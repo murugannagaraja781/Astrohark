@@ -1,0 +1,77 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build/Releases
+releases/
+build/
+dist/
+local_tmp/
+
+# Android specific (Astro5StarApp / astrofivestar-mobile-native)
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+bin/
+gen/
+out/
+.gradle/
+local.properties
+**/build/
+**/captures/
+**/google-services.json
+.externalNativeBuild
+.cxx
+
+# Sensitive/Keys/Credentials
+firebase-service-account.json
+github_action_key
+github_action_key.pub
+TEST_CREDENTIALS.md
+credentials.json
+*.keystore
+*.jks
+
+# Other
+test.txt
+tamil superadmindasbord task.txt
+*.log
+*log.txt
+**/build_log*.txt
+**/compile_log.txt
+
+# Large distribution folders
+gradle-*/
+node_modules/
+.npm/
+.gradle/
+.gradle_home/
+build_gradle_home/
+build_error.txt
+**/caches/
+**/daemon/
+**/wrapper/dists/

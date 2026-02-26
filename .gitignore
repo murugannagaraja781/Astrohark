@@ -75,3 +75,4 @@ build_error.txt
 **/caches/
 **/daemon/
 **/wrapper/dists/
+astroapp/android/app/src/main/assets/csc.db

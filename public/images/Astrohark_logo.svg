@@ -1,0 +1,9 @@
+<svg width="400" height="100" viewBox="0 0 400 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .text { font: bold 60px 'Outfit', sans-serif; fill: #111827; }
+  </style>
+  <text x="20" y="72" class="text">Astr</text>
+  <circle cx="178" cy="50" r="30" fill="#FFD700"/>
+  <path d="M198 15C225 25 225 75 198 85" stroke="#EA580C" stroke-width="10" stroke-linecap="round"/>
+  <text x="240" y="72" class="text">hark</text>
+</svg>

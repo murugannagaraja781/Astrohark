@@ -1,6 +1,6 @@
 # MongoDB Backup Setup Walkthrough (astrohark)
 
-I have created a backup script for you at `/Users/wohozo/Documents/astroharkt/scripts/db_backup.sh`. This script will:
+I have created a backup script for you at `/Users/wohozo/Documents/Astrohark/scripts/db_backup.sh`. This script will:
 1. Dump your MongoDB database.
 2. Zip it into a `.tar.gz` file.
 3. Save it in a folder called `backups/`.
@@ -29,11 +29,11 @@ Run this command and follow the interactive steps:
 To make this run every night at 2 AM automatically:
 1. Run `crontab -e` in your terminal.
 2. Paste this line at the bottom:
-`0 2 * * * /Users/wohozo/Documents/astroharkt/scripts/db_backup.sh >> /Users/wohozo/Documents/astroharkt/backups/backup.log 2>&1`
+`0 2 * * * /Users/wohozo/Documents/Astrohark/scripts/db_backup.sh >> /Users/wohozo/Documents/Astrohark/backups/backup.log 2>&1`
 
 ### 4. Test it now
 You can run it manually right away to see if it works:
-`/Users/wohozo/Documents/astroharkt/scripts/db_backup.sh`
+`/Users/wohozo/Documents/Astrohark/scripts/db_backup.sh`
 
 ---
 **Security Note**: This script uses the URI from your `.env` file. Do not share your `.env` file with anyone.

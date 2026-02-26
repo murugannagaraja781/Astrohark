@@ -1,10 +1,11 @@
 :root {
-    --primary: #007bff;
-    --secondary: #ffc107;
-    --bg-body: #F0FDF4;
-    --accent-gold: #007bff;
-    --surface: #FFFFFF;
-    --border: #A7F3D0;
+    --primary: #EA580C;
+    --secondary: #FFD700;
+    --bg-body: #0F172A;
+    --accent-gold: #FFD700;
+    --surface: #1E293B;
+    --border: #334155;
+    --text-main: #F8FAFC;
 }
 
 * {
@@ -449,7 +450,7 @@ body {
 
     /* Sidebar Logo Header */
     .admin-nav::before {
-        content: 'astrohark';
+        content: 'Astrohark';
         /* Fallback or extra branding */
         display: block;
         padding: 24px 30px;

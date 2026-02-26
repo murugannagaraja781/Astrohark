@@ -140,9 +140,31 @@ const server = http.createServer(app);
 const io = new Server(server);
 const cors = require("cors");
 const compression = require('compression');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
+// Security & Optimization
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
 app.use(compression());
 app.use(cors({ origin: "*" }));
+
+// Rate Limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // limit each IP to 1000 requests per windowMs
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+app.use(globalLimiter);
+
+// Specific limiter for payment/auth
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: 'Too many API requests, please try again later'
+});
+app.use('/api/', apiLimiter);
 
 // Global to store server URL for absolute image paths
 let SERVER_URL = process.env.SERVER_URL || '';
@@ -5014,6 +5036,11 @@ app.post('/call', async (req, res) => {
     // Return 500 only for actual sending errors, not config errors
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, 'public', 'index.html')); // Fallback to index or create a specialized 404.html
 });
 
 const PORT = process.env.PORT || 3000;

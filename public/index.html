@@ -4,7 +4,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>astrohark</title>
+  <title>Astrohark - Talk to Best Astrologers | Online Astrology Consultation</title>
+  <meta name="description"
+    content="Astrohark is India's most trusted online astrology platform. Talk or chat with expert astrologers for career, love, marriage, and wealth guidance. Get your free horoscope today!">
+  <meta name="keywords"
+    content="astrology, online astrologer, talk to astrologer, horoscope, kundli, rasi palan, Astrohark, astrology app">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://Astrohark.com/">
+  <meta property="og:title" content="Astrohark - Talk to Best Astrologers Online">
+  <meta property="og:description"
+    content="Expert astrology guidance at your fingertips. Talk or chat with top astrologers in India.">
+  <meta property="og:image" content="https://Astrohark.com/images/Astrohark-banner.jpg">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://Astrohark.com/">
+  <meta property="twitter:title" content="Astrohark - Online Astrology Consultation">
+  <meta property="twitter:description"
+    content="Expert astrology guidance at your fingertips. Talk or chat with top astrologers in India.">
+  <meta property="twitter:image" content="https://Astrohark.com/images/Astrohark-banner.jpg">
+
+  <link rel="canonical" href="https://Astrohark.com/">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/smoothness/jquery-ui.css">
@@ -23,12 +45,14 @@
   </script>
   <style>
     :root {
-      --primary: #047857;
-      --secondary: #6EE7B7;
-      --bg-body: #F0FDF4;
-      --accent-gold: #D4AF37;
-      --surface: #FFFFFF;
-      --border: #A7F3D0;
+      --primary: #EA580C;
+      --secondary: #6B7280;
+      --bg-body: #0F172A;
+      --accent-gold: #FFD700;
+      --surface: #1E293B;
+      --border: #334155;
+      --text-main: #F8FAFC;
+      --text-muted: #94A3B8;
     }
 
     * {
@@ -41,6 +65,7 @@
       height: 100vh;
       overflow: hidden;
       background: var(--bg-body);
+      color: var(--text-main);
     }
 
     input,
@@ -64,7 +89,7 @@
     #screen-login {
       position: absolute;
       inset: 0;
-      background: linear-gradient(135deg, #065F46, #059669, #34D399);
+      background: radial-gradient(circle at top right, #1E293B, #0F172A);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -102,12 +127,18 @@
       margin-top: 10px;
       border-radius: 8px;
       border: none;
-      background: linear-gradient(to right, #059669, #047857);
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      background: linear-gradient(135deg, #EA580C, #F97316);
+      box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
       color: white;
       cursor: pointer;
       font-weight: 600;
       letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+
+    .cosmic-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(234, 88, 12, 0.4);
     }
 
 
@@ -211,15 +242,14 @@
 
     /* Online: Green & Pulsing */
     .status-badge.online {
-      background: #059669;
-      /* Darker Green as requested */
+      background: #4169E1;
       box-shadow: 0 0 0 2px white;
       /* Clean separator */
     }
 
     /* Active Profile Image Ring */
     .astro-img.online-active {
-      border: 2px solid #059669;
+      border: 2px solid #4169E1;
       animation: pulse-border 2s infinite;
     }
 
@@ -232,15 +262,15 @@
     /* Pulse Animation for Border */
     @keyframes pulse-border {
       0% {
-        box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7);
+        box-shadow: 0 0 0 0 rgba(65, 105, 225, 0.7);
       }
 
       70% {
-        box-shadow: 0 0 0 6px rgba(5, 150, 105, 0);
+        box-shadow: 0 0 0 6px rgba(65, 105, 225, 0);
       }
 
       100% {
-        box-shadow: 0 0 0 0 rgba(5, 150, 105, 0);
+        box-shadow: 0 0 0 0 rgba(65, 105, 225, 0);
       }
     }
 
@@ -286,8 +316,8 @@
       position: absolute;
       top: 16px;
       right: 16px;
-      background: #ECFDF5;
-      color: #059669;
+      background: #EFF6FF;
+      color: #4169E1;
       font-weight: 700;
       font-size: 0.85rem;
       padding: 4px 10px;
@@ -336,14 +366,14 @@
     }
 
     .cta-btn.active-audio {
-      background: #ECFDF5;
-      border-color: #A7F3D0;
-      color: #059669;
+      background: #F3F4F6;
+      border-color: #D1D5DB;
+      color: #4169E1;
       cursor: pointer;
     }
 
     .cta-btn.active-audio:hover {
-      background: #D1FAE5;
+      background: #E5E7EB;
     }
 
     .cta-btn.active-video {
@@ -600,7 +630,7 @@
 
     .countdown-circle-fg {
       fill: none;
-      stroke: #059669;
+      stroke: #4169E1;
       stroke-width: 8;
       stroke-linecap: round;
       stroke-dasharray: 251;
@@ -616,7 +646,7 @@
       transform: translate(-50%, -50%);
       font-size: 1.5rem;
       font-weight: bold;
-      color: #059669;
+      color: #4169E1;
     }
 
 
@@ -901,11 +931,11 @@
     .bal-amount {
       font-size: 1.5rem;
       font-weight: 700;
-      color: #059669;
+      color: #4169E1;
     }
 
     .btn-recharge {
-      background: linear-gradient(135deg, #059669, #10B981);
+      background: linear-gradient(135deg, #4169E1, #3B82F6);
       color: white;
       width: 100%;
       padding: 14px;
@@ -1327,13 +1357,13 @@
     .chip-btn:hover,
     .chip-btn:active {
       background: #d1fae5;
-      color: #047857;
+      color: #1E40AF;
       border-color: #10b981;
     }
 
     /* --- App Download Header Button --- */
     .download-header-btn {
-      background: linear-gradient(135deg, #059669, #10b981);
+      background: linear-gradient(135deg, #4169E1, #10b981);
       color: white !important;
       padding: 6px 14px;
       border-radius: 8px;
@@ -1396,7 +1426,7 @@
     }
 
     .download-card-banner {
-      background: linear-gradient(135deg, #065F46, #059669);
+      background: linear-gradient(135deg, #111827, #EA580C);
       padding: 40px 20px;
       text-align: center;
       color: white;
@@ -1429,7 +1459,7 @@
     }
 
     .download-action-btn {
-      background: #059669;
+      background: #4169E1;
       color: white;
       text-decoration: none;
       padding: 16px 24px;
@@ -1445,7 +1475,7 @@
     }
 
     .download-action-btn:hover {
-      background: #047857;
+      background: #1E40AF;
       transform: translateY(-2px);
       box-shadow: 0 12px 20px -3px rgba(5, 150, 105, 0.5);
     }
@@ -1487,9 +1517,9 @@
   <!-- App Download Header (Guest/Login) -->
   <div id="staticHeader"
     style="position: fixed; top: 0; left: 0; right: 0; z-index: 10001; background: white; padding: 10px 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
-    <div style="font-weight: bold; color: #059669; font-size: 1.1rem;">✨ astrohark</div>
+    <div style="font-weight: bold; color: #4169E1; font-size: 1.1rem;">✨ Astrohark</div>
     <div style="display: flex; align-items: center; gap: 10px;">
-      <a href="/downloads/astrohark.apk?v=5.5.5" class="download-header-btn">
+      <a href="/downloads/Astrohark-v6.0.0.apk" class="download-header-btn">
         <i class="fas fa-download"></i> App
       </a>
       <button id="staticLoginBtn" onclick="window.location.reload()"
@@ -1533,17 +1563,17 @@
 
   <div class="app-footer">
     <div class="footer-links">
-      <a href="https://astrohark.com/terms-condition" target="_blank">Terms</a>
+      <a href="https://Astrohark.com/terms-condition" target="_blank">Terms</a>
       <span class="sep">|</span>
-      <a href="https://astrohark.com/privacy-policy" target="_blank">Privacy</a>
+      <a href="https://Astrohark.com/privacy-policy" target="_blank">Privacy</a>
       <span class="sep">|</span>
-      <a href="https://astrohark.com/refund-cancellation-policy" target="_blank">Refunds</a>
+      <a href="https://Astrohark.com/refund-cancellation-policy" target="_blank">Refunds</a>
       <span class="sep">|</span>
-      <a href="https://astrohark.com/shipping-policy" target="_blank">Shipping</a>
+      <a href="https://Astrohark.com/shipping-policy" target="_blank">Shipping</a>
       <span class="sep">|</span>
-      <a href="https://astrohark.com/return-policy" target="_blank">Returns</a>
+      <a href="https://Astrohark.com/return-policy" target="_blank">Returns</a>
     </div>
-    <div class="footer-copy">&copy; 2024 astrohark</div>
+    <div class="footer-copy">&copy; 2026 Astrohark</div>
   </div>
   </div>
 
@@ -1597,7 +1627,7 @@
       color: #FFF;
       font-size: 0.9rem;
       cursor: pointer;
-      background: linear-gradient(135deg, #059669, #10B981);
+      background: linear-gradient(135deg, #4169E1, #3B82F6);
       padding: 8px 16px;
       border-radius: 50px;
       display: flex;
@@ -1652,7 +1682,7 @@
     }
 
     .refer-header {
-      background: linear-gradient(135deg, #065F46, #059669);
+      background: linear-gradient(135deg, #1E3A8A, #4169E1);
       padding: 30px 20px;
       color: white;
       position: relative;
@@ -1680,8 +1710,8 @@
     }
 
     .refer-rule-icon {
-      background: #ECFDF5;
-      color: #059669;
+      background: #EFF6FF;
+      color: #4169E1;
       width: 20px;
       height: 20px;
       border-radius: 50%;
@@ -1696,7 +1726,7 @@
 
     .refer-code-box {
       background: #F9FAFB;
-      border: 2px dashed #059669;
+      border: 2px dashed #4169E1;
       padding: 16px;
       border-radius: 16px;
       margin: 20px 0;
@@ -1707,14 +1737,14 @@
       justify-content: center;
       align-items: center;
       gap: 15px;
-      color: #065F46;
+      color: #1E3A8A;
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .refer-code-box:active {
       transform: scale(0.95);
-      background: #ECFDF5;
+      background: #EFF6FF;
     }
 
     .copy-toast {
@@ -1781,7 +1811,7 @@
     }
 
     .referral-input-glow {
-      border: 2px solid #059669 !important;
+      border: 2px solid #4169E1 !important;
       box-shadow: 0 0 15px rgba(5, 150, 105, 0.2);
     }
   </style>
@@ -1789,11 +1819,12 @@
   <!-- Screen: Client Dashboard -->
   <div id="screen-client" class="dashboard-container hidden">
     <div class="app-header">
-      <div style="font-weight: bold; font-size: 1.2rem;">astrohark</div>
+      <img src="images/Astrohark_logo.svg" alt="Astrohark" style="height: 35px; cursor: pointer;"
+        onclick="location.reload()">
       <div style="display: flex; align-items: center; gap: 10px;">
 
-        <a href="/downloads/astrohark.apk?v=5.5.5" class="download-header-btn" title="Download Official App (v5.5.5)">
-          <i class="fas fa-cloud-download-alt"></i> App
+        <a href="/downloads/Astrohark-v6.0.0.apk" class="download-header-btn" title="Download Official App (v6.0.0)">
+          <i class="fas fa-android"></i> Download App (v6.0.0)
         </a>
 
         <!-- Login Button (Visible when Guest) -->
@@ -1968,7 +1999,7 @@
               <img src="images/academy_icon.png" alt="Academy">
               <span>Astro Academy</span>
             </div>
-            <div class="service-item-card" onclick="alert('For free services, please contact: info@astrohark.com')">
+            <div class="service-item-card" onclick="alert('For free services, please contact: info@Astrohark.com')">
               <img src="images/free_services_icon.png" alt="Free">
               <span>Free Services</span>
             </div>
@@ -2156,7 +2187,7 @@
           </div>
         </div>
         <button class="cosmic-btn" onclick="fetchDashboardChart()"
-          style="font-size:1.1rem; padding:15px; border-radius:12px; box-shadow:0 10px 15px -3px rgba(4,120,87,0.2); width:100%; border:none; background:linear-gradient(to right, #059669, #047857); color:white; cursor:pointer; font-weight:600;">
+          style="font-size:1.1rem; padding:15px; border-radius:12px; box-shadow:0 10px 15px -3px rgba(4,120,87,0.2); width:100%; border:none; background:linear-gradient(to right, #4169E1, #1E40AF); color:white; cursor:pointer; font-weight:600;">
           <i class="fas fa-calculator"></i> Get Birth Chart
         </button>
       </div>
@@ -2273,7 +2304,7 @@
       </div>
 
       <div style="display: flex; align-items: center; gap: 10px;">
-        <a href="/downloads/astrohark.apk?v=5.5.5" class="download-header-btn">
+        <a href="/downloads/Astrohark-v6.0.0.apk" class="download-header-btn">
           <i class="fas fa-download"></i> App
         </a>
       </div>
@@ -2309,7 +2340,7 @@
 
       <!-- Astro Earnings Card -->
       <div class="progress-card"
-        style="margin-bottom: 0px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; border: none;">
+        style="margin-bottom: 0px; background: linear-gradient(135deg, #3B82F6 0%, #4169E1 100%); color: white; border: none;">
         <div>
           <div style="font-weight: bold; font-size: 1.1rem;">Total Earnings</div>
 
@@ -2329,7 +2360,7 @@
         </div>
         <div style="text-align: right;">
           <button id="btnAstroWithdraw" onclick="astroRequestWithdrawal()"
-            style="background: white; color: #059669; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            style="background: white; color: #4169E1; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 0.8rem; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
             Withdraw
           </button>
         </div>
@@ -2538,7 +2569,7 @@
             <div style="font-size: 1.5rem; font-weight: 800; color: #111827;">₹<span id="mainWalletVal">0.00</span>
             </div>
           </div>
-          <i class="fas fa-wallet" style="color: #059669; font-size: 1.5rem; opacity: 0.2;"></i>
+          <i class="fas fa-wallet" style="color: #4169E1; font-size: 1.5rem; opacity: 0.2;"></i>
         </div>
 
         <div
@@ -2558,7 +2589,7 @@
       </p>
 
       <button class="cosmic-btn" onclick="openRechargeFromMain()"
-        style="width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; border:none; background: #059669; color:white;">
+        style="width: 100%; padding: 16px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; border:none; background: #4169E1; color:white;">
         <i class="fas fa-plus-circle"></i> Add Money
       </button>
     </div>
@@ -3005,7 +3036,7 @@
           <!-- Client Details Header (For Astrologer) -->
           <div id="clientDetailsHeader"
             style="display:none; padding:12px 15px; background:#f0fdf4; border-bottom:1px solid #d1fae5; font-size:0.9rem;">
-            <div style="font-weight:600; color:#047857; margin-bottom:5px;">Client Details</div>
+            <div style="font-weight:600; color:#1E40AF; margin-bottom:5px;">Client Details</div>
             <div id="clientDetailsContent" style="color:#555; font-size:0.85rem;">
               <!-- Will be populated by JavaScript -->
             </div>
@@ -4104,7 +4135,7 @@
               <div class="slide-cta" onclick="document.getElementById('astroList').scrollIntoView({behavior:'smooth'})">Book Now <i class="fas fa-arrow-right"></i></div>
             </div>
           </div>
-          <div class="home-slide" style="background: linear-gradient(135deg, #059669 0%, #10B981 100%);">
+          <div class="home-slide" style="background: linear-gradient(135deg, #4169E1 0%, #3B82F6 100%);">
             <div class="slide-content">
               <div class="slide-title">Find Your Soulmate</div>
               <div class="slide-subtitle">Vedic Compatibility</div>
@@ -4429,7 +4460,7 @@
       });
 
       if (astrologers.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:20px; color:#A7F3D0;">No astrologers online right now.</div>';
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#D1D5DB;">No astrologers online right now.</div>';
         return;
       }
 
@@ -4466,7 +4497,7 @@
 
                   <!-- Document Verified Badge (Conditional) -->
                   ${isDocsVerified ? `
-                  <div style="display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; color:#059669; background:#ECFDF5; padding:2px 6px; border-radius:4px; border:1px solid #D1FAE5; margin-bottom:4px;">
+                  <div style="display:inline-flex; align-items:center; gap:4px; font-size:0.75rem; color:#4169E1; background:#EFF6FF; padding:2px 6px; border-radius:4px; border:1px solid #D1FAE5; margin-bottom:4px;">
                     <i class="fas fa-check-circle"></i> Document Verified
                   </div>` : ''}
 
@@ -4548,8 +4579,8 @@
               let statusLabel = `<span style="color:#F59E0B; font-weight:bold;">PENDING</span>`;
               let bgColor = '#FFFBEB';
               if (w.status === 'approved') {
-                statusLabel = `<span style="color:#059669; font-weight:bold;">APPROVED</span>`;
-                bgColor = '#ECFDF5';
+                statusLabel = `<span style="color:#4169E1; font-weight:bold;">APPROVED</span>`;
+                bgColor = '#EFF6FF';
               } else if (w.status === 'rejected') {
                 statusLabel = `<span style="color:#DC2626; font-weight:bold;">REJECTED</span>`;
                 bgColor = '#FEF2F2';
@@ -4791,7 +4822,7 @@
                </div>
                <div style="display:flex; flex-direction:column; align-items:flex-end;">
                   <span style="font-size:0.7rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;">${amountLabel}</span>
-                  <span style="font-size:1.1rem; font-weight:800; color:${isAstro ? '#059669' : '#1e3a8a'};">₹${amount.toFixed(2)}</span>
+                  <span style="font-size:1.1rem; font-weight:800; color:${isAstro ? '#4169E1' : '#1e3a8a'};">₹${amount.toFixed(2)}</span>
                </div>
             </div>
           `;
@@ -6035,7 +6066,7 @@
         </div>
         <div style="flex:1; overflow-y:auto; padding:20px;">
           <!-- Lagna Section -->
-          <div style="background:linear-gradient(135deg, #047857 0%, #059669 100%); color:white; padding:15px; border-radius:12px; margin-bottom:15px;">
+          <div style="background:linear-gradient(135deg, #1E40AF 0%, #4169E1 100%); color:white; padding:15px; border-radius:12px; margin-bottom:15px;">
             <div style="font-size:0.8rem; opacity:0.9; margin-bottom:5px;">🌟 ${t('Ascendant')}</div>
             <div style="font-size:1.5rem; font-weight:bold;">${t(d.houses?.ascendantDetails?.signName) || 'N/A'}</div>
             <div style="font-size:0.8rem; margin-top:5px;">${t('Nakshatra')}: ${t(d.houses?.ascendantDetails?.nakshatra) || 'N/A'}</div>
@@ -6078,7 +6109,7 @@
       rawPlanets.forEach(p => {
         html += `
           <div style="background:white; padding:10px; border-radius:8px; border:1px solid #eee; font-size:0.85rem;">
-            <div style="font-weight:bold; color:#047857; margin-bottom:5px; border-bottom:1px solid #f9f9f9;">${t(p.name)}</div>
+            <div style="font-weight:bold; color:#1E40AF; margin-bottom:5px; border-bottom:1px solid #f9f9f9;">${t(p.name)}</div>
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; text-align:center;">
               <div><span style="color:#999;font-size:0.7rem;">${t('SignL')}</span><br>${t(p.signLord || '')}</div>
               <div><span style="color:#999;font-size:0.7rem;">${t('StarL')}</span><br>${t(p.starLord || '')}</div>
@@ -6102,7 +6133,7 @@
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
               <div style="background:#ecfdf5; padding:12px; border-radius:8px; border-left:4px solid #10b981;">
                 <div style="font-size:0.8rem; color:#666; margin-bottom:4px;">${t('Tithi')}</div>
-                <div style="font-weight:bold; color:#047857;">${t(panchangam.tithi) || 'N/A'}</div>
+                <div style="font-weight:bold; color:#1E40AF;">${t(panchangam.tithi) || 'N/A'}</div>
               </div>
               <div style="background:#eff6ff; padding:12px; border-radius:8px; border-left:4px solid #3b82f6;">
                 <div style="font-size:0.8rem; color:#666; margin-bottom:4px;">${t('Nakshatra')}</div>
@@ -6255,7 +6286,7 @@
 
       // 1. Lagna & Panchangam Header
       html += `
-        <div style="background:linear-gradient(135deg, #047857 0%, #059669 100%); color:white; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow:0 10px 15px -3px rgba(4,120,87,0.2);">
+        <div style="background:linear-gradient(135deg, #1E40AF 0%, #4169E1 100%); color:white; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow:0 10px 15px -3px rgba(4,120,87,0.2);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
              <div>
                 <div style="font-size:0.8rem; opacity:0.9;">🌟 ${t('Ascendant')}</div>
@@ -6848,7 +6879,7 @@
         html += `
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px; border-top:1px solid #eee; padding-top:15px;">
             <div style="font-size:0.85rem;"><i class="fas fa-briefcase" style="color:#d97706; width:18px;"></i> <b>தொழில்:</b> ${data.details.career_ta || 'N/A'}</div>
-            <div style="font-size:0.85rem;"><i class="fas fa-coins" style="color:#059669; width:18px;"></i> <b>நிதி:</b> ${data.details.finance_ta || 'N/A'}</div>
+            <div style="font-size:0.85rem;"><i class="fas fa-coins" style="color:#4169E1; width:18px;"></i> <b>நிதி:</b> ${data.details.finance_ta || 'N/A'}</div>
             <div style="font-size:0.85rem;"><i class="fas fa-heartbeat" style="color:#ef4444; width:18px;"></i> <b>ஆரோக்கியம்:</b> ${data.details.health_ta || 'N/A'}</div>
             <div style="font-size:0.85rem;"><i class="fas fa-magic" style="color:#3b82f6; width:18px;"></i> <b>அதிர்ஷ்டம்:</b> ${data.details.lucky_number || ''} (${data.details.lucky_color_ta || ''})</div>
           </div>
@@ -7162,7 +7193,7 @@
 
           listEl.innerHTML = res.data.map(txn => {
             const date = new Date(txn.createdAt).toLocaleDateString() + ' ' + new Date(txn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const statusColor = txn.status === 'success' ? '#059669' : (txn.status === 'failed' ? '#DC2626' : '#D97706');
+            const statusColor = txn.status === 'success' ? '#4169E1' : (txn.status === 'failed' ? '#DC2626' : '#D97706');
             const icon = txn.status === 'success' ? 'fa-check-circle' : (txn.status === 'failed' ? 'fa-times-circle' : 'fa-clock');
 
             return `
@@ -7546,7 +7577,7 @@
 
     window.shareOnWhatsApp = function () {
       const code = document.getElementById('myReferralCode').innerText;
-      const text = `வணக்கம்! astrohark செயலியில் இணையுங்கள்.எனது Referral Code: ${code}. பயன்படுத்தி போனஸ் பெறுங்கள்! https://play.google.com/store/search?q=astroharkt&c=apps`;
+      const text = `வணக்கம்! Astrohark செயலியில் இணையுங்கள்.எனது Referral Code: ${code}. பயன்படுத்தி போனஸ் பெறுங்கள்! https://play.google.com/store/search?q=Astroharkt&c=apps`;
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`);
     };
 
@@ -7604,7 +7635,7 @@
 
     function startMoneyAnimation() {
       const container = document.getElementById('coinAnimationContainer');
-      const colors = ['#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#FFFFFF'];
+      const colors = ['#F59E0B', '#3B82F6', '#3B82F6', '#EF4444', '#FFFFFF'];
 
       // Create 100 colorful confetti pieces
       for (let i = 0; i < 100; i++) {
@@ -7648,7 +7679,7 @@
       style="background:white; border-radius:15px; width:90%; max-width:350px; text-align:center; padding:30px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
       <h2 style="color:#111; margin-bottom:10px;">Session Summary</h2>
       <!-- <div id="summaryText" style="font-size:1.2rem; color:#4B5563; margin-bottom:20px;"></div> -->
-      <div class="summary-amount" style="font-size:2rem; font-weight:bold; color: #059669; margin-bottom:30px;"></div>
+      <div class="summary-amount" style="font-size:2rem; font-weight:bold; color: #4169E1; margin-bottom:30px;"></div>
       <button onclick="closeSummaryModal()" class="btn-primary"
         style="width:100%; padding: 12px; font-size:1rem; border-radius:10px; border:none; background:#2563EB; color:white; font-weight:bold;">Okay</button>
     </div>
@@ -7696,7 +7727,7 @@
             <input type="text" id="inputReferralCode" class="cosmic-input" placeholder="Enter Code"
               style="margin:0; text-align:center; flex:1; height:45px; border-radius:12px; font-weight:700; border: 1px solid #ddd;">
             <button class="cosmic-btn" onclick="applyReferral()"
-              style="width: auto; margin:0; padding: 0 20px; height:45px; border-radius:12px; border:none; background: #059669; color:white; font-weight:bold;">Claim</button>
+              style="width: auto; margin:0; padding: 0 20px; height:45px; border-radius:12px; border:none; background: #4169E1; color:white; font-weight:bold;">Claim</button>
           </div>
         </div>
       </div>
@@ -7714,10 +7745,10 @@
         <div style="font-size: 1.2rem; font-weight: 600;">Full Experience</div>
       </div>
       <div class="download-card-content">
-        <h3>Install astrohark</h3>
+        <h3>Install Astrohark</h3>
         <p>For instant notifications, smooth calls, and the best experience, download our official Android app.</p>
-        <a href="/downloads/astrohark.apk?v=5.5.5" class="download-action-btn" onclick="closeAppDownloadModal()">
-          <i class="fas fa-download"></i> Download Release APK (v5.5.5)
+        <a href="/downloads/Astrohark-v6.0.0.apk" class="download-action-btn" onclick="closeAppDownloadModal()">
+          <i class="fas fa-download"></i> Download Release APK (v6.0.0)
         </a>
         <span class="later-text" onclick="closeAppDownloadModal()">Maybe later</span>
       </div>

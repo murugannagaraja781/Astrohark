@@ -115,7 +115,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
-                    android:scheme="astro5"
+                    android:scheme="astrohark"
                     android:host="payment-success"/>
             </intent-filter>
         </activity>
@@ -154,7 +154,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="astro5" />
+                <data android:scheme="astrohark" />
             </intent-filter>
         </activity>
 

@@ -738,7 +738,9 @@ async function seedDatabase() {
       userId, name, phone, role,
       skills: role === 'astrologer' ? ['Vedic', 'Prashana'] : [],
       price: 20,
-      walletBalance: 369
+      walletBalance: 369,
+      experience: role === 'astrologer' ? 5 : 0,
+      approvalStatus: role === 'astrologer' ? 'approved' : 'pending'
     });
   };
 

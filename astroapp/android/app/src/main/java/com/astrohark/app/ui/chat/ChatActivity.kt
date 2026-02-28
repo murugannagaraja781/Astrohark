@@ -346,7 +346,7 @@ fun ChatScreen(
                     TextButton(onClick = onEndChat) { Text("End", color = Color.Red, fontWeight = FontWeight.Bold) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1B5E20),
+                    containerColor = Color(0xFFE87A1E),
                     titleContentColor = Color.White
                 )
             )
@@ -600,7 +600,7 @@ fun ChatInputBar(
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_chart),
                                 contentDescription = "Chart",
-                                tint = Color(0xFF4CAF50) // Green when ready
+                                tint = Color(0xFFE87A1E) // Orange when ready
                             )
                         } else {
                             // Spin icon replacement - Use Refresh as a placeholder for "loading/pending"

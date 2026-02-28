@@ -135,7 +135,7 @@ fun OtpScreen(
     val brandBg = colorResource(id = R.color.brand_bg_soft)
     val textPrimary = colorResource(id = R.color.text_primary)
     val textSecondary = colorResource(id = R.color.text_secondary)
-    val primaryGreen = Color(0xFF1B5E20) // Manually defined based on XML #1B5E20
+    val primaryGreen = Color(0xFFE87A1E) // Brand Orange from logo
 
     Box(
         modifier = Modifier

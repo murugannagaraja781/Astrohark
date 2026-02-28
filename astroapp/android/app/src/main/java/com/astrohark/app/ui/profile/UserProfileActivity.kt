@@ -103,7 +103,7 @@ fun UserProfileScreen(
                         Icon(Icons.Default.ArrowBack, "Back", tint = Color.White)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF004D40))
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFE87A1E))
             )
         }
     ) { padding ->
@@ -185,7 +185,7 @@ fun UserProfileScreen(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF004D40))
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE87A1E))
             ) {
                 Text("Save Changes", fontWeight = FontWeight.Bold, fontSize = 16.sp)
             }

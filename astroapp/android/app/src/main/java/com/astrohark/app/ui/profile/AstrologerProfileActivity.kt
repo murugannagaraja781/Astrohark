@@ -97,7 +97,7 @@ fun AstrologerProfileScreen(
     onAction: (String) -> Unit
 ) {
     val scrollState = rememberScrollState()
-    val peacockTeal = Color(0xFF004D40)
+    val peacockTeal = Color(0xFFE87A1E)
     val yellowAccent = Color(0xFFFFD54F)
 
     Scaffold(
@@ -137,7 +137,7 @@ fun AstrologerProfileScreen(
                         .height(100.dp)
                         .background(
                             Brush.verticalGradient(
-                                listOf(Color(0xFF004D40), Color(0xFF00695B))
+                                listOf(Color(0xFFE87A1E), Color(0xFFD4700B))
                             )
                         )
                 )
@@ -311,7 +311,7 @@ fun AstrologerProfileScreen(
                     // Placeholder review avatars
                      Box(modifier = Modifier.size(50.dp).background(Color(0xFF1A237E), CircleShape))
                      Spacer(modifier = Modifier.width(8.dp))
-                     Box(modifier = Modifier.size(50.dp).background(Color(0xFF004D40), CircleShape))
+                     Box(modifier = Modifier.size(50.dp).background(Color(0xFFE87A1E), CircleShape))
                      Spacer(modifier = Modifier.width(8.dp))
                      Box(modifier = Modifier.size(50.dp).background(Color(0xFFD81B60), CircleShape))
                 }

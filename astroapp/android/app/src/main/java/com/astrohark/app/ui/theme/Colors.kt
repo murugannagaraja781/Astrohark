@@ -2,31 +2,36 @@ package com.astrohark.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// RASI COLORS (Used in HomeScreen Grid)
+// RASI COLORS (Used in HomeScreen Grid) - Keep zodiac-specific colors
 val AriesRed = Color(0xFFB71C1C) // Deep Red
-val TaurusGreen = Color(0xFF1B5E20) // Deep Green
-val GeminiGreen = Color(0xFF2E7D32) // USER REQ: Methunam Green Dark
-val CancerBlue = Color(0xFF0D47A1) // USER REQ: Kadam Dark Blue
-val LeoGold = Color(0xFFF9A825) // Deeper Gold
-val VirgoOlive = Color(0xFF558B2F) // Deep Olive
+val TaurusGreen = Color(0xFF8B4513) // Earthy Brown (was green)
+val GeminiGreen = Color(0xFFE87A1E) // Orange (was green)
+val CancerBlue = Color(0xFF0D47A1) // Dark Blue
+val LeoGold = Color(0xFFF5C518) // Logo Yellow Gold
+val VirgoOlive = Color(0xFFC4960F) // Dark Gold
 val LibraPink = Color(0xFFAD1457) // Dark Pink
 val ScorpioMaroon = Color(0xFF880E4F) // Deep Maroon
 val SagPurple = Color(0xFF6A1B9A) // Deep Purple
-val CapTeal = Color(0xFF00695C) // Deep Teal
+val CapTeal = Color(0xFFD4700B) // Dark Orange (was teal)
 val AquaBlue = Color(0xFF0277BD) // Deep Blue
 val PiscesIndigo = Color(0xFF283593) // Deep Indigo
 
-// ADDITIONAL PREMIUM COLORS (Requested by User / Legacy References)
+// BRAND COLORS (Logo-based)
+val BrandYellow = Color(0xFFF5C518)  // Logo Yellow
+val BrandOrange = Color(0xFFE87A1E)  // Logo Orange
+val BrandOrangeDark = Color(0xFFD4700B) // Dark Orange
+
+// ADDITIONAL PREMIUM COLORS
 val CosmicBlue = Color(0xFF0F1028)
 val NebulaPurple = Color(0xFF23244F)
 val GalaxyViolet = Color(0xFF1B1C3A)
-val ConstellationCyan = Color(0xFF2ECC71)
+val ConstellationCyan = Color(0xFFF5C518)  // Changed to Yellow
 val AntiqueGold = Color(0xFFD4AF37)
 val PremiumGold = Color(0xFFE6C15A)
 val StarWhite = Color(0xFFFFFFFF)
 val CardText = Color(0xFFD6D6F5)
 
-val ForestDark = Color(0xFF1B5E20)
+val ForestDark = Color(0xFFD4700B)   // Dark Orange (was green)
 val ForestGold = Color(0xFFFFD700)
 val OceanDeep = Color(0xFF01579B)
 val OceanFoam = Color(0xFF4FC3F7)
@@ -39,19 +44,19 @@ val LunarWhite = Color(0xFFF5F5F5)
 val CharcoalDark = Color(0xFF222222)
 val LuxuryOnSurface = Color(0xFFEAEAEA)
 
-// VIBRANT GREEN THEME (Booking/Wallet)
-val EmeraldGreen = Color(0xFF2ECC71)
-val MintGreen = Color(0xFF58D68D)
-val DarkEmerald = Color(0xFF27AE60)
-val DeepJungle = Color(0xFF1B5E20)
-val MagicMint = Color(0xFF69F0AE)
-val SoftMintBg = Color(0xFFE8F5E9)
+// VIBRANT ORANGE/YELLOW THEME (Booking/Wallet) - Was green
+val EmeraldGreen = Color(0xFFE87A1E)   // Orange (was green)
+val MintGreen = Color(0xFFF5C518)      // Yellow (was green)
+val DarkEmerald = Color(0xFFD4700B)    // Dark Orange (was green)
+val DeepJungle = Color(0xFFE87A1E)     // Orange (was green)
+val MagicMint = Color(0xFFFFD54F)      // Light Yellow (was green)
+val SoftMintBg = Color(0xFFFFF8E1)     // Warm cream (was green tint)
 
 // Specific Colors used in HomeScreen
 val RoyalGold = Color(0xFFFFD700)
-val RoyalMidnightBlue = Color(0xFF0F0B1F) // Matching CosmicPurple bgStart roughly
-val PeacockTeal = Color(0xFF009688)
-val PeacockGreen = Color(0xFF4CAF50)
+val RoyalMidnightBlue = Color(0xFF0F0B1F)
+val PeacockTeal = Color(0xFFE87A1E)    // Orange (was teal)
+val PeacockGreen = Color(0xFFF5C518)   // Yellow (was green)
 val SoftIvory = Color(0xFFFFF8E1)
 val PriceRed = Color(0xFFF44336)
 val PureWhite = Color(0xFFFFFFFF)

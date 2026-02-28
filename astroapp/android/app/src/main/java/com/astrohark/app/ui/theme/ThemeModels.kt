@@ -30,21 +30,26 @@ data class ThemeColors(
 
 object ThemePalette {
 
-    // Base Premium Template
+    // Brand Colors from Logo
+    private val BrandYellow = Color(0xFFF5C518)  // Logo Yellow
+    private val BrandOrange = Color(0xFFE87A1E)  // Logo Orange
+    private val BrandOrangeDark = Color(0xFFD4700B) // Darker Orange variant
+
+    // Base Premium Template - Using Logo Colors
     private val PremiumTemplate = ThemeColors(
-        bgStart = Color(0xFFFFFFFF), // Pure White Background
+        bgStart = Color(0xFFFFFFFF),      // Pure White Background
         bgCenter = Color(0xFFFFFFFF),
         bgEnd = Color(0xFFFFFFFF),
-        headerStart = Color(0xFF1B5E20), // Primary Green
-        headerEnd = Color(0xFF1B5E20),
+        headerStart = BrandOrange,         // Orange from logo
+        headerEnd = BrandOrangeDark,       // Darker orange
         cardBg = Color(0xFFFFFFFF),
-        cardStroke = Color(0xFF1B5E20), // Green Borders
+        cardStroke = BrandOrange,          // Orange Borders
         textPrimary = Color(0xFF1C1F26),
         textSecondary = Color(0xFF6B7280),
-        accent = Color(0xFF1B5E20) // Accent Green
+        accent = BrandYellow               // Yellow Accent from logo
     )
 
-    // All themes are now forced to Premium as requested
+    // All themes use logo-based premium template
     val CosmicPurple = PremiumTemplate
     val MidnightIndigo = PremiumTemplate
     val RoyalBlue = PremiumTemplate

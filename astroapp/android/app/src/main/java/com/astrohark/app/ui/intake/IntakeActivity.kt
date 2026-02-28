@@ -598,7 +598,7 @@ fun IntakeScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0xFF1B5E20), Color(0xFF2ECC71), Color(0xFF69F0AE))
+                    colors = listOf(Color(0xFFE87A1E), Color(0xFFF5C518), Color(0xFFFFD54F))
                 )
             )
     ) {
@@ -1183,16 +1183,16 @@ fun IntakeScreen(
                                 .shadow(
                                     elevation = 20.dp,
                                     shape = RoundedCornerShape(24.dp),
-                                    spotColor = Color(0xFF69F0AE),
-                                    ambientColor = Color(0xFF2ECC71)
+                                    spotColor = Color(0xFFFFD54F),
+                                    ambientColor = Color(0xFFF5C518)
                                 )
                                 .background(
                                     brush = Brush.verticalGradient(
-                                        colors = listOf(Color(0xFF1B5E20), Color(0xFF2E7D32))
+                                        colors = listOf(Color(0xFFE87A1E), Color(0xFFD4700B))
                                     ),
                                     shape = RoundedCornerShape(24.dp)
                                 )
-                                .border(1.dp, Color(0xFF69F0AE).copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                                .border(1.dp, Color(0xFFFFD54F).copy(alpha = 0.5f), RoundedCornerShape(24.dp))
                         ) {
                             Column(
                                 modifier = Modifier.padding(24.dp),
@@ -1202,9 +1202,9 @@ fun IntakeScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(80.dp)
-                                        .shadow(10.dp, CircleShape, spotColor = Color(0xFF69F0AE))
-                                        .background(Color(0xFF2ECC71).copy(alpha = 0.2f), CircleShape)
-                                        .border(2.dp, Color(0xFF69F0AE), CircleShape),
+                                        .shadow(10.dp, CircleShape, spotColor = Color(0xFFFFD54F))
+                                        .background(Color(0xFFF5C518).copy(alpha = 0.2f), CircleShape)
+                                        .border(2.dp, Color(0xFFFFD54F), CircleShape),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(

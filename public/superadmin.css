@@ -1,11 +1,11 @@
 :root {
-    --primary: #EA580C;
-    --secondary: #FFD700;
-    --bg-body: #0F172A;
-    --accent-gold: #FFD700;
-    --surface: #1E293B;
-    --border: #334155;
-    --text-main: #F8FAFC;
+    --primary: #FF7F00;
+    --secondary: #FF7F00;
+    --bg-body: #140F0A;
+    --accent-gold: #FF7F00;
+    --surface: #241A12;
+    --border: #332115;
+    --text-main: #FFFFFF;
 }
 
 * {
@@ -62,20 +62,21 @@ body {
 }
 
 .admin-card {
-    background: white;
+    background: var(--surface);
     border-radius: 12px;
     padding: 15px;
     margin-bottom: 15px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
 }
 
 .admin-user-card {
-    background: white;
+    background: var(--surface);
     border-radius: 12px;
     padding: 15px;
     margin-bottom: 15px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #eee;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
 }
 
 .admin-user-header {
@@ -87,7 +88,7 @@ body {
 
 .admin-user-name {
     font-weight: 700;
-    color: #1F2937;
+    color: var(--text-main);
     font-size: 1rem;
 }
 
@@ -240,8 +241,8 @@ body {
 }
 
 .admin-footer-content {
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: 100%;
+    margin: 0;
 }
 
 .admin-footer-section {

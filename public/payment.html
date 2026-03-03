@@ -15,21 +15,23 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #140F0A 0%, #241A12 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            color: #FFFFFF;
         }
 
         .payment-container {
-            background: white;
+            background: #241A12;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
             width: 100%;
             max-width: 400px;
             padding: 30px;
+            border: 1px solid #332115;
         }
 
         .payment-header {
@@ -40,18 +42,18 @@
         .wallet-icon {
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%);
+            background: linear-gradient(135deg, #2D2013 0%, #1A1108 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 15px;
             font-size: 1.8rem;
-            color: #E87A1E;
+            color: #FF7F00;
         }
 
         .payment-header h2 {
-            color: #1F2937;
+            color: #FFFFFF;
             font-size: 1.4rem;
             font-weight: 700;
         }
@@ -63,16 +65,17 @@
         }
 
         .user-info {
-            background: #F3F4F6;
+            background: #1A1108;
             padding: 15px;
             border-radius: 12px;
             margin-bottom: 20px;
             text-align: center;
+            border: 1px solid #332115;
         }
 
         .user-info .name {
             font-weight: 600;
-            color: #1F2937;
+            color: #FFFFFF;
             font-size: 1.1rem;
         }
 
@@ -96,13 +99,13 @@
         .amount-display .amount {
             font-size: 2.5rem;
             font-weight: 700;
-            color: #E87A1E;
+            color: #FF7F00;
         }
 
         .pay-btn {
             width: 100%;
             padding: 16px;
-            background: linear-gradient(135deg, #E87A1E 0%, #D4700B 100%);
+            background: linear-gradient(135deg, #FF7F00 0%, #D4700B 100%);
             border: none;
             border-radius: 12px;
             color: white;
@@ -138,7 +141,7 @@
 
         .security-note i {
             margin-right: 5px;
-            color: #E87A1E;
+            color: #FF7F00;
         }
 
         /* Error State */
@@ -181,7 +184,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(20, 15, 10, 0.95);
             z-index: 9999;
             justify-content: center;
             align-items: center;
@@ -196,7 +199,7 @@
             width: 50px;
             height: 50px;
             border: 4px solid #E5E7EB;
-            border-top-color: #E87A1E;
+            border-top-color: #FF7F00;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -210,7 +213,7 @@
         .loading-text {
             margin-top: 20px;
             font-size: 1rem;
-            color: #374151;
+            color: #FFFFFF;
             font-weight: 500;
         }
 
@@ -226,7 +229,7 @@
             display: block;
             background: #ECFDF5;
             border: 1px solid #10B981;
-            color: #E87A1E;
+            color: #FF7F00;
         }
 
         .status-message.error {

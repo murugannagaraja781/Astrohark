@@ -16,9 +16,9 @@ val CapTeal = Color(0xFFD4700B) // Dark Orange (was teal)
 val AquaBlue = Color(0xFF0277BD) // Deep Blue
 val PiscesIndigo = Color(0xFF283593) // Deep Indigo
 
-// BRAND COLORS (Logo-based)
-val BrandYellow = Color(0xFFF5C518)  // Logo Yellow
-val BrandOrange = Color(0xFFE87A1E)  // Logo Orange
+// BRAND COLORS (Updated to Deep Dark Theme)
+val BrandYellow = Color(0xFFFF7F00)  // Logo Orange
+val BrandOrange = Color(0xFFFF7F00)  // Logo Orange
 val BrandOrangeDark = Color(0xFFD4700B) // Dark Orange
 
 // ADDITIONAL PREMIUM COLORS
@@ -31,18 +31,18 @@ val PremiumGold = Color(0xFFE6C15A)
 val StarWhite = Color(0xFFFFFFFF)
 val CardText = Color(0xFFD6D6F5)
 
-val ForestDark = Color(0xFFD4700B)   // Dark Orange (was green)
-val ForestGold = Color(0xFFFFD700)
-val OceanDeep = Color(0xFF01579B)
-val OceanFoam = Color(0xFF4FC3F7)
-val RoyalPurple = Color(0xFF4A148C)
-val RoyalCream = Color(0xFFFFF8E1)
-val MysticMagenta = Color(0xFFD81B60)
+val ForestDark = Color(0xFF140F0A)   // Deep Dark Brown
+val ForestGold = Color(0xFFFF7F00)
+val OceanDeep = Color(0xFF140F0A)
+val OceanFoam = Color(0xFFA58B74)
+val RoyalPurple = Color(0xFF140F0A)
+val RoyalCream = Color(0xFF241A12)
+val MysticMagenta = Color(0xFFFF7F00)
 val MidnightBlack = Color(0xFF000000)
-val MidnightStar = Color(0xFF0A0A23)
-val LunarWhite = Color(0xFFF5F5F5)
-val CharcoalDark = Color(0xFF222222)
-val LuxuryOnSurface = Color(0xFFEAEAEA)
+val MidnightStar = Color(0xFF140F0A)
+val LunarWhite = Color(0xFFFFFFFF)
+val CharcoalDark = Color(0xFF140F0A)
+val LuxuryOnSurface = Color(0xFFFFFFFF)
 
 // VIBRANT ORANGE/YELLOW THEME (Booking/Wallet) - Was green
 val EmeraldGreen = Color(0xFFE87A1E)   // Orange (was green)
@@ -53,11 +53,11 @@ val MagicMint = Color(0xFFFFD54F)      // Light Yellow (was green)
 val SoftMintBg = Color(0xFFFFF8E1)     // Warm cream (was green tint)
 
 // Specific Colors used in HomeScreen
-val RoyalGold = Color(0xFFFFD700)
-val RoyalMidnightBlue = Color(0xFF0F0B1F)
-val PeacockTeal = Color(0xFFE87A1E)    // Orange (was teal)
-val PeacockGreen = Color(0xFFF5C518)   // Yellow (was green)
-val SoftIvory = Color(0xFFFFF8E1)
+val RoyalGold = Color(0xFFFF7F00)
+val RoyalMidnightBlue = Color(0xFF140F0A)
+val PeacockTeal = Color(0xFFFF7F00)    // Orange
+val PeacockGreen = Color(0xFFFF7F00)   // Orange
+val SoftIvory = Color(0xFFFFFFFF)
 val PriceRed = Color(0xFFF44336)
 val PureWhite = Color(0xFFFFFFFF)
 

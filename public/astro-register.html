@@ -9,14 +9,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #059669;
-            --primary-dark: #047857;
-            --bg-color: #F3F4F6;
+            --primary: #FF7F00;
+            --primary-dark: #D4700B;
+            --bg-color: #140F0A;
+            --surface: #241A12;
+            --text-main: #FFFFFF;
+            --text-muted: #A58B74;
+            --border: #332115;
         }
 
         body {
             font-family: 'Outfit', sans-serif;
             background: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
             padding: 20px;
             display: flex;
@@ -26,18 +31,20 @@
         }
 
         .container {
-            background: white;
+            background: var(--surface);
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
             max-width: 600px;
             width: 100%;
         }
 
         h2 {
             text-align: center;
-            color: #1F2937;
+            color: var(--primary);
             margin-bottom: 20px;
+            font-family: 'Cinzel', serif;
         }
 
         .form-group {
@@ -48,16 +55,17 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 500;
-            color: #374151;
+            color: var(--text-muted);
         }
 
         input,
         select,
         textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #D1D5DB;
-            border-radius: 6px;
+            background: #1A1A1A;
+            border: 1px solid var(--border);
+            color: white;
+            border-radius: 10px;
             font-size: 1rem;
             box-sizing: border-box;
             /* Fix padding issue */
@@ -89,10 +97,10 @@
         .section-title {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #111827;
+            color: var(--primary);
             margin-top: 20px;
             margin-bottom: 10px;
-            border-bottom: 1px solid #E5E7EB;
+            border-bottom: 1px solid var(--border);
             padding-bottom: 5px;
         }
 

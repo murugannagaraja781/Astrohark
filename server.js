@@ -3230,16 +3230,23 @@ io.on('connection', (socket) => {
       }
     }
     for (const [sessionId, session] of activeSessions) {
+      // 0. GHOST SESSION CLEANUP: If session hasn't started billing for > 5 mins, clean it up
+      const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+      if (!session.actualBillingStart && (now - session.startedAt > SESSION_TIMEOUT)) {
+        console.log(`[Ticker] Cleaning up ghost session ${sessionId} (timeout)`);
+        activeSessions.delete(sessionId);
+        if (session.users) {
+          session.users.forEach(u => {
+            if (userActiveSession.get(u) === sessionId) userActiveSession.delete(u);
+          });
+        }
+        continue;
+      }
+
       // 1. Check if Billing Started
       if (!session.actualBillingStart || now < session.actualBillingStart) continue;
 
       // 2. Check Connections (BOTH must be connected)
-      // We check if the socket ID for the user is present in userSockets AND if that socket is actually connected?
-      // userSockets only has entry if registered.
-      // We assume if they serve 'disconnect' event, they are removed from userSockets/socketToUser?
-      // Checking 'disconnect' handler: it conditionally removes from userSockets.
-      // Yes, if (userSockets.get(userId) === socket.id) userSockets.delete(userId);
-
       const clientSocketId = userSockets.get(session.clientId);
       const astroSocketId = userSockets.get(session.astrologerId);
 
@@ -3249,16 +3256,16 @@ io.on('connection', (socket) => {
       if (isClientConnected && isAstroConnected) {
         session.elapsedBillableSeconds++;
 
-        // DEBUG LOGGING
-        console.log(`[${sessionId}] Tick: ${session.elapsedBillableSeconds}, LastBilled: ${session.lastBilledMinute}, Deducted: ${session.totalDeducted}, Slab: ${session.currentSlab}`);
-
-        if (session.elapsedBillableSeconds % 5 === 0) console.log(`Session ${sessionId}: Tick ${session.elapsedBillableSeconds}s`);
+        // DEBUG LOGGING - Throttle to every 10s or 1 minute in production?
+        // For now keep it but it adds up in logs.
+        if (session.elapsedBillableSeconds % 30 === 0) {
+          console.log(`[${sessionId}] Tick: ${session.elapsedBillableSeconds}s, TotalDed: ${session.totalDeducted}`);
+        }
 
         // Phase 3: First Minute Check (at 60s exactly)
         if (session.elapsedBillableSeconds === 60) {
           console.log(`Session ${sessionId}: First 60s completed.`);
           processBillingCharge(sessionId, 60, 1, 'first_60_full');
-          // Note: lastBilledMinute update is below
         }
 
         // Phase 4: Check Slab Upgrade
@@ -3274,12 +3281,10 @@ io.on('connection', (socket) => {
           }
         }
 
-        // Check Minute Boundary (Future Slabs > 1)
         // Phase 5: Post-First-Minute Billing
         if (session.elapsedBillableSeconds > 60) {
           const eligibleSeconds = session.elapsedBillableSeconds - 60;
           const eligibleMinutes = Math.floor(eligibleSeconds / 60);
-          // Total billed = 1 (first min) + eligibleMinutes
           const totalShouldBeBilled = 1 + eligibleMinutes;
 
           if (totalShouldBeBilled > session.lastBilledMinute) {
@@ -3288,9 +3293,6 @@ io.on('connection', (socket) => {
             session.lastBilledMinute = totalShouldBeBilled;
           }
         }
-      } else {
-        // Paused
-        // console.log(`Session ${sessionId} Paused. Client: ${isClientConnected}, Astro: ${isAstroConnected}`);
       }
     }
   }
@@ -3837,12 +3839,11 @@ io.on('connection', (socket) => {
       }
 
       try {
-        // If Astrologer, use grace period before marking offline
+        // Find user to check role
         const user = await User.findOne({ userId });
         if (user && user.role === 'astrologer') {
-          // Save current status before potential offline
-          return; // Manual Toggle Rule: Skip offline marking
-
+          // Astrologer specific logic can go here (e.g. status tracking)
+          console.log(`Astrologer ${userId} disconnected. Socket: ${socket.id}`);
         }
       } catch (e) { console.error('Disconnect DB error', e); }
 

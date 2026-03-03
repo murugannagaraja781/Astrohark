@@ -1383,7 +1383,7 @@
       overflow-y: auto;
       padding: 15px;
       padding-bottom: 30px;
-      background: #f9fafb;
+      background: var(--bg-card);
       position: relative;
       display: flex;
       flex-direction: column;
@@ -1396,7 +1396,7 @@
       flex: 0 0 400px;
       display: none;
       flex-direction: column;
-      background: #f9fafb;
+      background: var(--bg-card);
       border-left: 1px solid #eee;
       overflow-y: auto;
       max-height: 100%;
@@ -1462,7 +1462,8 @@
     }
 
     .chip-btn {
-      background: #f3f4f6;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-soft);
       border: 1px solid #e5e7eb;
       padding: 6px 15px;
       border-radius: 20px;
@@ -2037,7 +2038,8 @@
               position: relative;
               margin-bottom: 20px;
               box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-              background: #f3f4f6;
+              background: rgba(255, 255, 255, 0.03);
+              border: 1px solid var(--border-soft);
             }
 
             .home-slider-wrapper {
@@ -3038,7 +3040,7 @@
 
       <div style="margin: 25px 0; display: flex; flex-direction: column; gap: 12px;">
         <div
-          style="background: #f3f4f6; padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;">
+          style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-soft); padding: 15px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;">
           <div style="text-align: left;">
             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Main
               Wallet
@@ -6896,16 +6898,16 @@
 
       document.getElementById('horoscopeDate').innerText = data.date || 'இன்று';
 
-      const prediction = data.horoscope_data || 'இன்று உங்களுக்கு நற்பலன்கள் கிடைக்கும்.';
+      const prediction = data.forecast_ta || data.horoscope_data || 'இன்று உங்களுக்கு நற்பலன்கள் கிடைக்கும்.';
 
       let html = `
-        <div id="horoscopeWrapper" class="relative overflow-hidden transition-all duration-500 ease-in-out" style="max-height: 130px;">
-          <p class="font-inter text-base lg:text-lg leading-relaxed text-gray-300 font-light tracking-wide">${prediction}</p>
-          <div id="fadeMask" class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+        <div id="horoscopeWrapper" class="relative overflow-hidden transition-all duration-700 ease-in-out" style="max-height: 120px; transition: max-height 0.5s ease-in-out;">
+          <p class="font-inter text-base lg:text-lg leading-relaxed text-gray-200 font-light tracking-wide">${prediction}</p>
+          <div id="fadeMask" class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
         </div>
         <button id="readMoreAction" onclick="toggleReadMore()"
-          class="mt-4 font-poppins text-xs font-bold uppercase tracking-widest text-milk-green border border-milk-green/50 px-5 py-2 rounded-md hover:bg-milk-green hover:text-black transition-all duration-300 cursor-pointer">
-          Read More +
+          style="margin-top:20px; font-family:var(--font-body); font-size: 0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--primary); background:rgba(255,127,0,0.1); border:1px solid var(--border-accent); padding:8px 20px; rounded-md:8px; cursor:pointer; transition:all 0.3s ease; border-radius: 8px;">
+          Read More <i class="fas fa-chevron-down" style="margin-left:5px;"></i>
         </button>
       `;
 
@@ -6963,14 +6965,15 @@
       const wrapper = document.getElementById('horoscopeWrapper');
       const btn = document.getElementById('readMoreAction');
       const mask = document.getElementById('fadeMask');
-      if (wrapper.style.maxHeight !== '2000px') {
-        wrapper.style.maxHeight = '2000px';
-        btn.innerText = 'Read Less −';
-        if (mask) mask.style.display = 'none';
+
+      if (wrapper.style.maxHeight !== 'none' && wrapper.style.maxHeight !== '') {
+        wrapper.style.maxHeight = 'none';
+        btn.innerHTML = 'Read Less <i class="fas fa-chevron-up" style="margin-left:5px;"></i>';
+        if (mask) mask.style.opacity = '0';
       } else {
-        wrapper.style.maxHeight = '130px';
-        btn.innerText = 'Read More +';
-        if (mask) mask.style.display = 'block';
+        wrapper.style.maxHeight = '120px';
+        btn.innerHTML = 'Read More <i class="fas fa-chevron-down" style="margin-left:5px;"></i>';
+        if (mask) mask.style.opacity = '1';
       }
     }
 

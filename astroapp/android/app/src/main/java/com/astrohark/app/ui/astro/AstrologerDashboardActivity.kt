@@ -1,5 +1,10 @@
 package com.astrohark.app.ui.astro
 
+import android.Manifest
+import android.provider.Settings
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import android.content.Intent
 import android.media.MediaPlayer
 import java.text.SimpleDateFormat
@@ -31,6 +36,7 @@ import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -591,6 +597,37 @@ fun AstrologerDashboardScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // 0. Permission Warning Banner
+            val hasOverlay = Settings.canDrawOverlays(context)
+            val hasAudio = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+            val hasCamera = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            val hasNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            } else true
+
+            if (!hasOverlay || !hasAudio || !hasCamera || !hasNotification) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp)).clickable {
+                        context.startActivity(Intent(context, PermissionActivity::class.java))
+                    },
+                    border = BorderStroke(1.dp, Color(0xFFEF5350))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = Color(0xFFD32F2F))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Missing Permissions", fontWeight = FontWeight.Bold, color = Color(0xFFB71C1C), fontSize = 14.sp)
+                            Text("Click here to enable Display Over Apps, Audio, and Notifications to receive calls.", fontSize = 12.sp, color = Color(0xFFB71C1C))
+                        }
+                    }
+                }
+            }
+
             // 1. Emergency Banner (Skeuomorphic)
             Card(
                 colors = CardDefaults.cardColors(containerColor = colors.headerStart),

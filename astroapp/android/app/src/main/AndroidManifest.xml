@@ -103,6 +103,9 @@
         <activity android:name=".ui.horoscope.FreeHoroscopeActivity" />
         <activity android:name=".ui.astro.AstrologerDashboardActivity" />
         <activity android:name=".ui.astro.AstrologerHistoryActivity" />
+        <activity android:name=".ui.astro.PermissionActivity" 
+            android:theme="@style/Theme.FCMCallApp"
+            android:screenOrientation="portrait"/>
         <activity android:name=".ui.admin.SuperPowerAdminDashboardActivity" android:exported="false" android:theme="@style/Theme.FCMCallApp"/>
         <activity android:name=".ui.settings.SettingsActivity" />
         <activity android:name=".ui.settings.ThemeSettingsActivity" />

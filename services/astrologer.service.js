@@ -31,6 +31,10 @@ async function getFormattedAstrologers(SERVER_URL) {
 }
 
 async function broadcastAstroUpdate(io, SERVER_URL) {
+    if (!io) {
+        console.error('[Broadcast] Failed: io instance is undefined. Make sure app.set("io", io) is called in server.js');
+        return;
+    }
     try {
         const formattedAstros = await getFormattedAstrologers(SERVER_URL);
         io.emit('astrologer-update', formattedAstros);

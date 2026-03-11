@@ -162,6 +162,7 @@ initFcmAuth();
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+app.set('io', io);
 const cors = require("cors");
 const compression = require('compression');
 const helmet = require('helmet');
@@ -203,6 +204,7 @@ app.use((req, res, next) => {
       console.log(`[Config] Automatically detected SERVER_URL: ${SERVER_URL}`);
     }
   }
+  app.set('SERVER_URL', SERVER_URL);
   next();
 });
 
@@ -233,43 +235,10 @@ function formatImageUrl(imgPath, name) {
   return imgPath;
 }
 
-async function getFormattedAstrologers() {
-  try {
-    const astros = await User.find({ role: 'astrologer', approvalStatus: 'approved' })
-      .select('userId name phone skills price isOnline isChatOnline isAudioOnline isVideoOnline experience isVerified image walletBalance totalEarnings isBusy languages orderCount isDocumentVerified')
-      .lean();
-
-    return astros.map(a => ({
-      userId: a.userId,
-      name: a.name,
-      skills: a.skills || [],
-      price: a.price || 15,
-      isOnline: a.isOnline || false,
-      isChatOnline: a.isChatOnline || false,
-      isAudioOnline: a.isAudioOnline || false,
-      isVideoOnline: a.isVideoOnline || false,
-      experience: a.experience || 0,
-      isVerified: a.isVerified || false,
-      isBusy: a.isBusy || false,
-      image: formatImageUrl(a.image, a.name),
-      languages: a.languages || ['Tamil', 'English'],
-      orderCount: a.orderCount || 0,
-      isDocumentVerified: a.isDocumentVerified || false
-    }));
-  } catch (e) {
-    console.error('Error fetching formatted astros:', e);
-    return [];
-  }
-}
+const { broadcastAstroUpdate: serviceBroadcastAstroUpdate } = require('./services/astrologer.service');
 
 async function broadcastAstroUpdate() {
-  try {
-    const formattedAstros = await getFormattedAstrologers();
-    io.emit('astrologer-update', formattedAstros);
-    console.log(`Broadcasting update for ${formattedAstros.length} astrologers.`);
-  } catch (e) {
-    console.error('Broadcast Error:', e);
-  }
+  await serviceBroadcastAstroUpdate(io, SERVER_URL);
 }
 
 app.use(express.json());

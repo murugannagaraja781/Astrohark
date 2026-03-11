@@ -1,0 +1,3 @@
+955:app.delete('/api/admin/academy/videos/:id', async (req, res) => {
+1070:app.delete('/api/admin/banners/:id', async (req, res) => {
+4964:app.delete('/unregister/:userId', (req, res) => {

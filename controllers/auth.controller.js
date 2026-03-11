@@ -49,23 +49,48 @@ exports.verifyOtp = async (req, res) => {
         });
     }
 
-    // Test Accounts
-    if ((phone === '8000000001' || phone === '9000000001') && otp === '0101') {
-        // Existing test account logic...
-        // (Simplified for brevity in this step, but I'll make sure it's complete)
+    // --- Test Astrologer Account ---
+    if (phone === '8000000001' && otp === '0101') {
         let user = await User.findOne({ phone });
-        const isAstro = phone === '8000000001';
         if (!user) {
             user = await User.create({
                 userId: crypto.randomUUID(),
                 phone,
-                name: isAstro ? 'Test Astrologer' : 'Test Client',
-                role: isAstro ? 'astrologer' : 'client',
-                isAvailable: isAstro,
-                walletBalance: isAstro ? 0 : 1000,
-                referralCode: await generateUniqueReferralCode(isAstro ? 'TestAstro' : 'TestClient')
+                name: 'Test Astrologer',
+                isAvailable: true,
+                ratePerMinute: 10,
+                referralCode: await generateUniqueReferralCode('TestAstro')
+            });
+        } else if (user.role !== 'astrologer') {
+            user.role = 'astrologer';
+            user.isOnline = true;
+            user.isAvailable = true;
+            user.ratePerMinute = user.ratePerMinute || 10;
+            await user.save();
+        }
+        return res.json({
+            ok: true, userId: user.userId, name: user.name, role: user.role,
+            phone: user.phone, walletBalance: user.walletBalance,
+            totalEarnings: user.totalEarnings || 0,
+            image: formatImageUrl(user.image, user.name, SERVER_URL),
+            ratePerMinute: user.ratePerMinute
+        });
+    }
+
+    // --- Test Client Account ---
+    if (phone === '9000000001' && otp === '0101') {
+        let user = await User.findOne({ phone });
+        if (!user) {
+            user = await User.create({
+                userId: crypto.randomUUID(),
+                phone,
+                name: 'Test Client',
+                role: 'client',
+                walletBalance: 1000,
+                referralCode: await generateUniqueReferralCode('TestClient')
             });
         }
+
         return res.json({
             ok: true, userId: user.userId, name: user.name, role: user.role,
             phone: user.phone, walletBalance: user.walletBalance,

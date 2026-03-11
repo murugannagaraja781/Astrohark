@@ -1,0 +1,2 @@
+946:app.put('/api/admin/academy/videos/:id', async (req, res) => {
+1060:app.put('/api/admin/banners/:id', async (req, res) => {

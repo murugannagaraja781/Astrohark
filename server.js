@@ -14,6 +14,19 @@ const admin = require('firebase-admin'); // Firebase Admin for Mobile App
 const { DateTime } = require('luxon');
 const { fetchDailyHoroscope } = require("./utils/rasiEng/horoscopeData");
 
+const User = require('./models/User');
+const CallRequest = require('./models/CallRequest');
+const Session = require('./models/Session');
+const PairMonth = require('./models/PairMonth');
+const BillingLedger = require('./models/BillingLedger');
+const Withdrawal = require('./models/Withdrawal');
+const Payment = require('./models/Payment');
+const ChatMessage = require('./models/ChatMessage');
+const AcademyVideo = require('./models/AcademyVideo');
+const Banner = require('./models/Banner');
+const AccountDeletionRequest = require('./models/AccountDeletionRequest');
+const GlobalSettings = require('./models/GlobalSettings');
+
 // PhonePe Config
 // PhonePe Config
 const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
@@ -293,21 +306,39 @@ app.get('/wallet', (req, res) => {
   `);
 });
 
-// Policy Page Routes
-app.get('/terms-condition', (req, res) => res.sendFile(path.join(__dirname, 'public/terms-condition.html')));
-app.get('/refund-cancellation-policy', (req, res) => res.sendFile(path.join(__dirname, 'public/refund-cancellation-policy.html')));
-app.get('/return-policy', (req, res) => res.sendFile(path.join(__dirname, 'public/return-policy.html')));
-app.get('/shipping-policy', (req, res) => res.sendFile(path.join(__dirname, 'public/shipping-policy.html')));
 
 // Routes
 const rasiEngRouter = require("./routes/rasiEng");
 const rasipalanRouter = require("./routes/rasipalan");
 const freeHoroscopeRouter = require("./routes/freeHoroscope");
 
+// Newly Extracted Routers
+const authRoutes = require('./routes/auth.routes');
+const commonRoutes = require('./routes/common.routes');
+const astrologerRoutes = require('./routes/astrologer.routes');
+const adminRoutes = require('./routes/admin.routes');
+const horoscopeRoutes = require('./routes/horoscope.routes');
+const userRoutes = require('./routes/user.routes');
+const paymentRoutes = require('./routes/payment.routes');
+const pageRoutes = require('./routes/page.routes');
+
 app.use("/api/rasi-eng", rasiEngRouter);
 app.use("/api/rasipalan", rasipalanRouter);
 app.use("/api/horoscope/rasi-palan", rasipalanRouter); // Android App specific path
 app.use("/api/horoscope", freeHoroscopeRouter); // Free horoscope chart generation
+
+// Register Extracted Routes
+app.use('/', pageRoutes);
+app.use('/api', authRoutes);
+app.use('/api', commonRoutes);
+app.use('/api/astrologer', astrologerRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api', horoscopeRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/chat', userRoutes);
+app.use('/api/payment', paymentRoutes);
+
+
 
 // FCM Test Endpoint - Verify Firebase is working
 app.get('/api/test-fcm', async (req, res) => {
@@ -420,7 +451,7 @@ const connectDB = async (retries = 5) => {
     });
     console.log('✅ MongoDB Connected to:', MONGO_URI.split('@').pop().split('?')[0]);
     if (process.env.NODE_ENV !== 'test') {
-      seedDatabase();
+      // seedDatabase();
     }
   } catch (err) {
     console.error('❌ MongoDB Connection Error:', err.message);
@@ -479,226 +510,20 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 connectDB();
 
 // Schemas
-const UserSchema = new mongoose.Schema({
-  userId: { type: String, unique: true },
-  phone: { type: String, unique: true },
-  name: String, // Display Name
-  realName: String, // New
-  gender: String, // New
-  dob: String, // New
-  tob: String, // New
-  pob: String, // New
-  cellNumber2: String, // New
-  whatsAppNumber: String, // New
-  address: String, // New
-  aadharNumber: String, // New
-  panNumber: String, // New
-  astrologyExperience: String, // New
-  profession: String, // New
-  bankDetails: String, // New
-  upiId: String, // New
-  upiNumber: String, // New
-  role: { type: String, enum: ['client', 'astrologer', 'superadmin'], default: 'client' },
-  approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }, // New default is pending
-  isOnline: { type: Boolean, default: false },
-  isChatOnline: { type: Boolean, default: false },
-  isAudioOnline: { type: Boolean, default: false },
-  isVideoOnline: { type: Boolean, default: false },
-  isBanned: { type: Boolean, default: false },
-  skills: [String],
-  price: { type: Number, default: 20 },
-  walletBalance: { type: Number, default: 108 },
-  superWalletBalance: { type: Number, default: 0 }, // New for promotions
-  totalEarnings: { type: Number, default: 0 },
-  experience: { type: Number, default: 0 },
-  isVerified: { type: Boolean, default: false },
-  isDocumentVerified: { type: Boolean, default: false },
-  documentStatus: { type: String, default: 'none' },
-  image: { type: String, default: '' },
-  birthDetails: {
-    dob: String,
-    tob: String,
-    pob: String,
-    lat: Number,
-    lon: Number
-  },
-  intakeDetails: {
-    gender: String,
-    marital: String,
-    occupation: String,
-    topic: String,
-    partner: { name: String, dob: String, tob: String, pob: String }
-  },
-  isAvailable: { type: Boolean, default: false },
-  ratePerMinute: { type: Number, default: 10 },
-  referralCode: { type: String, unique: true, sparse: true },
-  fcmToken: { type: String, default: '' },
-  lastSeen: { type: Date, default: Date.now },
-  isBusy: { type: Boolean, default: false },
-  availabilityExpiresAt: Date,
-  referredBy: { type: String, default: null },
-  referralCount: { type: Number, default: 0 },
-  isNewUser: { type: Boolean, default: true }
-});
 
 
 
-// Helper: Generate unique referral code
-async function generateUniqueReferralCode(name) {
-  let base = (name || 'ASTRO').substring(0, 4).toUpperCase();
-  let code = base + Math.floor(1000 + Math.random() * 9000);
-  return code;
-}
 
-
-const CallRequestSchema = new mongoose.Schema({
-  callId: { type: String, unique: true },
-  callerId: String,
-  receiverId: String,
-  status: { type: String, enum: ['initiated', 'ringing', 'accepted', 'rejected', 'missed'], default: 'initiated' },
-  createdAt: { type: Date, default: Date.now }
-});
-const CallRequest = mongoose.model('CallRequest', CallRequestSchema);
-const User = mongoose.model('User', UserSchema);
-
-const SessionSchema = new mongoose.Schema({
-  sessionId: { type: String, unique: true },
-
-  // Phase 0: Core Billing Fields
-  clientId: String,
-  astrologerId: String,
-  clientConnectedAt: Number, // Timestamp
-  astrologerConnectedAt: Number, // Timestamp
-  actualBillingStart: Number, // Timestamp
-  sessionEndAt: Number, // Timestamp
-  status: { type: String, enum: ['active', 'ended'], default: 'active' },
-
-  // Legacy/Compatibility Fields
-  fromUserId: String,
-  toUserId: String,
-  type: String,
-  startTime: Number,
-  endTime: Number,
-  duration: Number,
-  totalEarned: Number, // Phase 16: Track session earnings
-  totalCharged: Number // Track total client deduction
-});
-const Session = mongoose.model('Session', SessionSchema);
-
-
-const PairMonthSchema = new mongoose.Schema({
-  pairId: { type: String, required: true, index: true }, // client_id + "_" + astrologer_id
-  clientId: String,
-  astrologerId: String,
-  yearMonth: { type: String, required: true }, // "YYYY-MM"
-  currentSlab: { type: Number, default: 0 },
-  slabLockedAt: { type: Number, default: 0 }, // seconds
-  resetAt: Date
-});
-// Compound index for unique pair in a month
-PairMonthSchema.index({ pairId: 1, yearMonth: 1 }, { unique: true });
-const PairMonth = mongoose.model('PairMonth', PairMonthSchema);
-
-const BillingLedgerSchema = new mongoose.Schema({
-  billingId: { type: String, unique: true },
-  sessionId: { type: String, required: true, index: true },
-  minuteIndex: { type: Number, required: true },
-  chargedToClient: Number,
-  creditedToAstrologer: Number,
-  adminAmount: Number,
-  reason: {
-    type: String,
-    enum: ['first_60', 'first_60_partial', 'slab', 'rounded', 'payout_withdrawal', 'referral', 'bonus',
-      'slab_1', 'slab_2', 'slab_3', 'slab_4', 'slab_5', 'slab_6', 'slab_7', 'slab_8', 'slab_9', 'slab_10',
-      'slab_11', 'slab_12', 'slab_13', 'slab_14', 'slab_15', 'slab_16', 'slab_17', 'slab_18', 'slab_19', 'slab_20']
-  },
-  createdAt: { type: Date, default: Date.now }
-});
-const BillingLedger = mongoose.model('BillingLedger', BillingLedgerSchema);
 
 // Phase 15: Withdrawal Schema
-const WithdrawalSchema = new mongoose.Schema({
-  astroId: String,
-  amount: Number,
-  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-  requestedAt: { type: Date, default: Date.now },
-  processedAt: Date
-});
-const Withdrawal = mongoose.model('Withdrawal', WithdrawalSchema);
-
-const PaymentSchema = new mongoose.Schema({
-  transactionId: { type: String, unique: true },
-  merchantTransactionId: String, // For PhonePe callback matching
-  userId: String,
-  amount: Number, // Total amount paid (including GST)
-  baseAmount: Number, // Original recharge amount
-  gstAmount: Number, // GST @ 18%
-  withGst: { type: Boolean, default: false },
-  status: { type: String, enum: ['pending', 'success', 'failed'], default: 'pending' },
-  createdAt: { type: Date, default: Date.now },
-  providerRefId: String,
-  isApp: { type: Boolean, default: false },
-  isSuperWallet: { type: Boolean, default: false }, // Promotion trigger
-  offerPercentage: { type: Number, default: 0 },    // Legacy bonus calculation
-  couponCode: String,                               // Applied coupon
-  couponBonus: { type: Number, default: 0 }         // Bonus amount from coupon
-});
-const Payment = mongoose.model('Payment', PaymentSchema);
 
 
-const ChatMessageSchema = new mongoose.Schema({
-  messageId: { type: String, unique: true },
-  sessionId: String,
-  fromUserId: String,
-  toUserId: String,
-  text: String,
-  type: { type: String, default: 'text' }, // text, system
-  timestamp: { type: Number, default: Date.now },
-  createdAt: { type: Date, default: Date.now }
-});
-const ChatMessage = mongoose.model('ChatMessage', ChatMessageSchema);
 
-const AcademyVideoSchema = new mongoose.Schema({
-  title: String,
-  youtubeUrl: String,
-  thumbnail: String,
-  category: String,
-  createdAt: { type: Date, default: Date.now }
-});
-const AcademyVideo = mongoose.model('AcademyVideo', AcademyVideoSchema);
 
-const BannerSchema = new mongoose.Schema({
-  imageUrl: { type: String, required: true },
-  title: String,
-  subtitle: String,
-  ctaText: { type: String, default: 'Learn More' },
-  order: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true },
-  offerPercentage: { type: Number, default: 0 }, // e.g. 50 for +50%
-  expiryDate: { type: Date },                     // Optional expiry
-  createdAt: { type: Date, default: Date.now }
-});
-const Banner = mongoose.model('Banner', BannerSchema);
+
 
 // Account Deletion Request Schema
-const AccountDeletionRequestSchema = new mongoose.Schema({
-  requestId: { type: String, unique: true },
-  userIdentifier: { type: String, required: true }, // Email or Phone
-  userId: String, // If found in database
-  reason: String,
-  status: { type: String, default: 'pending' }, // pending, approved, rejected, completed
-  requestedAt: { type: Date, default: Date.now },
-  processedAt: Date,
-  processedBy: String, // Admin userId who processed it
-  notes: String // Admin notes
-});
-const AccountDeletionRequest = mongoose.model('AccountDeletionRequest', AccountDeletionRequestSchema);
 
-const GlobalSettingsSchema = new mongoose.Schema({
-  key: { type: String, unique: true },
-  value: mongoose.Schema.Types.Mixed
-});
-const GlobalSettings = mongoose.model('GlobalSettings', GlobalSettingsSchema);
 
 // Memory cache for performance
 let SLAB_RATES = {
@@ -824,41 +649,6 @@ function generateTamilHoroscope() {
 generateTamilHoroscope();
 
 // --- Endpoints ---
-app.get('/api/user/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const user = await User.findOne({ userId });
-    if (!user) return res.status(404).json({ ok: false, error: 'User not found' });
-
-    // Auto-generate if missing (migration)
-    if (!user.referralCode) {
-      user.referralCode = await generateUniqueReferralCode(user.name);
-      await user.save();
-    }
-
-    res.json({
-      ok: true,
-      userId: user.userId,
-      name: user.name,
-      phone: user.phone,
-      role: user.role,
-      walletBalance: user.walletBalance,
-      superWalletBalance: user.superWalletBalance || 0,
-      isOnline: user.isOnline,
-      isAvailable: user.isAvailable,
-      isChatOnline: user.isChatOnline || false,
-      isAudioOnline: user.isAudioOnline || false,
-      isVideoOnline: user.isVideoOnline || false,
-      totalEarnings: user.totalEarnings || 0,
-      image: formatImageUrl(user.image, user.name),
-      referralCode: user.referralCode,
-      isNewUser: user.isNewUser
-    });
-
-  } catch (err) {
-    res.status(500).json({ ok: false, error: 'Internal Error' });
-  }
-});
 
 
 
@@ -938,33 +728,8 @@ app.post('/register', async (req, res) => {
 });
 
 // Academy Admin APIs
-app.post('/api/admin/academy/videos', async (req, res) => {
-  try {
-    const video = new AcademyVideo(req.body);
-    await video.save();
-    res.json({ ok: true, video });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
 
-app.put('/api/admin/academy/videos/:id', async (req, res) => {
-  try {
-    const video = await AcademyVideo.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json({ ok: true, video });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
 
-app.delete('/api/admin/academy/videos/:id', async (req, res) => {
-  try {
-    await AcademyVideo.findByIdAndDelete(req.params.id);
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
 
 // Daily Horoscope API
 app.get('/api/daily-horoscope', async (req, res) => {
@@ -1037,49 +802,12 @@ app.get('/api/home/banners', async (req, res) => {
 });
 
 // Admin: Get All Banners
-app.get('/api/admin/banners', async (req, res) => {
-  try {
-    const banners = await Banner.find().sort({ order: 1 });
-    res.json({ ok: true, banners });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
 
 // Admin: Create Banner
-app.post('/api/admin/banners', async (req, res) => {
-  try {
-    const banner = new Banner({
-      ...req.body,
-      offerPercentage: parseFloat(req.body.offerPercentage || 0),
-      expiryDate: req.body.expiryDate ? new Date(req.body.expiryDate) : null
-    });
-    await banner.save();
-    res.json({ ok: true, banner });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
 
 // Admin: Update Banner
-app.put('/api/admin/banners/:id', async (req, res) => {
-  try {
-    const banner = await Banner.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json({ ok: true, banner });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
 
 // Admin: Delete Banner
-app.delete('/api/admin/banners/:id', async (req, res) => {
-  try {
-    await Banner.findByIdAndDelete(req.params.id);
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
 
 // 12 Rasi Horoscope API
 app.get('/api/horoscope/rasi', (req, res) => {
@@ -1153,336 +881,18 @@ app.post('/api/user/intake', async (req, res) => {
 // ==========================================
 // CHAT HISTORY API (Required by Android App)
 // ==========================================
-app.get('/api/chat/history/:sessionId', async (req, res) => {
-  try {
-    const { sessionId } = req.params;
-    const messages = await ChatMessage.find({ sessionId }).sort({ timestamp: 1 });
-
-    res.json({
-      success: true,
-      messages: messages.map(m => ({
-        messageId: m._id.toString(),
-        text: m.text,
-        fromUserId: m.fromUserId,
-        toUserId: m.toUserId,
-        timestamp: m.timestamp
-      }))
-    });
-  } catch (err) {
-    console.error('Chat history error:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 // ==========================================
 // LEGACY CHART APIs (Redirect to rasi-eng)
 // ==========================================
 
 // Birth chart - proxy to rasi-eng/charts/full
-app.post('/api/charts/birth-chart', async (req, res) => {
-  try {
-    const { DateTime } = require('luxon');
-    const { swissEph } = require('./utils/rasiEng/swisseph');
-    const { getPlanetsWithDetails, getHouseCusps } = require('./utils/rasiEng/calculations');
-
-    const { date, time, lat, lng, timezone = 5.5, ayanamsa = 'Lahiri' } = req.body;
-
-    const offsetHours = Math.floor(Math.abs(timezone));
-    const offsetMinutes = Math.round((Math.abs(timezone) - offsetHours) * 60);
-    const sign = timezone >= 0 ? '+' : '-';
-    const zone = `UTC${sign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
-
-    const dt = DateTime.fromFormat(`${date} ${time}`, "yyyy-MM-dd HH:mm", { zone });
-    if (!dt.isValid) {
-      return res.status(400).json({ error: 'Invalid date or time format' });
-    }
-
-    const utc = dt.toUTC();
-    const jd = swissEph.julday(utc.year, utc.month, utc.day, utc.hour + utc.minute / 60);
-
-    const houses = getHouseCusps(jd, lat, lng, 'Placidus', ayanamsa);
-    const planets = getPlanetsWithDetails(jd, houses.cusps, ayanamsa);
-
-    res.json({ success: true, data: { planets, houses } });
-  } catch (err) {
-    console.error('Birth chart error:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 // Match porutham
-app.post('/api/match/porutham', async (req, res) => {
-  try {
-    const { DateTime } = require('luxon');
-    const { swissEph } = require('./utils/rasiEng/swisseph');
-    const { calculatePorutham } = require('./utils/rasiEng/matchCalculations');
-
-    const {
-      groomDate, groomTime, groomLat, groomLng, groomTimezone = 5.5,
-      brideDate, brideTime, brideLat, brideLng, brideTimezone = 5.5,
-      // Alternative fields for compatibility
-      gDate, gTime, gLat, gLng, gTz,
-      bDate, bTime, bLat, bLng, bTz,
-      // Direct moon longitude input (if already calculated)
-      groomMoonLon, brideMoonLon
-    } = req.body;
-
-    let gMoonLon, bMoonLon;
-
-    // If moon longitudes are provided directly, use them
-    if (groomMoonLon !== undefined && brideMoonLon !== undefined) {
-      gMoonLon = groomMoonLon;
-      bMoonLon = brideMoonLon;
-    } else {
-      // Calculate moon positions from birth data
-      const gD = groomDate || gDate;
-      const gT = groomTime || gTime || '12:00';
-      const gLa = groomLat || gLat || 13.08;
-      const gLo = groomLng || gLng || 80.27;
-      const gZ = groomTimezone || gTz || 5.5;
-
-      const bD = brideDate || bDate;
-      const bT = brideTime || bTime || '12:00';
-      const bLa = brideLat || bLat || 13.08;
-      const bLo = brideLng || bLng || 80.27;
-      const bZ = brideTimezone || bTz || 5.5;
-
-      if (!gD || !bD) {
-        return res.status(400).json({ success: false, error: 'Both groom and bride birth dates required' });
-      }
-
-      // Helper to parse datetime
-      const parseDateTime = (date, time, tz) => {
-        const offsetHours = Math.floor(Math.abs(tz));
-        const offsetMinutes = Math.round((Math.abs(tz) - offsetHours) * 60);
-        const sign = tz >= 0 ? '+' : '-';
-        const zone = `UTC${sign}${String(offsetHours).padStart(2, '0')}:${String(offsetMinutes).padStart(2, '0')}`;
-        return DateTime.fromFormat(`${date} ${time}`, "yyyy-MM-dd HH:mm", { zone });
-      };
-
-      const gDt = parseDateTime(gD, gT, gZ);
-      const bDt = parseDateTime(bD, bT, bZ);
-
-      if (!gDt.isValid || !bDt.isValid) {
-        return res.status(400).json({ success: false, error: 'Invalid date/time format' });
-      }
-
-      // Calculate Julian Days
-      const gUtc = gDt.toUTC();
-      const bUtc = bDt.toUTC();
-      const gJd = swissEph.julday(gUtc.year, gUtc.month, gUtc.day, gUtc.hour + gUtc.minute / 60);
-      const bJd = swissEph.julday(bUtc.year, bUtc.month, bUtc.day, bUtc.hour + bUtc.minute / 60);
-
-      // Get Moon positions
-      const gPlanets = swissEph.getAllPlanets(gJd, 'Lahiri');
-      const bPlanets = swissEph.getAllPlanets(bJd, 'Lahiri');
-
-      const gMoon = gPlanets.find(p => p.name === 'Moon');
-      const bMoon = bPlanets.find(p => p.name === 'Moon');
-
-      if (!gMoon || !bMoon) {
-        return res.status(500).json({ success: false, error: 'Could not calculate Moon positions' });
-      }
-
-      gMoonLon = gMoon.longitude;
-      bMoonLon = bMoon.longitude;
-    }
-
-    const result = calculatePorutham(gMoonLon, bMoonLon);
-    res.json({ success: true, data: result });
-  } catch (err) {
-    console.error('Match porutham error:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
 
 // OTP Send (Mock)
-app.post('/api/send-otp', (req, res) => {
-  const { phone } = req.body;
-  if (!phone) return res.json({ ok: false, error: 'Phone required' });
-
-  // Generate 4-digit OTP
-  const otp = Math.floor(1000 + Math.random() * 9000).toString();
-
-  // Super Admin Bypass (Don't send SMS)
-  if (phone === '9876543210') {
-    console.log('Super Admin Login Attempt');
-    return res.json({ ok: true });
-  }
-
-  // Test Astrologer Bypass (OTP: 0101)
-  if (phone === '8000000001') {
-    console.log('Test Astrologer Login Attempt - OTP: 0101');
-    otpStore.set(phone, { otp: '0101', expires: Date.now() + 300000 });
-    return res.json({ ok: true });
-  }
-
-  // Test Client Bypass (OTP: 0101)
-  if (phone === '9000000001') {
-    console.log('Test Client Login Attempt - OTP: 0101');
-    otpStore.set(phone, { otp: '0101', expires: Date.now() + 300000 });
-    return res.json({ ok: true });
-  }
-
-  // Send via MSG91 for everyone else
-  sendMsg91(phone, otp);
-
-  otpStore.set(phone, { otp, expires: Date.now() + 300000 }); // 5 min
-  console.log(`OTP for ${phone}: ${otp}`); // Log for debug
-  res.json({ ok: true });
-});
 
 // OTP Verify (DB Lookup)
-app.post('/api/verify-otp', async (req, res) => {
-  const { phone, otp } = req.body;
-
-  // --- Super Admin Backdoor ---
-  if (phone === '9876543210' && otp === '1369') {
-    let user = await User.findOne({ phone });
-    if (!user) {
-      user = await User.create({
-        userId: crypto.randomUUID(),
-        phone,
-        name: 'Super Admin',
-        role: 'superadmin',
-        walletBalance: 100000,
-        referralCode: await generateUniqueReferralCode('Admin')
-      });
-
-    } else if (user.role !== 'superadmin') {
-      user.role = 'superadmin';
-      await user.save();
-    }
-    return res.json({
-      ok: true,
-      userId: user.userId,
-      name: user.name,
-      role: user.role,
-      phone: user.phone,
-      walletBalance: user.walletBalance,
-      totalEarnings: user.totalEarnings || 0,
-      image: user.image
-    });
-  }
-
-  // --- Test Astrologer Account ---
-  if (phone === '8000000001' && otp === '0101') {
-    let user = await User.findOne({ phone });
-    if (!user) {
-      user = await User.create({
-        userId: crypto.randomUUID(),
-        phone,
-        name: 'Test Astrologer',
-        isAvailable: true,
-        ratePerMinute: 10,
-        referralCode: await generateUniqueReferralCode('TestAstro')
-      });
-
-    } else if (user.role !== 'astrologer') {
-      user.role = 'astrologer';
-      user.isOnline = true;
-      user.isAvailable = true;
-      user.ratePerMinute = user.ratePerMinute || 10;
-      await user.save();
-    }
-    return res.json({
-      ok: true,
-      userId: user.userId,
-      name: user.name,
-      role: user.role,
-      phone: user.phone,
-      walletBalance: user.walletBalance,
-      totalEarnings: user.totalEarnings || 0,
-      image: formatImageUrl(user.image, user.name),
-      ratePerMinute: user.ratePerMinute
-    });
-  }
-
-  // --- Test Client Account ---
-  if (phone === '9000000001' && otp === '0101') {
-    let user = await User.findOne({ phone });
-    if (!user) {
-      user = await User.create({
-        userId: crypto.randomUUID(),
-        phone,
-        name: 'Test Client',
-        role: 'client',
-        walletBalance: 1000,
-        referralCode: await generateUniqueReferralCode('TestClient')
-      });
-
-    } else if (user.role !== 'client') {
-      user.role = 'client';
-      await user.save();
-    }
-    return res.json({
-      ok: true,
-      userId: user.userId,
-      name: user.name,
-      role: user.role,
-      phone: user.phone,
-      walletBalance: user.walletBalance,
-      superWalletBalance: user.superWalletBalance || 0,
-      totalEarnings: user.totalEarnings || 0,
-      image: formatImageUrl(user.image, user.name)
-    });
-  }
-
-  // --- Normal User Verification ---
-  const entry = otpStore.get(phone);
-  if (!entry) return res.json({ ok: false, error: 'No OTP requested' });
-  if (Date.now() > entry.expires) return res.json({ ok: false, error: 'Expired' });
-  if (entry.otp !== otp) return res.json({ ok: false, error: 'Invalid OTP' });
-  otpStore.delete(phone);
-
-  try {
-    let user = await User.findOne({ phone });
-
-    // Check Ban
-    if (user && user.isBanned) {
-      return res.json({ ok: false, error: 'Account Banned by Admin' });
-    }
-
-    if (!user) {
-      // Create new client
-      const userId = crypto.randomUUID();
-      // Secure Name Generation (No phone parts)
-      const randomSuffix = crypto.randomBytes(2).toString('hex'); // 4 chars e.g. 'a1b2'
-      const name = `User_${randomSuffix}`;
-      user = await User.create({
-        userId, phone, name, role: 'client',
-        referralCode: await generateUniqueReferralCode(name)
-      });
-    } else {
-      // Migration: Ensure existing user has referral code
-      if (!user.referralCode) {
-        user.referralCode = await generateUniqueReferralCode(user.name);
-        await user.save();
-      }
-    }
-
-
-
-    // Ensure role is respected (if changed by admin)
-    res.json({
-      ok: true,
-      userId: user.userId,
-      name: user.name,
-      role: user.role,
-      phone: user.phone,
-      walletBalance: user.walletBalance,
-      superWalletBalance: user.superWalletBalance || 0,
-      totalEarnings: user.totalEarnings || 0,
-      image: formatImageUrl(user.image, user.name),
-      referralCode: user.referralCode,
-      isNewUser: user.isNewUser,
-      approvalStatus: user.approvalStatus,
-      documentStatus: user.documentStatus
-    });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: 'DB Error' });
-  }
-});
 
 // --- Referral Apply Endpoint ---
 app.post('/api/referral/apply', async (req, res) => {
@@ -1610,98 +1020,8 @@ app.post('/api/delete-account-request', async (req, res) => {
 });
 
 // ===== ADMIN: GET ACCOUNT DELETION REQUESTS =====
-app.get('/api/admin/deletion-requests', async (req, res) => {
-  try {
-    const { status } = req.query;
-
-    const query = status ? { status } : {};
-    const requests = await AccountDeletionRequest.find(query)
-      .sort({ requestedAt: -1 })
-      .limit(100);
-
-    res.json({ ok: true, requests });
-  } catch (error) {
-    console.error('[Admin] Error fetching deletion requests:', error);
-    res.status(500).json({ ok: false, error: 'Failed to fetch requests' });
-  }
-});
 
 // ===== ADMIN: PROCESS ACCOUNT DELETION REQUEST =====
-app.post('/api/admin/process-deletion', async (req, res) => {
-  try {
-    const { requestId, action, adminUserId, notes } = req.body;
-    // action: 'approve' or 'reject'
-
-    if (!requestId || !action || !adminUserId) {
-      return res.json({ ok: false, error: 'Missing required fields' });
-    }
-
-    const request = await AccountDeletionRequest.findOne({ requestId });
-    if (!request) {
-      return res.json({ ok: false, error: 'Request not found' });
-    }
-
-    if (request.status !== 'pending') {
-      return res.json({ ok: false, error: 'Request already processed' });
-    }
-
-    if (action === 'approve') {
-      // Delete user account and related data
-      if (request.userId) {
-        // Delete user
-        await User.deleteOne({ userId: request.userId });
-
-        // Delete related data
-        await Session.deleteMany({
-          $or: [
-            { fromUserId: request.userId },
-            { toUserId: request.userId }
-          ]
-        });
-        await ChatMessage.deleteMany({
-          $or: [
-            { fromUserId: request.userId },
-            { toUserId: request.userId }
-          ]
-        });
-        await Payment.deleteMany({ userId: request.userId });
-        await BillingLedger.deleteMany({
-          $or: [
-            { clientId: request.userId },
-            { astrologerId: request.userId }
-          ]
-        });
-        await PairMonth.deleteMany({
-          $or: [
-            { clientId: request.userId },
-            { astrologerId: request.userId }
-          ]
-        });
-        await Withdrawal.deleteMany({ astroId: request.userId });
-
-        console.log(`[Account Deletion] User ${request.userId} and related data deleted`);
-      }
-
-      request.status = 'completed';
-    } else if (action === 'reject') {
-      request.status = 'rejected';
-    }
-
-    request.processedAt = new Date();
-    request.processedBy = adminUserId;
-    request.notes = notes || '';
-    await request.save();
-
-    res.json({
-      ok: true,
-      message: `Request ${action === 'approve' ? 'approved and account deleted' : 'rejected'}`
-    });
-
-  } catch (error) {
-    console.error('[Admin] Error processing deletion:', error);
-    res.status(500).json({ ok: false, error: 'Failed to process request' });
-  }
-});
 
 // ===== NATIVE CALL ACCEPT API =====
 // Called from Android when notification Accept/Reject is clicked
@@ -2066,145 +1386,10 @@ function forceEndSession(sessionId, reason) {
 }
 
 // ===== City Autocomplete API =====
-app.post('/api/city-autocomplete', async (req, res) => {
-  try {
-    const { query } = req.body;
-
-    if (!query || query.trim().length < 2) {
-      return res.json({ ok: true, results: [] });
-    }
-
-    // Call Nominatim API to search for cities in India
-    const nominatimUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)},India&format=json&limit=50&countrycodes=in`;
-
-    const response = await fetch(nominatimUrl, {
-      headers: { 'User-Agent': 'AstroApp/1.0' }
-    });
-
-    if (!response.ok) {
-      return res.json({ ok: true, results: [] });
-    }
-
-    const data = await response.json();
-
-    if (!data || data.length === 0) {
-      return res.json({ ok: true, results: [] });
-    }
-
-    // Process and prioritize results
-    let results = data.map(item => ({
-      name: item.name,
-      state: item.address?.state || '',
-      country: item.address?.country || 'India',
-      latitude: parseFloat(item.lat),
-      longitude: parseFloat(item.lon),
-      displayName: item.display_name
-    }));
-
-    // Prioritize Tamil Nadu cities
-    const tamilNaduCities = results.filter(r => r.state === 'Tamil Nadu');
-    const otherCities = results.filter(r => r.state !== 'Tamil Nadu');
-
-    results = [...tamilNaduCities, ...otherCities];
-
-    // Remove duplicates
-    const seen = new Set();
-    results = results.filter(r => {
-      const key = `${r.name}-${r.state}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-    // Limit to top 10 results
-    results = results.slice(0, 10);
-
-    res.json({ ok: true, results });
-  } catch (error) {
-    console.error('City autocomplete error:', error);
-    res.json({ ok: false, error: 'Failed to fetch cities', results: [] });
-  }
-});
 
 // ===== Get City Timezone =====
-app.post('/api/city-timezone', async (req, res) => {
-  try {
-    const { latitude, longitude } = req.body;
-
-    if (!latitude || !longitude) {
-      return res.json({ ok: false, error: 'Latitude and longitude required' });
-    }
-
-    // Call GeoNames Timezone API
-    const geonamesUrl = `http://api.geonames.org/timezoneJSON?lat=${latitude}&lng=${longitude}&username=demo`;
-
-    const response = await fetch(geonamesUrl);
-
-    if (!response.ok) {
-      return res.json({ ok: false, error: 'Failed to fetch timezone' });
-    }
-
-    const data = await response.json();
-
-    if (data.status && data.status.value !== 0) {
-      return res.json({ ok: false, error: 'Invalid coordinates' });
-    }
-
-    res.json({
-      ok: true,
-      timezone: data.timezoneId,
-      gmtOffset: data.gmtOffset,
-      dstOffset: data.dstOffset
-    });
-  } catch (error) {
-    console.error('Timezone fetch error:', error);
-    res.json({ ok: false, error: 'Failed to fetch timezone' });
-  }
-});
 
 // ===== Astrologer Registration REST (for Android App) =====
-app.post('/api/astrologer/register', async (req, res) => {
-  try {
-    const data = req.body;
-    const { name, phone, email, experience, price, skills, bio } = data;
-
-    if (!name || !phone) {
-      return res.status(400).json({ ok: false, error: 'Name and phone are required' });
-    }
-
-    const existing = await User.findOne({ phone });
-    if (existing) {
-      return res.json({ ok: false, error: 'Phone number already registered' });
-    }
-
-    const userId = 'ASTRO_' + Date.now() + Math.floor(Math.random() * 1000);
-    const newUser = new User({
-      userId,
-      phone,
-      email,
-      name,
-      realName: name,
-      astrologyExperience: experience,
-      ratePerMinute: price,
-      profession: skills,
-      bio,
-      role: 'astrologer',
-      approvalStatus: 'pending',
-      isVerified: false,
-      isAvailable: false,
-      isOnline: false,
-      walletBalance: 0,
-      totalEarnings: 0
-    });
-
-    await newUser.save();
-    console.log(`[Registration] New Astrologer Registered: ${name} (${userId})`);
-    res.json({ ok: true });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ ok: false, error: 'Internal server error' });
-  }
-});
 
 // ===== Socket.IO =====
 io.on('connection', (socket) => {
@@ -3895,77 +3080,8 @@ io.on('connection', (socket) => {
 // ===== Reliable Calling System (DB + FCM) =====
 
 // 1. Astrologer Online Toggle
-app.post('/api/astrologer/online', async (req, res) => {
-  const { userId, available, fcmToken } = req.body;
-  if (!userId) return res.json({ ok: false, error: 'Missing userId' });
-
-  try {
-    const user = await User.findOne({ userId });
-    if (!user || user.role !== 'astrologer') return res.json({ ok: false, error: 'Access denied' });
-    if (user.approvalStatus !== 'approved') return res.json({ ok: false, error: 'Account pending admin approval' });
-
-    const update = {
-      isAvailable: available,
-      isOnline: available, // Sync Master
-      isChatOnline: available,
-      isAudioOnline: available,
-      isVideoOnline: available,
-      lastSeen: new Date()
-    };
-
-    if (fcmToken) {
-      update.fcmToken = fcmToken;
-    }
-
-    await User.updateOne({ userId }, update);
-
-    await broadcastAstroUpdate();
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("Online Toggle Error:", e);
-    res.json({ ok: false });
-  }
-});
 
 // 1b. Individual Service Toggle (Chat / Audio / Video)
-app.post('/api/astrologer/service-toggle', async (req, res) => {
-  const { userId, service, enabled } = req.body;
-  if (!userId || !service) return res.json({ ok: false, error: 'Missing params' });
-
-  try {
-    const update = { lastSeen: new Date() };
-
-    // Update specific service
-    if (service === 'chat') {
-      update.isChatOnline = enabled;
-    } else if (service === 'audio') {
-      update.isAudioOnline = enabled;
-    } else if (service === 'video') {
-      update.isVideoOnline = enabled;
-    }
-
-    // Also update isAvailable and isOnline if any service is enabled
-    const user = await User.findOne({ userId });
-    if (user) {
-      const chatOn = service === 'chat' ? enabled : user.isChatOnline;
-      const audioOn = service === 'audio' ? enabled : user.isAudioOnline;
-      const videoOn = service === 'video' ? enabled : user.isVideoOnline;
-
-      // isAvailable = true if ANY service is online
-      update.isAvailable = chatOn || audioOn || videoOn;
-      update.isOnline = chatOn || audioOn || videoOn;
-    }
-
-    await User.updateOne({ userId }, update);
-
-    await broadcastAstroUpdate();
-    console.log(`[Service Toggle] ${userId}: ${service} = ${enabled}`);
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("Service Toggle Error:", e);
-    res.json({ ok: false });
-  }
-});
 
 // 2. Initiate Call (User -> Astrologer)
 app.post('/api/call/initiate', async (req, res) => {
@@ -4062,495 +3178,14 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // Generate Payment Token (Called from WebView with auth session)
-app.post('/api/payment/token', async (req, res) => {
-  try {
-    const { userId, amount } = req.body;
-
-    if (!userId || !amount) {
-      return res.json({ ok: false, error: 'Missing userId or amount' });
-    }
-
-    if (amount < 1) {
-      return res.json({ ok: false, error: 'Minimum amount is ₹1' });
-    }
-
-    // Verify user exists
-    const user = await User.findOne({ userId });
-    if (!user) {
-      return res.json({ ok: false, error: 'User not found' });
-    }
-
-    // GST Calculation (18%)
-    const baseAmount = parseFloat(amount);
-    const gstAmount = baseAmount * 0.18;
-    const totalAmount = baseAmount + gstAmount;
-
-    // Generate secure token
-    const token = crypto.randomBytes(32).toString('hex');
-
-    // Store token mapping
-    paymentTokens.set(token, {
-      userId: userId,
-      baseAmount: baseAmount,
-      gstAmount: gstAmount,
-      amount: totalAmount, // Total to be paid
-      couponCode: req.body.couponCode || "", // Support coupons
-      createdAt: Date.now(),
-      used: false,
-      userName: user.name,
-      userPhone: user.phone
-    });
-
-    console.log(`Payment Token Created: ${token.substring(0, 8)}... for ${user.name} amount ₹${amount}`);
-
-    res.json({ ok: true, token });
-
-  } catch (e) {
-    console.error('Payment Token Error:', e);
-    res.json({ ok: false, error: 'Failed to create payment token' });
-  }
-});
 
 // Verify Payment Token (Called from payment.html in browser)
-app.get('/api/verify-payment-token', async (req, res) => {
-  try {
-    const { token } = req.query;
-
-    if (!token) {
-      return res.json({ valid: false, error: 'Token required' });
-    }
-
-    const tokenData = paymentTokens.get(token);
-
-    if (!tokenData) {
-      return res.json({ valid: false, error: 'Invalid or expired token' });
-    }
-
-    // Check expiry (10 minutes)
-    const expiryTime = 10 * 60 * 1000;
-    if (Date.now() - tokenData.createdAt > expiryTime) {
-      paymentTokens.delete(token);
-      return res.json({ valid: false, error: 'Token expired' });
-    }
-
-    // Check if already used
-    if (tokenData.used) {
-      return res.json({ valid: false, error: 'Token already used' });
-    }
-
-    // Valid token - return payment details (but NOT the userId for security)
-    res.json({
-      valid: true,
-      amount: tokenData.amount, // Total
-      baseAmount: tokenData.baseAmount,
-      gstAmount: tokenData.gstAmount,
-      userName: tokenData.userName,
-      expiresIn: Math.floor((expiryTime - (Date.now() - tokenData.createdAt)) / 1000) // seconds
-    });
-
-  } catch (e) {
-    console.error('Verify Token Error:', e);
-    res.json({ valid: false, error: 'Verification failed' });
-  }
-});
 
 // 1. Initiate Payment (Supports both token-based and legacy userId-based)
 // Validate Coupon Code
-app.post('/api/payment/validate-coupon', async (req, res) => {
-  try {
-    const { couponCode, amount } = req.body;
 
-    if (!couponCode || !amount) {
-      return res.json({ ok: false, error: 'Missing code or amount' });
-    }
-
-    const code = couponCode.toUpperCase().trim();
-    const baseAmount = parseFloat(amount);
-
-    // Hardcoded logic for WELCOME50 (as per user request "50% Off")
-    if (code === 'WELCOME50') {
-      const bonus = baseAmount * 0.50;
-      return res.json({
-        ok: true,
-        bonus: bonus,
-        message: 'WELCOME50 Applied! 50% Bonus will be added to your Super Wallet.'
-      });
-    }
-
-    return res.json({ ok: false, error: 'Invalid coupon code' });
-  } catch (e) {
-    console.error('Coupon Validation Error:', e);
-    res.json({ ok: false, error: 'Internal Error' });
-  }
-});
-
-app.post('/api/payment/create', async (req, res) => {
-  try {
-    let { userId, amount, isApp, token, isSuperWallet, offerPercentage, couponCode } = req.body;
-    let baseAmount = 0, gstAmount = 0, couponBonus = 0;
-
-    // Handle Optional Coupon
-    if (couponCode) {
-      const code = couponCode.toUpperCase().trim();
-      if (code === 'WELCOME50') {
-        // We calculate bonus on baseAmount (excluding GST)
-        // For token-based, we get baseAmount later, if legacy we have it now
-        // To be safe, let's just flag it and calculate after amount is finalized
-      }
-    }
-
-    // Token-based authentication (SECURE - for browser flow)
-    if (token) {
-      const tokenData = paymentTokens.get(token);
-
-      if (!tokenData) {
-        return res.json({ ok: false, error: 'Invalid or expired token' });
-      }
-
-      // Check expiry (10 minutes)
-      const expiryTime = 10 * 60 * 1000;
-      if (Date.now() - tokenData.createdAt > expiryTime) {
-        paymentTokens.delete(token);
-        return res.json({ ok: false, error: 'Token expired' });
-      }
-
-      // Check if already used
-      if (tokenData.used) {
-        return res.json({ ok: false, error: 'Token already used' });
-      }
-
-      // Mark token as used (single-use)
-      tokenData.used = true;
-
-      // Extract userId and amount from token
-      userId = tokenData.userId;
-      amount = tokenData.amount; // Total
-      baseAmount = tokenData.baseAmount || amount;
-      gstAmount = tokenData.gstAmount || 0;
-
-      console.log(`Token Auth Payment: ${token.substring(0, 8)}... userId=${userId} amount=${amount} (Base: ${baseAmount}, GST: ${gstAmount})`);
-    } else {
-      // Legacy or direct call - calculate GST if not provided
-      baseAmount = parseFloat(amount);
-      gstAmount = baseAmount * 0.18;
-      amount = baseAmount + gstAmount; // Total
-    }
-
-
-    // Legacy check (for backward compatibility with WebView calls)
-    if (!amount || !userId) {
-      return res.json({ ok: false, error: 'Missing Amount or User' });
-    }
-
-    // Fetch User to get real mobile number
-    const userObj = await User.findOne({ userId });
-    const rawPhone = (userObj && userObj.phone) ? userObj.phone : "9999999999";
-    const userMobile = rawPhone.replace(/[^0-9]/g, '').slice(-10);
-
-    const merchantTransactionId = "MT" + Date.now() + Math.floor(Math.random() * 1000);
-    const redirectUrl = `https://astrohark.com/api/payment/callback`;
-
-    // Finalize Coupon Bonus if any
-    if (couponCode) {
-      const code = couponCode.toUpperCase().trim();
-      if (code === 'WELCOME50') {
-        couponBonus = baseAmount * 0.50;
-      }
-    }
-
-    // Create Pending Record
-    await Payment.create({
-      transactionId: merchantTransactionId,
-      merchantTransactionId,
-      userId,
-      amount, // Total
-      baseAmount,
-      gstAmount,
-      status: 'pending',
-      withGst: true,
-      isApp: !!isApp, // Store the source
-      isSuperWallet: !!isSuperWallet || !!couponBonus, // Mark as super wallet if coupon bonus exists
-      offerPercentage: parseFloat(offerPercentage || 0),
-      couponCode: couponCode || null,
-      couponBonus: couponBonus
-    });
-
-    // PhonePe Payload
-    // FIX: Sanitize UserID (Only Alphanumeric) and Use Valid Mobile
-    const cleanUserId = userId.replace(/[^a-zA-Z0-9]/g, '') || "User";
-
-    // --- NATIVE APP FLOW (Use Web Payment via External Browser) ---
-    // Native SDK has issues, so we use browser redirect which is more reliable
-    if (isApp) {
-      console.log('App Payment Request:', { userId, amount, cleanUserId });
-
-      // Use PAY_PAGE type - same as web, opens in browser
-      const appPayload = {
-        merchantId: PHONEPE_MERCHANT_ID,
-        merchantTransactionId: merchantTransactionId,
-        merchantUserId: cleanUserId,
-        amount: amount * 100, // Amount in Paise
-        redirectUrl: "astro5://payment-success",
-        redirectMode: "GET", // Use GET for deep links
-        callbackUrl: `https://astrohark.com/api/payment/callback?isApp=true&txnId=${merchantTransactionId}`,
-        mobileNumber: userMobile,
-        paymentInstrument: {
-          type: "PAY_PAGE"
-        }
-      };
-
-      console.log('App Payload:', JSON.stringify(appPayload));
-
-      const appBase64Payload = Buffer.from(JSON.stringify(appPayload)).toString('base64');
-      const appStringToSign = appBase64Payload + "/pg/v1/pay" + PHONEPE_SALT_KEY;
-      const appSha256 = crypto.createHash('sha256').update(appStringToSign).digest('hex');
-      const appChecksum = appSha256 + "###" + PHONEPE_SALT_INDEX;
-
-      // Call PhonePe API to get payment URL
-      const appOptions = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-VERIFY': appChecksum,
-          'accept': 'application/json'
-        },
-        body: JSON.stringify({ request: appBase64Payload })
-      };
-
-      try {
-        console.log('Calling PhonePe API for app...');
-        const appFetchRes = await fetch(`${PHONEPE_HOST_URL}/pg/v1/pay`, appOptions);
-        const appResponse = await appFetchRes.json();
-        console.log('PhonePe App Response:', JSON.stringify(appResponse));
-
-        if (appResponse.success) {
-          const payUrl = appResponse.data.instrumentResponse?.redirectInfo?.url;
-          console.log('Payment URL:', payUrl);
-
-          if (!payUrl) {
-            console.error('No payment URL in response');
-            return res.json({ ok: false, error: 'No payment URL received' });
-          }
-
-          return res.json({
-            ok: true,
-            merchantTransactionId: merchantTransactionId,
-            paymentUrl: payUrl,  // App will open this in external browser
-            useWebFlow: true
-          });
-        } else {
-          const errorMsg = appResponse.data?.message || appResponse.message || 'Payment Init Failed';
-          console.error("PhonePe App Initiation Failed:", errorMsg, JSON.stringify(appResponse));
-          return res.json({ ok: false, error: errorMsg });
-        }
-      } catch (appErr) {
-        console.error("PhonePe App Error:", appErr);
-        return res.json({ ok: false, error: 'Payment service temporarily unavailable' });
-      }
-    }
-
-    // --- WEB FLOW PAYLOAD ---
-    const payload = {
-      merchantId: PHONEPE_MERCHANT_ID,
-      merchantTransactionId: merchantTransactionId,
-      merchantUserId: cleanUserId,
-      amount: amount * 100, // Amount in Paise
-      redirectUrl: redirectUrl,
-      redirectMode: "POST",
-      callbackUrl: `https://astrohark.com/api/payment/callback`,
-      mobileNumber: "9000090000",
-      paymentInstrument: {
-        type: "PAY_PAGE"
-      }
-    };
-
-    const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
-    const stringToSign = base64Payload + "/pg/v1/pay" + PHONEPE_SALT_KEY;
-    const sha256 = crypto.createHash('sha256').update(stringToSign).digest('hex');
-    const checksum = sha256 + "###" + PHONEPE_SALT_INDEX;
-
-    // --- WEB FLOW ---
-    const options = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-VERIFY': checksum,
-        'accept': 'application/json'
-      },
-      body: JSON.stringify({ request: base64Payload })
-    };
-
-    const fetchRes = await fetch(`${PHONEPE_HOST_URL}/pg/v1/pay`, options);
-    const response = await fetchRes.json();
-
-    if (response.success) {
-      const payUrl = response.data.instrumentResponse?.redirectInfo?.url || response.data.instrumentResponse?.intentUrl;
-      const intentUrl = response.data.instrumentResponse?.intentUrl; // Specifically for UPI_INTENT
-
-      res.json({
-        ok: true,
-        merchantTransactionId: merchantTransactionId,
-        paymentUrl: payUrl,
-        intentUrl: intentUrl // Pass this to Frontend for Deep Link
-      });
-    } else {
-      console.error("PhonePe Initiation Failed:", JSON.stringify(response));
-      // Return specific error from PhonePe if available
-      res.json({ ok: false, error: response.data?.message || response.message || 'Payment Init Failed' });
-    }
-
-  } catch (e) {
-    console.error("Payment Create Error:", e);
-    res.json({ ok: false, error: 'Internal Error' });
-  }
-});
 
 // 2. Callback (Webhook)
-app.post('/api/payment/callback', async (req, res) => {
-  console.log('=================================');
-  console.log('[CALLBACK HIT] /api/payment/callback');
-  console.log('[CALLBACK] Body:', JSON.stringify(req.body).substring(0, 200));
-  console.log('[CALLBACK] Query:', req.query);
-  console.log('=================================');
-
-  try {
-    let decoded = {};
-
-    // Case 1: Base64 Encoded JSON (S2S or App Intent)
-    if (req.body.response) {
-      decoded = JSON.parse(Buffer.from(req.body.response, 'base64').toString('utf-8'));
-    }
-    // Case 2: Direct Form POST (Web Redirect)
-    else if (req.body.code || req.body.merchantTransactionId) {
-      decoded = req.body;
-    }
-    // Case 3: GET Query Params (Fallback)
-    else if (req.query.code || req.query.merchantTransactionId) {
-      decoded = req.query;
-    }
-    else {
-      console.log('[CALLBACK ERROR] No payment data found in Body or Query');
-      // Return HTML with alert
-      console.log('[CALLBACK ERROR] No payment data found in Body or Query');
-
-      const userAgent = req.headers['user-agent'] || '';
-      const isAndroidApp = req.query.isApp === 'true' || userAgent.includes('Android') || userAgent.includes('Astro5App');
-
-      // AUTO-REDIRECT TO APP IF DETECTED (Even if isApp param is missing)
-      if (isAndroidApp) {
-        const intentUrl = `intent://payment-failed?reason=no_response#Intent;scheme=astro5;package=com.astrohark.app;end`;
-        const customScheme = `astro5://payment-failed?reason=no_response`;
-
-        return res.send(`
-          <html>
-          <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>body{font-family:sans-serif;text-align:center;padding:20px;}</style>
-          </head>
-          <body>
-          <h3>Redirecting...</h3>
-          <script>
-            // Try Intent first (Chrome/Android)
-            window.location.href = "${intentUrl}";
-
-            // Fallback
-            setTimeout(() => { window.location.href = "${customScheme}"; }, 800);
-          </script>
-          </body></html>
-        `);
-      }
-
-      // Web Fallback
-      return res.redirect('/wallet?status=failure&reason=no_response');
-    }
-
-    // PhonePe response format: { success, code, data: { merchantTransactionId, ... } }
-    const code = decoded.code;
-    const merchantTransactionId = decoded.data?.merchantTransactionId || decoded.merchantTransactionId || req.query.txnId; // Fallback to Query ID
-    const providerReferenceId = decoded.data?.providerReferenceId || decoded.providerReferenceId;
-
-    console.log(`Payment Callback: ${merchantTransactionId} | Status: ${code}`);
-    console.log(`[DEBUG] Full decoded response:`, JSON.stringify(decoded).substring(0, 300));
-
-    const payment = await Payment.findOne({
-      $or: [
-        { transactionId: merchantTransactionId },
-        { merchantTransactionId: merchantTransactionId }
-      ]
-    });
-    if (!payment) {
-      console.error('Payment not found for:', merchantTransactionId);
-      return res.redirect('/?status=fail&reason=not_found');
-    }
-
-
-    // Credit wallet ONLY for SUCCESS (not pending)
-    const isSuccess = code === 'PAYMENT_SUCCESS' || code === 'SUCCESS';
-    const isFailed = code === 'PAYMENT_ERROR' || code === 'PAYMENT_FAILED' || code === 'FAILURE';
-
-    console.log(`[WALLET DEBUG] Code: "${code}", isSuccess: ${isSuccess}, isFailed: ${isFailed}`);
-    console.log(`[WALLET DEBUG] Payment found: ${payment._id}, userId: ${payment.userId}, amount: ${payment.amount}, status: ${payment.status}`);
-
-    const redirectIsApp = payment.isApp || req.query.isApp === 'true';
-
-    if (isSuccess) {
-      // Treat as success - credit wallet
-      if (payment.status !== 'success') {
-        payment.status = 'success'; // Always mark as success
-        payment.providerRefId = providerReferenceId;
-        await payment.save();
-
-        // Credit Wallet
-        const user = await User.findOne({ userId: payment.userId });
-        if (user) {
-          // Rule: If GST was added, credit ONLY the baseAmount to the user's wallet
-          const creditAmount = payment.withGst ? (payment.baseAmount || payment.amount) : payment.amount;
-
-          user.walletBalance += creditAmount;
-
-          // Coupon Bonus - Credit to Super Wallet
-          if (payment.couponBonus > 0) {
-            user.superWalletBalance = (user.superWalletBalance || 0) + payment.couponBonus;
-            console.log(`🎁 Coupon Bonus Applied: ${user.name} +₹${payment.couponBonus} (Code: ${payment.couponCode})`);
-          }
-
-          await user.save();
-          console.log(`✅ Wallet Credited: ${user.name} +₹${creditAmount} (PhonePe: ${code}, Total Paid: ₹${payment.amount})`);
-
-          // Notify Socket if online
-          const sId = userSockets.get(user.userId);
-          if (sId) {
-            io.to(sId).emit('wallet-update', {
-              balance: user.walletBalance,
-              totalEarnings: user.totalEarnings
-            });
-            io.to(sId).emit('app-notification', { text: `✅ Recharge Successful! +₹${creditAmount}` });
-          }
-        }
-      }
-
-      if (redirectIsApp) {
-        const txnId = merchantTransactionId || '';
-        return res.redirect(`/payment-success?amount=${payment.amount || ''}&txnId=${txnId}`);
-      }
-      return res.redirect(`/wallet?status=success&amount=${payment.amount}`);
-
-    } else {
-      // Failure Handling
-      payment.status = 'failed';
-      await payment.save();
-
-      if (redirectIsApp) {
-        return res.redirect('/payment-failed');
-      }
-      return res.redirect(`/wallet?status=failure`);
-    }
-
-  } catch (e) {
-    console.error("Callback Error:", e);
-    return res.redirect('/?status=error');
-  }
-});
 
 // --- 3. Public Status Pages ---
 app.get('/payment-success', (req, res) => {
@@ -4628,23 +3263,6 @@ app.get('/payment-failed', (req, res) => {
 });
 
 // 3. Payment History API
-app.get('/api/payment/history/:userId', async (req, res) => {
-  try {
-    const { userId } = req.params;
-    if (!userId) return res.status(400).json({ error: 'UserId required' });
-
-    // Fetch last 20 transactions
-    const transactions = await Payment.find({ userId })
-      .sort({ createdAt: -1 })
-      .limit(20)
-      .lean();
-
-    res.json({ ok: true, data: transactions });
-  } catch (e) {
-    console.error("Payment History Error:", e);
-    res.status(500).json({ ok: false, error: 'Internal Server Error' });
-  }
-});
 
 // ===== PhonePe SDK API (Native App Payment) =====
 

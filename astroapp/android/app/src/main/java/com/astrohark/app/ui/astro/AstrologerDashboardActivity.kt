@@ -604,8 +604,11 @@ fun AstrologerDashboardScreen(
             val hasNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             } else true
+            val hasBatteryOptimization = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                (context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
+            } else true
 
-            if (!hasOverlay || !hasAudio || !hasCamera || !hasNotification) {
+            if (!hasOverlay || !hasAudio || !hasCamera || !hasNotification || !hasBatteryOptimization) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
                     shape = RoundedCornerShape(16.dp),
@@ -621,8 +624,8 @@ fun AstrologerDashboardScreen(
                         Icon(androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = Color(0xFFD32F2F))
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Missing Permissions", fontWeight = FontWeight.Bold, color = Color(0xFFB71C1C), fontSize = 14.sp)
-                            Text("Click here to enable Display Over Apps, Audio, and Notifications to receive calls.", fontSize = 12.sp, color = Color(0xFFB71C1C))
+                            Text("Action Required: Enable Permissions", fontWeight = FontWeight.Bold, color = Color(0xFFB71C1C), fontSize = 14.sp)
+                            Text("Please enable Display Over Apps, Battery Optimization, and Notifications to receive calls reliably.", fontSize = 12.sp, color = Color(0xFFB71C1C))
                         }
                     }
                 }
@@ -806,21 +809,36 @@ fun AstrologerDashboardScreen(
                 isAudioOnline = isAudioOnline,
                 isVideoOnline = isVideoOnline,
                 onChatToggle = { enabled ->
-                    isChatOnline = enabled
-                    scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                        updateServiceStatus(sessionId, "chat", enabled)
+                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasNotification)) {
+                        context.startActivity(Intent(context, PermissionActivity::class.java))
+                        Toast.makeText(context, "Please enable required permissions first", Toast.LENGTH_LONG).show()
+                    } else {
+                        isChatOnline = enabled
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            updateServiceStatus(sessionId, "chat", enabled)
+                        }
                     }
                 },
                 onAudioToggle = { enabled ->
-                    isAudioOnline = enabled
-                    scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                        updateServiceStatus(sessionId, "audio", enabled)
+                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasAudio || !hasNotification)) {
+                        context.startActivity(Intent(context, PermissionActivity::class.java))
+                        Toast.makeText(context, "Please enable Speaker/Audio permissions first", Toast.LENGTH_LONG).show()
+                    } else {
+                        isAudioOnline = enabled
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            updateServiceStatus(sessionId, "audio", enabled)
+                        }
                     }
                 },
                 onVideoToggle = { enabled ->
-                    isVideoOnline = enabled
-                    scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                        updateServiceStatus(sessionId, "video", enabled)
+                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasAudio || !hasCamera || !hasNotification)) {
+                        context.startActivity(Intent(context, PermissionActivity::class.java))
+                        Toast.makeText(context, "Please enable Camera/Audio permissions first", Toast.LENGTH_LONG).show()
+                    } else {
+                        isVideoOnline = enabled
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            updateServiceStatus(sessionId, "video", enabled)
+                        }
                     }
                 }
             )

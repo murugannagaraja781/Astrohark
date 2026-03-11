@@ -1,7 +1,6 @@
 // server.js
 require('dotenv').config(); // Load environment variables from .env file
-// Force update timestamp: 2026-01-10 (Sync Fix)d
-// Force update timestamp: 2026-01-10
+// Force update timestamp: 2026-03-11 (OTP Fix)
 const https = require('https');
 const express = require('express');
 const http = require('http');
@@ -26,6 +25,18 @@ const AcademyVideo = require('./models/AcademyVideo');
 const Banner = require('./models/Banner');
 const AccountDeletionRequest = require('./models/AccountDeletionRequest');
 const GlobalSettings = require('./models/GlobalSettings');
+
+const {
+  userSockets,
+  socketToUser,
+  userActiveSession,
+  activeSessions,
+  pendingMessages,
+  otpStore,
+  offlineTimeouts,
+  savedAstroStatus,
+  sessionDisconnectTimeouts
+} = require('./services/socketStore');
 
 // PhonePe Config
 // PhonePe Config
@@ -580,21 +591,9 @@ async function seedDatabase() {
 }
 // seedDatabase(); // Moved to DB connection success
 
-// In-Memory cache for socket mapping (Ephemeral)
-const userSockets = new Map(); // userId -> socketId
-const socketToUser = new Map(); // socketId -> userId
-const userActiveSession = new Map(); // userId -> sessionId
-const activeSessions = new Map(); // sessionId -> { type, users... }
-const pendingMessages = new Map();
-const otpStore = new Map();
+// Stores are now imported from ./services/socketStore.js
 
-// Astrologer Status Persistence (5-min grace period)
-const offlineTimeouts = new Map(); // userId -> timeoutId
-const savedAstroStatus = new Map(); // userId -> { chat, audio, video, timestamp }
 const OFFLINE_GRACE_PERIOD = 5 * 60 * 1000; // 5 minutes
-
-// Session Disconnect Persistence (1-min grace period for calls)
-const sessionDisconnectTimeouts = new Map(); // userId -> timeoutId
 const SESSION_GRACE_PERIOD = 60 * 1000; // 60 seconds
 
 // --- Static Files & Root Route ---

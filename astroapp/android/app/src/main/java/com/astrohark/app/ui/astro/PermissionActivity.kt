@@ -48,14 +48,14 @@ class PermissionActivity : ComponentActivity() {
 @Composable
 fun PermissionScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    
+
     // State for permissions
     var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
-    var hasAudioPermission by remember { 
-        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) 
+    var hasAudioPermission by remember {
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
     }
-    var hasCameraPermission by remember { 
-        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) 
+    var hasCameraPermission by remember {
+        mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
     var hasNotificationPermission by remember {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -63,6 +63,13 @@ fun PermissionScreen(onBack: () -> Unit) {
         } else {
             mutableStateOf(true)
         }
+    }
+
+    var hasBatteryOptimizationPermission by remember {
+        val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+        mutableStateOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            powerManager.isIgnoringBatteryOptimizations(context.packageName)
+        } else true)
     }
 
     // Update states periodically or based on lifecycle
@@ -73,6 +80,10 @@ fun PermissionScreen(onBack: () -> Unit) {
             hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 hasNotificationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            }
+            val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                hasBatteryOptimizationPermission = powerManager.isIgnoringBatteryOptimizations(context.packageName)
             }
             kotlinx.coroutines.delay(1000)
         }
@@ -105,7 +116,8 @@ fun PermissionScreen(onBack: () -> Unit) {
                 .padding(padding)
                 .fillMaxSize()
                 .background(CosmicAppTheme.backgroundBrush)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
@@ -130,7 +142,28 @@ fun PermissionScreen(onBack: () -> Unit) {
                 }
             )
 
-            // 2. Audio Permission
+            // 2. Battery Optimization
+            PermissionItem(
+                title = "Disable Battery Optimization",
+                description = "Required to keep the app active in background so you don't miss any calls/chats.",
+                icon = Icons.Default.BatteryChargingFull,
+                isGranted = hasBatteryOptimizationPermission,
+                onEnable = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        try {
+                            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                data = Uri.parse("package:${context.packageName}")
+                            }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+                            context.startActivity(intent)
+                        }
+                    }
+                }
+            )
+
+            // 3. Audio Permission
             PermissionItem(
                 title = "Microphone Access",
                 description = "Required for audio calls and voice consultation.",
@@ -144,7 +177,7 @@ fun PermissionScreen(onBack: () -> Unit) {
                 }
             )
 
-            // 3. Camera Permission
+            // 4. Camera Permission
             PermissionItem(
                 title = "Camera Access",
                 description = "Required for video consultation.",
@@ -158,7 +191,7 @@ fun PermissionScreen(onBack: () -> Unit) {
                 }
             )
 
-            // 4. Notification Permission
+            // 5. Notification Permission
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 PermissionItem(
                     title = "Notifications",
@@ -174,7 +207,7 @@ fun PermissionScreen(onBack: () -> Unit) {
                 )
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = onBack,
@@ -186,6 +219,7 @@ fun PermissionScreen(onBack: () -> Unit) {
             }
         }
     }
+}
 }
 
 @Composable
@@ -210,7 +244,7 @@ fun PermissionItem(
                 modifier = Modifier
                     .size(48.dp)
                     .background(
-                        if (isGranted) Color(0xFF4CAF50).copy(alpha = 0.1f) 
+                        if (isGranted) Color(0xFF4CAF50).copy(alpha = 0.1f)
                         else CosmicAppTheme.colors.accent.copy(alpha = 0.1f),
                         RoundedCornerShape(12.dp)
                     ),
@@ -222,16 +256,16 @@ fun PermissionItem(
                     tint = if (isGranted) Color(0xFF4CAF50) else CosmicAppTheme.colors.accent
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.textPrimary, fontSize = 16.sp)
                 Text(description, fontSize = 12.sp, color = CosmicAppTheme.colors.textSecondary)
             }
-            
+
             Spacer(modifier = Modifier.width(8.dp))
-            
+
             if (isGranted) {
                 Icon(Icons.Default.CheckCircle, contentDescription = "Enabled", tint = Color(0xFF4CAF50))
             } else {

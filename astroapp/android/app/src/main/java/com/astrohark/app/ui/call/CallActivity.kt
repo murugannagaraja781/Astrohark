@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -1150,11 +1152,17 @@ fun CallScreen(
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp
                 )
-                Text(
-                    text = duration,
-                    color = Color.Gray,
-                    fontSize = 14.sp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = duration,
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                    if (isRecording) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        RecordingIndicator()
+                    }
+                }
                 if (role == "astrologer" && remainingTime.isNotEmpty() && remainingTime != "00:00") {
                       Text(
                         text = "Time: $remainingTime",
@@ -1281,5 +1289,33 @@ fun ControlBtnItem(onClick: () -> Unit, icon: Any, label: String, active: Boolea
             }
         }
         Text(text = label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+    }
+}
+
+@Composable
+fun RecordingIndicator() {
+    val infiniteTransition = rememberInfiniteTransition()
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.2f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .background(Color.Red.copy(alpha = alpha), CircleShape)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = "REC",
+            color = Color.Red,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }

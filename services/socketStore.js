@@ -8,6 +8,7 @@ const offlineTimeouts = new Map(); // userId -> timeoutId
 const savedAstroStatus = new Map(); // userId -> { chat, audio, video, timestamp }
 const sessionDisconnectTimeouts = new Map(); // userId -> timeoutId
 const paymentTokens = new Map();
+const otpStore = new Map();
 
 module.exports = {
     userSockets,
@@ -18,5 +19,6 @@ module.exports = {
     offlineTimeouts,
     savedAstroStatus,
     sessionDisconnectTimeouts,
-    paymentTokens
+    paymentTokens,
+    otpStore
 };

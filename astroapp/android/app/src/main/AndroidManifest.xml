@@ -31,6 +31,7 @@
 
     <!-- Full screen intent for lock screen (incoming call UI) -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- Ringtone and vibration -->
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -103,7 +104,7 @@
         <activity android:name=".ui.horoscope.FreeHoroscopeActivity" />
         <activity android:name=".ui.astro.AstrologerDashboardActivity" />
         <activity android:name=".ui.astro.AstrologerHistoryActivity" />
-        <activity android:name=".ui.astro.PermissionActivity" 
+        <activity android:name=".ui.astro.PermissionActivity"
             android:theme="@style/Theme.FCMCallApp"
             android:screenOrientation="portrait"/>
         <activity android:name=".ui.admin.SuperPowerAdminDashboardActivity" android:exported="false" android:theme="@style/Theme.FCMCallApp"/>

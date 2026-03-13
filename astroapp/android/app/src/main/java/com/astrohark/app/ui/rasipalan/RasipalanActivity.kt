@@ -31,13 +31,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// PREMIUM COLOR TOKENS
-private val EmeraldStart = Color(0xFF0F3D2E)
-private val EmeraldEnd = Color(0xFF145A41)
-private val GoldAccent = Color(0xFFD4AF37)
-private val MysticBg = Color(0xFF0B1410)
-private val MysticTextPrimary = Color(0xFFF5F7F6)
-private val MysticTextSecondary = Color(0xFFA8B3AF)
+// PREMIUM COLOR TOKENS (Cocoa Dark Refresh)
+private val CocoaCardStart = Color(0xFF1C140E)
+private val CocoaCardEnd = Color(0xFF140F0A)
+private val ChocolateBrown = Color(0xFFFF7F00) // Using Accent Orange for consistency
+private val MysticBg = Color(0xFF0B0805)
+private val MysticTextPrimary = Color(0xFFF5F2F0)
+private val MysticTextSecondary = Color(0xFFA58B74)
 
 // Status Colors
 private val GoodGlow = Color(0xFF22C55E)
@@ -101,24 +101,24 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
                             text = displayTitle,
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
-                                color = GoldAccent
+                                color = ChocolateBrown
                             )
                         )
                         Text(
                             text = "Elegant Tamil + English Guide",
                             style = MaterialTheme.typography.labelSmall,
-                            color = GoldAccent.copy(alpha = 0.7f)
+                            color = ChocolateBrown.copy(alpha = 0.7f)
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = GoldAccent)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = ChocolateBrown)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                      containerColor = MysticBg,
-                     titleContentColor = GoldAccent
+                     titleContentColor = ChocolateBrown
                 )
             )
         },
@@ -128,7 +128,7 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = GoldAccent
+                    color = ChocolateBrown
                 )
             } else {
                 LazyColumn(
@@ -144,7 +144,7 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
                         Text(
                             text = "More Insights",
                             style = MaterialTheme.typography.titleMedium,
-                            color = GoldAccent,
+                            color = ChocolateBrown,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
                     }
@@ -165,13 +165,13 @@ fun PremiumRasipalanCard(item: RasipalanItem) {
         modifier = Modifier.fillMaxWidth(),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.4f))
+        border = BorderStroke(1.dp, ChocolateBrown.copy(alpha = 0.4f))
     ) {
         Box(
             modifier = Modifier
                 .background(
                     Brush.verticalGradient(
-                        colors = listOf(EmeraldStart, EmeraldEnd)
+                        colors = listOf(CocoaCardStart, CocoaCardEnd)
                     )
                 )
                 .padding(24.dp)
@@ -193,7 +193,7 @@ fun PremiumRasipalanCard(item: RasipalanItem) {
                     Text(
                         text = item.date ?: "",
                         style = MaterialTheme.typography.bodySmall,
-                        color = GoldAccent
+                        color = ChocolateBrown
                     )
                 }
 
@@ -209,7 +209,7 @@ fun PremiumRasipalanCard(item: RasipalanItem) {
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = GoldAccent.copy(alpha = 0.3f), thickness = 0.5.dp)
+                Divider(color = ChocolateBrown.copy(alpha = 0.3f), thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // 3 Status Indicators
@@ -223,7 +223,7 @@ fun PremiumRasipalanCard(item: RasipalanItem) {
                 Surface(
                     color = Color.Black.copy(alpha = 0.2f),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    border = BorderStroke(0.5.dp, GoldAccent.copy(alpha = 0.2f))
+                    border = BorderStroke(0.5.dp, ChocolateBrown.copy(alpha = 0.2f))
                 ) {
                     Row(
                         modifier = Modifier.padding(16.dp).fillMaxWidth(),
@@ -250,14 +250,14 @@ fun StatusIndicatorRow(label: String, status: String?) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.titleSmall,
-                color = GoldAccent,
+                color = ChocolateBrown,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Surface(
-                color = EmeraldStart.copy(alpha = 0.3f),
+                color = CocoaCardStart.copy(alpha = 0.5f),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, GoldAccent.copy(alpha = 0.3f))
+                border = BorderStroke(1.dp, ChocolateBrown.copy(alpha = 0.3f))
             ) {
                 Text(
                     text = text,
@@ -318,7 +318,7 @@ fun StatusChip(status: String) {
 fun LuckyStat(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = label, style = MaterialTheme.typography.labelSmall, color = MysticTextSecondary)
-        Text(text = value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = GoldAccent)
+        Text(text = value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = ChocolateBrown)
     }
 }
 
@@ -327,12 +327,12 @@ fun ComingSoonCard(title: String) {
     Card(
         modifier = Modifier.fillMaxWidth().height(100.dp),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = EmeraldStart.copy(alpha = 0.4f)),
-        border = BorderStroke(0.5.dp, GoldAccent.copy(alpha = 0.2f))
+        colors = CardDefaults.cardColors(containerColor = CocoaCardStart.copy(alpha = 0.4f)),
+        border = BorderStroke(0.5.dp, ChocolateBrown.copy(alpha = 0.2f))
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.Lock, contentDescription = null, tint = GoldAccent.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Lock, contentDescription = null, tint = ChocolateBrown.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(text = title, style = MaterialTheme.typography.titleSmall, color = MysticTextPrimary.copy(alpha = 0.8f))
                 Text(text = "Feature under preparation", style = MaterialTheme.typography.labelSmall, color = MysticTextSecondary.copy(alpha = 0.6f))

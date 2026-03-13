@@ -97,12 +97,23 @@ class ChartDisplayActivity : ComponentActivity() {
         val lagna = data.getJSONObject("lagna")
         val navamsa = data.getJSONObject("navamsa").getJSONObject("planets")
 
-        val signMap = mapOf(
-            "Pisces" to 0, "Aries" to 1, "Taurus" to 2, "Gemini" to 3,
-            "Aquarius" to 4, "Cancer" to 5,
-            "Capricorn" to 6, "Leo" to 7,
-            "Sagittarius" to 8, "Scorpio" to 9, "Libra" to 10, "Virgo" to 11
-        )
+        val signMap = mutableMapOf<String, Int>()
+        // Add variations to be safe
+        listOf("Pisces", "Pis").forEach { signMap[it] = 0 }
+        listOf("Aries", "Ari").forEach { signMap[it] = 1 }
+        listOf("Taurus", "Tau").forEach { signMap[it] = 2 }
+        listOf("Gemini", "Gem").forEach { signMap[it] = 3 }
+        listOf("Aquarius", "Aqu").forEach { signMap[it] = 4 }
+        listOf("Cancer", "Can").forEach { signMap[it] = 5 }
+        listOf("Capricorn", "Cap").forEach { signMap[it] = 6 }
+        listOf("Leo", "Leo").forEach { signMap[it] = 7 }
+        listOf("Sagittarius", "Sag").forEach { signMap[it] = 8 }
+        listOf("Scorpio", "Sco").forEach { signMap[it] = 9 }
+        listOf("Libra", "Lib").forEach { signMap[it] = 10 }
+        listOf("Virgo", "Vir").forEach { signMap[it] = 11 }
+
+        // Add case-insensitive matching
+        val normalizedSignMap = signMap.mapKeys { it.key.lowercase() }
 
         val rasiBoxes = Array(12) { StringBuilder() }
         val lagnaSign = lagna.getString("name")
@@ -112,9 +123,9 @@ class ChartDisplayActivity : ComponentActivity() {
         while(planetKeys.hasNext()) {
             val pName = planetKeys.next() as String
             val pData = planets.getJSONObject(pName)
-            val pSign = pData.getString("sign")
+            val pSign = pData.getString("sign").lowercase()
             val pNameTamil = pData.optString("nameTamil", pName).take(2)
-            signMap[pSign]?.let { idx ->
+            normalizedSignMap[pSign]?.let { idx ->
                 rasiBoxes[idx].append("<div class='planet'>$pNameTamil</div>")
             }
         }
@@ -124,9 +135,9 @@ class ChartDisplayActivity : ComponentActivity() {
         while(nKeys.hasNext()) {
              val pName = nKeys.next() as String
              val pData = navamsa.getJSONObject(pName)
-             val pSign = pData.getString("navamsaSign")
+             val pSign = pData.getString("navamsaSign").lowercase()
              val pNameTamil = planets.optJSONObject(pName)?.optString("nameTamil", pName)?.take(2) ?: pName.take(2)
-             signMap[pSign]?.let { idx ->
+             normalizedSignMap[pSign]?.let { idx ->
                  navamsaBoxes[idx].append("<div class='planet'>$pNameTamil</div>")
              }
         }
@@ -136,26 +147,27 @@ class ChartDisplayActivity : ComponentActivity() {
             <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
-                    body { font-family: sans-serif; padding: 10px; background: #fdfdfd; }
-                    h2, h3 { text-align: center; color: #333; margin: 5px 0; }
+                    body { font-family: sans-serif; padding: 10px; background: #fff; }
+                    h2, h3 { text-align: center; color: #8B4513; margin: 15px 0 5px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
                     .chart-container {
                         display: grid;
                         grid-template-columns: 1fr 1fr 1fr 1fr;
                         grid-template-rows: 1fr 1fr 1fr 1fr;
                         gap: 2px;
-                        background: #444;
-                        border: 2px solid #333;
+                        background: #8B4513;
+                        border: 3px solid #8B4513;
                         width: 100%;
                         aspect-ratio: 1 / 1;
-                        margin-bottom: 20px;
+                        margin-bottom: 25px;
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
                     }
-                    .box { background: #fff; padding: 2px; font-size: 10px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; min-height: 40px; }
+                    .box { background: #fff; padding: 2px; font-size: 11px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; min-height: 40px; border: 0.5px solid #eee; }
                     .b0 { grid-column: 1; grid-row: 1; }
                     .b1 { grid-column: 2; grid-row: 1; }
                     .b2 { grid-column: 3; grid-row: 1; }
                     .b3 { grid-column: 4; grid-row: 1; }
                     .b4 { grid-column: 1; grid-row: 2; }
-                    .center-box { grid-column: 2 / span 2; grid-row: 2 / span 2; background: #ffe; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+                    .center-box { grid-column: 2 / span 2; grid-row: 2 / span 2; background: #fdf5e6; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #8B4513; font-size: 18px; }
                     .b5 { grid-column: 4; grid-row: 2; }
                     .b6 { grid-column: 1; grid-row: 3; }
                     .b7 { grid-column: 4; grid-row: 3; }
@@ -163,12 +175,12 @@ class ChartDisplayActivity : ComponentActivity() {
                     .b9 { grid-column: 2; grid-row: 4; }
                     .b10 { grid-column: 3; grid-row: 4; }
                     .b11 { grid-column: 4; grid-row: 4; }
-                    .planet { background: #e0f7fa; padding: 1px 3px; margin: 1px; border-radius: 3px; color: #006064; font-weight: bold; }
-                    .planet.lagna { background: #fce4ec; color: #880e4f; }
-                    .info-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                    .info-table td, .info-table th { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
-                    .info-table th { background-color: #f2f2f2; }
-                    .highlight { background-color: #fff9c4; font-weight: bold; border: 2px solid #fbc02d; }
+                    .planet { background: #fff3e0; padding: 2px 4px; margin: 2px; border-radius: 4px; color: #8B4513; font-weight: bold; border: 1px solid #ffcc80; }
+                    .planet.lagna { background: #d7ccc8; color: #5d4037; border-color: #5d4037; }
+                    .info-table { width: 100%; border-collapse: collapse; margin-top: 15px; border: 1px solid #8B4513; }
+                    .info-table td, .info-table th { border: 1px solid #d7ccc8; padding: 10px; text-align: left; font-size: 13px; }
+                    .info-table th { background-color: #8B4513; color: #fff; }
+                    .highlight { background-color: #fff9c4; font-weight: bold; border: 2px solid #8B4513; }
                 </style>
             </head>
             <body>

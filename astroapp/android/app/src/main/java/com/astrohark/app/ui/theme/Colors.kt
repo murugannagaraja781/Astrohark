@@ -60,6 +60,15 @@ val PeacockGreen = Color(0xFFFF7F00)   // Orange
 val SoftIvory = Color(0xFFFFFFFF)
 val PriceRed = Color(0xFFF44336)
 val PureWhite = Color(0xFFFFFFFF)
+val ChocolateBrown = Color(0xFF8B4513)
+
+// COCOA DARK THEME TOKENS
+val CocoaDarkBg = Color(0xFF140F0A)
+val CocoaSurface = Color(0xFF1C140E)
+val CocoaAccent = Color(0xFFFF7F00)
+val CocoaTextPrimary = Color(0xFFF5F2F0)
+val CocoaTextSecondary = Color(0xFFA58B74)
+val CocoaDeepDark = Color(0xFF0B0805)
 
 // LEGACY COMPATIBILITY
 val MetallicGold = Color(0xFFD4AF37)

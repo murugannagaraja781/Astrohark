@@ -40,12 +40,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-// --- Aesthetic Constants ---
-val ParchmentBase = Color(0xFFF4E1C1) // Vintage Paper Color
-val ParchmentLight = Color(0xFFFCF5E5)
-val TraditionalRed = Color(0xFF8B0000) // Deep Blood Red for borders
-val TextGold = Color(0xFFB8860B)
-val BorderColor = Color(0xFF8B0000)
+// --- Aesthetic Constants (Cocoa Dark Refresh) ---
+val ParchmentBase = Color(0xFF140F0A)
+val ParchmentLight = Color(0xFF1C140E)
+val ChocolateBrown = Color(0xFFFF7F00)
+val BorderColor = Color(0xFF241A12)
+val ChartLineColor = Color(0xFFA58B74).copy(alpha = 0.5f)
 
 // --- Tamil Translation Constants ---
 val signTamil = mapOf(
@@ -172,12 +172,12 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Column {
-                        Text("ராசி & நவாம்ச கட்டங்கள்", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = TraditionalRed)
+                        Text("ராசி & நவாம்ச கட்டங்கள்", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ChocolateBrown)
                         Text(birthData.optString("name", "User"), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = TraditionalRed) }
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = ChocolateBrown) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = ParchmentLight)
             )
@@ -186,7 +186,7 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
         Column(modifier = Modifier.padding(padding).fillMaxSize().background(ParchmentLight)) {
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = TraditionalRed)
+                    CircularProgressIndicator(color = ChocolateBrown)
                 }
             } else if (chartState != null) {
                 ScrollableTabRow(
@@ -197,7 +197,7 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
                     indicator = { tabPositions ->
                         TabRowDefaults.Indicator(
                             Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                            color = TraditionalRed
+                            color = ChocolateBrown
                         )
                     }
                 ) {
@@ -211,7 +211,7 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
                                     title,
                                     fontSize = 13.sp,
                                     fontWeight = if(selectedTab == index) FontWeight.Bold else FontWeight.Medium,
-                                    color = if(selectedTab == index) TraditionalRed else Color.Gray
+                                    color = if(selectedTab == index) ChocolateBrown else Color.Gray
                                 )
                             }
                         )
@@ -234,13 +234,13 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
 fun ChartsTab(data: ChartData, birthData: JSONObject) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
 
-        Text("ராசி கட்டம் (Rasi Chart)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TraditionalRed)
+        Text("ராசி கட்டம் (Rasi Chart)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ChocolateBrown)
         Spacer(Modifier.height(8.dp))
         SouthIndianGridEnhanced(data.planets, data.houses.ascendantDetails.signName, "Rasi", birthData, data.panchanga.nakshatra?.name ?: "")
 
         Spacer(Modifier.height(32.dp))
 
-        Text("நவாம்ச கட்டம் (Navamsa - D9)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TraditionalRed)
+        Text("நவாம்ச கட்டம் (Navamsa - D9)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ChocolateBrown)
         Spacer(Modifier.height(8.dp))
         SouthIndianGridEnhanced(data.navamsa?.planets ?: emptyList(), "", "Navamsa", birthData, "")
 
@@ -259,7 +259,7 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
             .fillMaxWidth()
             .aspectRatio(1f)
             .background(ParchmentBase, RoundedCornerShape(4.dp))
-            .border(3.dp, TraditionalRed, RoundedCornerShape(4.dp))
+            .border(3.dp, ChocolateBrown, RoundedCornerShape(4.dp))
     ) {
         // Decorative Borders for boxes
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -272,10 +272,10 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
             for (i in 1..3) {
                 if (i == 2) {
                     // Skip center 2x2
-                    drawLine(TraditionalRed, Offset(i * cellW, 0f), Offset(i * cellW, cellH), strokeWidth = 1.dp.toPx())
-                    drawLine(TraditionalRed, Offset(i * cellW, 3 * cellH), Offset(i * cellW, h), strokeWidth = 1.dp.toPx())
+                    drawLine(ChocolateBrown, Offset(i * cellW, 0f), Offset(i * cellW, cellH), strokeWidth = 1.dp.toPx())
+                    drawLine(ChocolateBrown, Offset(i * cellW, 3 * cellH), Offset(i * cellW, h), strokeWidth = 1.dp.toPx())
                 } else {
-                    drawLine(TraditionalRed, Offset(i * cellW, 0f), Offset(i * cellW, h), strokeWidth = 1.dp.toPx())
+                    drawLine(ChocolateBrown, Offset(i * cellW, 0f), Offset(i * cellW, h), strokeWidth = 1.dp.toPx())
                 }
             }
 
@@ -283,10 +283,10 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
             for (i in 1..3) {
                 if (i == 2) {
                     // Skip center 2x2
-                    drawLine(TraditionalRed, Offset(0f, i * cellH), Offset(cellW, i * cellH), strokeWidth = 1.dp.toPx())
-                    drawLine(TraditionalRed, Offset(3 * cellW, i * cellH), Offset(w, i * cellH), strokeWidth = 1.dp.toPx())
+                    drawLine(ChocolateBrown, Offset(0f, i * cellH), Offset(cellW, i * cellH), strokeWidth = 1.dp.toPx())
+                    drawLine(ChocolateBrown, Offset(3 * cellW, i * cellH), Offset(w, i * cellH), strokeWidth = 1.dp.toPx())
                 } else {
-                    drawLine(TraditionalRed, Offset(0f, i * cellH), Offset(w, i * cellH), strokeWidth = 1.dp.toPx())
+                    drawLine(ChocolateBrown, Offset(0f, i * cellH), Offset(w, i * cellH), strokeWidth = 1.dp.toPx())
                 }
             }
 
@@ -307,7 +307,7 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
             )
 
             // Central Border (Thicker)
-            drawPath(rectPath, TraditionalRed, style = Stroke(width = 2.4.dp.toPx()))
+            drawPath(rectPath, ChocolateBrown, style = Stroke(width = 2.4.dp.toPx()))
         }
 
         // Contents
@@ -363,12 +363,12 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
                 val dob = "${birthData.optInt("day")}-${getMonthName(birthData.optInt("month"))}-${birthData.optInt("year")}"
                 val tob = String.format("%02d:%02d", birthData.optInt("hour"), birthData.optInt("minute"))
 
-                Text(dob, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Text(tob, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                Text(dob, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(tob, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 Spacer(Modifier.height(2.dp))
-                Text(title, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = TraditionalRed)
+                Text(title, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = ChocolateBrown)
                 if (starName.isNotEmpty()) {
-                    Text(starName, fontSize = 11.sp, color = Color.DarkGray, fontWeight = FontWeight.Medium)
+                    Text(starName, fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f), fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -382,7 +382,7 @@ fun getMonthName(m: Int): String = listOf("", "Jan", "Feb", "Mar", "Apr", "May",
 fun PlanetsTab(data: ChartData) {
     LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
-            Text("நவகிரக பாதசாரம் (Navagraha Pathasaram)", fontWeight = FontWeight.Bold, color = TraditionalRed, fontSize = 18.sp)
+            Text("நவகிரக பாதசாரம் (Navagraha Pathasaram)", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 18.sp)
             Spacer(Modifier.height(8.dp))
         }
 
@@ -391,23 +391,23 @@ fun PlanetsTab(data: ChartData) {
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = ParchmentBase),
                 elevation = CardDefaults.cardElevation(2.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, TraditionalRed.copy(0.2f))
+                border = androidx.compose.foundation.BorderStroke(1.dp, ChocolateBrown.copy(0.2f))
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(shape = CircleShape, color = TraditionalRed, modifier = Modifier.size(36.dp)) {
+                        Surface(shape = CircleShape, color = ChocolateBrown, modifier = Modifier.size(36.dp)) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(planetAbbrTamil[planet.name] ?: planet.name.take(1), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                         }
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(planetTamil[planet.name] ?: planet.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                            Text("${signTamil[planet.signName] ?: planet.signName} - ${planet.degreeFormatted ?: ""}", fontSize = 12.sp, color = Color.DarkGray)
+                            Text(planetTamil[planet.name] ?: planet.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+                            Text("${signTamil[planet.signName] ?: planet.signName} - ${planet.degreeFormatted ?: ""}", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
                         }
-                        Text("${planet.house}-ம் வீடு", fontWeight = FontWeight.Bold, color = TraditionalRed)
+                        Text("${planet.house}-ம் வீடு", fontWeight = FontWeight.Bold, color = ChocolateBrown)
                     }
-                    Divider(Modifier.padding(vertical = 12.dp), color = TraditionalRed.copy(0.1f))
+                    Divider(Modifier.padding(vertical = 12.dp), color = ChocolateBrown.copy(0.1f))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         PlanetDetailSub("நட்சத்திரம்", "${planet.nakshatra} - ${planet.nakshatraPada}")
                         PlanetDetailSub("நட்சத்திர அதிபதி", planet.starLord ?: "N/A")
@@ -422,8 +422,8 @@ fun PlanetsTab(data: ChartData) {
 @Composable
 fun PlanetDetailSub(label: String, value: String) {
     Column {
-        Text(label, fontSize = 10.sp, color = Color.Gray)
-        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(label, fontSize = 10.sp, color = Color.White.copy(alpha = 0.4f))
+        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.White)
     }
 }
 
@@ -431,7 +431,7 @@ fun PlanetDetailSub(label: String, value: String) {
 fun DashaListTab(mahadashas: List<DashaPeriod>) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
-            Box(Modifier.fillMaxWidth().background(TraditionalRed).padding(16.dp)) {
+            Box(Modifier.fillMaxWidth().background(ChocolateBrown).padding(16.dp)) {
                 Text("விம்ஷோத்தரி தசா புக்தி விபரங்கள்", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
@@ -452,7 +452,7 @@ fun DashaNodeInternal(period: DashaPeriod) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(if (isCurrent) Color(0xFFFFF9C4) else Color.Transparent)
+                .background(if (isCurrent) Color(0xFFFF7F00).copy(alpha = 0.1f) else Color.Transparent)
                 .clickable(enabled = hasSub) { expanded = !expanded }
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -462,7 +462,7 @@ fun DashaNodeInternal(period: DashaPeriod) {
 
             // Icon/Prefix based on level
             val iconColor = when(period.level) {
-                1 -> TraditionalRed
+                1 -> ChocolateBrown
                 2 -> Color(0xFF2E7D32)
                 3 -> Color(0xFF1976D2)
                 else -> Color.DarkGray
@@ -484,9 +484,10 @@ fun DashaNodeInternal(period: DashaPeriod) {
                         else -> "சிக்ஷ்ம"
                     },
                     fontWeight = if(period.level == 1) FontWeight.Bold else FontWeight.Medium,
-                    fontSize = if(period.level == 1) 16.sp else 14.sp
+                    fontSize = if(period.level == 1) 16.sp else 14.sp,
+                    color = Color.White
                 )
-                Text("${period.start.take(10).replace("-", ".")} - ${period.end.take(10).replace("-", ".")}", fontSize = 11.sp, color = Color.Gray)
+                Text("${period.start.take(10).replace("-", ".")} - ${period.end.take(10).replace("-", ".")}", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
             }
 
             if (hasSub) {

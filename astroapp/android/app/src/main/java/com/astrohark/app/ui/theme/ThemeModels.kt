@@ -30,26 +30,28 @@ data class ThemeColors(
 
 object ThemePalette {
 
-    // Brand Colors from Logo
-    private val BrandYellow = Color(0xFFF5C518)  // Logo Yellow
-    private val BrandOrange = Color(0xFFE87A1E)  // Logo Orange
-    private val BrandOrangeDark = Color(0xFFD4700B) // Darker Orange variant
+    // Brand Colors from Screenshot
+    private val CocoaDark = Color(0xFF140F0A)   // Deepest Background
+    private val CocoaSurface = Color(0xFF241A12) // Card/Surface
+    private val AccentOrange = Color(0xFFFF7F00) // Primary Orange
+    private val TextPrimary = Color(0xFFFFFFFF)  // White Text
+    private val TextSecondary = Color(0xFFA58B74) // Muted Cream/Brown
 
-    // Base Premium Template - Using Logo Colors
+    // Base Premium Template - Dark Cocoa Theme
     private val PremiumTemplate = ThemeColors(
-        bgStart = Color(0xFFFFFFFF),      // Pure White Background
-        bgCenter = Color(0xFFFFFFFF),
-        bgEnd = Color(0xFFFFFFFF),
-        headerStart = BrandOrange,         // Orange from logo
-        headerEnd = BrandOrangeDark,       // Darker orange
-        cardBg = Color(0xFFFFFFFF),
-        cardStroke = BrandOrange,          // Orange Borders
-        textPrimary = Color(0xFF1C1F26),
-        textSecondary = Color(0xFF6B7280),
-        accent = BrandYellow               // Yellow Accent from logo
+        bgStart = CocoaDarkBg,
+        bgCenter = CocoaDarkBg,
+        bgEnd = CocoaDeepDark,
+        headerStart = CocoaDarkBg,
+        headerEnd = CocoaDarkBg,
+        cardBg = CocoaSurface,
+        cardStroke = CocoaSurface.copy(alpha = 0.5f),
+        textPrimary = CocoaTextPrimary,
+        textSecondary = CocoaTextSecondary,
+        accent = CocoaAccent
     )
 
-    // All themes use logo-based premium template
+    // All themes use this premium template now
     val CosmicPurple = PremiumTemplate
     val MidnightIndigo = PremiumTemplate
     val RoyalBlue = PremiumTemplate

@@ -11,9 +11,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,6 +29,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoFixHigh
 import com.astrohark.app.ui.theme.*
+import com.astrohark.app.utils.Localization
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -155,6 +160,8 @@ fun IntakeScreen(
     val scope = rememberCoroutineScope()
 
     // Form State
+    // Form State
+    var isTamil by remember { mutableStateOf(true) } // Default to Tamil as per user request
     var name by remember { mutableStateOf("") }
     var gender by remember { mutableStateOf("Male") } // Male, Female
 
@@ -600,7 +607,7 @@ fun IntakeScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(Color(0xFFE87A1E), Color(0xFFF5C518), Color(0xFFFFD54F))
+                    colors = listOf(Color(0xFF140F0A), Color(0xFF0B0805))
                 )
             )
     ) {
@@ -610,7 +617,7 @@ fun IntakeScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            "Consultation Details",
+                            Localization.get("premium_consultation", isTamil),
                             color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
@@ -618,6 +625,11 @@ fun IntakeScreen(
                     navigationIcon = {
                         IconButton(onClick = onClose) {
                             Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    actions = {
+                        TextButton(onClick = { isTamil = !isTamil }) {
+                            Text(if (isTamil) "English" else "தமிழ்", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -640,7 +652,7 @@ fun IntakeScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C140E)),
                         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                     ) {
                         Column(
@@ -648,112 +660,138 @@ fun IntakeScreen(
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             Text(
-                                "Personal Details",
+                                Localization.get("personal_details", isTamil),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = RoyalMidnightBlue
+                                color = ChocolateBrown
                             )
 
                             OutlinedTextField(
                                 value = name,
                                 onValueChange = { name = it },
-                                label = { Text("Full Name") },
+                                label = { Text(Localization.get("full_name", isTamil)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = PeacockGreen,
-                                    focusedLabelColor = PeacockGreen,
-                                    cursorColor = PeacockGreen,
-                                    focusedTextColor = RoyalMidnightBlue,
-                                    unfocusedTextColor = RoyalMidnightBlue
+                                    focusedBorderColor = Color(0xFFFF7F00),
+                                    focusedLabelColor = Color(0xFFFF7F00),
+                                    cursorColor = Color(0xFFFF7F00),
+                                    focusedTextColor = Color.White,
+                                    unfocusedTextColor = Color.White.copy(alpha = 0.7f),
+                                    unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
                                 )
                             )
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Gender:", fontWeight = FontWeight.SemiBold, color = RoyalMidnightBlue)
+                                Text("${Localization.get("gender", isTamil)}:", fontWeight = FontWeight.SemiBold, color = ChocolateBrown)
                                 Spacer(Modifier.width(16.dp))
                                 RadioButton(
                                     selected = gender == "Male",
                                     onClick = { gender = "Male" },
-                                    colors = RadioButtonDefaults.colors(selectedColor = PeacockGreen)
+                                    colors = RadioButtonDefaults.colors(selectedColor = ChocolateBrown)
                                 )
-                                Text("Male", color = RoyalMidnightBlue)
+                                Text(Localization.get("male", isTamil), color = ChocolateBrown)
                                 Spacer(Modifier.width(16.dp))
                                 RadioButton(
                                     selected = gender == "Female",
                                     onClick = { gender = "Female" },
-                                    colors = RadioButtonDefaults.colors(selectedColor = PeacockGreen)
+                                    colors = RadioButtonDefaults.colors(selectedColor = ChocolateBrown)
                                 )
-                                Text("Female", color = RoyalMidnightBlue)
+                                Text(Localization.get("female", isTamil), color = ChocolateBrown)
                             }
 
-                            Text("Date of Birth", fontWeight = FontWeight.SemiBold, color = RoyalMidnightBlue)
-                            OutlinedTextField(
-                                value = if (day.isNotBlank() && month.isNotBlank() && year.isNotBlank()) "$day/$month/$year" else "",
-                                onValueChange = {},
-                                label = { Text("Select Date") },
-                                readOnly = true,
-                                enabled = false,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        val cal = Calendar.getInstance()
-                                        val d = day.toIntOrNull() ?: cal.get(Calendar.DAY_OF_MONTH)
-                                        val m = (month.toIntOrNull() ?: (cal.get(Calendar.MONTH) + 1)) - 1
-                                        val y = year.toIntOrNull() ?: cal.get(Calendar.YEAR)
-                                        DatePickerDialog(context, { _, py, pm, pd ->
-                                            year = py.toString()
-                                            month = (pm + 1).toString()
-                                            day = pd.toString()
-                                        }, y, m, d).show()
-                                    },
-                                shape = RoundedCornerShape(12.dp),
-                                trailingIcon = { Icon(Icons.Default.AutoAwesome, "Pick", tint = PeacockGreen) },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = RoyalMidnightBlue,
-                                    disabledBorderColor = Color.Gray,
-                                    disabledLabelColor = RoyalMidnightBlue,
-                                    disabledContainerColor = Color.Transparent
+                            Text(Localization.get("dob", isTamil), fontWeight = FontWeight.SemiBold, color = ChocolateBrown)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = day,
+                                    onValueChange = { if (it.length <= 2) day = it },
+                                    label = { Text("DD") },
+                                    modifier = Modifier.weight(1f),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
                                 )
-                            )
+                                OutlinedTextField(
+                                    value = month,
+                                    onValueChange = { if (it.length <= 2) month = it },
+                                    label = { Text("MM") },
+                                    modifier = Modifier.weight(1f),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
+                                )
+                                OutlinedTextField(
+                                    value = year,
+                                    onValueChange = { if (it.length <= 4) year = it },
+                                    label = { Text("YYYY") },
+                                    modifier = Modifier.weight(1.5f),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
+                                )
+                                IconButton(onClick = {
+                                    val cal = Calendar.getInstance()
+                                    DatePickerDialog(context, { _, py, pm, pd ->
+                                        year = py.toString()
+                                        month = (pm + 1).toString()
+                                        day = pd.toString()
+                                    }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                                }) {
+                                    Icon(Icons.Default.AutoAwesome, "Pick", tint = ChocolateBrown)
+                                }
+                            }
 
-                            Text("Time of Birth", fontWeight = FontWeight.SemiBold, color = RoyalMidnightBlue)
-                            OutlinedTextField(
-                                value = if (hour.isNotBlank() && minute.isNotBlank()) "$hour:$minute $amPm" else "",
-                                onValueChange = {},
-                                label = { Text("Select Time") },
-                                readOnly = true,
-                                enabled = false,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        val h = hour.toIntOrNull() ?: 12
-                                        val m = minute.toIntOrNull() ?: 0
-                                        TimePickerDialog(context, { _, ph, pm ->
-                                            hour = if (ph > 12) (ph - 12).toString() else if (ph == 0) "12" else ph.toString()
-                                            minute = String.format("%02d", pm)
-                                            amPm = if (ph >= 12) "PM" else "AM"
-                                        }, h, m, false).show()
-                                    },
-                                shape = RoundedCornerShape(12.dp),
-                                trailingIcon = { Icon(Icons.Default.AutoFixHigh, "Pick", tint = PeacockGreen) },
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = RoyalMidnightBlue,
-                                    disabledBorderColor = Color.Gray,
-                                    disabledLabelColor = RoyalMidnightBlue,
-                                    disabledContainerColor = Color.Transparent
+                            Text(Localization.get("tob", isTamil), fontWeight = FontWeight.SemiBold, color = ChocolateBrown)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedTextField(
+                                    value = hour,
+                                    onValueChange = { if (it.length <= 2) hour = it },
+                                    label = { Text("HH") },
+                                    modifier = Modifier.weight(1f),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
                                 )
-                            )
+                                OutlinedTextField(
+                                    value = minute,
+                                    onValueChange = { if (it.length <= 2) minute = it },
+                                    label = { Text("MM") },
+                                    modifier = Modifier.weight(1f),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
+                                )
+                                TextButton(onClick = { amPm = if (amPm == "AM") "PM" else "AM" }) {
+                                    Text(amPm, color = ChocolateBrown, fontWeight = FontWeight.Bold)
+                                }
+                                IconButton(onClick = {
+                                    TimePickerDialog(context, { _, ph, pm ->
+                                        val hTyped = if (ph > 12) (ph - 12) else if (ph == 0) 12 else ph
+                                        hour = hTyped.toString()
+                                        minute = String.format("%02d", pm)
+                                        amPm = if (ph >= 12) "PM" else "AM"
+                                    }, 12, 0, false).show()
+                                }) {
+                                    Icon(Icons.Default.AutoFixHigh, "Pick", tint = ChocolateBrown)
+                                }
+                            }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Checkbox(
                                     checked = unknownTime,
                                     onCheckedChange = { unknownTime = it },
-                                    colors = CheckboxDefaults.colors(checkedColor = PeacockGreen)
+                                    colors = CheckboxDefaults.colors(checkedColor = ChocolateBrown)
                                 )
-                                Text("Don't know exact time", color = RoyalMidnightBlue)
+                                Text(Localization.get("unknown_time", isTamil), color = ChocolateBrown)
                             }
 
-                            Text("Place of Birth", fontWeight = FontWeight.SemiBold, color = RoyalMidnightBlue)
+                            Text(Localization.get("pob", isTamil), fontWeight = FontWeight.SemiBold, color = ChocolateBrown)
 
                             OutlinedTextField(
                                 value = cityName,
@@ -764,12 +802,12 @@ fun IntakeScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable { launchLocationPicker() },
-                                trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = PeacockGreen) },
+                                trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = ChocolateBrown) },
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = RoyalMidnightBlue,
+                                    disabledTextColor = ChocolateBrown,
                                     disabledBorderColor = Color.Gray,
-                                    disabledLabelColor = RoyalMidnightBlue,
+                                    disabledLabelColor = ChocolateBrown,
                                     disabledContainerColor = Color.Transparent
                                 )
                             )
@@ -783,9 +821,9 @@ fun IntakeScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = RoyalMidnightBlue,
+                                    disabledTextColor = ChocolateBrown,
                                     disabledBorderColor = Color.Gray,
-                                    disabledLabelColor = RoyalMidnightBlue,
+                                    disabledLabelColor = ChocolateBrown,
                                     disabledContainerColor = Color.Transparent
                                 )
                             )
@@ -798,21 +836,22 @@ fun IntakeScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = PeacockGreen,
-                                    focusedLabelColor = PeacockGreen,
-                                    cursorColor = PeacockGreen
+                                    focusedBorderColor = ChocolateBrown,
+                                    focusedLabelColor = ChocolateBrown,
+                                    cursorColor = ChocolateBrown
                                 )
                             )
 
-                            SpinnerDropdown(
-                                label = "Marital Status",
+                            ChoiceChipGroup(
+                                label = Localization.get("marital_status", isTamil),
                                 selected = maritalStatus,
                                 items = listOf("Single", "Married", "Divorced", "Widowed"),
+                                isTamil = isTamil,
                                 onSelect = { maritalStatus = it }
                             )
 
-                            SpinnerDropdown(
-                                label = "Topic of Concern",
+                            ChoiceChipGroup(
+                                label = Localization.get("topic", isTamil),
                                 selected = topic,
                                 items = listOf(
                                     "Career / Job",
@@ -822,6 +861,7 @@ fun IntakeScreen(
                                     "Legal",
                                     "General"
                                 ),
+                                isTamil = isTamil,
                                 onSelect = { topic = it }
                             )
                         }
@@ -834,7 +874,7 @@ fun IntakeScreen(
                             Checkbox(
                                 checked = includePartner,
                                 onCheckedChange = { includePartner = it },
-                                colors = CheckboxDefaults.colors(checkedColor = PeacockGreen)
+                                colors = CheckboxDefaults.colors(checkedColor = ChocolateBrown)
                             )
                             Text(
                                 "Include Partner Details",
@@ -844,7 +884,7 @@ fun IntakeScreen(
                             )
                         } else {
                             Text(
-                                "Partner Details",
+                                Localization.get("partner_details", isTamil),
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
                                 fontSize = 20.sp
@@ -866,76 +906,101 @@ fun IntakeScreen(
                                 OutlinedTextField(
                                     value = pName,
                                     onValueChange = { pName = it },
-                                    label = { Text("Partner Name") },
+                                    label = { Text(Localization.get("full_name", isTamil)) },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = PeacockGreen,
-                                        focusedLabelColor = PeacockGreen,
-                                        cursorColor = PeacockGreen
+                                        focusedBorderColor = ChocolateBrown,
+                                        focusedLabelColor = ChocolateBrown,
+                                        cursorColor = ChocolateBrown
                                     )
                                 )
-                                Text("Partner DOB", fontWeight = FontWeight.Bold, color = RoyalMidnightBlue)
-                                OutlinedTextField(
-                                    value = if (pDay.isNotBlank() && pMonth.isNotBlank() && pYear.isNotBlank()) "$pDay/$pMonth/$pYear" else "",
-                                    onValueChange = {},
-                                    label = { Text("Select Date") },
-                                    readOnly = true,
-                                    enabled = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            val cal = Calendar.getInstance()
-                                            val d = pDay.toIntOrNull() ?: cal.get(Calendar.DAY_OF_MONTH)
-                                            val m = (pMonth.toIntOrNull() ?: (cal.get(Calendar.MONTH) + 1)) - 1
-                                            val y = pYear.toIntOrNull() ?: cal.get(Calendar.YEAR)
-                                            DatePickerDialog(context, { _, py, pm, pd ->
-                                                pYear = py.toString()
-                                                pMonth = (pm + 1).toString()
-                                                pDay = pd.toString()
-                                            }, y, m, d).show()
-                                        },
-                                    shape = RoundedCornerShape(12.dp),
-                                    trailingIcon = { Icon(Icons.Default.AutoAwesome, "Pick", tint = PeacockGreen) },
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        disabledTextColor = RoyalMidnightBlue,
-                                        disabledBorderColor = Color.Gray,
-                                        disabledLabelColor = RoyalMidnightBlue,
-                                        disabledContainerColor = Color.Transparent
+                                Text(Localization.get("dob", isTamil), fontWeight = FontWeight.Bold, color = ChocolateBrown)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = pDay,
+                                        onValueChange = { if (it.length <= 2) pDay = it },
+                                        label = { Text("DD") },
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
                                     )
-                                )
+                                    OutlinedTextField(
+                                        value = pMonth,
+                                        onValueChange = { if (it.length <= 2) pMonth = it },
+                                        label = { Text("MM") },
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
+                                    )
+                                    OutlinedTextField(
+                                        value = pYear,
+                                        onValueChange = { if (it.length <= 4) pYear = it },
+                                        label = { Text("YYYY") },
+                                        modifier = Modifier.weight(1.5f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
+                                    )
+                                    IconButton(onClick = {
+                                        val cal = Calendar.getInstance()
+                                        DatePickerDialog(context, { _, py, pm, pd ->
+                                            pYear = py.toString()
+                                            pMonth = (pm + 1).toString()
+                                            pDay = pd.toString()
+                                        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                                    }) {
+                                        Icon(Icons.Default.AutoAwesome, "Pick", tint = ChocolateBrown)
+                                    }
+                                }
 
-                                Text("Partner Time", fontWeight = FontWeight.Bold, color = RoyalMidnightBlue)
-                                OutlinedTextField(
-                                    value = if (pHour.isNotBlank() && pMinute.isNotBlank()) "$pHour:$pMinute $pAmPm" else "",
-                                    onValueChange = {},
-                                    label = { Text("Select Time") },
-                                    readOnly = true,
-                                    enabled = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            val h = pHour.toIntOrNull() ?: 12
-                                            val m = pMinute.toIntOrNull() ?: 0
-                                            TimePickerDialog(context, { _, ph, pm ->
-                                                pHour = if (ph > 12) (ph - 12).toString() else if (ph == 0) "12" else ph.toString()
-                                                pMinute = String.format("%02d", pm)
-                                                pAmPm = if (ph >= 12) "PM" else "AM"
-                                            }, h, m, false).show()
-                                        },
-                                    shape = RoundedCornerShape(12.dp),
-                                    trailingIcon = { Icon(Icons.Default.AutoFixHigh, "Pick", tint = PeacockGreen) },
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        disabledTextColor = RoyalMidnightBlue,
-                                        disabledBorderColor = Color.Gray,
-                                        disabledLabelColor = RoyalMidnightBlue,
-                                        disabledContainerColor = Color.Transparent
+                                Text(Localization.get("tob", isTamil), fontWeight = FontWeight.Bold, color = ChocolateBrown)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    OutlinedTextField(
+                                        value = pHour,
+                                        onValueChange = { if (it.length <= 2) pHour = it },
+                                        label = { Text("HH") },
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
                                     )
-                                )
+                                    OutlinedTextField(
+                                        value = pMinute,
+                                        onValueChange = { if (it.length <= 2) pMinute = it },
+                                        label = { Text("MM") },
+                                        modifier = Modifier.weight(1f),
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        shape = RoundedCornerShape(12.dp),
+                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
+                                    )
+                                    TextButton(onClick = { pAmPm = if (pAmPm == "AM") "PM" else "AM" }) {
+                                        Text(pAmPm, color = ChocolateBrown, fontWeight = FontWeight.Bold)
+                                    }
+                                    IconButton(onClick = {
+                                        TimePickerDialog(context, { _, ph, pm ->
+                                            val hTyped = if (ph > 12) (ph - 12) else if (ph == 0) 12 else ph
+                                            pHour = hTyped.toString()
+                                            pMinute = String.format("%02d", pm)
+                                            pAmPm = if (ph >= 12) "PM" else "AM"
+                                        }, 12, 0, false).show()
+                                    }) {
+                                        Icon(Icons.Default.AutoFixHigh, "Pick", tint = ChocolateBrown)
+                                    }
+                                }
                                 Text(
-                                    "Partner Place of Birth",
+                                    Localization.get("pob", isTamil),
                                     fontWeight = FontWeight.Bold,
-                                    color = RoyalMidnightBlue
+                                    color = ChocolateBrown
                                 )
                                 OutlinedTextField(
                                     value = pCityName,
@@ -946,12 +1011,12 @@ fun IntakeScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable { launchPartnerLocationPicker() },
-                                    trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = PeacockGreen) },
+                                    trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = ChocolateBrown) },
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        disabledTextColor = RoyalMidnightBlue,
+                                        disabledTextColor = ChocolateBrown,
                                         disabledBorderColor = Color.Gray,
-                                        disabledLabelColor = RoyalMidnightBlue,
+                                        disabledLabelColor = ChocolateBrown,
                                         disabledContainerColor = Color.Transparent
                                     )
                                 )
@@ -964,9 +1029,9 @@ fun IntakeScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
-                                        disabledTextColor = RoyalMidnightBlue,
+                                        disabledTextColor = ChocolateBrown,
                                         disabledBorderColor = Color.Gray,
-                                        disabledLabelColor = RoyalMidnightBlue,
+                                        disabledLabelColor = ChocolateBrown,
                                         disabledContainerColor = Color.Transparent
                                     )
                                 )
@@ -978,20 +1043,20 @@ fun IntakeScreen(
                         onClick = { submit() },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
+                            .height(60.dp)
                             .shadow(
-                                elevation = 8.dp,
-                                shape = RoundedCornerShape(16.dp),
-                                spotColor = PeacockGreen
+                                elevation = 12.dp,
+                                shape = RoundedCornerShape(20.dp),
+                                spotColor = ChocolateBrown
                             ),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PeacockGreen)
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = ChocolateBrown)
                     ) {
                         Text(
-                            if (isEditMode) "Update Details" else "Start Consultation",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = RoyalMidnightBlue
+                            if (isEditMode) "Update Details" else Localization.get("submit_consultation", isTamil),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
                         )
                     }
 
@@ -1150,6 +1215,50 @@ fun IntakeScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ChoiceChipGroup(
+    label: String,
+    selected: String,
+    items: List<String>,
+    isTamil: Boolean,
+    onSelect: (String) -> Unit
+) {
+    Column {
+        Text(
+            label,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(vertical = 4.dp),
+            color = ChocolateBrown,
+            fontSize = 15.sp
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items.forEach { item ->
+                val isItemSelected = selected == item
+                val localizedItem = Localization.get(item.lowercase().replace(" ", "_"), isTamil)
+
+                Surface(
+                    onClick = { onSelect(item) },
+                    shape = RoundedCornerShape(50),
+                    color = if (isItemSelected) ChocolateBrown else Color.White,
+                    border = BorderStroke(1.dp, if (isItemSelected) ChocolateBrown else Color.Gray.copy(alpha = 0.5f)),
+                    modifier = Modifier.padding(vertical = 4.dp)
+                ) {
+                    Text(
+                        text = localizedItem,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        color = if (isItemSelected) Color.White else Color.DarkGray
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun SpinnerDropdown(
     label: String,
@@ -1164,7 +1273,7 @@ fun SpinnerDropdown(
             label,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(vertical = 4.dp),
-            color = RoyalMidnightBlue,
+            color = ChocolateBrown,
             fontSize = 15.sp
         )
         Box(
@@ -1183,12 +1292,12 @@ fun SpinnerDropdown(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { expanded = true },
-                trailingIcon = { Icon(Icons.Default.ArrowDropDown, "", tint = PeacockGreen) },
+                trailingIcon = { Icon(Icons.Default.ArrowDropDown, "", tint = ChocolateBrown) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    disabledTextColor = RoyalMidnightBlue,
+                    disabledTextColor = ChocolateBrown,
                     disabledBorderColor = Color.Transparent, // Border handled by Box
-                    disabledLabelColor = RoyalMidnightBlue,
+                    disabledLabelColor = ChocolateBrown,
                     disabledContainerColor = Color.Transparent
                 )
             )
@@ -1201,7 +1310,7 @@ fun SpinnerDropdown(
             ) {
                 items.forEach { item ->
                     DropdownMenuItem(
-                        text = { Text(item, color = RoyalMidnightBlue, fontWeight = FontWeight.Medium) },
+                        text = { Text(item, color = ChocolateBrown, fontWeight = FontWeight.Medium) },
                         onClick = {
                             onSelect(item)
                             expanded = false

@@ -175,13 +175,12 @@ fun FreeHoroscopeScreen(
 
     var isLoading by remember { mutableStateOf(false) }
 
-    // Vibrant Green Theme (Matching IntakeActivity)
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(DeepJungle, EmeraldGreen, MagicMint)
+                    colors = listOf(Color(0xFF140F0A), Color(0xFF0B0805))
                 )
             )
     ) {
@@ -223,7 +222,7 @@ fun FreeHoroscopeScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1C140E)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
                     Column(
@@ -234,12 +233,12 @@ fun FreeHoroscopeScreen(
                             text = "Enter Your Birth Details",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = RoyalMidnightBlue
+                            color = ChocolateBrown
                         )
                         Text(
                             text = "Fill in the details below to generate your personalized Rasi chart.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = RoyalMidnightBlue.copy(alpha = 0.7f)
+                            color = ChocolateBrown.copy(alpha = 0.7f)
                         )
 
                         Spacer(Modifier.height(8.dp))
@@ -253,95 +252,120 @@ fun FreeHoroscopeScreen(
                             singleLine = true,
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PeacockGreen,
-                                focusedLabelColor = PeacockGreen,
-                                cursorColor = PeacockGreen,
-                                focusedTextColor = RoyalMidnightBlue,
-                                unfocusedTextColor = RoyalMidnightBlue
+                                focusedBorderColor = ChocolateBrown,
+                                focusedLabelColor = ChocolateBrown,
+                                cursorColor = ChocolateBrown,
+                                focusedTextColor = ChocolateBrown,
+                                unfocusedTextColor = ChocolateBrown
                             )
                         )
 
                         // Gender
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Gender:", fontWeight = FontWeight.SemiBold, color = RoyalMidnightBlue)
+                            Text("Gender:", fontWeight = FontWeight.SemiBold, color = ChocolateBrown)
                             Spacer(Modifier.width(16.dp))
                             RadioButton(
                                 selected = gender == "Male",
                                 onClick = { gender = "Male" },
-                                colors = RadioButtonDefaults.colors(selectedColor = PeacockGreen)
+                                colors = RadioButtonDefaults.colors(selectedColor = ChocolateBrown)
                             )
-                            Text("Male", color = RoyalMidnightBlue)
+                            Text("Male", color = ChocolateBrown)
                             Spacer(Modifier.width(16.dp))
                             RadioButton(
                                 selected = gender == "Female",
                                 onClick = { gender = "Female" },
-                                colors = RadioButtonDefaults.colors(selectedColor = PeacockGreen)
+                                colors = RadioButtonDefaults.colors(selectedColor = ChocolateBrown)
                             )
-                            Text("Female", color = RoyalMidnightBlue)
+                            Text("Female", color = ChocolateBrown)
                         }
 
                         // Date of Birth Split
-                        Text("Date of Birth", fontWeight = FontWeight.SemiBold, color = RoyalMidnightBlue)
-                        OutlinedTextField(
-                            value = if (day.isNotBlank() && month.isNotBlank() && year.isNotBlank()) "$day/$month/$year" else "",
-                            onValueChange = {},
-                            label = { Text("Select Date") },
-                            readOnly = true,
-                            enabled = false,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    val cal = Calendar.getInstance()
-                                    val d = day.toIntOrNull() ?: cal.get(Calendar.DAY_OF_MONTH)
-                                    val m = (month.toIntOrNull() ?: (cal.get(Calendar.MONTH) + 1)) - 1
-                                    val y = year.toIntOrNull() ?: cal.get(Calendar.YEAR)
-                                    DatePickerDialog(context, { _, py, pm, pd ->
-                                        year = py.toString()
-                                        month = (pm + 1).toString()
-                                        day = pd.toString()
-                                    }, y, m, d).show()
-                                },
-                            shape = RoundedCornerShape(12.dp),
-                            trailingIcon = { Icon(Icons.Default.AutoAwesome, "Pick", tint = PeacockGreen) },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                disabledTextColor = RoyalMidnightBlue,
-                                disabledBorderColor = Color.Gray,
-                                disabledLabelColor = RoyalMidnightBlue,
-                                disabledContainerColor = Color.Transparent
+                        Text("Date of Birth", fontWeight = FontWeight.SemiBold, color = ChocolateBrown)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = day,
+                                onValueChange = { if (it.length <= 2) day = it },
+                                label = { Text("DD") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
                             )
-                        )
+                            OutlinedTextField(
+                                value = month,
+                                onValueChange = { if (it.length <= 2) month = it },
+                                label = { Text("MM") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
+                            )
+                            OutlinedTextField(
+                                value = year,
+                                onValueChange = { if (it.length <= 4) year = it },
+                                label = { Text("YYYY") },
+                                modifier = Modifier.weight(1.5f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
+                            )
+                            IconButton(onClick = {
+                                val cal = Calendar.getInstance()
+                                DatePickerDialog(context, { _, py, pm, pd ->
+                                    year = py.toString()
+                                    month = (pm + 1).toString()
+                                    day = pd.toString()
+                                }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
+                            }) {
+                                Icon(Icons.Default.AutoAwesome, "Pick", tint = ChocolateBrown)
+                            }
+                        }
 
                         // Time of Birth Split
-                        Text("Time of Birth", fontWeight = FontWeight.SemiBold, color = RoyalMidnightBlue)
-                        OutlinedTextField(
-                            value = if (hour.isNotBlank() && minute.isNotBlank()) "$hour:$minute $amPm" else "",
-                            onValueChange = {},
-                            label = { Text("Select Time") },
-                            readOnly = true,
-                            enabled = false,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    val h = hour.toIntOrNull() ?: 12
-                                    val m = minute.toIntOrNull() ?: 0
-                                    TimePickerDialog(context, { _, ph, pm ->
-                                        hour = if (ph > 12) (ph - 12).toString() else if (ph == 0) "12" else ph.toString()
-                                        minute = String.format("%02d", pm)
-                                        amPm = if (ph >= 12) "PM" else "AM"
-                                    }, h, m, false).show()
-                                },
-                            shape = RoundedCornerShape(12.dp),
-                            trailingIcon = { Icon(Icons.Default.AutoFixHigh, "Pick", tint = PeacockGreen) },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                disabledTextColor = RoyalMidnightBlue,
-                                disabledBorderColor = Color.Gray,
-                                disabledLabelColor = RoyalMidnightBlue,
-                                disabledContainerColor = Color.Transparent
+                        Text("Time of Birth", fontWeight = FontWeight.SemiBold, color = ChocolateBrown)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = hour,
+                                onValueChange = { if (it.length <= 2) hour = it },
+                                label = { Text("HH") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
                             )
-                        )
+                            OutlinedTextField(
+                                value = minute,
+                                onValueChange = { if (it.length <= 2) minute = it },
+                                label = { Text("MM") },
+                                modifier = Modifier.weight(1f),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
+                            )
+                            TextButton(onClick = { amPm = if (amPm == "AM") "PM" else "AM" }) {
+                                Text(amPm, color = ChocolateBrown, fontWeight = FontWeight.Bold)
+                            }
+                            IconButton(onClick = {
+                                TimePickerDialog(context, { _, ph, pm ->
+                                    val hTyped = if (ph > 12) (ph - 12) else if (ph == 0) 12 else ph
+                                    hour = hTyped.toString()
+                                    minute = String.format("%02d", pm)
+                                    amPm = if (ph >= 12) "PM" else "AM"
+                                }, 12, 0, false).show()
+                            }) {
+                                Icon(Icons.Default.AutoFixHigh, "Pick", tint = ChocolateBrown)
+                            }
+                        }
 
                         // Place of Birth (Auto-Select)
-                        Text("Place of Birth", fontWeight = FontWeight.SemiBold, color = RoyalMidnightBlue)
+                        Text("Place of Birth", fontWeight = FontWeight.SemiBold, color = ChocolateBrown)
 
                         // City (Read-only + Picker)
                         OutlinedTextField(
@@ -353,12 +377,12 @@ fun FreeHoroscopeScreen(
                              modifier = Modifier
                                  .fillMaxWidth()
                                  .clickable { launchLocationPicker() },
-                             trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = PeacockGreen) },
+                             trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = ChocolateBrown) },
                              shape = RoundedCornerShape(12.dp),
                              colors = OutlinedTextFieldDefaults.colors(
-                                 disabledTextColor = RoyalMidnightBlue,
+                                 disabledTextColor = ChocolateBrown,
                                  disabledBorderColor = Color.Gray,
-                                 disabledLabelColor = RoyalMidnightBlue,
+                                 disabledLabelColor = ChocolateBrown,
                                  disabledContainerColor = Color.Transparent
                              )
                         )
@@ -373,9 +397,9 @@ fun FreeHoroscopeScreen(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                disabledTextColor = RoyalMidnightBlue,
-                                disabledBorderColor = Color.Gray,
-                                disabledLabelColor = RoyalMidnightBlue,
+                                disabledTextColor = Color(0xFFA58B74),
+                                disabledBorderColor = Color.White.copy(alpha = 0.1f),
+                                disabledLabelColor = Color(0xFFA58B74),
                                 disabledContainerColor = Color.Transparent
                             )
                         )
@@ -418,10 +442,10 @@ fun FreeHoroscopeScreen(
                                 .shadow(
                                     elevation = 8.dp,
                                     shape = RoundedCornerShape(16.dp),
-                                    spotColor = PeacockGreen
+                                    spotColor = ChocolateBrown
                                 ),
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PeacockGreen),
+                            colors = ButtonDefaults.buttonColors(containerColor = ChocolateBrown),
                             enabled = !isLoading
                         ) {
                             if (isLoading) {
@@ -434,7 +458,7 @@ fun FreeHoroscopeScreen(
                                     "Generate Rasi Chart",
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = RoyalMidnightBlue
+                                    color = Color.White
                                 )
                             }
                         }

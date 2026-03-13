@@ -17,19 +17,19 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Chat
 import androidx.compose.material.icons.rounded.VideoCall
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.Translate
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -600,7 +600,8 @@ fun HomeScreen(
                     }
                 )
             }
-        ) { padding ->
+        }
+    ) { padding ->
             Box(modifier = Modifier.padding(padding).fillMaxSize().background(CosmicAppTheme.colors.bgStart)) {
                 // Content Layer
                 LazyColumn(
@@ -2156,6 +2157,6 @@ fun getRasiIconById(id: Int): Int {
         10 -> com.astrohark.app.R.drawable.ic_rasi_capricorn_premium_copy
         11 -> com.astrohark.app.R.drawable.ic_rasi_aquarius_premium
         12 -> com.astrohark.app.R.drawable.ic_rasi_pisces_premium_copy
-        else -> com.astrohark.app.R.drawable.ic_launcher_foreground
+        else -> com.astrohark.app.R.mipmap.ic_launcher_foreground
     }
 }

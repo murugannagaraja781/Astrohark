@@ -163,6 +163,36 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 app.set('io', io);
+
+// WebRTC ICE/TURN Config
+const DEFAULT_ICE_SERVERS = [
+  { urls: 'stun:stun.l.google.com:19302' },
+  {
+    urls: 'turn:turn.astrohark.com:3478?transport=udp',
+    username: 'webrtcuser',
+    credential: 'strongpassword123'
+  },
+  {
+    urls: 'turn:turn.astrohark.com:3478?transport=tcp',
+    username: 'webrtcuser',
+    credential: 'strongpassword123'
+  },
+  {
+    urls: 'turns:turn.astrohark.com:5349',
+    username: 'webrtcuser',
+    credential: 'strongpassword123'
+  }
+];
+
+app.get('/api/webrtc-config', (req, res) => {
+  try {
+    const iceServers = process.env.ICE_SERVERS ? JSON.parse(process.env.ICE_SERVERS) : DEFAULT_ICE_SERVERS;
+    res.json({ ok: true, iceServers });
+  } catch (e) {
+    console.error('Error parsing ICE_SERVERS:', e);
+    res.json({ ok: true, iceServers: DEFAULT_ICE_SERVERS });
+  }
+});
 const cors = require("cors");
 const compression = require('compression');
 const helmet = require('helmet');

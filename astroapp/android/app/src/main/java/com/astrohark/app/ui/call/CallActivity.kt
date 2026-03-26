@@ -160,7 +160,7 @@ class CallActivity : ComponentActivity() {
 
     private val pendingIceCandidates = LinkedList<IceCandidate>()
 
-    private val iceServers = listOf(
+    private var iceServers = mutableListOf(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
         PeerConnection.IceServer.builder("turn:turn.astrohark.com:3478?transport=udp")
             .setUsername("webrtcuser").setPassword("strongpassword123").createIceServer(),
@@ -294,6 +294,9 @@ class CallActivity : ComponentActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "Proximity lock init failed", e)
         }
+
+        // Fetch dynamic ICE/TURN servers
+        fetchIceServers()
 
         // Check Permissions
         if (checkPermissions()) {
@@ -536,6 +539,53 @@ class CallActivity : ComponentActivity() {
     /**
      * Restart ICE connection if it becomes unstable
      */
+    private fun fetchIceServers() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val client = okhttp3.OkHttpClient()
+                val request = okhttp3.Request.Builder()
+                    .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/webrtc-config")
+                    .build()
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val jsonStr = response.body?.string()
+                    Log.d(TAG, "ICE Config Response: $jsonStr")
+                    val json = JSONObject(jsonStr ?: "{}")
+                    if (json.optBoolean("ok")) {
+                        val serverArray = json.optJSONArray("iceServers")
+                        if (serverArray != null) {
+                            val newIceServers = mutableListOf<PeerConnection.IceServer>()
+                            for (i in 0 until serverArray.length()) {
+                                try {
+                                    val obj = serverArray.getJSONObject(i)
+                                    val urls = obj.optString("urls")
+                                    if (urls.isNotEmpty()) {
+                                        val builder = PeerConnection.IceServer.builder(urls)
+                                        if (obj.has("username")) {
+                                            builder.setUsername(obj.getString("username"))
+                                        }
+                                        if (obj.has("credential")) {
+                                            builder.setPassword(obj.getString("credential"))
+                                        }
+                                        newIceServers.add(builder.createIceServer())
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error parsing individual ICE server", e)
+                                }
+                            }
+                            if (newIceServers.isNotEmpty()) {
+                                iceServers = newIceServers
+                                Log.d(TAG, "Updated with ${iceServers.size} ICE servers from API")
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to fetch ICE servers", e)
+            }
+        }
+    }
+
     private fun restartIce() {
         try {
             val constraints = MediaConstraints().apply {

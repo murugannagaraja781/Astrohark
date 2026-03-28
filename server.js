@@ -386,17 +386,42 @@ app.get('/api/test-fcm', async (req, res) => {
   }
 });
 
-// WebRTC Configuration API - Provides TURN/STUN details to Mobile App
+// WebRTC Configuration API - Provides TURN/STUN details to Mobile App/Web
+function getWebRTCConfig() {
+  return {
+    ok: true,
+    stunServer: process.env.STUN_SERVER || 'stun:stun.l.google.com:19302',
+    turnServer: process.env.TURN_SERVER || 'turn.astrohark.com',
+    turnPort: process.env.TURN_PORT || '3478',
+    turnUsername: process.env.TURN_USERNAME || 'webrtcuser',
+    turnPassword: process.env.TURN_PASSWORD || 'strongpassword123',
+    iceServers: [
+      { urls: process.env.STUN_SERVER || 'stun:stun.l.google.com:19302' },
+      {
+        urls: `turn:${process.env.TURN_SERVER || 'turn.astrohark.com'}:${process.env.TURN_PORT || '3478'}?transport=udp`,
+        username: process.env.TURN_USERNAME || 'webrtcuser',
+        credential: process.env.TURN_PASSWORD || 'strongpassword123'
+      },
+      {
+        urls: `turn:${process.env.TURN_SERVER || 'turn.astrohark.com'}:${process.env.TURN_PORT || '3478'}?transport=tcp`,
+        username: process.env.TURN_USERNAME || 'webrtcuser',
+        credential: process.env.TURN_PASSWORD || 'strongpassword123'
+      }
+    ]
+  };
+}
+
 app.get('/api/config/webrtc', (req, res) => {
   try {
-    res.json({
-      ok: true,
-      stunServer: process.env.STUN_SERVER || 'stun:stun.l.google.com:19302',
-      turnServer: process.env.TURN_SERVER || 'turn.astrohark.com',
-      turnPort: process.env.TURN_PORT || '3478',
-      turnUsername: process.env.TURN_USERNAME || 'webrtcuser',
-      turnPassword: process.env.TURN_PASSWORD || 'strongpassword123'
-    });
+    res.json(getWebRTCConfig());
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get('/api/webrtc-config', (req, res) => {
+  try {
+    res.json(getWebRTCConfig());
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }

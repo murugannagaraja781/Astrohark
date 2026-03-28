@@ -7,7 +7,7 @@ echo "=========================================="
 echo "    astrohark Nginx Auto Setup"
 echo "=========================================="
 
-APP_DIR="/var/www/astroharkt"
+APP_DIR="/var/www/Astrohark"
 APP_NAME="astro-app"
 DEFAULT_PORT=3000
 
@@ -55,7 +55,7 @@ if [ ! -d "$APP_DIR" ]; then
     sudo mkdir -p /var/www
     sudo chown $USER:$USER /var/www
     cd /var/www
-    git clone https://github.com/murugannagaraja781/astroharkt.git
+    git clone https://github.com/murugannagaraja781/Astrohark.git $APP_DIR
 else
     echo "Updating existing code in $APP_DIR..."
     cd $APP_DIR

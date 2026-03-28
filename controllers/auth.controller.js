@@ -57,14 +57,21 @@ exports.verifyOtp = async (req, res) => {
                 userId: crypto.randomUUID(),
                 phone,
                 name: 'Test Astrologer',
+                role: 'astrologer',
+                isOnline: true,
                 isAvailable: true,
                 ratePerMinute: 10,
+                skills: ['Vedic', 'Prashana'],
+                experience: 5,
+                approvalStatus: 'approved',
                 referralCode: await generateUniqueReferralCode('TestAstro')
             });
         } else if (user.role !== 'astrologer') {
             user.role = 'astrologer';
             user.isOnline = true;
             user.isAvailable = true;
+            user.approvalStatus = 'approved';
+            user.skills = user.skills.length > 0 ? user.skills : ['Vedic', 'Prashana'];
             user.ratePerMinute = user.ratePerMinute || 10;
             await user.save();
         }

@@ -620,12 +620,9 @@ async function seedDatabase() {
     });
   };
 
-  await create('Astro Maveeran', '9000000001', 'astrologer');
-  await create('Thiru', '9000000002', 'astrologer');
-  await create('Lakshmi', '9000000003', 'astrologer');
-  await create('Client John', '8000000001', 'client');
-  await create('Client Sarah', '8000000002', 'client');
-  await create('Client Mike', '8000000003', 'client');
+  await create('Test Astrologer', '8000000001', 'astrologer');
+  await create('Test Client', '9000000001', 'client');
+  await create('Super Admin', '9876543210', 'superadmin');
 
   console.log('--- Database Seeded ---');
 }

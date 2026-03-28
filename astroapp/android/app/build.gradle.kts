@@ -16,8 +16,8 @@ android {
         applicationId = "com.astrohark.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 6
-        versionName = "6.0.0"
+        versionCode = 1
+        versionName = "1.0.0"
     }
 
     signingConfigs {
@@ -61,6 +61,12 @@ android {
     buildFeatures {
         viewBinding = true
         compose = true
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 

@@ -30,6 +30,8 @@ import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.Chat
 import androidx.compose.material.icons.rounded.VideoCall
 import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -610,14 +612,6 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     if (selectedTab == 0) {
-                        // 1. Top Bar / Profile
-                        item {
-                            HomeTopBar(
-                                onMenuClick = { scope.launch { drawerState.open() } },
-                                userName = userSession?.userName ?: "User"
-                            )
-                        }
-
                         // 2. Wallet Balance
                         item {
                             WalletDashboard(walletBalance) { onWalletClick() }
@@ -922,18 +916,28 @@ fun AppDrawer(onItemClick: (String) -> Unit, onClose: () -> Unit, session: AuthR
             )
         }
         Spacer(modifier = Modifier.weight(1f))
+        Text(
+            text = "Version 1.0.0",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray,
+            modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally)
+        )
         Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
 // --- 2. HEADER ---
 @Composable
-// --- 2. HEADER (Aesthetic Refresh) ---
-@Composable
 fun HomeTopBar(
+    balance: Double,
+    superBalance: Double,
+    onWalletClick: () -> Unit,
     onMenuClick: () -> Unit,
-    onNotificationClick: () -> Unit = {},
-    userName: String = "Sarah Jenkins"
+    isGuest: Boolean = false,
+    isTamil: Boolean = true,
+    onToggleLanguage: () -> Unit = {},
+    onReferClick: () -> Unit = {},
+    userName: String = "User"
 ) {
     Row(
         modifier = Modifier
@@ -942,15 +946,17 @@ fun HomeTopBar(
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar + Name Section
+        // Profile Icon / Menu
         Box(
             modifier = Modifier
                 .size(45.dp)
                 .clip(CircleShape)
-                .background(Color.Gray.copy(alpha = 0.2f))
+                .background(Color.White.copy(alpha = 0.05f))
+                .clickable { onMenuClick() },
+            contentAlignment = Alignment.Center
         ) {
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground), // Placeholder
+                painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
                 contentDescription = "Avatar",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -961,7 +967,7 @@ fun HomeTopBar(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Good Morning",
+                text = if (isTamil) "வணக்கம்," else "Hello,",
                 style = MaterialTheme.typography.labelSmall,
                 color = CosmicAppTheme.colors.textSecondary
             )
@@ -972,34 +978,20 @@ fun HomeTopBar(
             )
         }
 
-        // Icons Section
+        // Action Icons
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(
-                onClick = onNotificationClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(Color.White.copy(alpha = 0.05f), CircleShape)
+                onClick = onReferClick,
+                modifier = Modifier.size(40.dp).background(Color.White.copy(alpha = 0.05f), CircleShape)
             ) {
-                Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Rounded.Notifications,
-                    contentDescription = "Notifications",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
+                Icon(Icons.Rounded.AutoAwesome, null, tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(20.dp))
             }
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             IconButton(
-                onClick = onMenuClick,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(Color.White.copy(alpha = 0.05f), CircleShape)
+                onClick = onToggleLanguage,
+                modifier = Modifier.size(40.dp).background(Color.White.copy(alpha = 0.05f), CircleShape)
             ) {
-                Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Rounded.Settings,
-                    contentDescription = "Settings",
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
+                Icon(Icons.Default.Translate, null, tint = Color.White, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -1068,7 +1060,7 @@ fun DailyHoroscopeBanner(sign: String, content: String, onClick: () -> Unit) {
         Box(modifier = Modifier.fillMaxWidth()) {
             // Background Image (Cosmic/Stars placeholder)
             Image(
-                painter = painterResource(id = R.drawable.ic_launcher_foreground), // Use a cosmic gradient or star pattern
+                painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground), // Use a cosmic gradient or star pattern
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1250,7 +1242,7 @@ fun AestheticAstroCard(astro: Astrologer, onConnectClick: (Astrologer) -> Unit) 
             Spacer(modifier = Modifier.height(16.dp))
 
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, bottom = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, bottom = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -1421,7 +1413,7 @@ fun AstrologerCard(
                 }
                  Spacer(modifier = Modifier.height(8.dp))
                  Row(verticalAlignment = Alignment.CenterVertically) {
-                     Text("${if(astro.rating > 0) astro.rating else 4.5}", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.Black)
+                     Text("${if(astro.rating > 0) astro.rating else 4.5}", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.White)
                      Icon(Icons.Rounded.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(12.dp))
                  }
                  Text("${if(astro.orders>0) astro.orders else 3908} Orders", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = Color.Gray)
@@ -1432,7 +1424,7 @@ fun AstrologerCard(
              // Right Column
              Column(modifier = Modifier.weight(1f)) {
                  Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                     Text(astro.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color.Black, maxLines = 1)
+                     Text(astro.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color.White, maxLines = 1)
                      Column(horizontalAlignment = Alignment.End) {
                          Row(verticalAlignment = Alignment.CenterVertically) {
                              Text("₹ ${astro.price}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = PriceRed)

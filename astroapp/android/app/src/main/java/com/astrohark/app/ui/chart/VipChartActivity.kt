@@ -61,9 +61,9 @@ val planetTamil = mapOf(
 )
 
 val planetAbbrTamil = mapOf(
-    "Sun" to "சூ", "Moon" to "சந்", "Mars" to "செவ்", "Mercury" to "பு",
-    "Jupiter" to "குரு", "Venus" to "சுக்", "Saturn" to "சனி", "Rahu" to "ரா",
-    "Ketu" to "கே", "Ascendant" to "ல", "As" to "ல"
+    "Sun" to "சூரி", "Moon" to "சந்", "Mars" to "செவ்", "Mercury" to "புத",
+    "Jupiter" to "குரு", "Venus" to "சுக்", "Saturn" to "சனி", "Rahu" to "ராகு",
+    "Ketu" to "கேது", "Ascendant" to "லக்", "As" to "லக்", "Mandi" to "மாந்"
 )
 
 // --- Updated Data Models ---
@@ -89,7 +89,9 @@ data class Planet(
     val degreeFormatted: String? = null,
     val signLord: String? = null,
     val starLord: String? = null,
-    val subLord: String? = null
+    val subLord: String? = null,
+    val isRetrograde: Boolean = false,
+    val isCombust: Boolean = false
 )
 
 data class HouseData(
@@ -380,39 +382,52 @@ fun getMonthName(m: Int): String = listOf("", "Jan", "Feb", "Mar", "Apr", "May",
 
 @Composable
 fun PlanetsTab(data: ChartData) {
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item {
-            Text("நவகிரக பாதசாரம் (Navagraha Pathasaram)", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 18.sp)
-            Spacer(Modifier.height(8.dp))
-        }
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("நவகிரக பாதசாரம் (Navagraha Pathasaram)", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 18.sp)
+        Spacer(Modifier.height(12.dp))
 
-        items(data.planets) { planet ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = ParchmentBase),
-                elevation = CardDefaults.cardElevation(2.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, ChocolateBrown.copy(0.2f))
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(shape = CircleShape, color = ChocolateBrown, modifier = Modifier.size(36.dp)) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(planetAbbrTamil[planet.name] ?: planet.name.take(1), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            }
+        // New Precise Table Grid
+        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray)) {
+            // Header
+            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF2E7D32)).padding(8.dp)) {
+                listOf("கிரகம்", "நட்சத்திரம்", "பாதம்", "ராசி", "நிலை").forEach { head ->
+                    Text(
+                        text = head,
+                        modifier = Modifier.weight(1f),
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
+            // Rows
+            data.planets.forEach { planet ->
+                HorizontalDivider(color = Color.Gray.copy(alpha = 0.5f))
+                Row(modifier = Modifier.fillMaxWidth().background(ParchmentBase).padding(vertical = 10.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Planet Name (Red)
+                    Row(Modifier.weight(1f), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = planetAbbrTamil[planet.name] ?: planet.name,
+                            color = Color.Red,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                        if (planet.isRetrograde) {
+                            Text(" (வ)", color = Color.Red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(planetTamil[planet.name] ?: planet.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
-                            Text("${signTamil[planet.signName] ?: planet.signName} - ${planet.degreeFormatted ?: ""}", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
+                        if (planet.isCombust) {
+                            Text(" (அ)", color = Color.Red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                         }
-                        Text("${planet.house}-ம் வீடு", fontWeight = FontWeight.Bold, color = ChocolateBrown)
                     }
-                    Divider(Modifier.padding(vertical = 12.dp), color = ChocolateBrown.copy(0.1f))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        PlanetDetailSub("நட்சத்திரம்", "${planet.nakshatra} - ${planet.nakshatraPada}")
-                        PlanetDetailSub("நட்சத்திர அதிபதி", planet.starLord ?: "N/A")
-                        PlanetDetailSub("உப அதிபதி", planet.subLord ?: "N/A")
-                    }
+
+                    // Others in Blue
+                    Text(text = planet.nakshatra.take(6), color = Color.Blue, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(text = planet.nakshatraPada.toString(), color = Color.Blue, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(text = (signTamil[planet.signName] ?: planet.signName).take(4), color = Color.Blue, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(text = "${planet.house}-ம் வீடு", color = Color.Blue, fontSize = 11.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
                 }
             }
         }

@@ -13,16 +13,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CallEnd
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
-import androidx.compose.material.icons.filled.Videocam
-import androidx.compose.material.icons.filled.VideocamOff
-import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.ui.Alignment
@@ -160,13 +155,9 @@ class CallActivity : ComponentActivity() {
 
     private val pendingIceCandidates = LinkedList<IceCandidate>()
 
-    private val iceServers = listOf(
+    private var iceServers = mutableListOf(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
         PeerConnection.IceServer.builder("turn:turn.astrohark.com:3478?transport=udp")
-            .setUsername("webrtcuser").setPassword("strongpassword123").createIceServer(),
-        PeerConnection.IceServer.builder("turn:turn.astrohark.com:3478?transport=tcp")
-            .setUsername("webrtcuser").setPassword("strongpassword123").createIceServer(),
-        PeerConnection.IceServer.builder("turns:turn.astrohark.com:5349")
             .setUsername("webrtcuser").setPassword("strongpassword123").createIceServer()
     )
 
@@ -210,6 +201,9 @@ class CallActivity : ComponentActivity() {
         // --- GLOBAL STATE FIX: Mark call as active to prevent duplicate starts ---
         CallState.isCallActive = true
         CallState.currentSessionId = intent.getStringExtra("sessionId")
+        
+        // Fetch TURN/STUN Config from Server
+        fetchWebRTCConfig()
 
         // Initialize WebRTC Views Programmatically
         localView = SurfaceViewRenderer(this)
@@ -261,6 +255,7 @@ class CallActivity : ComponentActivity() {
                     onEndCall = { endCall() },
                     onEditIntake = { openEditIntake() },
                     onShowRasi = { showRasiChart() },
+                    onShowMatch = { showMatchDisplay() },
                     isRecording = isRecordingState,
                     onToggleRecording = { toggleRecording() },
                     isReady = isWebRTCInitialized
@@ -569,6 +564,44 @@ class CallActivity : ComponentActivity() {
             }, constraints)
         } catch (e: Exception) {
             Log.e(TAG, "ICE restart failed", e)
+        }
+    }
+
+    private fun fetchWebRTCConfig() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = com.astrohark.app.data.api.ApiClient.api.getWebRTCConfig()
+                if (response.isSuccessful) {
+                    val config = response.body()
+                    if (config != null && config.has("ok") && config.get("ok").asBoolean) {
+                        val stun = if (config.has("stunServer")) config.get("stunServer").asString else "stun:stun.l.google.com:19302"
+                        val turn = if (config.has("turnServer")) config.get("turnServer").asString else "turn.astrohark.com"
+                        val port = if (config.has("turnPort")) config.get("turnPort").asString else "3478"
+                        val user = if (config.has("turnUsername")) config.get("turnUsername").asString else "webrtcuser"
+                        val pass = if (config.has("turnPassword")) config.get("turnPassword").asString else "strongpassword123"
+
+                        val newIceServers = mutableListOf<PeerConnection.IceServer>()
+                        newIceServers.add(PeerConnection.IceServer.builder(stun).createIceServer())
+                        
+                        // UDP
+                        newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=udp")
+                            .setUsername(user).setPassword(pass).createIceServer())
+                        
+                        // TCP
+                        newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=tcp")
+                            .setUsername(user).setPassword(pass).createIceServer())
+                            
+                        // TURNS (standard TLS)
+                        newIceServers.add(PeerConnection.IceServer.builder("turns:$turn:5349")
+                            .setUsername(user).setPassword(pass).createIceServer())
+
+                        iceServers = newIceServers
+                        Log.d(TAG, "✓ WebRTC: Config updated from server")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "✗ WebRTC: Failed to fetch config: ${e.message}")
+            }
         }
     }
 
@@ -1066,6 +1099,16 @@ class CallActivity : ComponentActivity() {
             Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
         }
     }
+
+    private fun showMatchDisplay() {
+        if (clientBirthData != null) {
+            val intent = android.content.Intent(this, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
+            intent.putExtra("birthData", clientBirthData.toString())
+            startActivity(intent)
+        } else {
+            Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
+        }
+    }
 }
 
 // openHelper for simplified observer
@@ -1096,10 +1139,15 @@ fun CallScreen(
     onEndCall: () -> Unit,
     onEditIntake: () -> Unit,
     onShowRasi: () -> Unit,
+    onShowMatch: () -> Unit,
     isRecording: Boolean = false,
     onToggleRecording: () -> Unit = {},
     isReady: Boolean = false
 ) {
+    val context = LocalContext.current
+    BackHandler {
+        Toast.makeText(context, "Call irugum pothu back button vela seiyathu. Mudika 'End Call' azhuthavum", Toast.LENGTH_LONG).show()
+    }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -1239,6 +1287,7 @@ fun CallScreen(
                 ) {
                     if (role == "astrologer") {
                         ControlBtnItem(onClick = onShowRasi, icon = android.R.drawable.ic_menu_gallery, label = "Chart", active = true)
+                        ControlBtnItem(onClick = onShowMatch, icon = Icons.Default.Favorite, label = "Match", active = true)
                     } else {
                         Spacer(modifier = Modifier.size(48.dp))
                     }
@@ -1255,12 +1304,16 @@ fun CallScreen(
                     }
 
                     if (role == "astrologer") {
-                        ControlBtnItem(
-                            onClick = onToggleRecording,
-                            icon = if (isRecording) Icons.Default.Stop else Icons.Default.FiberManualRecord,
-                            label = if (isRecording) "Stop" else "REC",
-                            active = isRecording
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            ControlBtnItem(onClick = onEditIntake, icon = Icons.Default.Edit, label = "Edit", active = false)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            ControlBtnItem(
+                                onClick = onToggleRecording,
+                                icon = if (isRecording) Icons.Default.Stop else Icons.Default.FiberManualRecord,
+                                label = if (isRecording) "Stop" else "REC",
+                                active = isRecording
+                            )
+                        }
                     } else {
                         ControlBtnItem(onClick = onEditIntake, icon = Icons.Default.Edit, label = "Edit", active = false)
                     }

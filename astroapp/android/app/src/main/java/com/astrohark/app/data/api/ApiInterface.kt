@@ -82,4 +82,6 @@ interface ApiInterface {
         @retrofit2.http.Part("userId") userId: okhttp3.RequestBody,
         @retrofit2.http.Part image: okhttp3.MultipartBody.Part
     ): Response<com.google.gson.JsonObject>
+    @retrofit2.http.GET("api/config/webrtc")
+    suspend fun getWebRTCConfig(): Response<com.google.gson.JsonObject>
 }

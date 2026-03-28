@@ -82,6 +82,7 @@
         android:theme="@style/Theme.FCMCallApp"
         android:name=".AstrologerApp"
         android:networkSecurityConfig="@xml/network_security_config"
+        android:extractNativeLibs="true"
         tools:targetApi="34">
 
         <!--
@@ -105,8 +106,7 @@
         <activity android:name=".ui.astro.AstrologerDashboardActivity" />
         <activity android:name=".ui.astro.AstrologerHistoryActivity" />
         <activity android:name=".ui.astro.PermissionActivity"
-            android:theme="@style/Theme.FCMCallApp"
-            android:screenOrientation="portrait"/>
+            android:theme="@style/Theme.FCMCallApp" />
         <activity android:name=".ui.admin.SuperPowerAdminDashboardActivity" android:exported="false" android:theme="@style/Theme.FCMCallApp"/>
         <activity android:name=".ui.settings.SettingsActivity" />
         <activity android:name=".ui.settings.ThemeSettingsActivity" />
@@ -130,8 +130,8 @@
         <activity android:name=".ui.wallet.WalletActivity" />
         <activity android:name=".ui.wallet.SuperWalletActivity" />
         <activity android:name=".ui.chat.ChatActivity" android:windowSoftInputMode="adjustResize"/>
-        <activity android:name=".ui.call.CallActivity" android:screenOrientation="portrait"/>
-        <activity android:name=".ui.intake.IntakeActivity" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".ui.call.CallActivity" />
+        <activity android:name=".ui.intake.IntakeActivity" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ui.chart.ChartDisplayActivity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
             android:screenOrientation="portrait"

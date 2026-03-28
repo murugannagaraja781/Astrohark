@@ -5664,6 +5664,33 @@
       }
 
       try {
+        // Fetch WebRTC Config (TURN/STUN)
+        let iceServers = [{ urls: 'stun:stun.l.google.com:19302' }];
+        const loader = document.getElementById('connectionStatus');
+        if (loader) loader.textContent = 'Connecting...';
+
+        try {
+          const confRes = await fetch('/api/config/webrtc').then(r => r.json());
+          if (confRes.ok) {
+            iceServers = [
+              { urls: confRes.stunServer },
+              {
+                urls: `turn:${confRes.turnServer}:${confRes.turnPort}?transport=udp`,
+                username: confRes.turnUsername,
+                credential: confRes.turnPassword
+              },
+              {
+                urls: `turn:${confRes.turnServer}:${confRes.turnPort}?transport=tcp`,
+                username: confRes.turnUsername,
+                credential: confRes.turnPassword
+              }
+            ];
+            console.log('[WebRTC] Custom TURN configured');
+          }
+        } catch (e) {
+          console.warn('Using default STUN', e);
+        }
+
         const constraints = {
           audio: true,
           video: state.session.type === 'video'
@@ -5677,11 +5704,22 @@
           lv.play().catch(e => console.warn('Local Video Play Error:', e));
         }
 
-        const p = new SimplePeer({ initiator, stream, trickle: false });
+        // Initialize SimplePeer with Trickle ICE and proper config
+        const p = new SimplePeer({
+          initiator,
+          stream,
+          trickle: true,
+          config: { iceServers }
+        });
 
         p.on('signal', d => {
           if (state.session) {
-            socket.emit('signal', { sessionId: state.session.id, toUserId: state.session.partnerId, signal: d });
+            let signalToSend = d;
+            // Android app expects 'type' field for all signals including candidates
+            if (d.candidate && !d.type) {
+              signalToSend = { type: 'candidate', candidate: d.candidate };
+            }
+            socket.emit('signal', { sessionId: state.session.id, toUserId: state.session.partnerId, signal: signalToSend });
           }
         });
 
@@ -5737,7 +5775,12 @@
     // Signal Handler
     socket.on('signal', d => {
       if (state.session && d.sessionId === state.session.id && state.peer) {
-        state.peer.signal(d.signal);
+        let signalData = d.signal;
+        // Normalize candidate format from Android (strip 'type: candidate' wrapper if present)
+        if (signalData && signalData.type === 'candidate' && signalData.candidate) {
+          signalData = signalData.candidate;
+        }
+        state.peer.signal(signalData);
       }
     });
 

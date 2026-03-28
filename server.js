@@ -356,6 +356,22 @@ app.get('/api/test-fcm', async (req, res) => {
   }
 });
 
+// WebRTC Configuration API - Provides TURN/STUN details to Mobile App
+app.get('/api/config/webrtc', (req, res) => {
+  try {
+    res.json({
+      ok: true,
+      stunServer: process.env.STUN_SERVER || 'stun:stun.l.google.com:19302',
+      turnServer: process.env.TURN_SERVER || 'turn.astrohark.com',
+      turnPort: process.env.TURN_PORT || '3478',
+      turnUsername: process.env.TURN_USERNAME || 'webrtcuser',
+      turnPassword: process.env.TURN_PASSWORD || 'strongpassword123'
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ===== MSG91 Helper =====
 function sendMsg91(phoneNumber, otp) {
   const cleanPhone = phoneNumber.replace(/\D/g, '');

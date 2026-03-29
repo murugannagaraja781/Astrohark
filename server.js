@@ -265,7 +265,7 @@ function formatImageUrl(imgPath, name) {
   return imgPath;
 }
 
-const { broadcastAstroUpdate: serviceBroadcastAstroUpdate } = require('./services/astrologer.service');
+const { getFormattedAstrologers, broadcastAstroUpdate: serviceBroadcastAstroUpdate } = require('./services/astrologer.service');
 
 async function broadcastAstroUpdate() {
   await serviceBroadcastAstroUpdate(io, SERVER_URL);
@@ -691,7 +691,7 @@ generateTamilHoroscope();
 // Astrologer List API (Used by Mobile App)
 app.get('/api/astrology/astrologers', async (req, res) => {
   try {
-    const formatted = await getFormattedAstrologers();
+    const formatted = await getFormattedAstrologers(SERVER_URL);
     res.json({ ok: true, astrologers: formatted });
   } catch (err) {
     console.error('Error fetching astrologers:', err);
@@ -1603,7 +1603,7 @@ io.on('connection', (socket) => {
 
   // --- Get Astrologers List ---
   socket.on('get-astrologers', async (cb) => {
-    const formatted = await getFormattedAstrologers();
+    const formatted = await getFormattedAstrologers(SERVER_URL);
     if (typeof cb === 'function') cb({ astrologers: formatted });
   });
 

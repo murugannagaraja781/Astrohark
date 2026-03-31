@@ -502,7 +502,7 @@ const connectDB = async (retries = 5) => {
     });
     console.log('✅ MongoDB Connected to:', MONGO_URI.split('@').pop().split('?')[0]);
     if (process.env.NODE_ENV !== 'test') {
-      // seedDatabase();
+      seedDatabase();
     }
   } catch (err) {
     console.error('❌ MongoDB Connection Error:', err.message);

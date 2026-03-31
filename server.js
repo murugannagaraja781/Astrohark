@@ -288,9 +288,9 @@ app.get('/wallet', (req, res) => {
   const reason = req.query.reason || '';
 
   // Construct Deep Link
-  const scheme = status === 'success' ? 'astro5://payment-success' : 'astro5://payment-failed';
+  const scheme = status === 'success' ? 'astrohark://payment-success' : 'astrohark://payment-failed';
   const deepLink = `${scheme}?status=${status}&reason=${reason}`;
-  const intentUrl = `intent://payment-${status === 'success' ? 'success' : 'failed'}?status=${status}#Intent;scheme=astro5;package=com.astrohark.app;end`;
+  const intentUrl = `intent://payment-${status === 'success' ? 'success' : 'failed'}?status=${status}#Intent;scheme=astrohark;package=com.astrohark.app;end`;
 
   res.send(`
     <html>

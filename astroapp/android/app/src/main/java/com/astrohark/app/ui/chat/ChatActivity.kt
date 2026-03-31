@@ -13,6 +13,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -346,7 +349,7 @@ fun ChatScreen(
                     TextButton(onClick = onEndChat) { Text("End", color = Color.Red, fontWeight = FontWeight.Bold) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = CosmicAppTheme.colors.surface,
+                    containerColor = CosmicAppTheme.colors.cardBg,
                     titleContentColor = Color.White
                 )
             )
@@ -427,6 +430,7 @@ fun ChatScreen(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
+    val isMe = msg.isSent
     // Colors: Sophisticated Dark Bubbles
     val bubbleColor = if (isMe) Color.White.copy(alpha = 0.08f) else Color(0xFFDDCBB4).copy(alpha = 0.1f)
     val align = if (isMe) Alignment.End else Alignment.Start
@@ -495,9 +499,12 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                                         .padding(bottom = 6.dp)
                                 ) {
                                     Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                                        Box(
+                                            modifier = Modifier
                                                 .fillMaxHeight()
                                                 .width(4.dp)
                                                 .background(Color(0xFFE6C15A))
+                                        )
                                         // Quote Content
                                         Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                                             Text(
@@ -665,7 +672,7 @@ fun ChatInputBar(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .background(
-                                    Brush.linearGradient(
+                                    androidx.compose.ui.graphics.Brush.linearGradient(
                                         colors = listOf(colors.accent, Color(0xFFD4700B))
                                     )
                                 ),

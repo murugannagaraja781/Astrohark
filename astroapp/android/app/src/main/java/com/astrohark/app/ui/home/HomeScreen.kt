@@ -829,14 +829,15 @@ fun PolicyLink(label: String, url: String, context: android.content.Context) {
 @Composable
 fun AppDrawer(onItemClick: (String) -> Unit, onClose: () -> Unit, session: AuthResponse?, isTamil: Boolean = true) {
     val context = LocalContext.current
+    val colors = CosmicAppTheme.colors
     ModalDrawerSheet(
-        drawerContainerColor = CosmicAppTheme.colors.surface,
-        drawerContentColor = CosmicAppTheme.colors.textPrimary
+        drawerContainerColor = colors.cardBg,
+        drawerContentColor = colors.textPrimary
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(CosmicAppTheme.colors.surface)
+                .background(colors.cardBg)
                 .padding(24.dp)
         ) {
             // Close Button Row
@@ -872,9 +873,8 @@ fun AppDrawer(onItemClick: (String) -> Unit, onClose: () -> Unit, session: AuthR
             Spacer(modifier = Modifier.height(12.dp))
             Text(session?.name ?: "User Profile", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color.DarkGray) // Strong Gray
             Text("Edit Profile", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
+            
+            Spacer(modifier = Modifier.height(8.dp))
 
         // Drawer Items
         val items = listOf("home", "profile", "wallet", "join_as_astrologer", "Terms & Conditions", "Privacy Policy", "settings", "logout")
@@ -911,7 +911,8 @@ fun AppDrawer(onItemClick: (String) -> Unit, onClose: () -> Unit, session: AuthR
             color = Color.Gray,
             modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally)
         )
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+        }
     }
 }
 
@@ -1114,7 +1115,6 @@ fun QuickActionItem(title: String, icon: ImageVector, iconColor: Color, modifier
 
 
 
-@Composable
 @Composable
 fun AestheticAstroCard(astro: Astrologer, onConnectClick: (Astrologer) -> Unit) {
     val infiniteTransition = rememberInfiniteTransition()

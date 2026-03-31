@@ -1,0 +1,195 @@
+89:class AstrologerDashboardActivity : ComponentActivity() {
+93:    override fun onCreate(savedInstanceState: Bundle?) {
+100:        setContent {
+101:            MaterialTheme {
+102:                CosmicAppTheme {
+108:                        onLogout = { performLogout() },
+109:                        onWithdraw = { showWithdrawDialog() }
+116:    private fun performLogout() {
+117:        SocketManager.logout { _ ->
+134:    private fun showWithdrawDialog() {
+140:    private fun setupSocket(userId: String?) {
+142:        if (userId != null) {
+143:            SocketManager.registerUser(userId) { success ->
+144:                if (success) {
+155:        SocketManager.onIncomingSession { data ->
+162:            if (!CallState.canReceiveCall(sessionId)) {
+163:                android.util.Log.d("AstrologerDashboard", "Blocking incoming call: Already active in session ${CallState.currentSessionId}")
+169:                .takeIf { !it.isNullOrEmpty() }
+171:                .takeIf { !it.isNullOrEmpty() }
+173:                .takeIf { !it.isNullOrEmpty() }
+182:            runOnUiThread {
+183:                val intent = Intent(this@AstrologerDashboardActivity, com.astrohark.app.IncomingCallActivity::class.java).apply {
+191:                    if (birthDataStr != null) {
+201:        socket?.on("session-request") { args ->
+202:            runOnUiThread {
+203:                try {
+209:                        .takeIf { !it.isNullOrEmpty() }
+211:                        .takeIf { !it.isNullOrEmpty() }
+217:                    if (!com.astrohark.app.utils.CallState.canReceiveCall(sessionId)) {
+223:                    if (type == "chat") {
+224:                        val intent = Intent(this@AstrologerDashboardActivity, com.astrohark.app.ui.chat.ChatActivity::class.java).apply {
+233:                } catch (e: Exception) {
+240:    override fun onDestroy() {
+250:suspend fun updateServiceStatus(userId: String, service: String, enabled: Boolean) {
+251:    try {
+255:            org.json.JSONObject().apply {
+268:        if (enabled) {
+272:    } catch (e: Exception) {
+285:) {
+286:    var walletBalance by remember { mutableDoubleStateOf(initialWallet) }
+287:    var profileImage by remember { mutableStateOf(initialImage) }
+288:    var isUploading by remember { mutableStateOf(false) }
+291:    var isChatOnline by remember { mutableStateOf(false) }
+292:    var isAudioOnline by remember { mutableStateOf(false) }
+293:    var isVideoOnline by remember { mutableStateOf(false) }
+297:    val tokenManager = remember { TokenManager(context) }
+298:    var todayProgress by remember { mutableIntStateOf(tokenManager.getDailyProgress()) }
+300:    val services = remember {
+310:    var showWithdrawDialog by remember { mutableStateOf(false) }
+311:    var withdrawAmount by remember { mutableStateOf("") }
+312:    var withdrawalHistory by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+314:    fun refreshBalanceAndHistory() {
+315:        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+316:            try {
+319:                    .url("https://astrohark.com/api/user/${sessionId}")
+322:                if (response.isSuccessful) {
+323:                    val json = JSONObject(response.body?.string() ?: "{}")
+338:                    if (isChatOnline || isAudioOnline || isVideoOnline) {
+344:                SocketManager.getMyWithdrawals { list ->
+347:            } catch (e: Exception) {
+355:    ) { uri: Uri? ->
+356:        uri?.let {
+357:            scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+358:                try {
+367:                    if (response.isSuccessful) {
+369:                        if (newImage != null) {
+373:                            if (session != null) {
+376:                            withContext(kotlinx.coroutines.Dispatchers.Main) {
+380:                    } else {
+381:                        withContext(kotlinx.coroutines.Dispatchers.Main) {
+385:                } catch (e: Exception) {
+387:                } finally {
+395:    LaunchedEffect(Unit) {
+401:        if (currentDate != lastDate) {
+405:        } else {
+407:            if (todayProgress < 100) {
+417:    if (showWithdrawDialog) {
+419:            onDismissRequest = { showWithdrawDialog = false },
+420:            title = { Text("Request Withdrawal", fontWeight = FontWeight.Bold) },
+421:            text = {
+422:                Column {
+423:                    Text("Available Balance: ₹${String.format("%.2f", walletBalance)}", color = CosmicColors.GoldAccent, fontWeight = FontWeight.Bold)
+427:                        onValueChange = { if (it.all { char -> char.isDigit() }) withdrawAmount = it },
+428:                        label = { Text("Enter Amount") },
+435:            confirmButton = {
+437:                    onClick = {
+439:                        if (amt < 500) {
+441:                        } else if (amt > walletBalance) {
+443:                        } else {
+444:                            SocketManager.requestWithdrawal(amt) { res ->
+445:                                scope.launch(kotlinx.coroutines.Dispatchers.Main) {
+446:                                    if (res?.optBoolean("ok") == true) {
+451:                                    } else {
+460:                ) {
+464:            dismissButton = {
+465:                TextButton(onClick = { showWithdrawDialog = false }) {
+474:        topBar = {
+481:            ) {
+504:                        .clickable { if (!isUploading) launcher.launch("image/*") },
+506:                ) {
+507:                    if (isUploading) {
+509:                    } else {
+511:                        else if (!profileImage.isNullOrEmpty()) {
+513:                            "${com.astrohark.app.utils.Constants.SERVER_URL}$path"
+516:                        if (imageUrl != null) {
+525:                        } else {
+542:                    ) {
+552:                Column(modifier = Modifier.weight(1f)) {
+569:                    onClick = {},
+575:                ) {
+586:                ) {
+591:    ) { padding ->
+602:        ) {
+607:            val hasNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+610:            val hasBatteryOptimization = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+614:            if (!hasOverlay || !hasAudio || !hasCamera || !hasNotification || !hasBatteryOptimization) {
+618:                    modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp)).clickable {
+622:                ) {
+626:                    ) {
+629:                        Column(modifier = Modifier.weight(1f)) {
+643:            ) {
+646:                ) {
+660:            ) {
+665:                ) {
+666:                    Column {
+669:                        Row(verticalAlignment = Alignment.CenterVertically) {
+671:                                text = "₹${String.format("%.2f", walletBalance)}",
+678:                                onClick = { showWithdrawDialog = true },
+682:                            ) {
+695:            if (withdrawalHistory.isNotEmpty()) {
+704:                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+705:                    withdrawalHistory.take(5).forEach { item ->
+710:                        val statusColor = when(status.lowercase()) {
+720:                        ) {
+725:                            ) {
+726:                                Column {
+746:            ) {
+750:                ) {
+751:                    Column(modifier = Modifier.weight(1f)) {
+755:                        Text("$todayProgress% completed (${String.format("%.1f", completedHours)} hours)", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
+757:                    Box(contentAlignment = Alignment.Center) {
+780:                onChatToggle = { enabled ->
+781:                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasNotification)) {
+784:                    } else {
+786:                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+791:                onAudioToggle = { enabled ->
+792:                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasAudio || !hasNotification)) {
+795:                    } else {
+797:                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+802:                onVideoToggle = { enabled ->
+803:                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasAudio || !hasCamera || !hasNotification)) {
+806:                    } else {
+808:                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+815:            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+816:                actions.chunked(3).forEach { rowItems ->
+820:                    ) {
+821:                        rowItems.forEach { (label, icon) ->
+834:                                     .clickable {
+835:                                         when (label) {
+842:                             ) {
+849:                                 ) {
+861:                                     ) {
+877:            ) {
+896:) {
+903:    ) {
+904:        Column(modifier = Modifier.padding(16.dp)) {
+950:) {
+962:    ) {
+986:            onCheckedChange = { onToggle(it) },
+1000:fun showRecordingsDialog(context: android.content.Context) {
+1002:    if (!dir.exists() || dir.listFiles()?.isEmpty() == true) {
+1007:    val files = dir.listFiles()?.sortedByDescending { it.lastModified() } ?: emptyList()
+1008:    val fileNames = files.map { it.name }
+1012:    builder.setItems(fileNames.toTypedArray()) { _, which ->
+1022:fun playRecording(context: android.content.Context, file: File) {
+1023:    try {
+1025:        mediaPlayer = MediaPlayer().apply {
+1030:        Toast.makeText(context, "Playing: ${file.name}", Toast.LENGTH_SHORT).show()
+1032:        mediaPlayer?.setOnCompletionListener {
+1036:    } catch (e: Exception) {
+1037:        Toast.makeText(context, "Playback failed: ${e.message}", Toast.LENGTH_SHORT).show()
+1041:fun showFileOptions(context: android.content.Context, file: File) {
+1043:    builder.setTitle("Options: ${file.name}")
+1045:    builder.setItems(options) { _, which ->
+1046:        when (which) {
+1056:fun openFileInExplorer(context: android.content.Context, file: File) {
+1057:    try {
+1058:        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+1063:    } catch (e: Exception) {
+1064:        Toast.makeText(context, "No app found to open this file. Path: ${file.absolutePath}", Toast.LENGTH_LONG).show()
+1068:fun shareRecording(context: android.content.Context, file: File) {
+1069:    try {
+1070:        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+1076:    } catch (e: Exception) {
+1077:        Toast.makeText(context, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()

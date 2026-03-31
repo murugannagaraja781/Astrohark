@@ -37,6 +37,8 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.VideoCall
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.snapshots.SnapshotStateList
@@ -310,6 +312,15 @@ fun AstrologerDashboardScreen(
     var showWithdrawDialog by remember { mutableStateOf(false) }
     var withdrawAmount by remember { mutableStateOf("") }
     var withdrawalHistory by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    
+    val actions = listOf(
+        "Call" to Icons.Default.Call,
+        "History" to Icons.Default.History,
+        "Earnings" to Icons.Default.MonetizationOn,
+        "Profile" to Icons.Default.Person,
+        "Settings" to androidx.compose.material.icons.Icons.Default.Settings,
+        "Star" to Icons.Default.Star
+    )
 
     fun refreshBalanceAndHistory() {
         scope.launch(kotlinx.coroutines.Dispatchers.IO) {
@@ -737,7 +748,9 @@ fun AstrologerDashboardScreen(
                         }
                     }
                 }
-               // 3. Today's Progress (Glassmorphism)
+            }
+            
+            // 3. Today's Progress (Glassmorphism)
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
                 shape = RoundedCornerShape(24.dp),
@@ -769,8 +782,6 @@ fun AstrologerDashboardScreen(
                              fontWeight = FontWeight.Bold
                          )
                     }
-                }
-            }
                 }
             }
 
@@ -935,7 +946,7 @@ fun ServiceTogglesCard(
             // Video Call Toggle
             ServiceToggleRow(
                 label = "Video Call",
-                icon = Icons.Default.Videocam,
+                icon = androidx.compose.material.icons.Icons.Default.VideoCall,
                 isEnabled = isVideoOnline,
                 onToggle = onVideoToggle
             )

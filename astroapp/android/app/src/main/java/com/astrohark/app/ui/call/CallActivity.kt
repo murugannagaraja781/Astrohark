@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
@@ -1192,7 +1194,9 @@ fun CallScreen(
     onShowMatch: () -> Unit,
     isRecording: Boolean = false,
     onToggleRecording: () -> Unit = {},
-    isRead    val colors = com.astrohark.app.ui.theme.CosmicAppTheme.colors
+    isReady: Boolean
+) {
+    val colors = com.astrohark.app.ui.theme.CosmicAppTheme.colors
     val context = LocalContext.current
     
     BackHandler {
@@ -1480,10 +1484,6 @@ fun RecordingIndicator() {
             color = Color.Red,
             fontSize = 10.sp,
             fontWeight = FontWeight.ExtraBold
-        )
-    }
-}
-.Bold
         )
     }
 }

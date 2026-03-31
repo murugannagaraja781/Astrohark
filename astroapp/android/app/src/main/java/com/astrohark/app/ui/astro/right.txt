@@ -1,0 +1,196 @@
+108:                        onLogout = { performLogout() },
+109:                        onWithdraw = { showWithdrawDialog() }
+111:                }
+112:            }
+113:        }
+114:    }
+125:        }
+126:    }
+138:    }
+146:                }
+147:            }
+148:        }
+163:                android.util.Log.d("AstrologerDashboard", "Blocking incoming call: Already active in session ${CallState.currentSessionId}")
+165:            }
+169:                .takeIf { !it.isNullOrEmpty() }
+171:                .takeIf { !it.isNullOrEmpty() }
+173:                .takeIf { !it.isNullOrEmpty() }
+193:                    }
+194:                }
+196:            }
+197:        }
+209:                        .takeIf { !it.isNullOrEmpty() }
+211:                        .takeIf { !it.isNullOrEmpty() }
+220:                    }
+230:                        }
+232:                    }
+233:                } catch (e: Exception) {
+235:                }
+236:            }
+237:        }
+238:    }
+246:    }
+247:}
+259:            }.toString()
+271:        }
+272:    } catch (e: Exception) {
+274:    }
+275:}
+286:    var walletBalance by remember { mutableDoubleStateOf(initialWallet) }
+287:    var profileImage by remember { mutableStateOf(initialImage) }
+288:    var isUploading by remember { mutableStateOf(false) }
+291:    var isChatOnline by remember { mutableStateOf(false) }
+292:    var isAudioOnline by remember { mutableStateOf(false) }
+293:    var isVideoOnline by remember { mutableStateOf(false) }
+297:    val tokenManager = remember { TokenManager(context) }
+298:    var todayProgress by remember { mutableIntStateOf(tokenManager.getDailyProgress()) }
+306:    }
+310:    var showWithdrawDialog by remember { mutableStateOf(false) }
+311:    var withdrawAmount by remember { mutableStateOf("") }
+312:    var withdrawalHistory by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+319:                    .url("https://astrohark.com/api/user/${sessionId}")
+323:                    val json = JSONObject(response.body?.string() ?: "{}")
+341:                    }
+342:                }
+346:                }
+347:            } catch (e: Exception) {
+349:            }
+350:        }
+351:    }
+375:                            }
+378:                            }
+379:                        }
+380:                    } else {
+383:                        }
+384:                    }
+385:                } catch (e: Exception) {
+387:                } finally {
+389:                }
+390:            }
+391:        }
+392:    }
+405:        } else {
+409:            }
+410:        }
+415:    }
+419:            onDismissRequest = { showWithdrawDialog = false },
+420:            title = { Text("Request Withdrawal", fontWeight = FontWeight.Bold) },
+423:                    Text("Available Balance: ₹${String.format("%.2f", walletBalance)}", color = CosmicColors.GoldAccent, fontWeight = FontWeight.Bold)
+427:                        onValueChange = { if (it.all { char -> char.isDigit() }) withdrawAmount = it },
+428:                        label = { Text("Enter Amount") },
+433:                }
+434:            },
+441:                        } else if (amt > walletBalance) {
+443:                        } else {
+451:                                    } else {
+454:                                    }
+455:                                }
+456:                            }
+457:                        }
+458:                    },
+462:                }
+463:            },
+465:                TextButton(onClick = { showWithdrawDialog = false }) {
+467:                }
+468:            }
+470:    }
+504:                        .clickable { if (!isUploading) launcher.launch("image/*") },
+509:                    } else {
+513:                            "${com.astrohark.app.utils.Constants.SERVER_URL}$path"
+514:                        } else null
+525:                        } else {
+532:                        }
+533:                    }
+549:                    }
+550:                }
+567:                }
+569:                    onClick = {},
+577:                }
+588:                }
+589:            }
+590:        }
+609:            } else true
+612:            } else true
+620:                    },
+632:                        }
+633:                    }
+634:                }
+635:            }
+649:                }
+650:            }
+671:                                text = "₹${String.format("%.2f", walletBalance)}",
+678:                                onClick = { showWithdrawDialog = true },
+684:                            }
+685:                        }
+690:                    }
+691:                }
+692:            }
+714:                        }
+729:                                }
+736:                            }
+737:                        }
+738:                    }
+739:                }
+755:                        Text("$todayProgress% completed (${String.format("%.1f", completedHours)} hours)", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
+756:                    }
+771:                    }
+772:                }
+773:            }
+784:                    } else {
+788:                        }
+789:                    }
+790:                },
+795:                    } else {
+799:                        }
+800:                    }
+801:                },
+806:                    } else {
+810:                        }
+811:                    }
+812:                }
+840:                                         }
+841:                                     }
+863:                                     }
+866:                                 }
+867:                             }
+868:                        }
+869:                    }
+870:                }
+871:            }
+879:            }
+884:        }
+885:    }
+886:}
+940:        }
+941:    }
+942:}
+986:            onCheckedChange = { onToggle(it) },
+995:    }
+996:}
+1005:    }
+1007:    val files = dir.listFiles()?.sortedByDescending { it.lastModified() } ?: emptyList()
+1008:    val fileNames = files.map { it.name }
+1015:    }
+1018:}
+1029:        }
+1030:        Toast.makeText(context, "Playing: ${file.name}", Toast.LENGTH_SHORT).show()
+1035:        }
+1036:    } catch (e: Exception) {
+1037:        Toast.makeText(context, "Playback failed: ${e.message}", Toast.LENGTH_SHORT).show()
+1038:    }
+1039:}
+1043:    builder.setTitle("Options: ${file.name}")
+1050:        }
+1051:    }
+1054:}
+1058:        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+1063:    } catch (e: Exception) {
+1064:        Toast.makeText(context, "No app found to open this file. Path: ${file.absolutePath}", Toast.LENGTH_LONG).show()
+1065:    }
+1066:}
+1070:        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+1076:    } catch (e: Exception) {
+1077:        Toast.makeText(context, "Share failed: ${e.message}", Toast.LENGTH_SHORT).show()
+1078:    }
+1079:}
+1080:}

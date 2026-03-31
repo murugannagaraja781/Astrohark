@@ -160,6 +160,7 @@ async function sendFcmV1Push(fcmToken, data, notification) {
 initFcmAuth();
 
 const app = express();
+app.set('trust proxy', 1); // Fix for express-rate-limit when behind reverse proxy
 const server = http.createServer(app);
 const io = new Server(server);
 app.set('io', io);

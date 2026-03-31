@@ -47,3 +47,23 @@ exports.processDeletion = async (req, res) => {
     }
     res.json({ ok: true });
 };
+exports.updateBalance = async (req, res) => {
+    try {
+        const { userId, amount, action } = req.body; // action: 'add' or 'subtract'
+        if (!userId || amount === undefined) return res.json({ ok: false, error: 'User ID and amount required' });
+
+        const user = await User.findOne({ userId });
+        if (!user) return res.json({ ok: false, error: 'User not found' });
+
+        if (action === 'subtract') {
+            user.walletBalance = (user.walletBalance || 0) - parseFloat(amount);
+        } else {
+            user.walletBalance = (user.walletBalance || 0) + parseFloat(amount);
+        }
+
+        await user.save();
+        res.json({ ok: true, balance: user.walletBalance });
+    } catch (error) {
+        res.json({ ok: false, error: error.message });
+    }
+};

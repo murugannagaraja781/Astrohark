@@ -8,5 +8,6 @@ router.get('/banners', adminController.getBanners);
 router.post('/banners', adminController.addBanner);
 router.get('/deletion-requests', adminController.getDeletionRequests);
 router.post('/process-deletion', adminController.processDeletion);
+router.post('/update-balance', adminController.updateBalance);
 
 module.exports = router;

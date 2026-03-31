@@ -50,3 +50,18 @@ exports.cityTimezone = async (req, res) => {
         res.json({ ok: false, error: 'Failed' });
     }
 };
+const GlobalSettings = require('../models/GlobalSettings');
+
+exports.getAppConfig = async (req, res) => {
+    try {
+        const shareLink = await GlobalSettings.findOne({ key: 'shareLink' });
+        res.json({
+            ok: true,
+            config: {
+                shareLink: shareLink ? shareLink.value : "https://play.google.com/store/apps/details?id=com.astrohark.app"
+            }
+        });
+    } catch (error) {
+        res.json({ ok: false, error: 'Failed to fetch config' });
+    }
+};

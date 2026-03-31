@@ -290,12 +290,33 @@ fun HomeScreen(
     var referralInput by remember { mutableStateOf("") }
     var isApplyingReferral by remember { mutableStateOf(false) }
 
+    // Dynamic Share Link State
+    var shareLink by remember { mutableStateOf("https://play.google.com/store/apps/details?id=com.astrohark.app") }
+
     // History State
     var historySessions by remember { mutableStateOf<List<SessionHistoryItem>>(emptyList()) }
     var isHistoryLoading by remember { mutableStateOf(false) }
 
     val tokenManager = remember { TokenManager(context) }
     val userSession by remember { mutableStateOf(tokenManager.getUserSession()) }
+
+    // Fetch App Config (Share Link)
+    LaunchedEffect(Unit) {
+        try {
+            val response = ApiClient.api.getAppConfig()
+            if (response.isSuccessful) {
+                val json = response.body()
+                if (json != null && json.has("ok") && json.get("ok").asBoolean) {
+                    val config = json.getAsJsonObject("config")
+                    if (config.has("shareLink")) {
+                        shareLink = config.get("shareLink").asString
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     // Fetch History when tab 5 is selected
     LaunchedEffect(selectedTab) {
@@ -458,7 +479,7 @@ fun HomeScreen(
                     Button(
                         onClick = {
                             // Share via WhatsApp
-                            val msg = "astrohark செயலியில் இணையுங்கள்! என் Referral Code: ${referralCode ?: ""}. இணைந்து ₹10 போனஸ் பெறுங்கள்: https://play.google.com/store/search?q=astroharkt&c=apps"
+                            val msg = "Astrohark செயலியில் இணையுங்கள்! என் Referral Code: ${referralCode ?: ""}. இணைந்து ₹10 போனஸ் பெறுங்கள்: $shareLink"
                             val intent = Intent(Intent.ACTION_VIEW).apply {
                                 data = Uri.parse("https://api.whatsapp.com/send?text=${Uri.encode(msg)}")
                             }
@@ -534,7 +555,7 @@ fun HomeScreen(
         }
     ) {
         Scaffold(
-            containerColor = Color.Black,
+            containerColor = CosmicAppTheme.colors.bgStart,
             topBar = {
                 HomeTopBar(
                     balance = walletBalance,
@@ -578,7 +599,7 @@ fun HomeScreen(
                 // Content Layer
                 LazyColumn(
                     state = listState,
-                    contentPadding = PaddingValues(bottom = 16.dp),
+                    contentPadding = PaddingValues(bottom = if (selectedTab == 0) 180.dp else 100.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     if (selectedTab == 0) {
@@ -607,7 +628,7 @@ fun HomeScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("Featured Astrologers", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                                    Text("Featured Astrologers", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), color = CosmicAppTheme.colors.textPrimary)
                                     Text("View All", color = CosmicAppTheme.colors.accent, fontSize = 14.sp, modifier = Modifier.clickable { selectedTab = 1 })
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -671,8 +692,8 @@ fun HomeScreen(
                                                         }
                                                         Spacer(modifier = Modifier.height(6.dp))
                                                         Text(
-                                                            text = Localization.get(rasiName.lowercase(), true),
-                                                            color = Color.White.copy(alpha = 0.6f),
+                                                            text = Localization.get(rasiName.lowercase(), true).replace("வகை", ""),
+                                                            color = CosmicAppTheme.colors.textPrimary.copy(alpha = 0.7f),
                                                             fontSize = 10.sp,
                                                             fontWeight = FontWeight.Medium
                                                         )
@@ -685,39 +706,9 @@ fun HomeScreen(
                             }
                         }
 
-                         // 6. Ritual Banner
+                         // 6. Support & Policies (Moved up to replace Ritual)
                          item {
-                             Card(
-                                 modifier = Modifier
-                                     .fillMaxWidth()
-                                     .padding(20.dp),
-                                 shape = RoundedCornerShape(28.dp),
-                                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
-                                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
-                             ) {
-                                 Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                                     Box(modifier = Modifier.size(50.dp).background(CosmicAppTheme.colors.accent.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                                         Icon(androidx.compose.material.icons.Icons.Rounded.AutoAwesome, null, tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(24.dp))
-                                     }
-                                     Spacer(modifier = Modifier.width(16.dp))
-                                     Column(modifier = Modifier.weight(1f)) {
-                                         Text("Full Moon Ritual", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color.White)
-                                         Text("Join live session tonight at 9 PM", color = CosmicAppTheme.colors.textSecondary, fontSize = 12.sp)
-                                     }
-                                     Button(
-                                         onClick = {},
-                                         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                                         shape = RoundedCornerShape(12.dp),
-                                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                                         modifier = Modifier.background(
-                                             brush = Brush.linearGradient(listOf(Color(0xFFFF8C00), Color(0xFFFF4500))),
-                                             shape = RoundedCornerShape(12.dp)
-                                         )
-                                     ) {
-                                         Text("Join", color = Color.White, fontWeight = FontWeight.Bold)
-                                     }
-                                 }
-                             }
+                             SupportAndPoliciesSection()
                          }
                     } else if (selectedTab == 5) {
                                 // 6b. History List
@@ -771,7 +762,7 @@ fun SupportAndPoliciesSection() {
         Text(
             text = "Policies & Support",
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-            color = Color.White
+            color = CosmicAppTheme.colors.textPrimary
         )
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -964,7 +955,7 @@ fun HomeTopBar(
             Text(
                 text = userName,
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color.White
+                color = CosmicAppTheme.colors.textPrimary
             )
         }
 
@@ -981,7 +972,7 @@ fun HomeTopBar(
                 onClick = onToggleLanguage,
                 modifier = Modifier.size(40.dp).background(Color.White.copy(alpha = 0.05f), CircleShape)
             ) {
-                Icon(Icons.Default.Translate, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Translate, null, tint = CosmicAppTheme.colors.textPrimary, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -1016,7 +1007,7 @@ fun WalletDashboard(balance: Double, onAddMoneyClick: () -> Unit) {
                 Text(
                     text = "₹${"%.2f".format(balance)}",
                     style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
-                    color = Color.White
+                    color = CosmicAppTheme.colors.textPrimary
                 )
             }
 
@@ -1068,7 +1059,6 @@ fun QuickActionsSection(onAction: (String) -> Unit) {
         ) {
             QuickActionItem("Chat", androidx.compose.material.icons.Icons.Rounded.Chat, Color(0xFF4A90E2), Modifier.weight(1f)) { onAction("chat") }
             QuickActionItem("Call", androidx.compose.material.icons.Icons.Rounded.Call, Color(0xFF7ED321), Modifier.weight(1f)) { onAction("call") }
-            QuickActionItem("Book Slot", androidx.compose.material.icons.Icons.Rounded.Schedule, Color(0xFFBD10E0), Modifier.weight(1f)) { onAction("book") }
         }
     }
 }
@@ -1104,7 +1094,7 @@ fun QuickActionItem(title: String, icon: ImageVector, iconColor: Color, modifier
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = title,
-                color = Color.White.copy(alpha = 0.8f),
+                color = CosmicAppTheme.colors.textPrimary.copy(alpha = 0.8f),
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -1179,7 +1169,7 @@ fun AestheticAstroCard(astro: Astrologer, onConnectClick: (Astrologer) -> Unit) 
             Text(
                 text = astro.name,
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = Color.White,
+                color = CosmicAppTheme.colors.textPrimary,
                 modifier = Modifier.padding(horizontal = 4.dp),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -1376,7 +1366,7 @@ fun AstrologerCard(
                 }
                  Spacer(modifier = Modifier.height(8.dp))
                  Row(verticalAlignment = Alignment.CenterVertically) {
-                     Text("${if(astro.rating > 0) astro.rating else 4.5}", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                     Text("${if(astro.rating > 0) astro.rating else 4.5}", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = CosmicAppTheme.colors.textPrimary)
                      Icon(Icons.Rounded.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(12.dp))
                  }
                  Text("${if(astro.orders>0) astro.orders else 3908} Orders", style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp), color = Color.Gray)
@@ -1387,7 +1377,7 @@ fun AstrologerCard(
              // Right Column
              Column(modifier = Modifier.weight(1f)) {
                  Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                     Text(astro.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color.White, maxLines = 1)
+                     Text(astro.name, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = CosmicAppTheme.colors.textPrimary, maxLines = 1)
                      Column(horizontalAlignment = Alignment.End) {
                          Row(verticalAlignment = Alignment.CenterVertically) {
                              Text("₹ ${astro.price}", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = PriceRed)
@@ -1414,9 +1404,6 @@ fun AstrologerCard(
                       if (showChat && astro.isChatOnline) {
                           AstrologerActionButton("Chat", Icons.Rounded.Chat, !astro.isBusy, AquaBlue, { onChatClick(astro) })
                       }
-                      if (showVideo && astro.isVideoOnline) {
-                          AstrologerActionButton("Video", Icons.Rounded.VideoCall, !astro.isBusy, PriceRed, { onCallClick(astro, "Video") }, Modifier.padding(start=6.dp))
-                      }
                       if (showCall && astro.isAudioOnline) {
                           AstrologerActionButton("Call", Icons.Rounded.Call, !astro.isBusy, ChocolateBrown, { onCallClick(astro, "Audio") }, Modifier.padding(start=6.dp))
                       }
@@ -1429,7 +1416,7 @@ fun AstrologerCard(
 @Composable
 fun HomeBottomBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
     Surface(
-        color = Color(0xFF140F0A), // Matches deepest background
+        color = CosmicAppTheme.colors.headerStart, // Matches background or white
         modifier = Modifier.fillMaxWidth(),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
     ) {
@@ -1484,7 +1471,7 @@ fun BottomNavItem(label: String, icon: ImageVector, isSelected: Boolean, onClick
         Text(
             text = label,
             fontSize = 10.sp,
-            color = if (isSelected) Color(0xFFFF7F00) else Color(0xFFA58B74).copy(alpha = 0.6f),
+            color = if (isSelected) Color(0xFFFF7F00) else CosmicAppTheme.colors.textSecondary.copy(alpha = 0.6f),
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
         )
     }
@@ -2076,15 +2063,15 @@ fun ConsultationHistoryCard(item: SessionHistoryItem) {
                         text = item.partnerName,
                         fontWeight = FontWeight.Bold,
                         fontSize = 15.sp,
-                        color = Color.White
+                        color = CosmicAppTheme.colors.textPrimary
                     )
-                    Text(text = startTimeStr, fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
+                    Text(text = startTimeStr, fontSize = 11.sp, color = CosmicAppTheme.colors.textSecondary)
                 }
                 Text(
                     text = "₹${String.format("%.2f", item.amount)}",
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 17.sp,
-                    color = if (item.isEarned) Color(0xFF4CAF50) else Color.White
+                    color = if (item.isEarned) Color(0xFF4CAF50) else CosmicAppTheme.colors.textPrimary
                 )
             }
 
@@ -2104,7 +2091,7 @@ fun ConsultationHistoryCard(item: SessionHistoryItem) {
                 Box(
                     modifier = Modifier
                         .background(
-                            if (item.isEarned) Color(0xFF4CAF50).copy(alpha = 0.1f) else Color.White.copy(alpha = 0.1f),
+                            if (item.isEarned) Color(0xFF4CAF50).copy(alpha = 0.1f) else CosmicAppTheme.colors.cardStroke,
                             RoundedCornerShape(8.dp)
                         )
                         .padding(horizontal = 8.dp, vertical = 2.dp)

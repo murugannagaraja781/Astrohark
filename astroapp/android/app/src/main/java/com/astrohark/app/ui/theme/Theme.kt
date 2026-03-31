@@ -86,8 +86,8 @@ fun CosmicAppTheme(
             val window = (view.context as Activity).window
             window.statusBarColor = pageColors.bgStart.toArgb()
             window.navigationBarColor = pageColors.bgStart.toArgb()
-            // false means light icons for dark background
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            // true means dark icons for light background
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
         }
     }
 

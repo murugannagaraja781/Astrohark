@@ -2,7 +2,7 @@ const https = require('https');
 
 function sendMsg91(phoneNumber, otp) {
     const cleanPhone = phoneNumber.replace(/\D/g, '');
-    const mobile = `91${cleanPhone}`;
+    const mobile = (cleanPhone.length === 10) ? `91${cleanPhone}` : cleanPhone;
     const authKey = process.env.MSG91_AUTH_KEY;
     const templateId = process.env.MSG91_TEMPLATE_ID;
 

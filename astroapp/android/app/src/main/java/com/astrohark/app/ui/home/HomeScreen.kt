@@ -548,37 +548,7 @@ fun HomeScreen(
                 )
 
             },
-            floatingActionButton = {
-                if (selectedTab == 0) {
-                    ExtendedFloatingActionButton(
-                        onClick = {
-                            if (isGuest) {
-                                onBannerClick(Banner(id = "", imageUrl = ""))
-                            } else {
-                                checkBalanceAndProceed { selectedTab = 3 }
-                            }
-                        },
-                        containerColor = colorResource(id = com.astrohark.app.R.color.marketplace_yellow),
-                        contentColor = Color.Black,
-                        shape = RoundedCornerShape(50),
-                        elevation = FloatingActionButtonDefaults.elevation(8.dp),
-                        text = {
-                            Text(
-                                if (isTamil) "ஜோதிடரிடம் பேச" else "Talk to Astrologer",
-                                fontWeight = FontWeight.ExtraBold,
-                                fontSize = 14.sp
-                            )
-                        },
-                        icon = {
-                            Icon(
-                                Icons.Rounded.Call,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    )
-                }
-            },
+            floatingActionButton = {},
             bottomBar = {
                 Column {
                     // STICKY FOOTER: Dual Yellow Buttons
@@ -617,14 +587,6 @@ fun HomeScreen(
                             WalletDashboard(walletBalance) { onWalletClick() }
                         }
 
-                        // 3. Daily Horoscope
-                        item {
-                            DailyHoroscopeBanner(
-                                sign = "Leo",
-                                content = "The Sun in your sign brings clarity in career matters today. Trust your intuition when...",
-                                onClick = { onServiceClick("horoscope") }
-                            )
-                        }
 
                         // 4. Quick Actions
                         item {
@@ -662,40 +624,49 @@ fun HomeScreen(
                             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
                                 Text(
                                     text = "Zodiac Insights",
-                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = Color.White
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
+                                    color = Color.White.copy(alpha = 0.9f)
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
                                 Card(
-                                    shape = RoundedCornerShape(24.dp),
-                                    colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
-                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+                                    shape = RoundedCornerShape(28.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.03f)),
+                                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f))
                                 ) {
                                     Column(modifier = Modifier.padding(16.dp)) {
                                         val chunks = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).chunked(4)
                                         chunks.forEach { rowIds ->
                                             Row(
-                                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
                                                 horizontalArrangement = Arrangement.SpaceAround
                                             ) {
                                                 rowIds.forEach { rasiId ->
                                                     val rasiName = getRasiNameById(rasiId)
                                                     val rasiIcon = getRasiIconById(rasiId)
-                                                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onRasiClick(ComposeRasiItem(rasiId, rasiName, rasiIcon, Color.White)) }) {
+                                                    Column(
+                                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                                        modifier = Modifier.clickable { onRasiClick(ComposeRasiItem(rasiId, rasiName, rasiIcon, Color.White)) }
+                                                    ) {
                                                         Box(
                                                             modifier = Modifier
-                                                                .size(50.dp)
-                                                                .background(Color.White.copy(alpha = 0.05f), CircleShape),
+                                                                .size(54.dp)
+                                                                .background(Color.White.copy(alpha = 0.05f), CircleShape)
+                                                                .border(1.dp, Color.White.copy(alpha = 0.1f), CircleShape),
                                                             contentAlignment = Alignment.Center
                                                         ) {
                                                             Image(
                                                                 painter = painterResource(id = rasiIcon),
                                                                 contentDescription = null,
-                                                                modifier = Modifier.size(28.dp)
+                                                                modifier = Modifier.size(26.dp)
                                                             )
                                                         }
-                                                        Spacer(modifier = Modifier.height(4.dp))
-                                                        Text(rasiName, color = Color.White.copy(alpha = 0.7f), fontSize = 10.sp)
+                                                        Spacer(modifier = Modifier.height(6.dp))
+                                                        Text(
+                                                            text = Localization.get(rasiName.lowercase(), true),
+                                                            color = Color.White.copy(alpha = 0.6f),
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Medium
+                                                        )
                                                     }
                                                 }
                                             }
@@ -711,21 +682,30 @@ fun HomeScreen(
                                  modifier = Modifier
                                      .fillMaxWidth()
                                      .padding(20.dp),
-                                 shape = RoundedCornerShape(24.dp),
-                                 colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.3f)),
-                                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+                                 shape = RoundedCornerShape(28.dp),
+                                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+                                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
                              ) {
                                  Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                                      Box(modifier = Modifier.size(50.dp).background(CosmicAppTheme.colors.accent.copy(alpha = 0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                                         Icon(androidx.compose.material.icons.Icons.Rounded.AutoAwesome, null, tint = CosmicAppTheme.colors.accent)
+                                         Icon(androidx.compose.material.icons.Icons.Rounded.AutoAwesome, null, tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(24.dp))
                                      }
                                      Spacer(modifier = Modifier.width(16.dp))
                                      Column(modifier = Modifier.weight(1f)) {
-                                         Text("Full Moon Ritual", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                                         Text("Full Moon Ritual", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = Color.White)
                                          Text("Join live session tonight at 9 PM", color = CosmicAppTheme.colors.textSecondary, fontSize = 12.sp)
                                      }
-                                     Button(onClick = {}, colors = ButtonDefaults.buttonColors(containerColor = CosmicAppTheme.colors.cardBg)) {
-                                         Text("Join", color = Color.White)
+                                     Button(
+                                         onClick = {},
+                                         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                                         shape = RoundedCornerShape(12.dp),
+                                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                                         modifier = Modifier.background(
+                                             brush = Brush.linearGradient(listOf(Color(0xFFFF8C00), Color(0xFFFF4500))),
+                                             shape = RoundedCornerShape(12.dp)
+                                         )
+                                     ) {
+                                         Text("Join", color = Color.White, fontWeight = FontWeight.Bold)
                                      }
                                  }
                              }
@@ -1003,9 +983,10 @@ fun WalletDashboard(balance: Double, onAddMoneyClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 12.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg.copy(alpha = 0.9f)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -1017,195 +998,172 @@ fun WalletDashboard(balance: Double, onAddMoneyClick: () -> Unit) {
             Column {
                 Text(
                     text = "Wallet Balance",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = CosmicAppTheme.colors.textSecondary
+                    style = MaterialTheme.typography.labelMedium,
+                    color = CosmicAppTheme.colors.textSecondary,
+                    letterSpacing = 1.sp
                 )
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "₹${"%.2f".format(balance)}",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
                     color = Color.White
                 )
             }
 
             Button(
                 onClick = onAddMoneyClick,
-                colors = ButtonDefaults.buttonColors(containerColor = CosmicAppTheme.colors.accent),
-                shape = RoundedCornerShape(14.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
-            ) {
-                Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Add Money", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
-            }
-        }
-    }
-}
-
-@Composable
-fun DailyHoroscopeBanner(sign: String, content: String, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
-    ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            // Background Image (Cosmic/Stars placeholder)
-            Image(
-                painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground), // Use a cosmic gradient or star pattern
-                contentDescription = null,
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = PaddingValues(0.dp),
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .height(45.dp)
                     .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Black.copy(alpha = 0.2f), Color.Black.copy(alpha = 0.8f))
-                        )
-                    ),
-                contentScale = ContentScale.Crop
-            )
-
-            Column(modifier = Modifier.padding(24.dp).align(Alignment.BottomStart)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Rounded.WbSunny,
-                        contentDescription = null,
-                        tint = CosmicAppTheme.colors.accent,
-                        modifier = Modifier.size(16.dp)
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color(0xFFFF8C00), Color(0xFFFF4500))
+                        ),
+                        shape = RoundedCornerShape(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "DAILY HOROSCOPE",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        color = CosmicAppTheme.colors.accent,
-                        fontSize = 12.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = sign,
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = content,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.7f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .background(CosmicAppTheme.colors.accent.copy(alpha = 0.1f), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text("Lucky Color: Gold", color = CosmicAppTheme.colors.accent, fontSize = 12.sp)
-                    }
-                    Text(
-                        text = "Read More >",
-                        color = CosmicAppTheme.colors.accent,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = Color.White
                     )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Add Money", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun QuickActionsSection(onAction: (String) -> Unit) {
     Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
         Text(
             text = "Quick Actions",
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = Color.White
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
+            color = Color.White.copy(alpha = 0.9f)
         )
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            QuickActionItem("Chat", androidx.compose.material.icons.Icons.Rounded.Chat, Color(0xFF4A90E2)) { onAction("chat") }
-            QuickActionItem("Call", androidx.compose.material.icons.Icons.Rounded.Call, Color(0xFF7ED321)) { onAction("call") }
-            QuickActionItem("Book Slot", androidx.compose.material.icons.Icons.Rounded.Schedule, Color(0xFFBD10E0)) { onAction("book") }
+            QuickActionItem("Chat", androidx.compose.material.icons.Icons.Rounded.Chat, Color(0xFF4A90E2), Modifier.weight(1f)) { onAction("chat") }
+            QuickActionItem("Call", androidx.compose.material.icons.Icons.Rounded.Call, Color(0xFF7ED321), Modifier.weight(1f)) { onAction("call") }
+            QuickActionItem("Book Slot", androidx.compose.material.icons.Icons.Rounded.Schedule, Color(0xFFBD10E0), Modifier.weight(1f)) { onAction("book") }
         }
     }
 }
 
 @Composable
-fun QuickActionItem(title: String, icon: ImageVector, iconColor: Color, onClick: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier
-                .size(70.dp)
-                .background(CosmicAppTheme.colors.cardBg, RoundedCornerShape(20.dp))
-                .clickable(onClick = onClick),
-            contentAlignment = Alignment.Center
+fun QuickActionItem(title: String, icon: ImageVector, iconColor: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Card(
+        modifier = modifier
+            .height(90.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = title,
-                tint = iconColor,
-                modifier = Modifier.size(28.dp)
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(iconColor.copy(alpha = 0.15f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = iconColor,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = title,
+                color = Color.White.copy(alpha = 0.8f),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
             )
         }
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(text = title, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
     }
 }
 
 
 
+@Composable
 @Composable
 fun AestheticAstroCard(astro: Astrologer, onConnectClick: (Astrologer) -> Unit) {
     Card(
         modifier = Modifier
-            .width(220.dp)
+            .width(200.dp)
             .padding(end = 16.dp),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.05f))
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
     ) {
-        Column(modifier = Modifier.padding(8.dp)) {
-            Box(modifier = Modifier.fillMaxWidth().height(140.dp)) {
+        Column(modifier = Modifier.padding(10.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(130.dp)) {
                 // Profile Image
                 AsyncImage(
                     model = if (astro.image.startsWith("http")) astro.image else "${com.astrohark.app.utils.Constants.SERVER_URL}/${astro.image}",
                     contentDescription = astro.name,
-                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(20.dp)),
+                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(22.dp)),
                     contentScale = ContentScale.Crop
                 )
 
-                // Online Badge
-                if (astro.isOnline) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                            .background(Color(0xFFFF7F00), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                    ) {
-                        Text("ONLINE", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                    }
+                // Status Badge
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .background(
+                            brush = if(astro.isOnline) Brush.horizontalGradient(listOf(Color(0xFFFF9A00), Color(0xFFFF5F00)))
+                                    else Brush.horizontalGradient(listOf(Color.Gray, Color.DarkGray)),
+                            shape = RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(modifier = Modifier.size(6.dp).background(Color.White, CircleShape))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if(astro.isOnline) "LIVE" else "AWAY", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = astro.name,
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = Color.White,
+                modifier = Modifier.padding(horizontal = 4.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = if (astro.skills.isNotEmpty()) astro.skills.joinToString(", ") else "Vedic Astrology",
+                style = MaterialTheme.typography.labelSmall,
+                color = CosmicAppTheme.colors.textSecondary,
+                modifier = Modifier.padding(horizontal = 4.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -1214,52 +1172,28 @@ fun AestheticAstroCard(astro: Astrologer, onConnectClick: (Astrologer) -> Unit) 
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = astro.name,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(8.dp)).padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text("4.9", color = Color(0xFFFFD700), fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.width(2.dp))
-                    Icon(androidx.compose.material.icons.Icons.Rounded.Star, null, tint = Color(0xFFFFD700), modifier = Modifier.size(10.dp))
+                Column {
+                    Text(
+                        text = "₹${astro.price}/min",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White
+                    )
                 }
-            }
 
-            Text(
-                text = "Vedic, Numerology",
-                style = MaterialTheme.typography.labelSmall,
-                color = CosmicAppTheme.colors.textSecondary,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 4.dp, bottom = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "₹${astro.price}/min",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White
-                )
                 Button(
                     onClick = { onConnectClick(astro) },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-                    border = BorderStroke(1.dp, Color(0xFFFF7F00)),
                     shape = RoundedCornerShape(12.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier.height(32.dp)
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier
+                        .height(32.dp)
+                        .width(80.dp)
+                        .background(
+                            brush = Brush.linearGradient(listOf(Color(0xFFFF8C00), Color(0xFFFF4500))),
+                            shape = RoundedCornerShape(12.dp)
+                        )
                 ) {
-                    Text("Connect", color = Color(0xFFFF7F00), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Chat", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -2009,8 +1943,9 @@ fun StickyFooterButtons(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+            .background(Color.Black.copy(alpha = 0.5f)) // Glass-like overlay
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Chat Button
         Button(
@@ -2021,13 +1956,26 @@ fun StickyFooterButtons(
                     onTabSelected(1) // Tab 1 = Chat
                 }
             },
-            colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = com.astrohark.app.R.color.marketplace_yellow), contentColor = Color.Black),
-            shape = RoundedCornerShape(50),
-            modifier = Modifier.weight(1f).height(48.dp)
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+            shape = RoundedCornerShape(16.dp),
+            contentPadding = PaddingValues(0.dp),
+            modifier = Modifier
+                .weight(1f)
+                .height(50.dp)
+                .background(
+                    brush = Brush.linearGradient(listOf(Color(0xFF4A90E2), Color(0xFF357ABD))),
+                    shape = RoundedCornerShape(16.dp)
+                )
         ) {
-            Icon(imageVector = androidx.compose.material.icons.Icons.Rounded.Chat, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.Black)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = if(isTamil) "சாட் செய்தி" else "Chat with Astrologer", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(imageVector = androidx.compose.material.icons.Icons.Rounded.Chat, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.White)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if(isTamil) "சாட் செய்தி" else "Chat Now",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                    color = Color.White
+                )
+            }
         }
 
         // Talk Button
@@ -2039,13 +1987,26 @@ fun StickyFooterButtons(
                     onTabSelected(3) // Tab 3 = Call
                 }
             },
-            colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = com.astrohark.app.R.color.marketplace_yellow), contentColor = Color.Black),
-            shape = RoundedCornerShape(50),
-            modifier = Modifier.weight(1f).height(48.dp)
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+            shape = RoundedCornerShape(16.dp),
+            contentPadding = PaddingValues(0.dp),
+            modifier = Modifier
+                .weight(1f)
+                .height(50.dp)
+                .background(
+                    brush = Brush.linearGradient(listOf(Color(0xFFFF8C00), Color(0xFFFF4500))),
+                    shape = RoundedCornerShape(16.dp)
+                )
         ) {
-            Icon(imageVector = androidx.compose.material.icons.Icons.Rounded.Call, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.Black)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(text = if(isTamil) "ஆலோசனை" else "Talk To Astrologer", style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(imageVector = androidx.compose.material.icons.Icons.Rounded.Call, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.White)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if(isTamil) "ஆலோசனை" else "Talk Now",
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                    color = Color.White
+                )
+            }
         }
     }
 }
@@ -2056,50 +2017,76 @@ fun ConsultationHistoryCard(item: SessionHistoryItem) {
     val startTimeStr = if (item.startTime > 0) dateFormat.format(java.util.Date(item.startTime)) else "N/A"
 
     Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
-        elevation = CardDefaults.cardElevation(2.dp),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = if (item.type == "chat") androidx.compose.material.icons.Icons.Rounded.Chat else androidx.compose.material.icons.Icons.Rounded.Call,
-                    contentDescription = null,
-                    tint = ChocolateBrown,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .background(
+                            if (item.type == "chat") Color(0xFF4A90E2).copy(alpha = 0.1f)
+                            else Color(0xFFFF8C00).copy(alpha = 0.1f),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = if (item.type == "chat") androidx.compose.material.icons.Icons.Rounded.Chat else androidx.compose.material.icons.Icons.Rounded.Call,
+                        contentDescription = null,
+                        tint = if (item.type == "chat") Color(0xFF4A90E2) else Color(0xFFFF8C00),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = item.partnerName,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
+                        fontSize = 15.sp,
                         color = Color.White
                     )
-                    Text(text = startTimeStr, fontSize = 12.sp, color = Color.White.copy(alpha = 0.5f))
+                    Text(text = startTimeStr, fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
                 }
                 Text(
                     text = "₹${String.format("%.2f", item.amount)}",
                     fontWeight = FontWeight.ExtraBold,
-                    fontSize = 18.sp,
-                    color = if (item.isEarned) Color(0xFF4CAF50) else Color(0xFF4A90E2)
+                    fontSize = 17.sp,
+                    color = if (item.isEarned) Color(0xFF4CAF50) else Color.White
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 val totalSec = item.duration / 1000
                 val mins = totalSec / 60
                 val secs = totalSec % 60
                 val duraText = if (mins > 0) "${mins}m ${secs}s" else "${secs}s"
-                Text("Duration: $duraText", fontSize = 12.sp, color = Color.Gray)
-                Text(
-                    text = if (item.isEarned) "Earned" else "Paid",
-                    fontSize = 11.sp,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Bold
-                )
+                
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(androidx.compose.material.icons.Icons.Rounded.Schedule, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = "Duration: $duraText", fontSize = 11.sp, color = Color.Gray)
+                }
+
+                Box(
+                    modifier = Modifier
+                        .background(
+                            if (item.isEarned) Color(0xFF4CAF50).copy(alpha = 0.1f) else Color.White.copy(alpha = 0.1f),
+                            RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = if (item.isEarned) "EARNED" else "PAID",
+                        fontSize = 9.sp,
+                        color = if (item.isEarned) Color(0xFF4CAF50) else Color.White.copy(alpha = 0.7f),
+                        fontWeight = FontWeight.Black
+                    )
+                }
             }
         }
     }

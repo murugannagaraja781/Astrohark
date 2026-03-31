@@ -3226,8 +3226,8 @@ setInterval(() => {
 // --- 3. Public Status Pages ---
 app.get('/payment-success', (req, res) => {
   const { amount, txnId } = req.query;
-  const intentUrl = `intent://payment-success?status=success&txnId=${txnId}#Intent;scheme=astro5;package=com.astrohark.app;end`;
-  const customSchemeUrl = `astro5://payment-success?status=success&txnId=${txnId}`;
+  const intentUrl = `intent://payment-success?status=success&txnId=${txnId}#Intent;scheme=astrohark;package=com.astrohark.app;end`;
+  const customSchemeUrl = `astrohark://payment-success?status=success&txnId=${txnId}`;
 
   res.send(`
     <!DOCTYPE html>
@@ -3256,7 +3256,7 @@ app.get('/payment-success', (req, res) => {
                // Immediate Deep Link fallback
                setTimeout(() => { window.location.href = "${customSchemeUrl}"; }, 100);
                // Backup force link
-               setTimeout(() => { window.location.href = "astro5://payment-success"; }, 500);
+               setTimeout(() => { window.location.href = "astrohark://payment-success"; }, 500);
              }
              openApp();
           </script>
@@ -3267,8 +3267,8 @@ app.get('/payment-success', (req, res) => {
 });
 
 app.get('/payment-failed', (req, res) => {
-  const intentUrl = `intent://payment-failed?status=failed#Intent;scheme=astro5;package=com.astrohark.app;end`;
-  const customSchemeUrl = `astro5://payment-failed?status=failed`;
+  const intentUrl = `intent://payment-failed?status=failed#Intent;scheme=astrohark;package=com.astrohark.app;end`;
+  const customSchemeUrl = `astrohark://payment-failed?status=failed`;
   res.send(`
     <!DOCTYPE html>
     <html>

@@ -331,18 +331,18 @@ fun ChatScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1)
+                        Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1, color = Color(0xFFDDCBB4))
                         if (isAstrologer && remainingTime.isNotEmpty() && remainingTime != "00:00") {
                              Text("Time: $remainingTime", fontSize = 12.sp, color = Color.Red, fontWeight = FontWeight.Bold)
                         } else {
-                             Text("Online", fontSize = 12.sp, color = Color.White.copy(alpha=0.7f))
+                             Text("Online", fontSize = 12.sp, color = Color(0xFFDDCBB4).copy(alpha=0.7f))
                         }
                     }
                 },
                 navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = Color.White) } },
                 actions = {
-                    Text(sessionDuration, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end=12.dp))
-                    IconButton(onClick = onEditIntake) { Icon(Icons.Default.Edit, "Intake", tint = Color.White) }
+                    Text(sessionDuration, color = Color(0xFFDDCBB4), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end=12.dp))
+                    IconButton(onClick = onEditIntake) { Icon(Icons.Default.Edit, "Intake", tint = Color(0xFFDDCBB4)) }
                     TextButton(onClick = onEndChat) { Text("End", color = Color.Red, fontWeight = FontWeight.Bold) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -524,7 +524,7 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                             }
                         }
 
-                        Text(displayText, fontSize = 16.sp, color = Color.Black)
+                        Text(displayText, fontSize = 16.sp, color = Color(0xFFDDCBB4))
 
                         if (isMe) {
                             Row(
@@ -555,7 +555,7 @@ fun TypingBubble() {
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier.padding(8.dp)
     ) {
-        Text("Typing...", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 12.sp, fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+        Text("Typing...", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 12.sp, color = Color(0xFFDDCBB4), fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
     }
 }
 
@@ -617,13 +617,15 @@ fun ChatInputBar(
                     onValueChange = onTextChange,
                     modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
                     shape = RoundedCornerShape(24.dp),
-                    placeholder = { Text("Type a message", fontSize = 14.sp) },
+                    placeholder = { Text("Type a message", fontSize = 14.sp, color = Color(0xFFDDCBB4).copy(alpha = 0.6f)) },
                     maxLines = 4,
                     colors = TextFieldDefaults.colors(
                        focusedContainerColor = Color(0xFFF0F0F0),
                        unfocusedContainerColor = Color(0xFFF0F0F0),
                        focusedIndicatorColor = Color.Transparent,
-                       unfocusedIndicatorColor = Color.Transparent
+                       unfocusedIndicatorColor = Color.Transparent,
+                       focusedTextColor = Color(0xFFDDCBB4),
+                       unfocusedTextColor = Color(0xFFDDCBB4)
                     )
                 )
                 FloatingActionButton(

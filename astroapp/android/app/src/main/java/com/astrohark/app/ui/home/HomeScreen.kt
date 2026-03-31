@@ -534,7 +534,7 @@ fun HomeScreen(
         }
     ) {
         Scaffold(
-            containerColor = ChocolateBrown,
+            containerColor = Color.Black,
             topBar = {
                 HomeTopBar(
                     balance = walletBalance,
@@ -611,9 +611,18 @@ fun HomeScreen(
                                     Text("View All", color = CosmicAppTheme.colors.accent, fontSize = 14.sp, modifier = Modifier.clickable { selectedTab = 1 })
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
-                                Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                                    filteredAstros.take(5).forEach { astro ->
-                                        AestheticAstroCard(astro) { onChatClick(it) }
+                                
+                                if (isLoading) {
+                                    Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                                        repeat(3) {
+                                            AstrologerShimmerItem()
+                                        }
+                                    }
+                                } else {
+                                    Row(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                                        filteredAstros.take(5).forEach { astro ->
+                                            AestheticAstroCard(astro) { onChatClick(it) }
+                                        }
                                     }
                                 }
                             }
@@ -821,13 +830,13 @@ fun PolicyLink(label: String, url: String, context: android.content.Context) {
 fun AppDrawer(onItemClick: (String) -> Unit, onClose: () -> Unit, session: AuthResponse?, isTamil: Boolean = true) {
     val context = LocalContext.current
     ModalDrawerSheet(
-        drawerContainerColor = Color(0xFFF8F9FA), // Light Color (User Request)
-        drawerContentColor = Color.DarkGray
+        drawerContainerColor = CosmicAppTheme.colors.surface,
+        drawerContentColor = CosmicAppTheme.colors.textPrimary
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF8F9FA)) // Light BG
+                .background(CosmicAppTheme.colors.surface)
                 .padding(24.dp)
         ) {
             // Close Button Row
@@ -2157,5 +2166,48 @@ fun getRasiIconById(id: Int): Int {
         11 -> com.astrohark.app.R.drawable.ic_rasi_aquarius_premium
         12 -> com.astrohark.app.R.drawable.ic_rasi_pisces_premium_copy
         else -> com.astrohark.app.R.mipmap.ic_launcher_foreground
+    }
+}
+
+@Composable
+fun ShimmerAnimation(
+    modifier: Modifier = Modifier,
+    content: @Composable (Brush) -> Unit
+) {
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val translateAnim by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmerTranslate"
+    )
+
+    val brush = Brush.linearGradient(
+        colors = listOf(
+            Color.White.copy(alpha = 0.05f),
+            Color.White.copy(alpha = 0.15f),
+            Color.White.copy(alpha = 0.05f),
+        ),
+        start = Offset(10f, 10f),
+        end = Offset(translateAnim, translateAnim)
+    )
+    content(brush)
+}
+
+@Composable
+fun AstrologerShimmerItem() {
+    ShimmerAnimation { brush ->
+        Box(
+            modifier = Modifier
+                .width(160.dp)
+                .height(220.dp)
+                .padding(8.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(brush)
+                .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(22.dp))
+        )
     }
 }

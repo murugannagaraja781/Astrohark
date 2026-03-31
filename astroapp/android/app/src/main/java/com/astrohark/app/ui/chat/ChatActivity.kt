@@ -346,7 +346,7 @@ fun ChatScreen(
                     TextButton(onClick = onEndChat) { Text("End", color = Color.Red, fontWeight = FontWeight.Bold) }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFE87A1E),
+                    containerColor = CosmicAppTheme.colors.surface,
                     titleContentColor = Color.White
                 )
             )
@@ -392,7 +392,7 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF5F5F5))
+                .background(Color(0xFF0F1028)) // Cosmic Dark BG
         ) {
 
             LazyColumn(
@@ -427,11 +427,8 @@ fun ChatScreen(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
-    val isMe = msg.isSent
-    val isMsgFromAstrologer = if (isMe) amIAstrologer else !amIAstrologer
-
-    // Colors: Astrologer = Pink, Client = Violet
-    val bubbleColor = if (isMsgFromAstrologer) Color(0xFFFFD1DC) else Color(0xFFE1BEE7)
+    // Colors: Sophisticated Dark Bubbles
+    val bubbleColor = if (isMe) Color.White.copy(alpha = 0.08f) else Color(0xFFDDCBB4).copy(alpha = 0.1f)
     val align = if (isMe) Alignment.End else Alignment.Start
 
     // Swipe State
@@ -468,8 +465,9 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
             content = {
                  Surface(
                     color = bubbleColor,
-                    shape = RoundedCornerShape(8.dp),
-                    shadowElevation = 1.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, if (isMe) Color.White.copy(alpha = 0.1f) else Color(0xFFDDCBB4).copy(alpha = 0.2f)),
+                    shadowElevation = 0.dp,
                     modifier = Modifier
                         .widthIn(max = 280.dp)
                         .combinedClickable(
@@ -497,13 +495,9 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                                         .padding(bottom = 6.dp)
                                 ) {
                                     Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-                                        // Accent Bar
-                                        Box(
-                                            modifier = Modifier
                                                 .fillMaxHeight()
                                                 .width(4.dp)
-                                                .background(Color(0xFF6200EE))
-                                        )
+                                                .background(Color(0xFFE6C15A))
                                         // Quote Content
                                         Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
                                             Text(
@@ -524,7 +518,7 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                             }
                         }
 
-                        Text(displayText, fontSize = 16.sp, color = Color(0xFFDDCBB4))
+                        Text(displayText, fontSize = 16.sp, color = if (isMe) Color.White else Color(0xFFDDCBB4))
 
                         if (isMe) {
                             Row(

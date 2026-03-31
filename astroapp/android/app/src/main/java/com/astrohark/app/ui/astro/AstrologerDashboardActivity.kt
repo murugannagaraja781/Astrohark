@@ -935,7 +935,7 @@ fun ServiceTogglesCard(
             // Video Call Toggle
             ServiceToggleRow(
                 label = "Video Call",
-                icon = Icons.Default.Person,
+                icon = Icons.Default.Videocam,
                 isEnabled = isVideoOnline,
                 onToggle = onVideoToggle
             )

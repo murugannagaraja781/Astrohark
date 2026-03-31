@@ -1192,16 +1192,21 @@ fun CallScreen(
     onShowMatch: () -> Unit,
     isRecording: Boolean = false,
     onToggleRecording: () -> Unit = {},
-    isReady: Boolean = false
-) {
+    isRead    val colors = com.astrohark.app.ui.theme.CosmicAppTheme.colors
     val context = LocalContext.current
+    
     BackHandler {
         Toast.makeText(context, "Call irugum pothu back button vela seiyathu. Mudika 'End Call' azhuthavum", Toast.LENGTH_LONG).show()
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF0F2F5)) // Light Gray/White base
+            .background(
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(Color(0xFF0F1028), Color(0xFF000000)) // Cosmic Blue to Black
+                )
+            )
     ) {
         // Remote View Layer (Full Screen)
         if (callType == "video" && isReady) {
@@ -1211,86 +1216,120 @@ fun CallScreen(
             )
         } else if (callType == "video" && !isReady) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFF8E24AA))
-                Text("Initializing Camera...", color = Color.Gray, modifier = Modifier.padding(top = 80.dp))
+                CircularProgressIndicator(color = Color(0xFFE6C15A))
+                Text(
+                    text = "Initializing Camera...", 
+                    color = Color.White.copy(alpha = 0.6f), 
+                    modifier = Modifier.padding(top = 80.dp),
+                    fontSize = 14.sp
+                )
             }
         } else {
             // Audio Call UI Placeholder
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                 Icon(
-                     painter = painterResource(id = R.drawable.ic_person_placeholder),
-                     contentDescription = "User",
-                     tint = Color.Gray,
-                     modifier = Modifier.size(120.dp)
-                 )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.05f),
+                        modifier = Modifier.size(160.dp),
+                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "User",
+                            tint = Color(0xFFDDCBB4),
+                            modifier = Modifier.padding(40.dp).fillMaxSize()
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "Encrypted Audio Call",
+                        color = Color.White.copy(alpha = 0.4f),
+                        fontSize = 12.sp,
+                        letterSpacing = 2.sp
+                    )
+                }
             }
         }
 
-        // Top Info Bar Area
+        // Top Info Bar Area (Glassmorphic)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
-                .padding(top = 24.dp)
-                .height(110.dp)
-                .shadow(8.dp, RoundedCornerShape(24.dp))
-                .background(Color.White, RoundedCornerShape(24.dp))
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 40.dp, start = 32.dp, end = 32.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(top = 32.dp)
+                .height(90.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Color.White.copy(alpha = 0.08f))
+                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = partnerName,
-                    color = Color(0xFF2E7D32),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = duration,
-                        color = Color.Gray,
-                        fontSize = 14.sp
+                        text = partnerName,
+                        color = Color(0xFFE6C15A), // Premium Gold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
                     )
-                    if (isRecording) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        RecordingIndicator()
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = duration,
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        if (isRecording) {
+                            Spacer(modifier = Modifier.width(12.dp))
+                            RecordingIndicator()
+                        }
                     }
                 }
-                if (role == "astrologer" && remainingTime.isNotEmpty() && remainingTime != "00:00") {
-                      Text(
-                        text = "Time: $remainingTime",
-                        color = Color.Red,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-                if (statusText.isNotEmpty()) {
-                      Text(
-                        text = statusText,
-                        color = Color(0xFF4CAF50),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                
+                Column(horizontalAlignment = Alignment.End) {
+                    if (role == "astrologer" && remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                        Surface(
+                            color = Color.Red.copy(alpha = 0.1f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                text = remainingTime,
+                                color = Color.Red,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    if (statusText.isNotEmpty()) {
+                        Text(
+                            text = statusText,
+                            color = Color(0xFF25D366), // Signal Green
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 }
             }
         }
 
-        // Local Video (PIP)
+        // Local Video (PIP) with Glow
         if (callType == "video") {
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .padding(end = 16.dp, bottom = 150.dp)
-                    .size(width = 100.dp, height = 140.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(2.dp, Color.White, RoundedCornerShape(16.dp))
-                    .background(Color.DarkGray)
+                    .padding(end = 16.dp, bottom = 180.dp)
+                    .size(width = 110.dp, height = 160.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .border(2.dp, Color(0xFFE6C15A).copy(alpha = 0.4f), RoundedCornerShape(20.dp))
+                    .shadow(12.dp, RoundedCornerShape(20.dp), spotColor = Color(0xFFE6C15A))
+                    .background(Color.Black)
             ) {
                 if (isReady) {
                     AndroidView(
@@ -1301,22 +1340,22 @@ fun CallScreen(
             }
         }
 
-        // Bottom Controls Container (Grid)
+        // Bottom Controls Container (Glassmorphic Panel)
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
                 .fillMaxWidth()
-                .shadow(16.dp, RoundedCornerShape(32.dp))
-                .background(Color.White, RoundedCornerShape(32.dp))
-                .padding(20.dp),
-            contentAlignment = Alignment.Center
+                .clip(RoundedCornerShape(32.dp))
+                .background(Color.White.copy(alpha = 0.08f))
+                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(32.dp))
+                .padding(24.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // Media Row
+                // Media Controls Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -1324,48 +1363,54 @@ fun CallScreen(
                 ) {
                     ControlBtnItem(onClick = onToggleMic, icon = if (!isMuted) Icons.Default.Mic else Icons.Default.MicOff, label = "Mute", active = !isMuted)
                     if (callType == "video") {
-                        ControlBtnItem(onClick = onToggleCamera, icon = if (isVideoEnabled) Icons.Default.Videocam else Icons.Default.VideocamOff, label = "Video", active = isVideoEnabled)
+                        ControlBtnItem(onClick = onToggleCamera, icon = if (isVideoEnabled) Icons.Default.Videocam else Icons.Default.VideocamOff, label = "Camera", active = isVideoEnabled)
                     }
                     ControlBtnItem(onClick = onToggleSpeaker, icon = if (isSpeakerOn) Icons.Default.VolumeUp else Icons.Default.VolumeOff, label = "Speaker", active = isSpeakerOn)
                 }
 
-                // Actions Row
+                // Actions & End Call Row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Left Actions (Astrologer only)
                     if (role == "astrologer") {
-                        ControlBtnItem(onClick = onShowRasi, icon = android.R.drawable.ic_menu_gallery, label = "Chart", active = true)
-                        ControlBtnItem(onClick = onShowMatch, icon = Icons.Default.Favorite, label = "Match", active = true)
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            ControlBtnItem(onClick = onShowRasi, icon = Icons.Default.GridView, label = "Chart", active = true)
+                            ControlBtnItem(onClick = onShowMatch, icon = Icons.Default.Favorite, label = "Match", active = true)
+                        }
                     } else {
-                        Spacer(modifier = Modifier.size(48.dp))
+                        ControlBtnItem(onClick = onEditIntake, icon = Icons.Default.EditNote, label = "Intake", active = false)
                     }
 
-                    // End Call
-                    IconButton(
+                    // Centered End Call Button (Prominent)
+                    Surface(
                         onClick = onEndCall,
                         modifier = Modifier
-                            .size(64.dp)
-                            .shadow(8.dp, CircleShape)
-                            .background(Color(0xFFFF5252), CircleShape)
+                            .size(72.dp)
+                            .shadow(16.dp, CircleShape, spotColor = Color.Red),
+                        shape = CircleShape,
+                        color = Color(0xFFFF4B4B)
                     ) {
-                        Icon(Icons.Default.CallEnd, "End", tint = Color.White, modifier = Modifier.size(32.dp))
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.CallEnd, "End Call", tint = Color.White, modifier = Modifier.size(36.dp))
+                        }
                     }
 
+                    // Right Actions
                     if (role == "astrologer") {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            ControlBtnItem(onClick = onEditIntake, icon = Icons.Default.Edit, label = "Edit", active = false)
-                            Spacer(modifier = Modifier.width(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            ControlBtnItem(onClick = onEditIntake, icon = Icons.Default.EditNote, label = "Edit", active = false)
                             ControlBtnItem(
                                 onClick = onToggleRecording,
-                                icon = if (isRecording) Icons.Default.Stop else Icons.Default.FiberManualRecord,
-                                label = if (isRecording) "Stop" else "REC",
+                                icon = if (isRecording) Icons.Default.StopCircle else Icons.Default.RadioButtonChecked,
+                                label = if (isRecording) "Stop" else "Rec",
                                 active = isRecording
                             )
                         }
                     } else {
-                        ControlBtnItem(onClick = onEditIntake, icon = Icons.Default.Edit, label = "Edit", active = false)
+                        Spacer(modifier = Modifier.size(48.dp))
                     }
                 }
             }
@@ -1375,50 +1420,70 @@ fun CallScreen(
 
 @Composable
 fun ControlBtnItem(onClick: () -> Unit, icon: Any, label: String, active: Boolean) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        val bgColor = if (active) Color(0xFFE8F5E9) else Color(0xFFF5F5F5)
-        val tintColor = if (active) Color(0xFF4CAF50) else Color.Gray
+    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        val bgColor = if (active) Color(0xFFE6C15A).copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f)
+        val tintColor = if (active) Color(0xFFE6C15A) else Color.White.copy(alpha = 0.6f)
+        val borderColor = if (active) Color(0xFFE6C15A).copy(alpha = 0.3f) else Color.White.copy(alpha = 0.1f)
 
-        IconButton(
+        Surface(
             onClick = onClick,
-            modifier = Modifier
-                .size(48.dp)
-                .shadow(if (active) 2.dp else 4.dp, CircleShape)
-                .background(bgColor, CircleShape)
+            modifier = Modifier.size(52.dp),
+            shape = CircleShape,
+            color = bgColor,
+            border = BorderStroke(1.dp, borderColor)
         ) {
-            when (icon) {
-                is ImageVector -> Icon(icon, null, tint = tintColor)
-                is Int -> Icon(painterResource(icon), null, tint = tintColor)
+            Box(contentAlignment = Alignment.Center) {
+                when (icon) {
+                    is ImageVector -> Icon(icon, null, tint = tintColor, modifier = Modifier.size(24.dp))
+                    is Int -> Icon(painterResource(icon), null, tint = tintColor, modifier = Modifier.size(24.dp))
+                }
             }
         }
-        Text(text = label, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+        Text(
+            text = label, 
+            fontSize = 11.sp, 
+            fontWeight = FontWeight.Medium, 
+            color = Color.White.copy(alpha = 0.8f)
+        )
     }
 }
 
 @Composable
 fun RecordingIndicator() {
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "rec")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = 0.2f,
+        targetValue = 0.3f,
         animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = LinearEasing),
+            animation = tween(1000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
-        )
+        ),
+        label = "recAlpha"
     )
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color.Red.copy(alpha = 0.1f))
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+    ) {
         Box(
             modifier = Modifier
-                .size(10.dp)
-                .background(Color.Red.copy(alpha = alpha), CircleShape)
+                .size(8.dp)
+                .graphicsLayer(alpha = alpha)
+                .background(Color.Red, CircleShape)
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
-            text = "REC",
+            text = "LIVE REC",
             color = Color.Red,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold
+            fontSize = 10.sp,
+            fontWeight = FontWeight.ExtraBold
+        )
+    }
+}
+.Bold
         )
     }
 }

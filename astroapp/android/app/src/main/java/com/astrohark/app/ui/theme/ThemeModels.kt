@@ -65,5 +65,5 @@ object ThemePalette {
     val RubyPassion = PremiumLightTemplate
 
     // Helper to get colors by enum
-    fun getColors(theme: AppTheme): ThemeColors = PremiumTemplate
+    fun getColors(theme: AppTheme): ThemeColors = PremiumLightTemplate
 }

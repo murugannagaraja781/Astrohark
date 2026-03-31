@@ -18,7 +18,6 @@ const PaymentSchema = new mongoose.Schema({
     couponBonus: { type: Number, default: 0 }
 });
 
-PaymentSchema.index({ transactionId: 1 });
 PaymentSchema.index({ userId: 1 });
 PaymentSchema.index({ status: 1 });
 PaymentSchema.index({ createdAt: -1 });

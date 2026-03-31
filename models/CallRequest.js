@@ -8,7 +8,6 @@ const CallRequestSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-CallRequestSchema.index({ callId: 1 });
 CallRequestSchema.index({ callerId: 1 });
 CallRequestSchema.index({ receiverId: 1 });
 

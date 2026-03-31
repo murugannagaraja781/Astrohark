@@ -21,7 +21,6 @@ const SessionSchema = new mongoose.Schema({
     totalCharged: Number
 });
 
-SessionSchema.index({ sessionId: 1 });
 SessionSchema.index({ clientId: 1 });
 SessionSchema.index({ astrologerId: 1 });
 SessionSchema.index({ status: 1 });

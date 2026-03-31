@@ -65,8 +65,6 @@ const UserSchema = new mongoose.Schema({
 // Added Optimization Indexes
 UserSchema.index({ role: 1 });
 UserSchema.index({ approvalStatus: 1 });
-UserSchema.index({ userId: 1 });
-UserSchema.index({ phone: 1 });
 UserSchema.index({ isOnline: 1 });
 UserSchema.index({ isChatOnline: 1 });
 UserSchema.index({ isAudioOnline: 1 });

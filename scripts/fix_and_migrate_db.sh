@@ -4,8 +4,8 @@
 # This script fixes permissions, starts mongod, and migrates Atlas data to local.
 
 # 1. Configuration
-ATLAS_URI="mongodb+srv://murugannagaraja781_db_user:NewLife2025@cluster0.tp2gekn.mongodb.net/astrofive"
-LOCAL_URI="mongodb://localhost:27017/astrofive"
+ATLAS_URI="mongodb+srv://murugannagaraja781_db_user:NewLife2025@cluster0.tp2gekn.mongodb.net/astrohark"
+LOCAL_URI="mongodb://localhost:27017/astrohark"
 PROJECT_DIR="/var/www/astroharkt"
 TEMP_DIR="$PROJECT_DIR/temp_migration"
 

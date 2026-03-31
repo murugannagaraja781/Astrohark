@@ -62,7 +62,7 @@ if pgrep -x "mongod" > /dev/null || pgrep -x "mongodb" > /dev/null || command -v
 
     # Update .env
     if [ -f .env ]; then
-        sed -i 's|^MONGODB_URI=.*|MONGODB_URI=mongodb://localhost:27017/astrofive|' .env
+        sed -i 's|^MONGODB_URI=.*|MONGODB_URI=mongodb://localhost:27017/astrohark|' .env
         echo "✅ .env updated."
     fi
 else

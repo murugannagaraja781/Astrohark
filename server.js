@@ -470,7 +470,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
   // ... (keeping upload logic if valid) ...
   return res.json({ ok: true, url: req.file ? '/uploads/' + req.file.filename : '' });
 });
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/astrofive';
+const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/astrohark';
 
 // Helper function to check if MongoDB is connected
 const isMongoConnected = () => {

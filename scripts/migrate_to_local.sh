@@ -7,7 +7,7 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$( dirname "$SCRIPT_DIR" )"
 TEMP_DIR="$PROJECT_DIR/temp_migration"
-LOCAL_URI="mongodb://localhost:27017/astrofive"
+LOCAL_URI="mongodb://localhost:27017/astrohark"
 
 echo "------------------------------------------------"
 echo "🚀 Starting MongoDB Migration: Atlas -> Local"
@@ -67,9 +67,9 @@ fi
 echo "⚙️ Step 3: Updating .env to use local database..."
 # Cross-platform sed for Mac/Linux
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    sed -i '' 's|^MONGODB_URI=.*|MONGODB_URI=mongodb://localhost:27017/astrofive|' "$PROJECT_DIR/.env"
+    sed -i '' 's|^MONGODB_URI=.*|MONGODB_URI=mongodb://localhost:27017/astrohark|' "$PROJECT_DIR/.env"
 else
-    sed -i 's|^MONGODB_URI=.*|MONGODB_URI=mongodb://localhost:27017/astrofive|' "$PROJECT_DIR/.env"
+    sed -i 's|^MONGODB_URI=.*|MONGODB_URI=mongodb://localhost:27017/astrohark|' "$PROJECT_DIR/.env"
 fi
 
 # 7. Cleanup

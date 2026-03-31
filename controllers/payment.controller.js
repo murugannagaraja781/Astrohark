@@ -124,7 +124,7 @@ exports.createPayment = async (req, res) => {
             paymentInstrument: { type: "PAY_PAGE" }
         };
 
-        if (isApp) payload.redirectUrl = "astro5://payment-success";
+        if (isApp) payload.redirectUrl = "astrohark://payment-success";
 
         const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
         const stringToSign = base64Payload + "/pg/v1/pay" + phonepeConfig.SALT_KEY;
@@ -193,8 +193,7 @@ exports.callback = async (req, res) => {
         }
 
         if (redirectIsApp) {
-            const status = isSuccess ? 'success' : 'failed';
-            const scheme = isSuccess ? 'astro5://payment-success' : 'astro5://payment-failed';
+            const scheme = isSuccess ? 'astrohark://payment-success' : 'astrohark://payment-failed';
             return res.send(`<html><script>window.location.href="${scheme}?status=${status}";</script></html>`);
         }
 

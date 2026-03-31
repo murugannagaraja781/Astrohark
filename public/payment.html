@@ -445,7 +445,7 @@
                     window.AndroidBridge.onPaymentComplete('success');
                 } else {
                     // Fallback for browser testing
-                    window.location.href = "astro5://payment-success";
+                    window.location.href = "astrohark://payment-success";
                 }
 
             } else if (status === 'fail' || status === 'failure' || status === 'failed') {
@@ -456,7 +456,7 @@
                     window.AndroidBridge.onPaymentComplete('failed');
                 } else {
                     // Fallback for browser testing
-                    window.location.href = "astro5://payment-failed";
+                    window.location.href = "astrohark://payment-failed";
                 }
             }
         }

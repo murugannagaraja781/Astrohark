@@ -315,104 +315,162 @@ fun IncomingCallScreen(
          }
     }
 
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val pulseScale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = 1.2f,
+        targetValue = 1.15f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = FastOutSlowInEasing),
+            animation = tween(1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
-        )
+        ),
+        label = "pulseScale"
     )
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF121212) // Dark background
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 0.1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                androidx.compose.ui.graphics.Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF1A1A2E), // Deep Space Blue
+                        Color(0xFF000000)  // Pure Black
+                    )
+                )
+            )
     ) {
+        // Decorative background elements (optional, but adds premium feel)
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(100.dp))
+            Spacer(modifier = Modifier.height(80.dp))
 
             val typeLabel = when(callType) {
-                "chat" -> "Incoming Chat Request"
+                "chat" -> "Astroluna Chat Request"
                 "video" -> "Incoming Video Call"
-                else -> "Incoming call"
+                else -> "Incoming Audio Call"
             }
 
-            Text(typeLabel, color = Color.Gray, fontSize = 16.sp)
+            Text(
+                text = typeLabel,
+                color = Color.LightGray.copy(alpha = 0.8f),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 1.sp
+            )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
+            Text(
+                text = callerName,
+                color = Color.White,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Text(
+                text = if (callerId == "Unknown" && callerName != "Unknown") "Astroluna User" else callerId,
+                color = Color.Gray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(60.dp))
+
+            // Avatar Section
             Box(
                 contentAlignment = Alignment.Center
             ) {
-                 Box(
-                    modifier = Modifier
-                        .size(160.dp)
-                        .scale(pulseScale)
-                        .clip(CircleShape)
-                        .background(Color.White.copy(alpha=0.1f))
-                )
+                // Pulsing rings
+                repeat(2) { index ->
+                    Box(
+                        modifier = Modifier
+                            .size(if (index == 0) 180.dp else 220.dp)
+                            .scale(pulseScale)
+                            .clip(CircleShape)
+                            .background(Color(0xFFDDCBB4).copy(alpha = pulseAlpha / (index + 1)))
+                    )
+                }
 
                 Surface(
                     shape = CircleShape,
-                    color = Color.DarkGray,
-                    modifier = Modifier.size(140.dp)
+                    color = Color(0xFF2E2E2E),
+                    modifier = Modifier.size(140.dp),
+                    border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFDDCBB4).copy(alpha = 0.5f))
                 ) {
                     Icon(
                         Icons.Default.Person,
                         contentDescription = "Caller",
-                        tint = Color.Gray,
-                        modifier = Modifier.padding(24.dp).fillMaxSize()
+                        tint = Color(0xFFDDCBB4),
+                        modifier = Modifier
+                            .padding(32.dp)
+                            .fillMaxSize()
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(callerName, color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Text(callerId, color = Color.Gray, fontSize = 14.sp, modifier = Modifier.padding(top=8.dp))
-
             Spacer(modifier = Modifier.weight(1f))
 
+            // Control Buttons
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 60.dp),
+                    .padding(bottom = 80.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Reject Button
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     FloatingActionButton(
                         onClick = onReject,
-                        containerColor = Color(0xFFD32F2F),
+                        containerColor = Color(0xFFFF4B4B),
                         contentColor = Color.White,
-                        modifier = Modifier.size(72.dp),
-                        shape = CircleShape
+                        modifier = Modifier.size(76.dp),
+                        shape = CircleShape,
+                        elevation = FloatingActionButtonDefaults.elevation(8.dp)
                     ) {
-                        Icon(Icons.Default.CallEnd, "Decline", modifier = Modifier.size(32.dp))
+                        Icon(Icons.Default.CallEnd, "Decline", modifier = Modifier.size(34.dp))
                     }
-                    Text("Decline", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(top=8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text("Decline", color = Color.White.copy(alpha = 0.7f), fontSize = 14.sp)
                 }
 
+                // Accept Button
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     FloatingActionButton(
                         onClick = { if (isSocketConnected) onAccept() },
-                        containerColor = if (isSocketConnected) Color(0xFF388E3C) else Color.Gray,
+                        containerColor = if (isSocketConnected) Color(0xFF25D366) else Color.Gray, // WhatsApp Green
                         contentColor = Color.White,
-                        modifier = Modifier.size(72.dp),
-                        shape = CircleShape
+                        modifier = Modifier.size(76.dp),
+                        shape = CircleShape,
+                        elevation = FloatingActionButtonDefaults.elevation(8.dp)
                     ) {
                         if (!isSocketConnected) {
-                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                modifier = Modifier.size(28.dp),
+                                strokeWidth = 3.dp
+                            )
                         } else {
-                             // Shake or animate icon if needed
-                            Icon(Icons.Default.Call, "Accept", modifier = Modifier.size(32.dp))
+                            Icon(Icons.Default.Call, "Accept", modifier = Modifier.size(34.dp))
                         }
                     }
-                    Text(if (isSocketConnected) "Accept" else "Connecting...", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(top=8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = if (isSocketConnected) "Accept" else "Connecting...",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
                 }
             }
         }

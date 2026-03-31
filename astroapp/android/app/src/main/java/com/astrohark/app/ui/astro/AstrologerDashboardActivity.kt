@@ -114,12 +114,15 @@ class AstrologerDashboardActivity : ComponentActivity() {
     }
 
     private fun performLogout() {
-        tokenManager.clearSession()
-        SocketManager.disconnect()
-        val intent = Intent(this, GuestDashboardActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
+        SocketManager.logout { _ ->
+            // Proceed regardless of success to ensure user can still exit
+            tokenManager.clearSession()
+            SocketManager.disconnect()
+            val intent = Intent(this, GuestDashboardActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
+        }
     }
 
     // ... (Socket and Logic Implementation same as before but adapted for Compose State)
@@ -631,91 +634,60 @@ fun AstrologerDashboardScreen(
                 }
             }
 
-            // 1. Emergency Banner (Skeuomorphic)
+            // 1. Emergency Banner (Glassmorphism)
             Card(
-                colors = CardDefaults.cardColors(containerColor = colors.headerStart),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth().shadow(6.dp, RoundedCornerShape(16.dp)),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.3f))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFB91C1C).copy(alpha = 0.1f)),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(20.dp)),
+                border = BorderStroke(1.dp, Color(0xFFB91C1C).copy(alpha = 0.4f))
             ) {
                 Column(
-                    modifier = Modifier
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(colors.headerStart, colors.headerEnd.copy(alpha = 0.8f))
-                            )
-                        )
-                        .padding(20.dp)
+                    modifier = Modifier.padding(20.dp)
                 ) {
-                    Text("Online for Emergency!", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-                    Text("Boost your earnings with emergency sessions.", color = Color.White.copy(alpha=0.9f), fontSize = 13.sp)
+                    Text("Online for Emergency!", color = Color(0xFFEF4444), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
+                    Text("Boost your earnings with emergency sessions.", color = Color.White.copy(alpha=0.6f), fontSize = 13.sp)
                 }
             }
 
-            // 2. Earnings Card (Skeuomorphic)
+            // 2. Earnings Card (Premium Gold Glass)
+            val goldColors = listOf(Color(0xFFFDE047), Color(0xFFEAB308), Color(0xFFB45309))
             Card(
-                colors = CardDefaults.cardColors(containerColor = colors.cardBg),
-                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                shape = RoundedCornerShape(28.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(12.dp, RoundedCornerShape(24.dp), spotColor = colors.accent.copy(alpha = 0.2f)),
-                border = BorderStroke(
-                    2.dp,
-                    Brush.linearGradient(
-                        colors = listOf(Color.White, colors.cardStroke.copy(alpha = 0.3f))
-                    )
-                )
+                    .shadow(16.dp, RoundedCornerShape(28.dp), spotColor = colors.accent.copy(alpha = 0.3f))
             ) {
-                Column(
+                Box(
                     modifier = Modifier
-                        .background(
-                            Brush.linearGradient(
-                                colors = listOf(Color(0xFFFFFFFF), Color(0xFFE1F5FE), Color(0xFFB3E5FC)),
-                                start = Offset(0f, 0f),
-                                end = Offset.Infinite
-                            )
-                        )
+                        .background(Brush.linearGradient(colors = goldColors))
                         .padding(24.dp)
                 ) {
-                    Text("Total Earnings", color = colors.textSecondary, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // Display Dynamic Balance with Depth
-                        Text(
-                            text = "₹${String.format("%.2f", walletBalance)}",
-                            fontSize = 32.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = colors.accent,
-                            style = androidx.compose.ui.text.TextStyle(
-                                shadow = androidx.compose.ui.graphics.Shadow(
-                                    color = colors.accent.copy(alpha = 0.2f),
-                                    offset = Offset(2f, 2f),
-                                    blurRadius = 8f
-                                )
+                    Column {
+                        Text("Total Earnings", color = Color.Black.copy(0.6f), fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "₹${String.format("%.2f", walletBalance)}",
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color.Black
                             )
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Button(
-                            onClick = { showWithdrawDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = colors.accent),
-                            shape = RoundedCornerShape(12.dp),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = 6.dp,
-                                pressedElevation = 2.dp
-                            ),
-                            modifier = Modifier.border(
-                                1.dp,
-                                Brush.linearGradient(listOf(Color.White.copy(alpha = 0.5f), Color.Transparent)),
-                                RoundedCornerShape(12.dp)
-                            )
-                        ) {
-                            Text("Withdraw", color = Color.White, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.weight(1f))
+                            Button(
+                                onClick = { showWithdrawDialog = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.Black),
+                                shape = RoundedCornerShape(14.dp),
+                                modifier = Modifier.height(44.dp)
+                            ) {
+                                Text("Withdraw", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
                         }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider(color = Color.Black.copy(alpha = 0.1f))
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text("Min. ₹500 to Withdraw", color = Color.Black.copy(alpha = 0.5f), fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Divider(color = colors.cardStroke.copy(alpha = 0.1f))
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text("Min. ₹500 to Withdraw", color = colors.textSecondary.copy(alpha = 0.6f), fontSize = 11.sp, fontWeight = FontWeight.Light)
                 }
             }
 
@@ -765,41 +737,40 @@ fun AstrologerDashboardScreen(
                         }
                     }
                 }
-            }
-
-            // 3. Today's Progress (Skeuomorphic)
+               // 3. Today's Progress (Glassmorphism)
             Card(
-                colors = CardDefaults.cardColors(containerColor = colors.cardBg),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(20.dp)),
-                border = BorderStroke(1.dp, colors.cardStroke.copy(alpha = 0.2f))
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
             ) {
                 Row(
-                   modifier = Modifier
-                       .background(
-                           Brush.verticalGradient(
-                               colors = listOf(Color.White, colors.cardBg)
-                           )
-                       )
-                       .padding(20.dp),
+                   modifier = Modifier.padding(20.dp),
                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Today's Progress", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = colors.textPrimary)
+                        Text("Today's Progress", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
                         val totalHours = 12.0
                         val completedHours = (todayProgress / 100.0) * totalHours
-                        Text("$todayProgress% completed (${String.format("%.1f", completedHours)} hours)", fontSize = 12.sp, color = colors.textSecondary)
+                        Text("$todayProgress% completed (${String.format("%.1f", completedHours)} hours)", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
                     }
                     Box(contentAlignment = Alignment.Center) {
                          CircularProgressIndicator(
                              progress = todayProgress / 100f,
-                             trackColor = colors.bgEnd,
+                             trackColor = Color.White.copy(alpha = 0.1f),
                              color = colors.accent,
-                             modifier = Modifier.size(54.dp),
+                             modifier = Modifier.size(56.dp),
                              strokeWidth = 6.dp
                          )
-                         Text("$todayProgress%", fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, color = colors.textPrimary)
+                         Text(
+                             "$todayProgress%",
+                             color = Color.White,
+                             fontSize = 11.sp,
+                             fontWeight = FontWeight.Bold
+                         )
                     }
+                }
+            }
                 }
             }
 
@@ -843,16 +814,6 @@ fun AstrologerDashboardScreen(
                 }
             )
 
-            // 4. Action Grid - Custom Row-based Layout to work inside verticalScroll
-            val actions = listOf(
-                "Call" to Icons.Default.Call,
-                "Chat" to Icons.Default.Chat,
-                "Earnings" to Icons.Default.MonetizationOn,
-                "Reviews" to Icons.Default.Star,
-                "History" to Icons.Default.History,
-                "Profile" to Icons.Default.Person
-            )
-
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 actions.chunked(3).forEach { rowItems ->
                     Row(
@@ -861,16 +822,16 @@ fun AstrologerDashboardScreen(
                     ) {
                         rowItems.forEach { (label, icon) ->
                              Card(
-                                 colors = CardDefaults.cardColors(containerColor = colors.cardBg),
-                                 shape = RoundedCornerShape(20.dp),
+                                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+                                 shape = RoundedCornerShape(24.dp),
                                  modifier = Modifier
                                      .weight(1f)
                                      .aspectRatio(1f)
-                                     .shadow(6.dp, RoundedCornerShape(20.dp))
+                                     .shadow(12.dp, RoundedCornerShape(24.dp))
                                      .border(
                                          1.dp,
-                                         Brush.linearGradient(listOf(Color.White, Color.Transparent)),
-                                         RoundedCornerShape(20.dp)
+                                         Color.White.copy(alpha = 0.12f),
+                                         RoundedCornerShape(24.dp)
                                      )
                                      .clickable {
                                          when (label) {
@@ -884,38 +845,29 @@ fun AstrologerDashboardScreen(
                                  Column(
                                      modifier = Modifier
                                          .fillMaxSize()
-                                         .background(
-                                             Brush.linearGradient(
-                                                 colors = listOf(Color.White, Color(0xFFF0F7FF)),
-                                                 start = Offset(0f, 0f),
-                                                 end = Offset(100f, 100f)
-                                             )
-                                         )
                                          .padding(12.dp),
                                      horizontalAlignment = Alignment.CenterHorizontally,
                                      verticalArrangement = Arrangement.Center
                                  ) {
                                      Box(
                                          modifier = Modifier
-                                             .size(44.dp)
-                                             .shadow(4.dp, CircleShape)
+                                             .size(48.dp)
                                              .background(
                                                  Brush.radialGradient(
-                                                     colors = listOf(Color.White, colors.bgEnd),
-                                                     center = Offset(15f, 15f)
+                                                     colors = listOf(colors.accent.copy(alpha = 0.2f), Color.Transparent)
                                                  ),
                                                  CircleShape
-                                             ),
+                                             )
+                                             .border(1.dp, colors.accent.copy(alpha = 0.3f), CircleShape),
                                          contentAlignment = Alignment.Center
                                      ) {
                                          Icon(icon, null, tint = colors.accent, modifier = Modifier.size(24.dp))
                                      }
-                                     Spacer(modifier = Modifier.height(10.dp))
-                                     Text(label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
+                                     Spacer(modifier = Modifier.height(12.dp))
+                                     Text(label, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                                  }
                              }
                         }
-                        // Handle incomplete rows if any (not needed for 6 items / 3 cols)
                     }
                 }
             }
@@ -946,10 +898,10 @@ fun ServiceTogglesCard(
 ) {
     val colors = CosmicAppTheme.colors
     Card(
-        colors = CardDefaults.cardColors(containerColor = colors.cardBg),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp)),
-        border = BorderStroke(1.dp, colors.cardStroke.copy(alpha = 0.15f))
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -1036,11 +988,11 @@ fun ServiceToggleRow(
             onCheckedChange = { onToggle(it) },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFF4CAF50),
+                checkedTrackColor = colors.accent,
                 uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = Color.Gray.copy(alpha = 0.4f)
+                uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
             ),
-            modifier = Modifier.scale(0.9f)
+            modifier = Modifier.scale(0.85f)
         )
     }
 }

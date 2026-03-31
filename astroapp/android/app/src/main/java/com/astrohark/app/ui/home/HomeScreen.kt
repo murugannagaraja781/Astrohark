@@ -1108,6 +1108,16 @@ fun QuickActionItem(title: String, icon: ImageVector, iconColor: Color, modifier
 @Composable
 @Composable
 fun AestheticAstroCard(astro: Astrologer, onConnectClick: (Astrologer) -> Unit) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 0.7f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+
     Card(
         modifier = Modifier
             .width(200.dp)
@@ -1126,22 +1136,32 @@ fun AestheticAstroCard(astro: Astrologer, onConnectClick: (Astrologer) -> Unit) 
                     contentScale = ContentScale.Crop
                 )
 
-                // Status Badge
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .background(
-                            brush = if(astro.isOnline) Brush.horizontalGradient(listOf(Color(0xFFFF9A00), Color(0xFFFF5F00)))
-                                    else Brush.horizontalGradient(listOf(Color.Gray, Color.DarkGray)),
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(modifier = Modifier.size(6.dp).background(Color.White, CircleShape))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(if(astro.isOnline) "LIVE" else "AWAY", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                // Status Badge with Pulse Glow
+                Box(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
+                    if (astro.isOnline) {
+                         // External Glow
+                         Box(
+                             modifier = Modifier
+                                 .matchParentSize()
+                                 .graphicsLayer(alpha = glowAlpha)
+                                 .background(Color(0xFFFF9A00), RoundedCornerShape(8.dp))
+                                 .shadow(8.dp, RoundedCornerShape(8.dp), spotColor = Color(0xFFFF9A00))
+                         )
+                    }
+                    Row(
+                        modifier = Modifier
+                            .background(
+                                brush = if(astro.isOnline) Brush.horizontalGradient(listOf(Color(0xFFFF9A00), Color(0xFFFF5F00)))
+                                        else Brush.horizontalGradient(listOf(Color.Gray, Color.DarkGray)),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.size(6.dp).background(Color.White, CircleShape))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(if(astro.isOnline) "LIVE" else "AWAY", color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.ExtraBold)
+                    }
                 }
             }
 

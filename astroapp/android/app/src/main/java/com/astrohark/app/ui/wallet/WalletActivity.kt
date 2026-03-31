@@ -196,19 +196,14 @@ fun WalletScreen(
     var couponMessage by remember { mutableStateOf<String?>(null) }
     var isCouponLoading by remember { mutableStateOf(false) }
 
-    // Trustworthy "Royal Indigo" Theme
-    val indigoDeep = Color(0xFF020617)
-    val indigoMedium = Color(0xFF0F172A)
-    val goldPrimary = Color(0xFFFACC15)
-    val goldGradient = Brush.linearGradient(
-        colors = listOf(Color(0xFFFDE047), Color(0xFFEAB308), Color(0xFFB45309))
-    )
+    val colors = CosmicAppTheme.colors
+    val goldPrimary = colors.accent
     val successGreen = Color(0xFF22C55E)
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(colors = listOf(indigoDeep, indigoMedium)))
+            .background(CosmicAppTheme.backgroundBrush)
     ) {
         Scaffold(
             containerColor = Color.Transparent,
@@ -218,7 +213,8 @@ fun WalletScreen(
                         Text(
                             stringResource(R.string.wallet_title),
                             color = Color.White,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.titleLarge
                         )
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -300,33 +296,41 @@ fun WalletScreen(
                     }
                 }
 
-                // 2. Balance Card (70/30 Rule Display)
+                // 2. Balance Card (Premium Gold Glass)
                 item {
+                    val cardGradient = Brush.linearGradient(
+                        colors = listOf(Color(0xFFFDE047), Color(0xFFEAB308), Color(0xFFB45309)),
+                        start = Offset(0f, 0f),
+                        end = Offset.Infinite
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
-                            .shadow(20.dp, RoundedCornerShape(24.dp), spotColor = goldPrimary.copy(0.4f))
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(goldGradient)
+                            .shadow(24.dp, RoundedCornerShape(28.dp), spotColor = goldPrimary.copy(0.4f))
+                            .clip(RoundedCornerShape(28.dp))
+                            .background(cardGradient)
                     ) {
+                        // Decorative Inner Glow
+                        Box(modifier = Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color.White.copy(0.2f), Color.Transparent), center = Offset(50f, 50f))))
+                        
                         Column(modifier = Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.SpaceBetween) {
                             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
                                 Column {
                                     Text(stringResource(R.string.total_balance), color = Color.Black.copy(0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    Text("₹ ${balance.toInt()}", style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Black, fontSize = 40.sp), color = Color.Black)
+                                    Text("₹ ${balance.toInt()}", style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Black, fontSize = 42.sp), color = Color.Black)
                                     if (superBalance > 0.0) {
-                                        Surface(color = indigoDeep, shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 4.dp)) {
+                                        Surface(color = colors.bgStart, shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 4.dp)) {
                                             Text("SUPER: ₹ ${superBalance.toInt()}", color = goldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                                         }
                                     }
                                 }
-                                Icon(Icons.Rounded.AccountBalanceWallet, null, tint = Color.Black.copy(0.15f), modifier = Modifier.size(56.dp))
+                                Icon(Icons.Rounded.AccountBalanceWallet, null, tint = Color.Black.copy(0.12f), modifier = Modifier.size(64.dp))
                             }
                             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.Bottom) {
                                 Column {
-                                    Text(stringResource(R.string.prosperity_account), color = Color.Black.copy(0.8f), fontWeight = FontWeight.Black, fontSize = 15.sp)
-                                    Text("Rule: 70% Main, 30% Super Wallet", color = Color.Black.copy(0.5f), fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                    Text(stringResource(R.string.prosperity_account), color = Color.Black.copy(0.8f), fontWeight = FontWeight.Black, fontSize = 16.sp)
+                                    Text("Rule: 70% Main, 30% Super Wallet", color = Color.Black.copy(0.5f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                 }
                                 Text(stringResource(R.string.valid_user), color = Color.Black.copy(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
@@ -334,13 +338,13 @@ fun WalletScreen(
                     }
                 }
 
-                // 3. Recharge & Trust Section
+                // 3. Recharge & Trust Section (Glassmorphism)
                 item {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = indigoMedium),
-                        border = BorderStroke(1.dp, Color.White.copy(0.05f))
+                        modifier = Modifier.fillMaxWidth().shadow(16.dp, RoundedCornerShape(28.dp)),
+                        shape = RoundedCornerShape(28.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(0.05f)),
+                        border = BorderStroke(1.dp, Color.White.copy(0.12f))
                     ) {
                         Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Text(stringResource(R.string.recharge_wallet), color = goldPrimary, fontWeight = FontWeight.Black, fontSize = 18.sp)

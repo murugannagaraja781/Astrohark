@@ -569,73 +569,122 @@ fun ChatInputBar(
     onViewChart: (() -> Unit)?,
     clientBirthData: JSONObject? = null
 ) {
-    Surface(
-        color = Color.White,
-        shadowElevation = 8.dp,
+    val colors = CosmicAppTheme.colors
+
+    Box(
         modifier = Modifier
+            .fillMaxWidth()
             .navigationBarsPadding()
             .imePadding()
+            .background(Color.Transparent) // Changed from Surface(white)
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
             if (replyingTo != null) {
-                Row(
-                    Modifier.fillMaxWidth().background(Color(0xFFEEEEEE)).padding(8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Card(
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
                 ) {
-                   Text("Replying to: ${replyingTo.text.take(30)}...", fontSize = 12.sp, color = Color.Gray)
-                   IconButton(onClick = onCancelReply, modifier = Modifier.size(24.dp)) {
-                       Icon(Icons.Default.Close, "Cancel", tint = Color.Gray)
-                   }
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (onViewChart != null) {
-                    val isReady = clientBirthData != null
-                    IconButton(onClick = onViewChart) {
-                        if (isReady) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_chart),
-                                contentDescription = "Chart",
-                                tint = Color(0xFFE87A1E) // Orange when ready
-                            )
-                        } else {
-                            // Spin icon replacement - Use Refresh as a placeholder for "loading/pending"
-                            Icon(
-                                Icons.Default.Refresh,
-                                contentDescription = "Waiting for data",
-                                tint = Color.Gray
-                            )
+                    Row(
+                        Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Replying to", fontSize = 10.sp, color = colors.accent, fontWeight = FontWeight.Bold)
+                            Text(replyingTo.text, fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f), maxLines = 1)
+                        }
+                        IconButton(onClick = onCancelReply, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Close, "Cancel", tint = Color.White.copy(alpha = 0.5f))
                         }
                     }
                 }
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = onTextChange,
-                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    placeholder = { Text("Type a message", fontSize = 14.sp, color = Color(0xFFDDCBB4).copy(alpha = 0.6f)) },
-                    maxLines = 4,
-                    colors = TextFieldDefaults.colors(
-                       focusedContainerColor = Color(0xFFF0F0F0),
-                       unfocusedContainerColor = Color(0xFFF0F0F0),
-                       focusedIndicatorColor = Color.Transparent,
-                       unfocusedIndicatorColor = Color.Transparent,
-                       focusedTextColor = Color(0xFFDDCBB4),
-                       unfocusedTextColor = Color(0xFFDDCBB4)
-                    )
-                )
-                FloatingActionButton(
-                    onClick = onSend,
-                    containerColor = Color(0xFFC9A227),
-                    contentColor = Color.White,
-                    shape = CircleShape,
-                    modifier = Modifier.size(44.dp)
+            }
+            
+            // Main Input Container (Glass Card)
+            Card(
+                shape = RoundedCornerShape(32.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+                modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(32.dp))
+            ) {
+                Row(
+                    modifier = Modifier.padding(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Send, "Send", modifier = Modifier.size(20.dp))
+                    if (onViewChart != null) {
+                        val isReady = clientBirthData != null
+                        IconButton(
+                            onClick = onViewChart,
+                            modifier = Modifier.size(40.dp).background(if(isReady) colors.accent.copy(alpha=0.1f) else Color.Transparent, CircleShape)
+                        ) {
+                            if (isReady) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.ic_chart),
+                                    contentDescription = "Chart",
+                                    tint = colors.accent,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Refresh,
+                                    contentDescription = "Waiting",
+                                    tint = Color.White.copy(alpha = 0.3f),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                    
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = onTextChange,
+                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        placeholder = { 
+                            Text("Type a message...", fontSize = 14.sp, color = Color(0xFFDDCBB4).copy(alpha = 0.4f)) 
+                        },
+                        maxLines = 4,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedTextColor = Color(0xFFDDCBB4),
+                            unfocusedTextColor = Color(0xFFDDCBB4),
+                            cursorColor = colors.accent
+                        )
+                    )
+
+                    // Send Button with Glow
+                    Surface(
+                        onClick = onSend,
+                        shape = CircleShape,
+                        color = Color.Transparent,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.linearGradient(
+                                        colors = listOf(colors.accent, Color(0xFFD4700B))
+                                    )
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Send, 
+                                contentDescription = "Send", 
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
                 }
             }
         }

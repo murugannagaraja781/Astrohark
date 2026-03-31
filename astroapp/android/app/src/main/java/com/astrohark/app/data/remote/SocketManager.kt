@@ -306,6 +306,18 @@ object SocketManager {
         })
     }
 
+    fun logout(callback: ((Boolean) -> Unit)? = null) {
+        socket?.emit("logout", null, Ack { args ->
+            val success = if (args != null && args.isNotEmpty()) {
+                val response = args[0] as? JSONObject
+                response?.optBoolean("ok") == true
+            } else {
+                false
+            }
+            callback?.invoke(success)
+        })
+    }
+
     fun disconnect() {
         socket?.disconnect()
         socket = null

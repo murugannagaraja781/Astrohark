@@ -1582,6 +1582,36 @@ io.on('connection', (socket) => {
     }
   });
 
+  // --- Logout (Explicit) ---
+  socket.on('logout', async (cb) => {
+    try {
+      const userId = socketToUser.get(socket.id);
+      if (!userId) return cb && cb({ ok: false, error: 'Not logged in' });
+
+      console.log(`[Presence] User ${userId} requested explicit logout.`);
+      
+      const user = await User.findOne({ userId });
+      if (user && user.role === 'astrologer') {
+        user.isOnline = false;
+        user.isAvailable = false;
+        user.isChatOnline = false;
+        user.isAudioOnline = false;
+        user.isVideoOnline = false;
+        await user.save();
+        broadcastAstroUpdate();
+      }
+
+      // Clear from maps
+      userSockets.delete(userId);
+      socketToUser.delete(socket.id);
+      
+      if (typeof cb === 'function') cb({ ok: true });
+    } catch (err) {
+      console.error('logout error', err);
+      if (typeof cb === 'function') cb({ ok: false, error: 'Internal error' });
+    }
+  });
+
   // --- Rejoin Session (for reconnecting after background/edit) ---
   socket.on('rejoin-session', (data) => {
     try {
@@ -1896,17 +1926,18 @@ io.on('connection', (socket) => {
           // --- MISS LOGIC START ---
           const astro = await User.findOne({ userId: toUserId });
           if (astro && astro.role === 'astrologer') {
-            astro.isOnline = false;
-            astro.isAvailable = false;
-            await astro.save();
-            broadcastAstroUpdate(); // Ensure this function is defined/imported
+            // USER REQUEST: Do NOT force offline on missed call. Stay Online.
+            // astro.isOnline = false;
+            // astro.isAvailable = false;
+            // await astro.save();
+            // broadcastAstroUpdate();
 
             // Notify Super Admin
-            const reasonMsg = `Missed Call Alert: ${astro.name} failed to answer in 30s. Automatically marked OFFLINE.`;
+            const reasonMsg = `Missed Call Alert: ${astro.name} failed to answer in 30s. Still Online.`;
             io.to('superadmin').emit('admin-notification', { text: reasonMsg, type: 'missed_call', astroId: toUserId });
 
-            // Log to text file (as requested)
-            const logMsg = `[${new Date().toISOString()}] MISSED CALL: Astrologer ${astro.name} (${astro.phone}) missed a call from ${fromUserId}. Marked OFFLINE.\n`;
+            // Log to text file
+            const logMsg = `[${new Date().toISOString()}] MISSED CALL: Astrologer ${astro.name} (${astro.phone}) missed a call from ${fromUserId}. Staying ONLINE.\n`;
             const fs = require('fs');
             fs.appendFile('missed_calls_log.txt', logMsg, (err) => {
               if (err) console.error('Error writing to log file', err);
@@ -2061,24 +2092,21 @@ io.on('connection', (socket) => {
       const targetSocketId = userSockets.get(fromUserId);
 
       if (accept) {
-        if (targetSocketId) {
-          io.to(targetSocketId).emit('session-answered', {
-            sessionId,
-            fromUserId: astrologerId,
-            type: callType || session.type,
-            accept: true
-          });
-        }
+        // Use Room (userId) for better multi-device support
+        io.to(fromUserId).emit('session-answered', {
+          sessionId,
+          fromUserId: astrologerId,
+          type: callType || session.type,
+          accept: true
+        });
         console.log(`[Native] Call accepted - Session: ${sessionId}, Caller: ${fromUserId}, Astro: ${astrologerId}`);
         if (typeof cb === 'function') cb({ ok: true, fromUserId });
       } else {
-        if (targetSocketId) {
-          io.to(targetSocketId).emit('session-answered', {
-            sessionId,
-            fromUserId: astrologerId,
-            accept: false
-          });
-        }
+        io.to(fromUserId).emit('session-answered', {
+          sessionId,
+          fromUserId: astrologerId,
+          accept: false
+        });
         endSessionRecord(sessionId);
         console.log(`[Native] Call rejected - Session: ${sessionId}`);
         if (typeof cb === 'function') cb({ ok: true });

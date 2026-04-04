@@ -35,7 +35,15 @@ import com.astrohark.app.ui.components.CustomCurvedHeader
 import com.astrohark.app.ui.components.CustomTextField
 import com.astrohark.app.ui.components.SettingsItem
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import com.astrohark.app.utils.Constants
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material3.*
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.*
@@ -101,7 +109,7 @@ fun UserProfileScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(CosmicAppTheme.colors.surfaceGradient)) {
+    Box(modifier = Modifier.fillMaxSize().background(CosmicAppTheme.backgroundBrush)) {
         // Standard Top Bar
         CenterAlignedTopAppBar(
             title = { Text("My Profile", color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold) },

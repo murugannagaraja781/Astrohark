@@ -109,7 +109,7 @@ fun AstrologerRegistrationScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(CosmicAppTheme.colors.surfaceGradient)
+                .background(CosmicAppTheme.backgroundBrush)
         ) {
             LazyColumn(
                 modifier = Modifier

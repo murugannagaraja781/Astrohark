@@ -3,7 +3,7 @@ package com.astrohark.app.ui.profile
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.astrohark.app.R
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import coil.compose.AsyncImage
 
 class AstrologerProfileActivity : ComponentActivity() {
@@ -123,7 +124,7 @@ fun AstrologerProfileScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(scrollState)
-                .background(CosmicAppTheme.colors.surfaceGradient)
+                .background(CosmicAppTheme.backgroundBrush)
         ) {
             Box(
                 modifier = Modifier
@@ -135,7 +136,7 @@ fun AstrologerProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp)
-                        .background(CosmicAppTheme.colors.surfaceGradient)
+                        .background(CosmicAppTheme.backgroundBrush)
                 )
 
                 // Avatar

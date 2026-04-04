@@ -1285,7 +1285,7 @@ fun CallScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CosmicAppTheme.colors.surfaceGradient)
+            .background(CosmicAppTheme.backgroundBrush)
     ) {
         // Remote View Layer (Full Screen)
         if (callType == "video" && isReady) {

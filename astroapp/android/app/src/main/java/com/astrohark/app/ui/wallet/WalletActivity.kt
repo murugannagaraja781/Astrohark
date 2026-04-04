@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +28,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -37,6 +39,7 @@ import com.astrohark.app.R
 import com.astrohark.app.data.api.ApiClient
 import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
@@ -195,6 +198,7 @@ fun WalletScreen(
     var couponBonus by remember { mutableStateOf(0.0) }
     var couponMessage by remember { mutableStateOf<String?>(null) }
     var isCouponLoading by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     val colors = CosmicAppTheme.colors
     val goldPrimary = colors.accent

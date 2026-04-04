@@ -21,11 +21,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.AutoFixHigh
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.CalendarToday
+import androidx.compose.material.icons.rounded.AccessTime
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -178,7 +176,7 @@ fun FreeHoroscopeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CosmicAppTheme.colors.surfaceGradient)
+            .background(CosmicAppTheme.backgroundBrush)
     ) {
         Scaffold(
             containerColor = Color.Transparent,
@@ -310,7 +308,7 @@ fun FreeHoroscopeScreen(
                                     day = pd.toString()
                                 }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
                             }) {
-                                Icon(androidx.compose.material.icons.filled.CalendarToday, "Pick", tint = CosmicAppTheme.colors.accent)
+                                Icon(Icons.Rounded.CalendarToday, "Pick", tint = CosmicAppTheme.colors.accent)
                             }
                         }
 
@@ -350,7 +348,7 @@ fun FreeHoroscopeScreen(
                                     amPm = if (ph >= 12) "PM" else "AM"
                                 }, 12, 0, false).show()
                             }) {
-                                Icon(Icons.Default.AccessTime, "Pick", tint = CosmicAppTheme.colors.accent)
+                                Icon(Icons.Rounded.AccessTime, "Pick", tint = CosmicAppTheme.colors.accent)
                             }
                         }
 

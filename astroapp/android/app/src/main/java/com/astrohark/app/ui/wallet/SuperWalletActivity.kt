@@ -31,6 +31,7 @@ import com.astrohark.app.R
 import com.astrohark.app.data.api.ApiClient
 import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -107,7 +108,7 @@ fun SuperWalletScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(CosmicAppTheme.colors.surfaceGradient)
+                .background(CosmicAppTheme.backgroundBrush)
                 .padding(padding)
                 .padding(AstroDimens.Large),
             horizontalAlignment = Alignment.CenterHorizontally

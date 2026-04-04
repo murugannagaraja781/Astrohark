@@ -27,6 +27,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.astrohark.app.data.api.ApiClient
 import com.astrohark.app.data.model.RasipalanItem
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.PaddingValues
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -112,7 +115,7 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = ChocolateBrown
+                    color = CosmicAppTheme.colors.accent
                 )
             } else {
                 LazyColumn(
@@ -290,18 +293,18 @@ fun LuckyStat(label: String, value: String) {
 
 @Composable
 fun ComingSoonCard(title: String) {
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth().height(100.dp),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = CocoaCardStart.copy(alpha = 0.4f)),
-        border = BorderStroke(0.5.dp, ChocolateBrown.copy(alpha = 0.2f))
+        shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+        color = CosmicAppTheme.colors.cardBg.copy(alpha = 0.4f),
+        border = BorderStroke(0.5.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
     ) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.Lock, contentDescription = null, tint = ChocolateBrown.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.Lock, contentDescription = null, tint = CosmicAppTheme.colors.accent.copy(alpha = 0.5f), modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = title, style = MaterialTheme.typography.titleSmall, color = MysticTextPrimary.copy(alpha = 0.8f))
-                Text(text = "Feature under preparation", style = MaterialTheme.typography.labelSmall, color = MysticTextSecondary.copy(alpha = 0.6f))
+                Text(text = title, style = MaterialTheme.typography.titleSmall, color = CosmicAppTheme.colors.textPrimary.copy(alpha = 0.8f))
+                Text(text = "Feature under preparation", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.textSecondary.copy(alpha = 0.6f))
             }
         }
     }

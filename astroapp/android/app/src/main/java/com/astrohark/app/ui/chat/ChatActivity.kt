@@ -435,7 +435,7 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(CosmicAppTheme.colors.surfaceGradient)
+                .background(CosmicAppTheme.backgroundBrush)
         ) {
 
             LazyColumn(

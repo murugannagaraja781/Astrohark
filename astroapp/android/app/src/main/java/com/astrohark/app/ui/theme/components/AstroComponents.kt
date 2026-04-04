@@ -29,25 +29,34 @@ fun AstroButton(
     enabled: Boolean = true,
     containerColor: Color? = null,
     contentColor: Color = Color.White,
-    isOutline: Boolean = false
+    isOutline: Boolean = false,
+    isLoading: Boolean = false
 ) {
     val finalContainerColor = containerColor ?: CosmicAppTheme.colors.accent
     
     if (isOutline) {
         OutlinedButton(
             onClick = onClick,
-            enabled = enabled,
+            enabled = enabled && !isLoading,
             modifier = modifier.height(AstroDimens.ButtonHeight),
             shape = RoundedCornerShape(AstroDimens.RadiusMedium),
             border = androidx.compose.foundation.BorderStroke(1.dp, finalContainerColor),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = finalContainerColor)
         ) {
-            Text(text = text, style = MaterialTheme.typography.labelLarge)
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    color = finalContainerColor,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(text = text, style = MaterialTheme.typography.labelLarge)
+            }
         }
     } else {
         Button(
             onClick = onClick,
-            enabled = enabled,
+            enabled = enabled && !isLoading,
             modifier = modifier.height(AstroDimens.ButtonHeight),
             shape = RoundedCornerShape(AstroDimens.RadiusMedium),
             colors = ButtonDefaults.buttonColors(
@@ -55,7 +64,15 @@ fun AstroButton(
                 contentColor = contentColor
             )
         ) {
-            Text(text = text, style = MaterialTheme.typography.labelLarge)
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    color = contentColor,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text(text = text, style = MaterialTheme.typography.labelLarge)
+            }
         }
     }
 }

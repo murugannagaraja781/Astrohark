@@ -132,7 +132,7 @@ fun OtpScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1.2f)
-                .background(CosmicAppTheme.colors.surfaceGradient),
+                .background(CosmicAppTheme.backgroundBrush),
             contentAlignment = Alignment.Center
         ) {
             Image(

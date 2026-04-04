@@ -25,6 +25,7 @@ import androidx.lifecycle.lifecycleScope
 import com.astrohark.app.MainActivity
 import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

@@ -116,7 +116,7 @@ fun PermissionScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(CosmicAppTheme.colors.surfaceGradient)
+                .background(CosmicAppTheme.backgroundBrush)
                 .padding(AstroDimens.Medium)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(AstroDimens.Medium)

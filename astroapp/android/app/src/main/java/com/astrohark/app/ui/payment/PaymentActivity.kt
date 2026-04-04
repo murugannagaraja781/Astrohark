@@ -70,7 +70,7 @@ class PaymentActivity : AppCompatActivity() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.parseColor("#0B1D2A")) // DeepSpaceNavy
+            setBackgroundColor(Color.parseColor("#150E0C")) // Cocoa BgStart
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT
@@ -88,7 +88,7 @@ class PaymentActivity : AppCompatActivity() {
         statusText = TextView(this).apply {
             text = "Initializing Payment..."
             textSize = 18f
-            setTextColor(Color.parseColor("#F2F4FF")) // StarWhite
+            setTextColor(Color.parseColor("#FFD700")) // Gold Accent
             gravity = Gravity.CENTER
             setPadding(0, 30, 0, 0)
         }

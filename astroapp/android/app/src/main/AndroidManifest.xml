@@ -126,6 +126,7 @@
         <activity android:name=".ui.auth.LoginActivity" />
         <activity android:name=".ui.auth.OtpVerificationActivity" />
         <activity android:name=".ui.auth.AstrologerRegistrationActivity" />
+        <activity android:name=".ui.support.FeedbackSupportActivity" />
         <activity android:name=".ui.home.HomeActivity" />
         <activity android:name=".ui.wallet.WalletActivity" />
         <activity android:name=".ui.wallet.SuperWalletActivity" />

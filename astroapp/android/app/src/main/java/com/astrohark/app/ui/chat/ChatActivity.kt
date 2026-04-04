@@ -334,23 +334,63 @@ fun ChatScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(title, fontWeight = FontWeight.Bold, fontSize = 16.sp, maxLines = 1, color = Color(0xFFDDCBB4))
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = CosmicAppTheme.colors.accent,
+                            maxLines = 1
+                        )
                         if (isAstrologer && remainingTime.isNotEmpty() && remainingTime != "00:00") {
-                             Text("Time: $remainingTime", fontSize = 12.sp, color = Color.Red, fontWeight = FontWeight.Bold)
+                             Text(
+                                 text = "Time: $remainingTime",
+                                 style = MaterialTheme.typography.labelSmall,
+                                 color = Color.Red,
+                                 fontWeight = FontWeight.Bold
+                             )
                         } else {
-                             Text("Online", fontSize = 12.sp, color = Color(0xFFDDCBB4).copy(alpha=0.7f))
+                             Text(
+                                 text = "Online",
+                                 style = MaterialTheme.typography.labelSmall,
+                                 color = CosmicAppTheme.colors.textSecondary
+                             )
                         }
                     }
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = Color.White) } },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = CosmicAppTheme.colors.accent
+                        )
+                    }
+                },
                 actions = {
-                    Text(sessionDuration, color = Color(0xFFDDCBB4), fontWeight = FontWeight.Bold, modifier = Modifier.padding(end=12.dp))
-                    IconButton(onClick = onEditIntake) { Icon(Icons.Default.Edit, "Intake", tint = Color(0xFFDDCBB4)) }
-                    TextButton(onClick = onEndChat) { Text("End", color = Color.Red, fontWeight = FontWeight.Bold) }
+                    Text(
+                        text = sessionDuration,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = CosmicAppTheme.colors.textPrimary,
+                        modifier = Modifier.padding(end = AstroDimens.Medium)
+                    )
+                    IconButton(onClick = onEditIntake) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Intake",
+                            tint = CosmicAppTheme.colors.accent
+                        )
+                    }
+                    TextButton(onClick = onEndChat) {
+                        Text(
+                            text = "End",
+                            color = Color.Red,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = CosmicAppTheme.colors.cardBg,
-                    titleContentColor = Color.White
+                    containerColor = CosmicAppTheme.colors.bgStart,
+                    titleContentColor = CosmicAppTheme.colors.textPrimary
                 )
             )
         },
@@ -395,13 +435,13 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFF0F1028)) // Cosmic Dark BG
+                .background(CosmicAppTheme.colors.surfaceGradient)
         ) {
 
             LazyColumn(
                 state = listState,
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 80.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(AstroDimens.Medium),
+                verticalArrangement = Arrangement.spacedBy(AstroDimens.Small),
                 modifier = Modifier.fillMaxSize()
             ) {
 
@@ -431,8 +471,7 @@ fun ChatScreen(
 @Composable
 fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
     val isMe = msg.isSent
-    // Colors: Sophisticated Dark Bubbles
-    val bubbleColor = if (isMe) Color.White.copy(alpha = 0.08f) else Color(0xFFDDCBB4).copy(alpha = 0.1f)
+    val bubbleColor = if (isMe) CosmicAppTheme.colors.accent.copy(alpha = 0.15f) else CosmicAppTheme.colors.cardBg
     val align = if (isMe) Alignment.End else Alignment.Start
 
     // Swipe State
@@ -467,10 +506,10 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                 }
             },
             content = {
-                 Surface(
+                Surface(
                     color = bubbleColor,
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, if (isMe) Color.White.copy(alpha = 0.1f) else Color(0xFFDDCBB4).copy(alpha = 0.2f)),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                    border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f)),
                     shadowElevation = 0.dp,
                     modifier = Modifier
                         .widthIn(max = 280.dp)
@@ -510,7 +549,7 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                                             Text(
                                                 text = "Replying to:",
                                                 style = MaterialTheme.typography.bodySmall,
-                                                color = Color(0xFF6200EE),
+                                                color = CosmicAppTheme.colors.accent,
                                                 fontWeight = FontWeight.Bold
                                             )
                                             Text(
@@ -525,7 +564,11 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                             }
                         }
 
-                        Text(displayText, fontSize = 16.sp, color = if (isMe) Color.White else Color(0xFFDDCBB4))
+                        Text(
+                            text = displayText,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = CosmicAppTheme.colors.textPrimary
+                        )
 
                         if (isMe) {
                             Row(
@@ -552,11 +595,18 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
 @Composable
 fun TypingBubble() {
     Surface(
-        color = Color(0xFFE0E0E0),
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.padding(8.dp)
+        color = CosmicAppTheme.colors.cardBg,
+        shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+        border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f)),
+        modifier = Modifier.padding(horizontal = AstroDimens.Medium, vertical = 4.dp)
     ) {
-        Text("Typing...", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 12.sp, color = Color(0xFFDDCBB4), fontStyle = androidx.compose.ui.text.font.FontStyle.Italic)
+        Text(
+            text = "Typing...",
+            modifier = Modifier.padding(horizontal = AstroDimens.Medium, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = CosmicAppTheme.colors.textSecondary,
+            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+        )
     }
 }
 
@@ -645,9 +695,9 @@ fun ChatInputBar(
                         value = text,
                         onValueChange = onTextChange,
                         modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(AstroDimens.RadiusLarge),
                         placeholder = { 
-                            Text("Type a message...", fontSize = 14.sp, color = Color(0xFFDDCBB4).copy(alpha = 0.4f)) 
+                            Text("Type a message...", style = MaterialTheme.typography.bodyMedium, color = CosmicAppTheme.colors.textSecondary.copy(alpha = 0.5f)) 
                         },
                         maxLines = 4,
                         colors = TextFieldDefaults.colors(
@@ -655,9 +705,9 @@ fun ChatInputBar(
                             unfocusedContainerColor = Color.Transparent,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = Color(0xFFDDCBB4),
-                            unfocusedTextColor = Color(0xFFDDCBB4),
-                            cursorColor = colors.accent
+                            focusedTextColor = CosmicAppTheme.colors.textPrimary,
+                            unfocusedTextColor = CosmicAppTheme.colors.textPrimary,
+                            cursorColor = CosmicAppTheme.colors.accent
                         )
                     )
 

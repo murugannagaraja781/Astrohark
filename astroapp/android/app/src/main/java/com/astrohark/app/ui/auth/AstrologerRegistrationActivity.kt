@@ -78,18 +78,30 @@ fun AstrologerRegistrationScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(Localization.get("join_as_astrologer", isTamil), color = cyan, fontWeight = FontWeight.Bold) },
+                title = { 
+                    Text(
+                        text = Localization.get("join_as_astrologer", isTamil), 
+                        style = MaterialTheme.typography.titleLarge,
+                        color = CosmicAppTheme.colors.accent, 
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = cyan)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = CosmicAppTheme.colors.accent)
                     }
                 },
                 actions = {
                     TextButton(onClick = { isTamil = !isTamil }) {
-                        Text(if (isTamil) "English" else "தமிழ்", color = cyan, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (isTamil) "English" else "தமிழ்", 
+                            color = CosmicAppTheme.colors.accent, 
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = navy)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = CosmicAppTheme.colors.bgStart)
             )
         }
     ) { padding ->
@@ -97,32 +109,32 @@ fun AstrologerRegistrationScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Brush.verticalGradient(listOf(navy, royalBlue)))
+                .background(CosmicAppTheme.colors.surfaceGradient)
         ) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .padding(horizontal = AstroDimens.Medium),
+                verticalArrangement = Arrangement.spacedBy(AstroDimens.Medium),
                 contentPadding = PaddingValues(bottom = 32.dp, top = 16.dp)
             ) {
-                item { SectionTitle(Localization.get("basic_info", isTamil), cyan) }
-                item { CustomTextField(value = realName, onValueChange = { realName = it }, label = Localization.get("real_name", isTamil), cyan) }
-                item { CustomTextField(value = displayName, onValueChange = { displayName = it }, label = Localization.get("display_name", isTamil), cyan) }
+                item { SectionTitle(Localization.get("basic_info", isTamil), CosmicAppTheme.colors.accent) }
+                item { CustomTextField(value = realName, onValueChange = { realName = it }, label = Localization.get("real_name", isTamil)) }
+                item { CustomTextField(value = displayName, onValueChange = { displayName = it }, label = Localization.get("display_name", isTamil)) }
 
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("${Localization.get("gender", isTamil)}:", color = Color.LightGray, fontWeight = FontWeight.SemiBold)
-                        Spacer(Modifier.width(16.dp))
-                        RadioButton(selected = gender == "Male", onClick = { gender = "Male" }, colors = RadioButtonDefaults.colors(selectedColor = cyan, unselectedColor = Color.LightGray))
-                        Text(Localization.get("male", isTamil), color = Color.White)
-                        Spacer(Modifier.width(16.dp))
-                        RadioButton(selected = gender == "Female", onClick = { gender = "Female" }, colors = RadioButtonDefaults.colors(selectedColor = cyan, unselectedColor = Color.LightGray))
-                        Text(Localization.get("female", isTamil), color = Color.White)
+                        Text("${Localization.get("gender", isTamil)}:", color = CosmicAppTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.width(AstroDimens.Medium))
+                        RadioButton(selected = gender == "Male", onClick = { gender = "Male" }, colors = RadioButtonDefaults.colors(selectedColor = CosmicAppTheme.colors.accent, unselectedColor = CosmicAppTheme.colors.textSecondary))
+                        Text(Localization.get("male", isTamil), color = CosmicAppTheme.colors.textPrimary)
+                        Spacer(Modifier.width(AstroDimens.Medium))
+                        RadioButton(selected = gender == "Female", onClick = { gender = "Female" }, colors = RadioButtonDefaults.colors(selectedColor = CosmicAppTheme.colors.accent, unselectedColor = CosmicAppTheme.colors.textSecondary))
+                        Text(Localization.get("female", isTamil), color = CosmicAppTheme.colors.textPrimary)
                     }
                 }
 
-                item { SectionTitle(Localization.get("birth_details", isTamil), cyan) }
+                item { SectionTitle(Localization.get("birth_details", isTamil), CosmicAppTheme.colors.accent) }
                 item {
                     val cal = Calendar.getInstance()
                     val datePickerDialog = android.app.DatePickerDialog(
@@ -135,8 +147,7 @@ fun AstrologerRegistrationScreen(onBack: () -> Unit) {
                     ReadOnlyTextField(
                         value = dob,
                         onClick = { datePickerDialog.show() },
-                        label = Localization.get("dob", isTamil),
-                        cyan = cyan
+                        label = Localization.get("dob", isTamil)
                     )
                 }
                 item {
@@ -150,36 +161,36 @@ fun AstrologerRegistrationScreen(onBack: () -> Unit) {
                     ReadOnlyTextField(
                         value = tob,
                         onClick = { timePickerDialog.show() },
-                        label = Localization.get("tob", isTamil),
-                        cyan = cyan
+                        label = Localization.get("tob", isTamil)
                     )
                 }
-                item { CustomTextField(value = pob, onValueChange = { pob = it }, label = Localization.get("pob", isTamil), cyan) }
+                item { CustomTextField(value = pob, onValueChange = { pob = it }, label = Localization.get("pob", isTamil)) }
 
-                item { SectionTitle(Localization.get("contact_details", isTamil), cyan) }
-                item { CustomTextField(value = cell1, onValueChange = { cell1 = it }, label = "${Localization.get("phone_number", isTamil)} 1 *", keyboardType = KeyboardType.Phone, color = cyan) }
-                item { CustomTextField(value = cell2, onValueChange = { cell2 = it }, label = "${Localization.get("phone_number", isTamil)} 2", keyboardType = KeyboardType.Phone, color = cyan) }
-                item { CustomTextField(value = whatsapp, onValueChange = { whatsapp = it }, label = Localization.get("whatsapp_number", isTamil), keyboardType = KeyboardType.Phone, color = cyan) }
-                item { CustomTextField(value = email, onValueChange = { email = it }, label = Localization.get("email_address", isTamil), keyboardType = KeyboardType.Email, color = cyan) }
-                item { CustomTextField(value = address, onValueChange = { address = it }, label = Localization.get("full_address", isTamil), singleLine = false, color = cyan) }
+                item { SectionTitle(Localization.get("contact_details", isTamil), CosmicAppTheme.colors.accent) }
+                item { CustomTextField(value = cell1, onValueChange = { cell1 = it }, label = "${Localization.get("phone_number", isTamil)} 1 *", keyboardType = KeyboardType.Phone) }
+                item { CustomTextField(value = cell2, onValueChange = { cell2 = it }, label = "${Localization.get("phone_number", isTamil)} 2", keyboardType = KeyboardType.Phone) }
+                item { CustomTextField(value = whatsapp, onValueChange = { whatsapp = it }, label = Localization.get("whatsapp_number", isTamil), keyboardType = KeyboardType.Phone) }
+                item { CustomTextField(value = email, onValueChange = { email = it }, label = Localization.get("email_address", isTamil), keyboardType = KeyboardType.Email) }
+                item { CustomTextField(value = address, onValueChange = { address = it }, label = Localization.get("full_address", isTamil), singleLine = false) }
 
-                item { SectionTitle(Localization.get("professional_details", isTamil), cyan) }
-                item { CustomTextField(value = aadhar, onValueChange = { aadhar = it }, label = Localization.get("aadhar_number", isTamil), color = cyan) }
-                item { CustomTextField(value = pan, onValueChange = { pan = it }, label = Localization.get("pan_number", isTamil), color = cyan) }
-                item { CustomTextField(value = experience, onValueChange = { experience = it }, label = Localization.get("experience_years", isTamil), keyboardType = KeyboardType.Number, color = cyan) }
-                item { CustomTextField(value = profession, onValueChange = { profession = it }, label = Localization.get("occupation", isTamil), color = cyan) }
+                item { SectionTitle(Localization.get("professional_details", isTamil), CosmicAppTheme.colors.accent) }
+                item { CustomTextField(value = aadhar, onValueChange = { aadhar = it }, label = Localization.get("aadhar_number", isTamil)) }
+                item { CustomTextField(value = pan, onValueChange = { pan = it }, label = Localization.get("pan_number", isTamil)) }
+                item { CustomTextField(value = experience, onValueChange = { experience = it }, label = Localization.get("experience_years", isTamil), keyboardType = KeyboardType.Number) }
+                item { CustomTextField(value = profession, onValueChange = { profession = it }, label = Localization.get("occupation", isTamil)) }
 
-                item { SectionTitle(Localization.get("payment_details", isTamil), cyan) }
-                item { CustomTextField(value = bankDetails, onValueChange = { bankDetails = it }, label = Localization.get("bank_details", isTamil), singleLine = false, color = cyan) }
-                item { CustomTextField(value = upiName, onValueChange = { upiName = it }, label = "UPI Name", color = cyan) }
-                item { CustomTextField(value = upiNumber, onValueChange = { upiNumber = it }, label = Localization.get("upi_id", isTamil), color = cyan) }
+                item { SectionTitle(Localization.get("payment_details", isTamil), CosmicAppTheme.colors.accent) }
+                item { CustomTextField(value = bankDetails, onValueChange = { bankDetails = it }, label = Localization.get("bank_details", isTamil), singleLine = false) }
+                item { CustomTextField(value = upiName, onValueChange = { upiName = it }, label = "UPI Name") }
+                item { CustomTextField(value = upiNumber, onValueChange = { upiNumber = it }, label = Localization.get("upi_id", isTamil)) }
 
                 item {
-                    Button(
+                    com.astrohark.app.ui.theme.components.AstroButton(
+                        text = Localization.get("register_now", isTamil),
                         onClick = {
                             if (realName.isBlank() || cell1.isBlank()) {
                                 Toast.makeText(context, Localization.get("please_fill_required", isTamil), Toast.LENGTH_SHORT).show()
-                                return@Button
+                                return@AstroButton
                             }
                             isLoading = true
 
@@ -221,16 +232,9 @@ fun AstrologerRegistrationScreen(onBack: () -> Unit) {
                                 }
                             }
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = cyan, contentColor = Color.Black),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = !isLoading
-                    ) {
-                        if (isLoading) CircularProgressIndicator(color = Color.Black, modifier = Modifier.size(24.dp))
-                        else Text(Localization.get("register_now", isTamil), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    }
+                        modifier = Modifier.fillMaxWidth(),
+                        isLoading = isLoading
+                    )
                 }
             }
         }
@@ -253,24 +257,23 @@ fun SectionTitle(title: String, color: Color) {
 fun ReadOnlyTextField(
     value: String,
     onClick: () -> Unit,
-    label: String,
-    cyan: Color
+    label: String
 ) {
     Box(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
         OutlinedTextField(
             value = value,
             onValueChange = {},
-            label = { Text(label, color = Color.LightGray) },
+            label = { Text(label, color = CosmicAppTheme.colors.textSecondary) },
             modifier = Modifier.fillMaxWidth(),
             enabled = false,
             readOnly = true,
             colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = Color.White,
-                disabledBorderColor = Color.LightGray.copy(alpha = 0.5f),
-                disabledLabelColor = Color.LightGray,
+                disabledTextColor = CosmicAppTheme.colors.textPrimary,
+                disabledBorderColor = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.5f),
+                disabledLabelColor = CosmicAppTheme.colors.textSecondary,
                 disabledContainerColor = Color.Transparent
             ),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(AstroDimens.RadiusMedium)
         )
     }
 }
@@ -281,25 +284,24 @@ fun CustomTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
-    color: Color,
     keyboardType: KeyboardType = KeyboardType.Text,
     singleLine: Boolean = true
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, color = Color.LightGray) },
+        label = { Text(label, color = CosmicAppTheme.colors.textSecondary) },
         modifier = Modifier.fillMaxWidth(),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = color,
-            unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f),
-            focusedLabelColor = color,
-            cursorColor = color,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White
+            focusedBorderColor = CosmicAppTheme.colors.accent,
+            unfocusedBorderColor = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.5f),
+            focusedLabelColor = CosmicAppTheme.colors.accent,
+            cursorColor = CosmicAppTheme.colors.accent,
+            focusedTextColor = CosmicAppTheme.colors.textPrimary,
+            unfocusedTextColor = CosmicAppTheme.colors.textPrimary
         ),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = singleLine,
-        shape = RoundedCornerShape(12.dp)
+        shape = RoundedCornerShape(AstroDimens.RadiusMedium)
     )
 }

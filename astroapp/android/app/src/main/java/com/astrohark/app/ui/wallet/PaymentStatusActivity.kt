@@ -86,20 +86,21 @@ fun PaymentStatusScreen(
     txnId: String?,
     onGoHome: () -> Unit
 ) {
-    val bgColor = if (isSuccess) Color(0xFFE8F5E9) else Color(0xFFFBE9E7)
-    val iconColor = if (isSuccess) Color(0xFF4CAF50) else Color(0xFFD32F2F)
+    val successColor = Color(0xFF4CAF50)
+    val failureColor = Color(0xFFD32F2F)
+    val iconColor = if (isSuccess) successColor else failureColor
     val icon: ImageVector = if (isSuccess) Icons.Default.CheckCircle else Icons.Default.Error
     val title = if (isSuccess) "Payment Successful!" else "Payment Failed"
     val message = if (isSuccess) "Your wallet has been recharged.\nTxn ID: ${txnId ?: "N/A"}" else "Transaction could not be completed."
 
     Surface(
-        color = Color.White,
+        color = CosmicAppTheme.colors.bgStart,
         modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(AstroDimens.Large),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -107,39 +108,34 @@ fun PaymentStatusScreen(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconColor,
-                modifier = Modifier.size(80.dp)
+                modifier = Modifier.size(100.dp)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
                 text = title,
-                fontSize = 24.sp,
+                style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black
+                color = CosmicAppTheme.colors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = message,
-                fontSize = 16.sp,
-                color = Color.Gray,
+                style = MaterialTheme.typography.bodyLarge,
+                color = CosmicAppTheme.colors.textSecondary,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            Button(
+            com.astrohark.app.ui.theme.components.AstroButton(
+                text = "Return to Wallet",
                 onClick = onGoHome,
-                colors = ButtonDefaults.buttonColors(containerColor = iconColor),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-            ) {
-                Text("Return to Home", fontSize = 16.sp, color = Color.White)
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

@@ -94,33 +94,32 @@ fun PermissionScreen(onBack: () -> Unit) {
     Scaffold(
         containerColor = CosmicAppTheme.colors.bgStart,
         topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(CosmicAppTheme.headerBrush)
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "App Permissions",
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White
-                )
-            }
+            CenterAlignedTopAppBar(
+                title = { 
+                    Text(
+                        text = "App Permissions",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = CosmicAppTheme.colors.accent,
+                        fontWeight = FontWeight.Bold
+                    ) 
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = CosmicAppTheme.colors.accent)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = CosmicAppTheme.colors.bgStart)
+            )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(CosmicAppTheme.backgroundBrush)
-                .padding(16.dp)
+                .background(CosmicAppTheme.colors.surfaceGradient)
+                .padding(AstroDimens.Medium)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(AstroDimens.Medium)
         ) {
             Text(
                 "For the best experience as an Astrologer, please enable the following permissions. These are required to receive calls even when the app is closed.",
@@ -197,7 +196,7 @@ fun PermissionScreen(onBack: () -> Unit) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 PermissionItem(
                     title = "Notifications",
-                    description = "Required to alert you about new chat and call requests.",
+                    description = "Alerts about new chat and call requests.",
                     icon = Icons.Default.Notifications,
                     isGranted = hasNotificationPermission,
                     onEnable = {
@@ -209,16 +208,13 @@ fun PermissionScreen(onBack: () -> Unit) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(AstroDimens.Medium))
 
-            Button(
+            com.astrohark.app.ui.theme.components.AstroButton(
+                text = "I have enabled all",
                 onClick = onBack,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = CosmicAppTheme.colors.accent),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("I have enabled all", color = Color.White, fontWeight = FontWeight.Bold)
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
@@ -233,8 +229,9 @@ fun PermissionItem(
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(AstroDimens.RadiusMedium),
         modifier = Modifier.fillMaxWidth(),
+        border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f)),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Row(
@@ -245,9 +242,9 @@ fun PermissionItem(
                 modifier = Modifier
                     .size(48.dp)
                     .background(
-                        if (isGranted) Color(0xFF4CAF50).copy(alpha = 0.1f)
-                        else CosmicAppTheme.colors.accent.copy(alpha = 0.1f),
-                        RoundedCornerShape(12.dp)
+                        if (isGranted) Color(0xFF4CAF50).copy(alpha = 0.15f)
+                        else CosmicAppTheme.colors.accent.copy(alpha = 0.15f),
+                        RoundedCornerShape(AstroDimens.RadiusSmall)
                     ),
                 contentAlignment = Alignment.Center
             ) {

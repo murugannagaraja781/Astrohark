@@ -32,27 +32,30 @@ fun CosmicAppTheme(
     val theme by ThemeManager.currentTheme.collectAsState()
     val customBg by ThemeManager.customBgColor.collectAsState()
 
-    // Get Base Colors
+    // Determine if we should use dark mode colors for the background
+    val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+
+    // Get Base Colors (now contains both light and dark options)
     val baseColors = ThemePalette.getColors(theme)
 
     // Apply Custom Background Overrides if set
     val colors = if (customBg != 0) {
         val customColor = Color(customBg)
-        // create a subtle gradient from the custom color
         baseColors.copy(
             bgStart = customColor,
-            bgCenter = customColor, // distinct logic could be added here
-            bgEnd = customColor
+            bgCenter = customColor,
+            bgEnd = customColor,
+            bgStartDark = customColor,
+            bgCenterDark = customColor,
+            bgEndDark = customColor
         )
     } else {
          baseColors
     }
 
     // 2. Page Overrides
-    // Identify current page by Activity class name
     val activityName = remember(context) { (context as? Activity)?.javaClass?.simpleName ?: "" }
 
-    // Check PageThemeManager for overrides
     val pageColors = remember(activityName, colors) {
         val pm = com.astrohark.app.utils.PageThemeManager
         val pageBg = pm.getPageColor(context, activityName, pm.ATTR_BG, -1)
@@ -76,18 +79,21 @@ fun CosmicAppTheme(
 
             headerStart = if (pageHeader != -1) Color(pageHeader) else colors.headerStart,
             headerEnd = if (pageHeader != -1) Color(pageHeader) else colors.headerEnd
-            // Footer not yet in ThemePalette, will use BottomBar approach or update ThemeColors later
         )
     }
+
+    // Select the actual background colors based on system theme
+    val currentBgStart = if (isDark) pageColors.bgStartDark else pageColors.bgStart
+    val currentBgCenter = if (isDark) pageColors.bgCenterDark else pageColors.bgCenter
+    val currentBgEnd = if (isDark) pageColors.bgEndDark else pageColors.bgEnd
 
     // Side Effect for System Bars
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = pageColors.bgStart.toArgb()
-            window.navigationBarColor = pageColors.bgStart.toArgb()
-            // true means dark icons for light background
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+            window.statusBarColor = currentBgStart.toArgb()
+            window.navigationBarColor = currentBgStart.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDark
         }
     }
 
@@ -95,10 +101,10 @@ fun CosmicAppTheme(
         LocalThemeColors provides pageColors
     ) {
         MaterialTheme(
-             colorScheme = androidx.compose.material3.darkColorScheme(
+             colorScheme = (if (isDark) androidx.compose.material3.darkColorScheme() else androidx.compose.material3.lightColorScheme()).copy(
                  primary = pageColors.accent,
                  secondary = pageColors.accent,
-                 background = pageColors.bgStart,
+                 background = currentBgStart,
                  surface = pageColors.cardBg,
                  onPrimary = Color.White,
                  onSecondary = Color.White,
@@ -121,11 +127,17 @@ object CosmicAppTheme {
     // Gradients must also be dynamic now
     val backgroundBrush: Brush
         @Composable
-        get() = Brush.linearGradient(
-            colors = listOf(colors.bgStart, colors.bgCenter, colors.bgEnd),
-            start = Offset(0f, 0f),
-            end = Offset(0f, Float.POSITIVE_INFINITY)
-        )
+        get() {
+            val isDark = androidx.compose.foundation.isSystemInDarkTheme()
+            val start = if (isDark) colors.bgStartDark else colors.bgStart
+            val center = if (isDark) colors.bgCenterDark else colors.bgCenter
+            val end = if (isDark) colors.bgEndDark else colors.bgEnd
+            return Brush.linearGradient(
+                colors = listOf(start, center, end),
+                start = Offset(0f, 0f),
+                end = Offset(0f, Float.POSITIVE_INFINITY)
+            )
+        }
 
     val headerBrush: Brush
         @Composable

@@ -31,15 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// PREMIUM COLOR TOKENS (Cocoa Dark Refresh)
-private val CocoaCardStart = Color(0xFF1C140E)
-private val CocoaCardEnd = Color(0xFF140F0A)
-private val ChocolateBrown = Color(0xFFFF7F00) // Using Accent Orange for consistency
-private val MysticBg = Color(0xFF0B0805)
-private val MysticTextPrimary = Color(0xFFF5F2F0)
-private val MysticTextSecondary = Color(0xFFA58B74)
-
-// Status Colors
+// Status Colors (Linked to Theme if possible, or standardized)
 private val GoodGlow = Color(0xFF22C55E)
 private val ModerateAmber = Color(0xFFF59E0B)
 private val WeakRed = Color(0xFFEF4444)
@@ -99,30 +91,22 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
                     Column {
                         Text(
                             text = displayTitle,
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = ChocolateBrown
-                            )
-                        )
-                        Text(
-                            text = "Elegant Tamil + English Guide",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = ChocolateBrown.copy(alpha = 0.7f)
+                            style = MaterialTheme.typography.titleLarge
                         )
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = ChocolateBrown)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = CosmicAppTheme.colors.accent)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                     containerColor = MysticBg,
-                     titleContentColor = ChocolateBrown
+                     containerColor = CosmicAppTheme.colors.bgStart,
+                     titleContentColor = CosmicAppTheme.colors.textPrimary
                 )
             )
         },
-        containerColor = MysticBg
+        containerColor = CosmicAppTheme.colors.bgStart
     ) { padding ->
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (isLoading) {
@@ -132,20 +116,20 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
                 )
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                    contentPadding = PaddingValues(AstroDimens.Medium),
+                    verticalArrangement = Arrangement.spacedBy(AstroDimens.Medium)
                 ) {
                     items(dataList) { item ->
                         PremiumRasipalanCard(item)
                     }
 
                     item {
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(AstroDimens.Small))
                         Text(
                             text = "More Insights",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = ChocolateBrown,
-                            modifier = Modifier.padding(vertical = 8.dp)
+                            style = MaterialTheme.typography.titleLarge,
+                            color = CosmicAppTheme.colors.accent,
+                            modifier = Modifier.padding(vertical = AstroDimens.Small)
                         )
                     }
 
@@ -161,77 +145,60 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
 
 @Composable
 fun PremiumRasipalanCard(item: RasipalanItem) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, ChocolateBrown.copy(alpha = 0.4f))
+    com.astrohark.app.ui.theme.components.AstroCard(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
-            modifier = Modifier
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(CocoaCardStart, CocoaCardEnd)
-                    )
-                )
-                .padding(24.dp)
-        ) {
-            Column {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = item.signNameTa ?: item.signNameEn ?: "",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MysticTextPrimary
-                        )
-                    )
-                    Text(
-                        text = item.date ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = ChocolateBrown
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Short daily message
+        Column(modifier = Modifier.padding(AstroDimens.Large)) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = item.prediction?.ta ?: "",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        lineHeight = 28.sp,
-                        color = MysticTextPrimary
-                    )
+                    text = item.signNameTa ?: item.signNameEn ?: "",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = CosmicAppTheme.colors.textPrimary
                 )
+                Text(
+                    text = item.date ?: "",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = CosmicAppTheme.colors.accent
+                )
+            }
 
-                Spacer(modifier = Modifier.height(16.dp))
-                Divider(color = ChocolateBrown.copy(alpha = 0.3f), thickness = 0.5.dp)
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(AstroDimens.Medium))
 
-                // 3 Status Indicators
-                StatusIndicatorRow("தொழில் (Career)", item.details?.career)
-                StatusIndicatorRow("நிதி (Finance)", item.details?.finance)
-                StatusIndicatorRow("ஆரோக்கியம் (Health)", item.details?.health)
+            // Short daily message
+            Text(
+                text = item.prediction?.ta ?: "",
+                style = MaterialTheme.typography.bodyLarge,
+                color = CosmicAppTheme.colors.textPrimary
+            )
 
-                Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(AstroDimens.Medium))
+            HorizontalDivider(color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(AstroDimens.Medium))
 
-                // Lucky Section
-                Surface(
-                    color = Color.Black.copy(alpha = 0.2f),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                    border = BorderStroke(0.5.dp, ChocolateBrown.copy(alpha = 0.2f))
+            // 3 Status Indicators
+            StatusIndicatorRow("தொழில் (Career)", item.details?.career)
+            StatusIndicatorRow("நிதி (Finance)", item.details?.finance)
+            StatusIndicatorRow("ஆரோக்கியம் (Health)", item.details?.health)
+
+            Spacer(modifier = Modifier.height(AstroDimens.Medium))
+
+            // Lucky Section
+            Surface(
+                color = Color.Black.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                border = BorderStroke(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.1f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(AstroDimens.Medium).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceAround
-                    ) {
-                        LuckyStat("அதிர்ஷ்ட எண்", item.lucky?.number ?: "-")
-                        LuckyStat("அதிர்ஷ்ட நிறம்", item.lucky?.color?.ta ?: "-")
-                    }
+                    LuckyStat("அதிர்ஷ்ட எண்", item.lucky?.number ?: "-")
+                    LuckyStat("அதிர்ஷ்ட நிறம்", item.lucky?.color?.ta ?: "-")
                 }
             }
         }
@@ -245,38 +212,37 @@ fun StatusIndicatorRow(label: String, status: String?) {
 
     if (isLongText) {
         Column(
-            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+            modifier = Modifier.padding(vertical = AstroDimens.Small).fillMaxWidth()
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.titleSmall,
-                color = ChocolateBrown,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
+                style = MaterialTheme.typography.labelLarge,
+                color = CosmicAppTheme.colors.accent,
+                modifier = Modifier.padding(bottom = AstroDimens.XSmall)
             )
             Surface(
-                color = CocoaCardStart.copy(alpha = 0.5f),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, ChocolateBrown.copy(alpha = 0.3f))
+                color = CosmicAppTheme.colors.bgStart.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(AstroDimens.RadiusSmall),
+                border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.1f))
             ) {
                 Text(
                     text = text,
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
-                    color = MysticTextPrimary
+                    modifier = Modifier.padding(AstroDimens.Small),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CosmicAppTheme.colors.textPrimary
                 )
             }
         }
     } else {
         Row(
-            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+            modifier = Modifier.padding(vertical = AstroDimens.Small).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MysticTextSecondary
+                color = CosmicAppTheme.colors.textSecondary
             )
             StatusChip(text)
         }
@@ -317,8 +283,8 @@ fun StatusChip(status: String) {
 @Composable
 fun LuckyStat(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = label, style = MaterialTheme.typography.labelSmall, color = MysticTextSecondary)
-        Text(text = value, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = ChocolateBrown)
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.textSecondary)
+        Text(text = value, style = MaterialTheme.typography.titleMedium, color = CosmicAppTheme.colors.accent)
     }
 }
 

@@ -339,14 +339,7 @@ fun IncomingCallScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF1A1A2E), // Deep Space Blue
-                        Color(0xFF000000)  // Pure Black
-                    )
-                )
-            )
+            .background(CosmicAppTheme.colors.surfaceGradient)
     ) {
         // Decorative background elements (optional, but adds premium feel)
         Column(
@@ -356,32 +349,31 @@ fun IncomingCallScreen(
             Spacer(modifier = Modifier.height(80.dp))
 
             val typeLabel = when(callType) {
-                "chat" -> "Astroluna Chat Request"
+                "chat" -> "Astrohark Chat Request"
                 "video" -> "Incoming Video Call"
                 else -> "Incoming Audio Call"
             }
 
             Text(
                 text = typeLabel,
-                color = Color.LightGray.copy(alpha = 0.8f),
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 1.sp
+                style = MaterialTheme.typography.labelLarge,
+                color = CosmicAppTheme.colors.accent,
+                letterSpacing = 2.sp
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = callerName,
-                color = Color.White,
-                fontSize = 32.sp,
+                style = MaterialTheme.typography.displaySmall,
+                color = CosmicAppTheme.colors.textPrimary,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
-                text = if (callerId == "Unknown" && callerName != "Unknown") "Astroluna User" else callerId,
-                color = Color.Gray,
-                fontSize = 14.sp,
+                text = if (callerId == "Unknown" && callerName != "Unknown") "Astrohark User" else callerId,
+                color = CosmicAppTheme.colors.textSecondary,
+                style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 4.dp)
             )
 
@@ -398,20 +390,20 @@ fun IncomingCallScreen(
                             .size(if (index == 0) 180.dp else 220.dp)
                             .scale(pulseScale)
                             .clip(CircleShape)
-                            .background(Color(0xFFDDCBB4).copy(alpha = pulseAlpha / (index + 1)))
+                            .background(CosmicAppTheme.colors.accent.copy(alpha = pulseAlpha / (index + 1)))
                     )
                 }
 
                 Surface(
                     shape = CircleShape,
-                    color = Color(0xFF2E2E2E),
+                    color = CosmicAppTheme.colors.cardBg,
                     modifier = Modifier.size(140.dp),
-                    border = androidx.compose.foundation.BorderStroke(2.dp, Color(0xFFDDCBB4).copy(alpha = 0.5f))
+                    border = androidx.compose.foundation.BorderStroke(2.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.5f))
                 ) {
                     Icon(
                         Icons.Default.Person,
                         contentDescription = "Caller",
-                        tint = Color(0xFFDDCBB4),
+                        tint = CosmicAppTheme.colors.accent,
                         modifier = Modifier
                             .padding(32.dp)
                             .fillMaxSize()

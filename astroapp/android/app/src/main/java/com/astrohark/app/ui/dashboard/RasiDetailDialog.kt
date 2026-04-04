@@ -108,7 +108,6 @@ fun RasiDetailDialog(
                     ) {
                         RasiInfoItem(Localization.get("element", true), "காற்று (Air)")
                         RasiInfoItem(Localization.get("lord", true), "சுக்கிரன் (Venus)")
-                        RasiInfoItem(Localization.get("category", true), "சரம் (Movable)")
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))

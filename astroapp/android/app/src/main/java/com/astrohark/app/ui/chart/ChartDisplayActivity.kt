@@ -147,27 +147,29 @@ class ChartDisplayActivity : ComponentActivity() {
             <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
-                    body { font-family: sans-serif; padding: 10px; background: #fff; }
-                    h2, h3 { text-align: center; color: #8B4513; margin: 15px 0 5px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+                    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 16px; background: #0B0805; color: #F5F2F0; }
+                    h2, h3 { text-align: center; color: #FFB300; margin: 24px 0 12px 0; border-bottom: 2px solid #3E2723; padding-bottom: 8px; font-weight: 300; letter-spacing: 1px; }
                     .chart-container {
                         display: grid;
                         grid-template-columns: 1fr 1fr 1fr 1fr;
                         grid-template-rows: 1fr 1fr 1fr 1fr;
-                        gap: 2px;
-                        background: #8B4513;
-                        border: 3px solid #8B4513;
+                        gap: 1px;
+                        background: #FFB300;
+                        border: 4px solid #FFB300;
                         width: 100%;
                         aspect-ratio: 1 / 1;
-                        margin-bottom: 25px;
-                        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+                        margin-bottom: 30px;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                        border-radius: 4px;
+                        overflow: hidden;
                     }
-                    .box { background: #fff; padding: 2px; font-size: 11px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; min-height: 40px; border: 0.5px solid #eee; }
+                    .box { background: #1C140E; padding: 4px; font-size: 11px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; min-height: 40px; border: 0.5px solid #3E2723; }
                     .b0 { grid-column: 1; grid-row: 1; }
                     .b1 { grid-column: 2; grid-row: 1; }
                     .b2 { grid-column: 3; grid-row: 1; }
                     .b3 { grid-column: 4; grid-row: 1; }
                     .b4 { grid-column: 1; grid-row: 2; }
-                    .center-box { grid-column: 2 / span 2; grid-row: 2 / span 2; background: #fdf5e6; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #8B4513; font-size: 18px; }
+                    .center-box { grid-column: 2 / span 2; grid-row: 2 / span 2; background: #0B0805; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #FFB300; font-size: 20px; text-transform: uppercase; letter-spacing: 2px; }
                     .b5 { grid-column: 4; grid-row: 2; }
                     .b6 { grid-column: 1; grid-row: 3; }
                     .b7 { grid-column: 4; grid-row: 3; }
@@ -175,12 +177,12 @@ class ChartDisplayActivity : ComponentActivity() {
                     .b9 { grid-column: 2; grid-row: 4; }
                     .b10 { grid-column: 3; grid-row: 4; }
                     .b11 { grid-column: 4; grid-row: 4; }
-                    .planet { background: #fff3e0; padding: 2px 4px; margin: 2px; border-radius: 4px; color: #8B4513; font-weight: bold; border: 1px solid #ffcc80; }
-                    .planet.lagna { background: #d7ccc8; color: #5d4037; border-color: #5d4037; }
-                    .info-table { width: 100%; border-collapse: collapse; margin-top: 15px; border: 1px solid #8B4513; }
-                    .info-table td, .info-table th { border: 1px solid #d7ccc8; padding: 10px; text-align: left; font-size: 13px; }
-                    .info-table th { background-color: #8B4513; color: #fff; }
-                    .highlight { background-color: #fff9c4; font-weight: bold; border: 2px solid #8B4513; }
+                    .planet { background: #3E2723; padding: 2px 6px; margin: 2px; border-radius: 4px; color: #FFB300; font-weight: bold; border: 1px solid #FFB300; font-size: 10px; }
+                    .planet.lagna { background: #FFB300; color: #1C140E; border-color: #FFB300; }
+                    .info-table { width: 100%; border-collapse: collapse; margin-top: 20px; border: 1px solid #3E2723; background: #1C140E; border-radius: 12px; overflow: hidden; }
+                    .info-table td, .info-table th { border: 1px solid #3E2723; padding: 12px; text-align: left; font-size: 13px; }
+                    .info-table th { background-color: #3E2723; color: #FFB300; font-weight: 600; }
+                    .highlight { background-color: #3E2723; font-weight: bold; border: 2px solid #FFB300; color: #fff; }
                 </style>
             </head>
             <body>
@@ -299,14 +301,30 @@ fun ChartDisplayScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Birth Chart Analysis", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF6200EE))
+                title = { Text("Birth Chart Analysis") },
+                navigationIcon = {
+                    androidx.compose.material3.IconButton(onClick = { /* finish handled in Activity or via back handler */ }) {
+                        androidx.compose.material3.Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = CosmicAppTheme.colors.accent
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = CosmicAppTheme.colors.bgStart,
+                    titleContentColor = CosmicAppTheme.colors.textPrimary
+                )
             )
-        }
+        },
+        containerColor = CosmicAppTheme.colors.bgStart
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = CosmicAppTheme.colors.accent
+                )
             } else if (failed) {
                  Text(
                      text = "Failed to load chart data.",

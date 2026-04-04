@@ -1,0 +1,405 @@
+Initialized native services in: /Users/wohozo/.gradle/native
+Initialized jansi services in: /Users/wohozo/.gradle/native
+Found daemon DaemonInfo{pid=2994, address=[f4bf015c-2d4c-4085-8b1b-4a75c5660ae1 port:63594, addresses:[/127.0.0.1]], state=Idle, lastBusy=1775150102868, context=DefaultDaemonContext[uid=43850294-4a2c-466f-85bc-a9c79b8ccf4c,javaHome=/Users/wohozo/.antigravity/extensions/redhat.java-1.53.0-darwin-arm64/jre/21.0.10-macosx-aarch64,javaVersion=21,javaVendor=Eclipse Adoptium,daemonRegistryDir=/Users/wohozo/.gradle/daemon,pid=2994,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx4096m,-Dfile.encoding=UTF-8,-Duser.country=IN,-Duser.language=en,-Duser.variant]} however its context does not match the desired criteria.
+JVM is incompatible.
+Wanted: DaemonRequestContext{jvmCriteria=/Library/Java/JavaVirtualMachines/zulu-23.jdk/Contents/Home (no JDK specified, using current Java home), daemonOpts=[-XX:MaxMetaspaceSize=1024m, -Xmx4096m, -Dfile.encoding=UTF-8, -Duser.country=IN, -Duser.language=en, -Duser.variant], applyInstrumentationAgent=true, nativeServicesMode=ENABLED, priority=NORMAL}
+Actual: DefaultDaemonContext[uid=43850294-4a2c-466f-85bc-a9c79b8ccf4c,javaHome=/Users/wohozo/.antigravity/extensions/redhat.java-1.53.0-darwin-arm64/jre/21.0.10-macosx-aarch64,javaVersion=21,javaVendor=Eclipse Adoptium,daemonRegistryDir=/Users/wohozo/.gradle/daemon,pid=2994,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx4096m,-Dfile.encoding=UTF-8,-Duser.country=IN,-Duser.language=en,-Duser.variant]
+
+  Looking for a different daemon...
+Found daemon DaemonInfo{pid=11480, address=[cf945f27-36f5-4916-b9fc-8d05e063549a port:52829, addresses:[/127.0.0.1]], state=Idle, lastBusy=1775155010853, context=DefaultDaemonContext[uid=836112c7-a80f-4a48-b321-a368c78b6701,javaHome=/Users/wohozo/.antigravity/extensions/redhat.java-1.53.0-darwin-arm64/jre/21.0.10-macosx-aarch64,javaVersion=21,javaVendor=Eclipse Adoptium,daemonRegistryDir=/Users/wohozo/.gradle/daemon,pid=11480,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=1024m,-Xmx4096m,-Dfile.encoding=UTF-8,-Duser.country=IN,-Duser.language=en,-Duser.variant]} however its context does not match the desired criteria.
+JVM is incompatible.
+Wanted: DaemonRequestContext{jvmCriteria=/Library/Java/JavaVirtualMachines/zulu-23.jdk/Contents/Home (no JDK specified, using current Java home), daemonOpts=[-XX:MaxMetaspaceSize=1024m, -Xmx4096m, -Dfile.encoding=UTF-8, -Duser.country=IN, -Duser.language=en, -Duser.variant], applyInstrumentationAgent=true, nativeServicesMode=ENABLED, priority=NORMAL}
+Actual: DefaultDaemonContext[uid=836112c7-a80f-4a48-b321-a368c78b6701,javaHome=/Users/wohozo/.antigravity/extensions/redhat.java-1.53.0-darwin-arm64/jre/21.0.10-macosx-aarch64,javaVersion=21,javaVendor=Eclipse Adoptium,daemonRegistryDir=/Users/wohozo/.gradle/daemon,pid=11480,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-XX:MaxMetaspaceSize=1024m,-Xmx4096m,-Dfile.encoding=UTF-8,-Duser.country=IN,-Duser.language=en,-Duser.variant]
+
+  Looking for a different daemon...
+Found daemon DaemonInfo{pid=14760, address=[92942042-a379-427c-ba22-1c11f0c611b6 port:53241, addresses:[/127.0.0.1]], state=Idle, lastBusy=1775150535496, context=DefaultDaemonContext[uid=2f1224ce-244d-4429-82f4-71d75ba949a4,javaHome=/Library/Java/JavaVirtualMachines/zulu-23.jdk/Contents/Home,javaVersion=23,javaVendor=Azul Systems, Inc.,daemonRegistryDir=/Users/wohozo/.gradle/daemon,pid=14760,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx4096m,-Dfile.encoding=UTF-8,-Duser.country=IN,-Duser.language=en,-Duser.variant]} however its context does not match the desired criteria.
+At least one daemon option is different.
+Wanted: DaemonRequestContext{jvmCriteria=/Library/Java/JavaVirtualMachines/zulu-23.jdk/Contents/Home (no JDK specified, using current Java home), daemonOpts=[-XX:MaxMetaspaceSize=1024m, -Xmx4096m, -Dfile.encoding=UTF-8, -Duser.country=IN, -Duser.language=en, -Duser.variant], applyInstrumentationAgent=true, nativeServicesMode=ENABLED, priority=NORMAL}
+Actual: DefaultDaemonContext[uid=2f1224ce-244d-4429-82f4-71d75ba949a4,javaHome=/Library/Java/JavaVirtualMachines/zulu-23.jdk/Contents/Home,javaVersion=23,javaVendor=Azul Systems, Inc.,daemonRegistryDir=/Users/wohozo/.gradle/daemon,pid=14760,idleTimeout=10800000,priority=NORMAL,applyInstrumentationAgent=true,nativeServicesMode=ENABLED,daemonOpts=-Xmx4096m,-Dfile.encoding=UTF-8,-Duser.country=IN,-Duser.language=en,-Duser.variant]
+
+  Looking for a different daemon...
+The client will now receive all logging from the daemon (pid: 21043). The daemon log file: /Users/wohozo/.gradle/daemon/8.12/daemon-21043.out.log
+Starting 4th build in daemon [uptime: 33 mins 40.967 secs, performance: 99%, GC rate: 0.00/s, heap usage: 0% of 4 GiB, non-heap usage: 10% of 1 GiB]
+Using 8 worker leases.
+Now considering [/Users/wohozo/Documents/Astrohark/astroapp/android] as hierarchies to watch
+Watching the file system is configured to be enabled if available
+File system watching is active
+Starting Build
+Settings evaluated using settings file '/Users/wohozo/Documents/Astrohark/astroapp/android/settings.gradle.kts'.
+Using local directory build cache for the root build (location = /Users/wohozo/.gradle/caches/build-cache-1, remove unused entries = after 7 days).
+Projects loaded. Root project using build file '/Users/wohozo/Documents/Astrohark/astroapp/android/build.gradle.kts'.
+Included projects: [root project 'AstroApp', project ':app']
+
+> Configure project :
+Evaluating root project 'AstroApp' using build file '/Users/wohozo/Documents/Astrohark/astroapp/android/build.gradle.kts'.
+Resolved plugin [id: 'com.android.application', version: '8.5.2', apply: false]
+Resolved plugin [id: 'org.jetbrains.kotlin.android', version: '2.0.20', apply: false]
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose', version: '2.0.20', apply: false]
+Resolved plugin [id: 'com.google.gms.google-services', version: '4.4.2', apply: false]
+
+> Configure project :app
+Evaluating project ':app' using build file '/Users/wohozo/Documents/Astrohark/astroapp/android/app/build.gradle.kts'.
+Resolved plugin [id: 'com.android.application']
+Resolved plugin [id: 'org.jetbrains.kotlin.android']
+Resolved plugin [id: 'com.google.gms.google-services']
+Resolved plugin [id: 'org.jetbrains.kotlin.plugin.compose']
+Resolved plugin [id: 'kotlin-kapt']
+Using default execution profile
+Using Kotlin Gradle Plugin gradle85 variant
+Parsed shrinker version: 8.5.35
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+Detected Android Gradle Plugin compose compiler configuration
+All projects evaluated.
+Task name matched 'assembleDebug'
+Selected primary task 'assembleDebug' from project :
+Tasks to be executed: [task ':app:preBuild', task ':app:preDebugBuild', task ':app:mergeDebugNativeDebugMetadata', task ':app:checkKotlinGradlePluginConfigurationErrors', task ':app:dataBindingMergeDependencyArtifactsDebug', task ':app:generateDebugResValues', task ':app:generateDebugResources', task ':app:processDebugGoogleServices', task ':app:mergeDebugResources', task ':app:packageDebugResources', task ':app:parseDebugLocalResources', task ':app:dataBindingGenBaseClassesDebug', task ':app:checkDebugAarMetadata', task ':app:mapDebugSourceSetPaths', task ':app:createDebugCompatibleScreenManifests', task ':app:extractDeepLinksDebug', task ':app:processDebugMainManifest', task ':app:processDebugManifest', task ':app:processDebugManifestForPackage', task ':app:processDebugResources', task ':app:kaptGenerateStubsDebugKotlin', task ':app:kaptDebugKotlin', task ':app:compileDebugKotlin', task ':app:javaPreCompileDebug', task ':app:compileDebugJavaWithJavac', task ':app:mergeDebugShaders', task ':app:compileDebugShaders', task ':app:generateDebugAssets', task ':app:mergeDebugAssets', task ':app:compressDebugAssets', task ':app:desugarDebugFileDependencies', task ':app:dexBuilderDebug', task ':app:mergeDebugGlobalSynthetics', task ':app:processDebugJavaRes', task ':app:mergeDebugJavaResource', task ':app:checkDebugDuplicateClasses', task ':app:mergeDebugStartupProfile', task ':app:mergeExtDexDebug', task ':app:mergeLibDexDebug', task ':app:mergeProjectDexDebug', task ':app:mergeDebugJniLibFolders', task ':app:mergeDebugNativeLibs', task ':app:stripDebugDebugSymbols', task ':app:validateSigningDebug', task ':app:writeDebugAppMetadata', task ':app:writeDebugSigningConfigVersions', task ':app:packageDebug', task ':app:createDebugApkListingFileRedirect', task ':app:assembleDebug']
+Tasks that were excluded: []
+Resolve mutations for :app:preBuild (Thread[#373,Execution worker,5,main]) started.
+:app:preBuild (Thread[#373,Execution worker,5,main]) started.
+
+> Task :app:preBuild UP-TO-DATE
+Skipping task ':app:preBuild' as it has no actions.
+Resolve mutations for :app:preDebugBuild (Thread[#372,included builds,5,main]) started.
+:app:preDebugBuild (Thread[#372,included builds,5,main]) started.
+
+> Task :app:preDebugBuild UP-TO-DATE
+Skipping task ':app:preDebugBuild' as it has no actions.
+Resolve mutations for :app:mergeDebugNativeDebugMetadata (Thread[#372,included builds,5,main]) started.
+:app:mergeDebugNativeDebugMetadata (Thread[#372,included builds,5,main]) started.
+
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+Skipping task ':app:mergeDebugNativeDebugMetadata' as it has no source files and no previous output files.
+Resolve mutations for :app:checkKotlinGradlePluginConfigurationErrors (Thread[#373,Execution worker,5,main]) started.
+:app:checkKotlinGradlePluginConfigurationErrors (Thread[#373,Execution worker,5,main]) started.
+
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+Skipping task ':app:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+Resolve mutations for :app:dataBindingMergeDependencyArtifactsDebug (Thread[#373,Execution worker,5,main]) started.
+:app:dataBindingMergeDependencyArtifactsDebug (Thread[#373,Execution worker,5,main]) started.
+
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+Registered task dependencies: app:debugCompileClasspath
+Skipping misunderstood TO dep string: androidx.compose.ui:ui-tooling
+Skipping misunderstood TO dep string: androidx.compose.ui:ui-test-manifest
+Skipping misunderstood TO dep string: com.google.firebase:firebase-messaging
+Skipping misunderstood TO dep string: com.google.firebase:firebase-analytics
+Skipping misunderstood TO dep string: androidx.compose.ui:ui
+Skipping misunderstood TO dep string: androidx.compose.ui:ui-graphics
+Skipping misunderstood TO dep string: androidx.compose.ui:ui-tooling-preview
+Skipping misunderstood TO dep string: androidx.compose.material3:material3
+Skipping misunderstood TO dep string: androidx.compose.runtime:runtime-livedata
+Starting dependency analysis
+Caching disabled for task ':app:dataBindingMergeDependencyArtifactsDebug' because:
+  Caching has been disabled for the task
+Skipping task ':app:dataBindingMergeDependencyArtifactsDebug' as it is up-to-date.
+Resolve mutations for :app:generateDebugResValues (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:generateDebugResValues (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:generateDebugResValues UP-TO-DATE
+Build cache key for task ':app:generateDebugResValues' is a3de17bf6832766342e31dd369011f71
+Skipping task ':app:generateDebugResValues' as it is up-to-date.
+Resolve mutations for :app:generateDebugResources (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:generateDebugResources (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:generateDebugResources UP-TO-DATE
+Build cache key for task ':app:generateDebugResources' is 4ea310b60a838732e3651ce3672f0290
+Skipping task ':app:generateDebugResources' as it is up-to-date.
+Resolve mutations for :app:processDebugGoogleServices (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:processDebugGoogleServices (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:processDebugGoogleServices UP-TO-DATE
+Build cache key for task ':app:processDebugGoogleServices' is b8947dba7d37bd5309a34bb9dd8977ab
+Skipping task ':app:processDebugGoogleServices' as it is up-to-date.
+Resolve mutations for :app:mergeDebugResources (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:mergeDebugResources (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:mergeDebugResources UP-TO-DATE
+Build cache key for task ':app:mergeDebugResources' is 5c3b56dba4cd7cc83129a5392040d0d0
+Skipping task ':app:mergeDebugResources' as it is up-to-date.
+Resolve mutations for :app:packageDebugResources (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:packageDebugResources (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:packageDebugResources UP-TO-DATE
+Build cache key for task ':app:packageDebugResources' is ea138f0bd65992088f98d84456a82ca2
+Skipping task ':app:packageDebugResources' as it is up-to-date.
+Resolve mutations for :app:parseDebugLocalResources (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:parseDebugLocalResources (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:parseDebugLocalResources UP-TO-DATE
+Build cache key for task ':app:parseDebugLocalResources' is 1069d7e283e9c0ef8ef704eb3e6f0909
+Skipping task ':app:parseDebugLocalResources' as it is up-to-date.
+Resolve mutations for :app:dataBindingGenBaseClassesDebug (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:dataBindingGenBaseClassesDebug (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+Build cache key for task ':app:dataBindingGenBaseClassesDebug' is dc01597fd72fae474bd4d5591d333d4c
+Skipping task ':app:dataBindingGenBaseClassesDebug' as it is up-to-date.
+Resolve mutations for :app:checkDebugAarMetadata (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:checkDebugAarMetadata (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+Caching disabled for task ':app:checkDebugAarMetadata' because:
+  Caching has been disabled for the task
+Skipping task ':app:checkDebugAarMetadata' as it is up-to-date.
+Resolve mutations for :app:mapDebugSourceSetPaths (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:mapDebugSourceSetPaths (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+Caching disabled for task ':app:mapDebugSourceSetPaths' because:
+  Caching has been disabled for the task
+Skipping task ':app:mapDebugSourceSetPaths' as it is up-to-date.
+Resolve mutations for :app:createDebugCompatibleScreenManifests (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:createDebugCompatibleScreenManifests (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+Caching disabled for task ':app:createDebugCompatibleScreenManifests' because:
+  Caching has been disabled for the task
+Skipping task ':app:createDebugCompatibleScreenManifests' as it is up-to-date.
+Resolve mutations for :app:extractDeepLinksDebug (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:extractDeepLinksDebug (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+Build cache key for task ':app:extractDeepLinksDebug' is b19e9ea076d7203d9e7cd2dedeb231b6
+Skipping task ':app:extractDeepLinksDebug' as it is up-to-date.
+Resolve mutations for :app:processDebugMainManifest (Thread[#379,Execution worker Thread 7,5,main]) started.
+:app:processDebugMainManifest (Thread[#379,Execution worker Thread 7,5,main]) started.
+
+> Task :app:processDebugMainManifest UP-TO-DATE
+Build cache key for task ':app:processDebugMainManifest' is 3062657fa421961b288d565dece2a2ed
+Skipping task ':app:processDebugMainManifest' as it is up-to-date.
+Resolve mutations for :app:processDebugManifest (Thread[#373,Execution worker,5,main]) started.
+:app:processDebugManifest (Thread[#373,Execution worker,5,main]) started.
+
+> Task :app:processDebugManifest UP-TO-DATE
+Build cache key for task ':app:processDebugManifest' is 5c1212d943159abcc1b2d5e384a38f16
+Skipping task ':app:processDebugManifest' as it is up-to-date.
+Resolve mutations for :app:processDebugManifestForPackage (Thread[#373,Execution worker,5,main]) started.
+:app:processDebugManifestForPackage (Thread[#373,Execution worker,5,main]) started.
+
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+Custom actions are attached to task ':app:processDebugManifestForPackage'.
+Build cache key for task ':app:processDebugManifestForPackage' is a4db424174d61e131345d33c1b54c534
+Skipping task ':app:processDebugManifestForPackage' as it is up-to-date.
+Resolve mutations for :app:processDebugResources (Thread[#373,Execution worker,5,main]) started.
+:app:processDebugResources (Thread[#373,Execution worker,5,main]) started.
+
+> Task :app:processDebugResources UP-TO-DATE
+Build cache key for task ':app:processDebugResources' is bb244438bc98edde3ca598f2afb2cba6
+Skipping task ':app:processDebugResources' as it is up-to-date.
+Resolve mutations for :app:kaptGenerateStubsDebugKotlin (Thread[#373,Execution worker,5,main]) started.
+:app:kaptGenerateStubsDebugKotlin (Thread[#373,Execution worker,5,main]) started.
+Resolve mutations for :app:javaPreCompileDebug (Thread[#378,Execution worker Thread 6,5,main]) started.
+:app:javaPreCompileDebug (Thread[#378,Execution worker Thread 6,5,main]) started.
+
+> Task :app:javaPreCompileDebug UP-TO-DATE
+Registered task dependencies: app:_agp_internal_javaPreCompileDebug_kaptClasspath
+Starting dependency analysis
+Build cache key for task ':app:javaPreCompileDebug' is da8fad2d394cd31ccb6c9160a2f1e167
+Skipping task ':app:javaPreCompileDebug' as it is up-to-date.
+Resolve mutations for :app:mergeDebugShaders (Thread[#378,Execution worker Thread 6,5,main]) started.
+:app:mergeDebugShaders (Thread[#378,Execution worker Thread 6,5,main]) started.
+
+> Task :app:mergeDebugShaders UP-TO-DATE
+Caching disabled for task ':app:mergeDebugShaders' because:
+  Simple merging task
+Skipping task ':app:mergeDebugShaders' as it is up-to-date.
+Resolve mutations for :app:compileDebugShaders (Thread[#378,Execution worker Thread 6,5,main]) started.
+:app:compileDebugShaders (Thread[#378,Execution worker Thread 6,5,main]) started.
+
+> Task :app:compileDebugShaders NO-SOURCE
+Skipping task ':app:compileDebugShaders' as it has no source files and no previous output files.
+Resolve mutations for :app:generateDebugAssets (Thread[#378,Execution worker Thread 6,5,main]) started.
+:app:generateDebugAssets (Thread[#378,Execution worker Thread 6,5,main]) started.
+
+> Task :app:generateDebugAssets UP-TO-DATE
+Skipping task ':app:generateDebugAssets' as it has no actions.
+Resolve mutations for :app:mergeDebugAssets (Thread[#378,Execution worker Thread 6,5,main]) started.
+:app:mergeDebugAssets (Thread[#378,Execution worker Thread 6,5,main]) started.
+
+> Task :app:mergeDebugAssets UP-TO-DATE
+Caching disabled for task ':app:mergeDebugAssets' because:
+  Simple merging task
+Skipping task ':app:mergeDebugAssets' as it is up-to-date.
+Resolve mutations for :app:compressDebugAssets (Thread[#374,Execution worker Thread 2,5,main]) started.
+:app:compressDebugAssets (Thread[#374,Execution worker Thread 2,5,main]) started.
+
+> Task :app:compressDebugAssets UP-TO-DATE
+Build cache key for task ':app:compressDebugAssets' is 9fa167cd14c29e990f23f5e90a4db16a
+Skipping task ':app:compressDebugAssets' as it is up-to-date.
+Resolve mutations for :app:desugarDebugFileDependencies (Thread[#374,Execution worker Thread 2,5,main]) started.
+:app:desugarDebugFileDependencies (Thread[#374,Execution worker Thread 2,5,main]) started.
+
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+Build cache key for task ':app:desugarDebugFileDependencies' is 883ba41730b348b900f9cddfde121c68
+Skipping task ':app:desugarDebugFileDependencies' as it is up-to-date.
+Resolve mutations for :app:checkDebugDuplicateClasses (Thread[#374,Execution worker Thread 2,5,main]) started.
+:app:checkDebugDuplicateClasses (Thread[#374,Execution worker Thread 2,5,main]) started.
+
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+Caching disabled for task ':app:checkDebugDuplicateClasses' because:
+  Caching has been disabled for the task
+Skipping task ':app:checkDebugDuplicateClasses' as it is up-to-date.
+Resolve mutations for :app:mergeDebugStartupProfile (Thread[#374,Execution worker Thread 2,5,main]) started.
+:app:mergeDebugStartupProfile (Thread[#374,Execution worker Thread 2,5,main]) started.
+
+> Task :app:mergeDebugStartupProfile UP-TO-DATE
+Caching disabled for task ':app:mergeDebugStartupProfile' because:
+  Simple merging task
+Skipping task ':app:mergeDebugStartupProfile' as it is up-to-date.
+Resolve mutations for :app:mergeExtDexDebug (Thread[#372,included builds,5,main]) started.
+:app:mergeExtDexDebug (Thread[#372,included builds,5,main]) started.
+
+> Task :app:mergeExtDexDebug UP-TO-DATE
+Build cache key for task ':app:mergeExtDexDebug' is 7746831f4877b76e2276617412661d1a
+Skipping task ':app:mergeExtDexDebug' as it is up-to-date.
+Resolve mutations for :app:mergeLibDexDebug (Thread[#372,included builds,5,main]) started.
+:app:mergeLibDexDebug (Thread[#372,included builds,5,main]) started.
+
+> Task :app:mergeLibDexDebug UP-TO-DATE
+Build cache key for task ':app:mergeLibDexDebug' is 731c4eff5aad057d19d03b96bffacfe0
+Skipping task ':app:mergeLibDexDebug' as it is up-to-date.
+Resolve mutations for :app:mergeDebugJniLibFolders (Thread[#372,included builds,5,main]) started.
+:app:mergeDebugJniLibFolders (Thread[#372,included builds,5,main]) started.
+
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+Caching disabled for task ':app:mergeDebugJniLibFolders' because:
+  Simple merging task
+Skipping task ':app:mergeDebugJniLibFolders' as it is up-to-date.
+Resolve mutations for :app:mergeDebugNativeLibs (Thread[#372,included builds,5,main]) started.
+:app:mergeDebugNativeLibs (Thread[#372,included builds,5,main]) started.
+
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+Caching disabled for task ':app:mergeDebugNativeLibs' because:
+  Caching has been disabled for the task
+Skipping task ':app:mergeDebugNativeLibs' as it is up-to-date.
+Resolve mutations for :app:stripDebugDebugSymbols (Thread[#372,included builds,5,main]) started.
+:app:stripDebugDebugSymbols (Thread[#372,included builds,5,main]) started.
+
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+Caching disabled for task ':app:stripDebugDebugSymbols' because:
+  Caching has been disabled for the task
+Skipping task ':app:stripDebugDebugSymbols' as it is up-to-date.
+Resolve mutations for :app:validateSigningDebug (Thread[#372,included builds,5,main]) started.
+:app:validateSigningDebug (Thread[#378,Execution worker Thread 6,5,main]) started.
+
+> Task :app:validateSigningDebug UP-TO-DATE
+Caching disabled for task ':app:validateSigningDebug' because:
+  Caching has been disabled for the task
+Skipping task ':app:validateSigningDebug' as it is up-to-date.
+Resolve mutations for :app:writeDebugAppMetadata (Thread[#378,Execution worker Thread 6,5,main]) started.
+:app:writeDebugAppMetadata (Thread[#378,Execution worker Thread 6,5,main]) started.
+
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+Caching disabled for task ':app:writeDebugAppMetadata' because:
+  Caching has been disabled for the task
+Skipping task ':app:writeDebugAppMetadata' as it is up-to-date.
+Resolve mutations for :app:writeDebugSigningConfigVersions (Thread[#378,Execution worker Thread 6,5,main]) started.
+:app:writeDebugSigningConfigVersions (Thread[#378,Execution worker Thread 6,5,main]) started.
+
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+Caching disabled for task ':app:writeDebugSigningConfigVersions' because:
+  Caching has been disabled for the task
+Skipping task ':app:writeDebugSigningConfigVersions' as it is up-to-date.
+
+> Task :app:kaptGenerateStubsDebugKotlin
+Registered task dependencies: app:kotlinCompilerClasspath
+Starting dependency analysis
+Registered task dependencies: app:kotlinCompilerPluginClasspathDebug
+Starting dependency analysis
+Build cache key for task ':app:kaptGenerateStubsDebugKotlin' is e6604c20d748c719ada4416961ae0337
+Task ':app:kaptGenerateStubsDebugKotlin' is not up-to-date because:
+  Task has failed previously.
+The input changes require a full rebuild for incremental task ':app:kaptGenerateStubsDebugKotlin'.
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/kotlin', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+file or directory '/Users/wohozo/Documents/Astrohark/astroapp/android/app/src/debug/java', not found
+Using Kotlin/JVM incremental compilation
+[KOTLIN] Kotlin compilation 'jdkHome' argument: null
+Options for KOTLIN DAEMON: IncrementalCompilationOptions(super=CompilationOptions(compilerMode=INCREMENTAL_COMPILER, targetPlatform=JVM, reportCategories=[0, 3], reportSeverity=2, requestedCompilationResults=[0], kotlinScriptExtensions=[]), areFileChangesKnown=false, modifiedFiles=null, deletedFiles=null, classpathChanges=NotAvailableForNonIncrementalRun, workingDir=/Users/wohozo/Documents/Astrohark/astroapp/android/app/build/kotlin/kaptGenerateStubsDebugKotlin/cacheable, multiModuleICSettings=MultiModuleICSettings(buildHistoryFile=/Users/wohozo/Documents/Astrohark/astroapp/android/app/build/kotlin/kaptGenerateStubsDebugKotlin/local-state/build-history.bin, useModuleDetection=true), usePreciseJavaTracking=true, icFeatures=IncrementalCompilationFeatures(withAbiSnapshot=false, preciseCompilationResultsBackup=true, keepIncrementalCompilationCachesInMemory=true, enableUnsafeIncrementalCompilationForMultiplatform=false), outputFiles=[/Users/wohozo/Documents/Astrohark/astroapp/android/app/build/tmp/kapt3/incrementalData/debug, /Users/wohozo/Documents/Astrohark/astroapp/android/app/build/tmp/kapt3/stubs/debug, /Users/wohozo/Documents/Astrohark/astroapp/android/app/build/kotlin/kaptGenerateStubsDebugKotlin/cacheable, /Users/wohozo/Documents/Astrohark/astroapp/android/app/build/kotlin/kaptGenerateStubsDebugKotlin/local-state])
+w: Kapt currently doesn't support language version 2.0+. Falling back to 1.9.
+e: file:///Users/wohozo/Documents/Astrohark/astroapp/android/app/src/main/java/com/astrohark/app/ui/home/HomeScreen.kt:702:1 Expecting a top level declaration
+Finished executing kotlin compiler using DAEMON strategy
+
+> Task :app:kaptGenerateStubsDebugKotlin FAILED
+
+[Incubating] Problems report is available at: file:///Users/wohozo/Documents/Astrohark/astroapp/android/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:kaptGenerateStubsDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.12/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 14s
+32 actionable tasks: 1 executed, 31 up-to-date
+Watched directory hierarchies: [/Users/wohozo/Documents/Astrohark/astroapp/android]

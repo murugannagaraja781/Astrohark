@@ -766,7 +766,13 @@ class CallActivity : ComponentActivity() {
              setSpeakerphoneOn(false) // Audio call default
         }
 
-        val audioSource = peerConnectionFactory.createAudioSource(MediaConstraints())
+        val audioConstraints = MediaConstraints().apply {
+            mandatory.add(MediaConstraints.KeyValuePair("googEchoCancellation", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googAutoGainControl", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googHighpassFilter", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("googNoiseSuppression", "true"))
+        }
+        val audioSource = peerConnectionFactory.createAudioSource(audioConstraints)
         localAudioTrack = peerConnectionFactory.createAudioTrack("101", audioSource)
 
         if (callType == "video") {
@@ -996,22 +1002,24 @@ class CallActivity : ComponentActivity() {
             "offer" -> {
                 val descriptionStr = signal.optJSONObject("sdp")?.optString("sdp") ?: signal.optString("sdp")
                 if (descriptionStr.isNotEmpty() && ::peerConnection.isInitialized) {
+                    val mungedSdp = optimizeSdp(descriptionStr)
                     peerConnection.setRemoteDescription(object : SimpleSdpObserver() {
                         override fun onSetSuccess() {
                             createAnswer()
                             drainRemoteCandidates()
                         }
-                    }, SessionDescription(SessionDescription.Type.OFFER, descriptionStr))
+                    }, SessionDescription(SessionDescription.Type.OFFER, mungedSdp))
                 }
             }
             "answer" -> {
                 val descriptionStr = signal.optJSONObject("sdp")?.optString("sdp") ?: signal.optString("sdp")
                 if (descriptionStr.isNotEmpty() && ::peerConnection.isInitialized) {
+                    val mungedSdp = optimizeSdp(descriptionStr)
                     peerConnection.setRemoteDescription(object : SimpleSdpObserver() {
                         override fun onSetSuccess() {
                             drainRemoteCandidates()
                         }
-                    }, SessionDescription(SessionDescription.Type.ANSWER, descriptionStr))
+                    }, SessionDescription(SessionDescription.Type.ANSWER, mungedSdp))
                 }
             }
             "candidate" -> {
@@ -1041,17 +1049,21 @@ class CallActivity : ComponentActivity() {
 
         peerConnection.createOffer(object : SimpleSdpObserver() {
             override fun onCreateSuccess(desc: SessionDescription?) {
-                if (!::peerConnection.isInitialized) return
-                peerConnection.setLocalDescription(SimpleSdpObserver(), desc)
+                if (!::peerConnection.isInitialized || desc == null) return
+                val mungedSdp = optimizeSdp(desc.description)
+                val mungedDesc = SessionDescription(desc.type, mungedSdp)
+                
+                peerConnection.setLocalDescription(SimpleSdpObserver(), mungedDesc)
                 val signalData = JSONObject().apply {
                     put("type", "offer")
-                    put("sdp", desc?.description)
+                    put("sdp", mungedSdp)
                 }
                 val payload = JSONObject().apply {
                     put("toUserId", partnerId)
                     put("signal", signalData)
                 }
                 sendSignal(payload)
+                Log.d(TAG, "Opus-prioritized offer sent")
             }
         }, constraints)
     }
@@ -1064,16 +1076,21 @@ class CallActivity : ComponentActivity() {
 
         peerConnection.createAnswer(object : SimpleSdpObserver() {
             override fun onCreateSuccess(desc: SessionDescription?) {
-                peerConnection.setLocalDescription(SimpleSdpObserver(), desc)
+                if (desc == null) return
+                val mungedSdp = optimizeSdp(desc.description)
+                val mungedDesc = SessionDescription(desc.type, mungedSdp)
+                
+                peerConnection.setLocalDescription(SimpleSdpObserver(), mungedDesc)
                 val signalData = JSONObject().apply {
                     put("type", "answer")
-                    put("sdp", desc?.description)
+                    put("sdp", mungedSdp)
                 }
                 val payload = JSONObject().apply {
                     put("toUserId", partnerId)
                     put("signal", signalData)
                 }
                 sendSignal(payload)
+                Log.d(TAG, "Opus-prioritized answer sent")
             }
         }, constraints)
     }
@@ -1161,6 +1178,68 @@ class CallActivity : ComponentActivity() {
             Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
         }
     }
+
+    private fun optimizeSdp(sdp: String): String {
+        try {
+            val lines = sdp.split("\n").map { it.trim() }
+            val newLines = lines.toMutableList()
+            
+            // 1. Audio Optimization (Opus)
+            val audioMLineIndex = lines.indexOfFirst { it.startsWith("m=audio") }
+            if (audioMLineIndex != -1) {
+                val elements = lines[audioMLineIndex].split(" ").toMutableList()
+                val opusPT = lines.find { it.contains("a=rtpmap:") && it.contains("opus/48000") }
+                    ?.substringAfter("a=rtpmap:")?.substringBefore(" ")
+                if (opusPT != null && elements.size > 3) {
+                    elements.remove(opusPT)
+                    elements.add(3, opusPT)
+                    newLines[audioMLineIndex] = elements.joinToString(" ")
+                    
+                    // Add FEC/DTX to fmtp for jitter resilience
+                    val fmtpIndex = newLines.indexOfFirst { it.startsWith("a=fmtp:$opusPT") }
+                    if (fmtpIndex != -1) {
+                        val fmtpLine = newLines[fmtpIndex]
+                        if (!fmtpLine.contains("useinbandfec=1")) {
+                            newLines[fmtpIndex] = "$fmtpLine;useinbandfec=1;usedtx=1"
+                        }
+                    }
+                }
+            }
+
+            // 2. Video Optimization (H264 > VP8) + Bitrate
+            val videoMLineIndex = lines.indexOfFirst { it.startsWith("m=video") }
+            if (videoMLineIndex != -1) {
+                val elements = lines[videoMLineIndex].split(" ").toMutableList()
+                
+                // Find potential payload types
+                val h264PT = lines.find { it.contains("a=rtpmap:") && it.contains("H264/90000") }
+                    ?.substringAfter("a=rtpmap:")?.substringBefore(" ")
+                val vp8PT = lines.find { it.contains("a=rtpmap:") && it.contains("VP8/90000") }
+                    ?.substringAfter("a=rtpmap:")?.substringBefore(" ")
+
+                if (h264PT != null && elements.size > 3) {
+                    elements.remove(h264PT)
+                    elements.add(3, h264PT)
+                } else if (vp8PT != null && elements.size > 3) {
+                    elements.remove(vp8PT)
+                    elements.add(3, vp8PT)
+                }
+                newLines[videoMLineIndex] = elements.joinToString(" ")
+                
+                // Add Bitrate suggestion (b=AS:2000 for ~2Mbps)
+                if (!lines.any { it.startsWith("b=AS:") }) {
+                    newLines.add(videoMLineIndex + 1, "b=AS:2000")
+                }
+            }
+            
+            val finalSdp = newLines.joinToString("\r\n")
+            Log.d(TAG, "✓ SDP Optimized: Audio(Opus), Video(H264/VP8), Bitrate(2000kbps)")
+            return finalSdp
+        } catch (e: Exception) {
+            Log.e(TAG, "✗ Error optimizing SDP", e)
+            return sdp
+        }
+    }
 }
 
 // openHelper for simplified observer
@@ -1206,11 +1285,7 @@ fun CallScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(Color(0xFF0F1028), Color(0xFF000000)) // Cosmic Blue to Black
-                )
-            )
+            .background(CosmicAppTheme.colors.surfaceGradient)
     ) {
         // Remote View Layer (Full Screen)
         if (callType == "video" && isReady) {
@@ -1234,14 +1309,14 @@ fun CallScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Surface(
                         shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.05f),
+                        color = CosmicAppTheme.colors.cardBg,
                         modifier = Modifier.size(160.dp),
-                        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                        border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = "User",
-                            tint = Color(0xFFDDCBB4),
+                            tint = CosmicAppTheme.colors.accent.copy(alpha = 0.5f),
                             modifier = Modifier.padding(40.dp).fillMaxSize()
                         )
                     }
@@ -1260,12 +1335,12 @@ fun CallScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(AstroDimens.Medium)
                 .padding(top = 32.dp)
                 .height(90.dp)
-                .clip(RoundedCornerShape(24.dp))
-                .background(Color.White.copy(alpha = 0.08f))
-                .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(24.dp))
+                .clip(RoundedCornerShape(AstroDimens.RadiusLarge))
+                .background(CosmicAppTheme.colors.cardBg.copy(alpha = 0.8f))
+                .border(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f), RoundedCornerShape(AstroDimens.RadiusLarge))
         ) {
             Row(
                 modifier = Modifier
@@ -1276,9 +1351,9 @@ fun CallScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = partnerName,
-                        color = Color(0xFFE6C15A), // Premium Gold
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = CosmicAppTheme.colors.accent,
+                        fontWeight = FontWeight.Bold
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -1328,11 +1403,11 @@ fun CallScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .padding(end = 16.dp, bottom = 180.dp)
+                    .padding(end = AstroDimens.Medium, bottom = 180.dp)
                     .size(width = 110.dp, height = 160.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .border(2.dp, Color(0xFFE6C15A).copy(alpha = 0.4f), RoundedCornerShape(20.dp))
-                    .shadow(12.dp, RoundedCornerShape(20.dp), spotColor = Color(0xFFE6C15A))
+                    .clip(RoundedCornerShape(AstroDimens.RadiusMedium))
+                    .border(2.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.4f), RoundedCornerShape(AstroDimens.RadiusMedium))
+                    .shadow(12.dp, RoundedCornerShape(AstroDimens.RadiusMedium), spotColor = CosmicAppTheme.colors.accent)
                     .background(Color.Black)
             ) {
                 if (isReady) {
@@ -1348,16 +1423,16 @@ fun CallScreen(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
+                .padding(AstroDimens.Medium)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(32.dp))
-                .background(Color.White.copy(alpha = 0.08f))
-                .border(1.dp, Color.White.copy(alpha = 0.12f), RoundedCornerShape(32.dp))
-                .padding(24.dp)
+                .clip(RoundedCornerShape(AstroDimens.RadiusLarge))
+                .background(CosmicAppTheme.colors.cardBg.copy(alpha = 0.9f))
+                .border(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f), RoundedCornerShape(AstroDimens.RadiusLarge))
+                .padding(AstroDimens.Large)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(20.dp)
+                verticalArrangement = Arrangement.spacedBy(AstroDimens.Medium)
             ) {
                 // Media Controls Row
                 Row(
@@ -1398,7 +1473,7 @@ fun CallScreen(
                         color = Color(0xFFFF4B4B)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.CallEnd, "End Call", tint = Color.White, modifier = Modifier.size(36.dp))
+                            Icon(Icons.Default.CallEnd, "End Call", tint = Color.White, modifier = Modifier.size(32.dp))
                         }
                     }
 
@@ -1425,13 +1500,13 @@ fun CallScreen(
 @Composable
 fun ControlBtnItem(onClick: () -> Unit, icon: Any, label: String, active: Boolean) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        val bgColor = if (active) Color(0xFFE6C15A).copy(alpha = 0.15f) else Color.White.copy(alpha = 0.05f)
-        val tintColor = if (active) Color(0xFFE6C15A) else Color.White.copy(alpha = 0.6f)
-        val borderColor = if (active) Color(0xFFE6C15A).copy(alpha = 0.3f) else Color.White.copy(alpha = 0.1f)
+        val bgColor = if (active) CosmicAppTheme.colors.accent.copy(alpha = 0.2f) else CosmicAppTheme.colors.cardBg
+        val tintColor = if (active) CosmicAppTheme.colors.accent else CosmicAppTheme.colors.textSecondary
+        val borderColor = if (active) CosmicAppTheme.colors.accent.copy(alpha = 0.4f) else CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f)
 
         Surface(
             onClick = onClick,
-            modifier = Modifier.size(52.dp),
+            modifier = Modifier.size(46.dp),
             shape = CircleShape,
             color = bgColor,
             border = BorderStroke(1.dp, borderColor)

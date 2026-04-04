@@ -102,19 +102,19 @@ fun AstrologerProfileScreen(
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
-                title = { Text("Profile", color = Color.White, fontWeight = FontWeight.Bold) },
+            CenterAlignedTopAppBar(
+                title = { Text("Profile", color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back", tint = Color.White)
+                        Icon(Icons.Default.ArrowBack, "Back", tint = CosmicAppTheme.colors.accent)
                     }
                 },
                 actions = {
                     IconButton(onClick = {}) {
-                        Icon(Icons.Default.Share, "Share", tint = Color.White)
+                        Icon(Icons.Default.Share, "Share", tint = CosmicAppTheme.colors.accent)
                     }
                 },
-                colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = peacockTeal)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = CosmicAppTheme.colors.bgStart)
             )
         }
     ) { padding ->
@@ -123,7 +123,7 @@ fun AstrologerProfileScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .verticalScroll(scrollState)
-                .background(Color.White)
+                .background(CosmicAppTheme.colors.surfaceGradient)
         ) {
             Box(
                 modifier = Modifier
@@ -135,11 +135,7 @@ fun AstrologerProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(100.dp)
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color(0xFFE87A1E), Color(0xFFD4700B))
-                            )
-                        )
+                        .background(CosmicAppTheme.colors.surfaceGradient)
                 )
 
                 // Avatar
@@ -161,8 +157,8 @@ fun AstrologerProfileScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(CircleShape)
-                            .background(Color.White)
-                            .border(3.dp, Color.White, CircleShape),
+                            .background(CosmicAppTheme.colors.bgStart)
+                            .border(3.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.5f), CircleShape),
                         contentScale = ContentScale.Crop,
                         error = painterResource(id = R.drawable.ic_person_placeholder),
                         placeholder = painterResource(id = R.drawable.ic_person_placeholder)
@@ -175,8 +171,8 @@ fun AstrologerProfileScreen(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .size(28.dp)
-                            .background(Color.White, CircleShape)
-                            .border(2.dp, Color.White, CircleShape)
+                            .background(CosmicAppTheme.colors.bgStart, CircleShape)
+                            .border(2.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.3f), CircleShape)
                             .padding(2.dp)
                     )
                 }
@@ -191,32 +187,33 @@ fun AstrologerProfileScreen(
                 Text(
                     text = name,
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color.Black
+                    color = CosmicAppTheme.colors.textPrimary
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top=4.dp)) {
                     Text("★★★★★", color = Color(0xFFFFC107), fontSize = 16.sp)
-                    Text(" 8942 reviews", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(start=4.dp))
+                    Text(" 8,942 reviews", style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textSecondary, modifier = Modifier.padding(start=4.dp))
                 }
 
                 Text(
                     text = skills,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
+                    color = CosmicAppTheme.colors.textSecondary,
                     modifier = Modifier.padding(top=6.dp),
                     textAlign = TextAlign.Center
                 )
 
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFFEEBEE),
+                    shape = RoundedCornerShape(AstroDimens.RadiusSmall),
+                    color = CosmicAppTheme.colors.accent.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.3f)),
                     modifier = Modifier.padding(top = 10.dp)
                 ) {
                     Text(
                         text = "₹$price/min",
-                        fontSize = 18.sp,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFFD32F2F),
+                        color = CosmicAppTheme.colors.accent,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                     )
                 }
@@ -225,33 +222,35 @@ fun AstrologerProfileScreen(
                 Row(
                    modifier = Modifier
                        .fillMaxWidth()
-                       .padding(vertical = 20.dp)
-                       .clip(RoundedCornerShape(16.dp))
-                       .background(Color(0xFFF8F9FA))
-                       .padding(16.dp),
+                       .padding(vertical = AstroDimens.Medium)
+                       .clip(RoundedCornerShape(AstroDimens.RadiusMedium))
+                       .background(CosmicAppTheme.colors.cardBg)
+                       .border(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f), RoundedCornerShape(AstroDimens.RadiusMedium))
+                       .padding(AstroDimens.Medium),
                    horizontalArrangement = Arrangement.SpaceEvenly,
                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     StatItem(icon = Icons.Default.Chat, value = "49k Mins")
-                    Box(modifier = Modifier.width(1.dp).height(24.dp).background(Color.LightGray.copy(alpha=0.6f)))
+                    Box(modifier = Modifier.width(1.dp).height(24.dp).background(CosmicAppTheme.colors.cardStroke.copy(alpha=0.3f)))
                     StatItem(icon = Icons.Default.Call, value = "31k Mins")
-                    Box(modifier = Modifier.width(1.dp).height(24.dp).background(Color.LightGray.copy(alpha=0.6f)))
+                    Box(modifier = Modifier.width(1.dp).height(24.dp).background(CosmicAppTheme.colors.cardStroke.copy(alpha=0.3f)))
                     StatItem(icon = Icons.Default.CheckCircle, value = "$exp Years")
                 }
 
                 // Bio Section
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF9C4).copy(alpha = 0.3f)),
-                    shape = RoundedCornerShape(12.dp)
+                    colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                    border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("About Astrologer", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Column(modifier = Modifier.padding(AstroDimens.Medium)) {
+                        Text("About Astrologer", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.accent)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = "$name is highly experienced in $skills. Dedicated to providing accurate guidance and helping clients find clarity in life's complex situations.",
-                            color = Color.DarkGray,
-                            fontSize = 13.sp,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = CosmicAppTheme.colors.textSecondary,
                             lineHeight = 18.sp
                         )
                     }
@@ -269,7 +268,7 @@ fun AstrologerProfileScreen(
                         ActionButton(
                             icon = Icons.Default.Chat,
                             label = "Chat",
-                            color = Color(0xFF00BCD4),
+                            color = CosmicAppTheme.colors.accent,
                             isEnabled = true,
                             onClick = { onAction("chat") }
                         )
@@ -279,7 +278,7 @@ fun AstrologerProfileScreen(
                         ActionButton(
                             icon = Icons.Default.Call,
                             label = "Call",
-                            color = Color(0xFF00796B),
+                            color = CosmicAppTheme.colors.accent,
                             isEnabled = true,
                             onClick = { onAction("audio") }
                         )
@@ -289,7 +288,7 @@ fun AstrologerProfileScreen(
                         ActionButton(
                             icon = androidx.compose.material.icons.Icons.Rounded.VideoCall,
                             label = "Video",
-                            color = Color(0xFFD32F2F),
+                            color = CosmicAppTheme.colors.accent,
                             isEnabled = true,
                             onClick = { onAction("video") }
                         )
@@ -299,11 +298,12 @@ fun AstrologerProfileScreen(
                 // Reviews Section Placeholder
                 Text(
                     "User Reviews",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black,
+                    color = CosmicAppTheme.colors.accent,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, top = 16.dp)
+                        .padding(start = 16.dp, top = 24.dp)
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp)
@@ -323,8 +323,8 @@ fun AstrologerProfileScreen(
 @Composable
 fun StatItem(icon: ImageVector, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, null, tint = Color.Black, modifier = Modifier.size(24.dp))
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Black, modifier = Modifier.padding(top=4.dp))
+        Icon(icon, null, tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(24.dp))
+        Text(value, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.textPrimary, modifier = Modifier.padding(top=4.dp))
     }
 }
 

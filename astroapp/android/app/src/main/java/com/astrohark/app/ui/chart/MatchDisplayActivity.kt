@@ -138,49 +138,52 @@ class MatchDisplayActivity : ComponentActivity() {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
                     body {
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
                         padding: 20px;
-                        background-color: #F0F2F5;
-                        color: #2E7D32;
+                        background-color: #0B0805;
+                        color: #F5F2F0;
+                        line-height: 1.6;
                     }
                     .card {
-                        background: #FFFFFF;
+                        background: #1C140E;
                         padding: 24px;
-                        border-radius: 24px;
-                        box-shadow: 10px 10px 20px #d1d9e6, -10px -10px 20px #ffffff;
+                        border-radius: 18px;
+                        border: 1px solid #3E2723;
                         margin-bottom: 24px;
+                        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
                     }
-                    h2 { color: #2E7D32; text-align: center; font-weight: 800; margin-top: 0; }
+                    h2 { color: #FFB300; text-align: center; font-weight: 300; margin-top: 0; letter-spacing: 1px; border-bottom: 1px solid #3E2723; padding-bottom: 12px; }
                     .score-box {
                         text-align: center;
-                        font-size: 32px;
-                        font-weight: 900;
-                        color: #4CAF50;
+                        font-size: 36px;
+                        font-weight: 800;
+                        color: #FFB300;
                         margin: 24px 0;
-                        padding: 16px;
-                        background: #F0F2F5;
+                        padding: 20px;
+                        background: #0B0805;
                         border-radius: 16px;
-                        box-shadow: inset 4px 4px 8px #d1d9e6, inset -4px -4px 8px #ffffff;
+                        border: 2px solid #FFB300;
                     }
                     .info-row {
                         display: flex;
                         justify-content: space-between;
-                        padding: 12px 0;
-                        border-bottom: 1px solid #eee;
+                        padding: 14px 0;
+                        border-bottom: 1px solid #3E2723;
                     }
-                    .info-label { font-weight: bold; color: #666; }
-                    .info-value { font-weight: bold; color: #2E7D32; }
+                    .info-label { color: #A58B74; font-size: 13px; }
+                    .info-value { font-weight: bold; color: #FFB300; }
 
-                    table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
-                    th { text-align: left; padding: 12px; color: #666; font-size: 13px; text-transform: uppercase; }
+                    table { width: 100%; border-collapse: separate; border-spacing: 0 12px; margin-top: 10px; }
+                    th { text-align: left; padding: 12px; color: #666; font-size: 11px; text-transform: uppercase; }
                     td {
-                        background: #F8F9FA;
+                        background: #0B0805;
                         padding: 16px;
                         border-radius: 12px;
-                        font-weight: 600;
+                        font-weight: 400;
+                        border: 1px solid #3E2723;
                     }
-                    .good { color: #4CAF50; }
-                    .bad { color: #F44336; }
+                    .good { color: #4CAF50; font-weight: bold; }
+                    .bad { color: #EF5350; font-weight: bold; }
                     .verdict {
                         text-align: center;
                         font-size: 18px;
@@ -188,9 +191,12 @@ class MatchDisplayActivity : ComponentActivity() {
                         padding: 16px;
                         border-radius: 12px;
                         margin-top: 16px;
+                        border: 1px solid currentColor;
+                        text-transform: uppercase;
+                        letter-spacing: 1px;
                     }
-                    .verdict-advisable { background: #E8F5E9; color: #2E7D32; }
-                    .verdict-not { background: #FFEBEE; color: #C62828; }
+                    .verdict-advisable { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
+                    .verdict-not { background: rgba(239, 83, 80, 0.1); color: #EF5350; }
                 </style>
             </head>
             <body>
@@ -286,14 +292,30 @@ fun MatchDisplayScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Compatibility Match", color = Color.White) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF6200EE))
+                title = { Text("Compatibility Match") },
+                navigationIcon = {
+                    androidx.compose.material3.IconButton(onClick = { /* navigate back handled by activity launcher */ }) {
+                        androidx.compose.material3.Icon(
+                             imageVector = androidx.compose.material.icons.Icons.Default.ArrowBack,
+                             contentDescription = "Back",
+                             tint = CosmicAppTheme.colors.accent
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = CosmicAppTheme.colors.bgStart,
+                    titleContentColor = CosmicAppTheme.colors.textPrimary
+                )
             )
-        }
+        },
+        containerColor = CosmicAppTheme.colors.bgStart
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = CosmicAppTheme.colors.accent
+                )
             } else if (failed || htmlContent?.startsWith("ERROR:") == true) {
                  Text(
                      text = htmlContent ?: "Failed to load match data.",

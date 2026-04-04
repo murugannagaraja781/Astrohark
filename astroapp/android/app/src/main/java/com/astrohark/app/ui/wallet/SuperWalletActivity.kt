@@ -94,72 +94,74 @@ fun SuperWalletScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Super Wallet", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Super Wallet", color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(Icons.Rounded.ArrowBack, contentDescription = "Back", tint = CosmicAppTheme.colors.accent)
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = pinkDeep)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = CosmicAppTheme.colors.bgStart)
             )
         }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(pinkLight)
+                .background(CosmicAppTheme.colors.surfaceGradient)
                 .padding(padding)
-                .padding(20.dp),
+                .padding(AstroDimens.Large),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // Offer Banner
-            Card(
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = pinkDeep)
+                shape = RoundedCornerShape(AstroDimens.RadiusLarge),
+                color = CosmicAppTheme.colors.cardBg,
+                border = BorderStroke(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.3f))
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(AstroDimens.Large),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Surface(
-                        color = Color.White.copy(alpha = 0.2f),
+                        color = CosmicAppTheme.colors.accent.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(50.dp)
                     ) {
                         Text(
                             text = "${offerPercent.toInt()}% Bonus Value",
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
+                            color = CosmicAppTheme.colors.accent,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = title,
-                        color = Color.White,
-                        fontSize = 22.sp,
+                        color = CosmicAppTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                     Text(
                         text = "Exclusive Promotional Offer",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 14.sp
+                        color = CosmicAppTheme.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            Text("Select Recharge Amount", color = Color(0xFF666666), fontSize = 14.sp)
+            Text("Select Recharge Amount", color = CosmicAppTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(Modifier.selectableGroup()) {
+                val rechargeOptions = listOf(100, 500, 1000, 2000)
                 rechargeOptions.chunked(2).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         row.forEach { amount ->
                             val selected = selectedAmount == amount
-                            Card(
+                            Surface(
                                 modifier = Modifier
                                     .weight(1f)
                                     .height(70.dp)
@@ -168,18 +170,16 @@ fun SuperWalletScreen(
                                         onClick = { selectedAmount = amount },
                                         role = Role.RadioButton
                                     ),
-                                shape = RoundedCornerShape(16.dp),
-                                border = if (selected) BorderStroke(2.dp, pinkDeep) else BorderStroke(1.dp, Color(0xFFF9A8D4)),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (selected) pinkDeep else Color.White
-                                )
+                                shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                                border = if (selected) BorderStroke(2.dp, CosmicAppTheme.colors.accent) else BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f)),
+                                color = if (selected) CosmicAppTheme.colors.accent else CosmicAppTheme.colors.cardBg
                             ) {
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Text(
-                                        "₹$amount",
+                                        text = "₹$amount",
+                                        style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 18.sp,
-                                        color = if (selected) Color.White else Color.Black
+                                        color = if (selected) CosmicAppTheme.colors.bgStart else CosmicAppTheme.colors.textPrimary
                                     )
                                 }
                             }
@@ -192,51 +192,45 @@ fun SuperWalletScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             // Summary
-            Card(
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                border = BorderStroke(1.dp, Color(0xFFFBCFE8))
+                shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                color = CosmicAppTheme.colors.cardBg,
+                border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
             ) {
-                Column(Modifier.padding(20.dp)) {
+                Column(Modifier.padding(AstroDimens.Large)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Base Recharge")
-                        Text("₹$selectedAmount", fontWeight = FontWeight.SemiBold)
+                        Text("Base Recharge", color = CosmicAppTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+                        Text("₹$selectedAmount", color = CosmicAppTheme.colors.textPrimary, fontWeight = FontWeight.SemiBold)
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Promotion Bonus", color = pinkDeep)
+                        Text("Promotion Bonus", color = CosmicAppTheme.colors.accent, style = MaterialTheme.typography.bodyMedium)
                         val bonus = (selectedAmount * offerPercent / 100).toInt()
-                        Text("+₹$bonus", color = pinkDeep, fontWeight = FontWeight.Bold)
+                        Text("+₹$bonus", color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold)
                     }
-                    Divider(Modifier.padding(vertical = 12.dp), color = Color(0xFFEEEEEE))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Total Credit", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    HorizontalDivider(Modifier.padding(vertical = AstroDimens.Medium), color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.1f))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Total Credit", color = CosmicAppTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         val total = selectedAmount + (selectedAmount * offerPercent / 100).toInt()
-                        Text("₹$total", fontWeight = FontWeight.ExtraBold, fontSize = 20.sp, color = Color.Black)
+                        Text("₹$total", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = CosmicAppTheme.colors.accent)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Button(
+            com.astrohark.app.ui.theme.components.AstroButton(
+                text = "PAY ₹$selectedAmount & GET ₹${selectedAmount + (selectedAmount * offerPercent / 100).toInt()}",
                 onClick = { onPay(selectedAmount) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = pinkDeep)
-            ) {
-                val total = selectedAmount + (selectedAmount * offerPercent / 100).toInt()
-                Text("PAY ₹$selectedAmount & GET ₹$total", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            }
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Shield, null, modifier = Modifier.size(14.dp), tint = Color.Gray)
+                Icon(Icons.Rounded.Shield, null, modifier = Modifier.size(16.dp), tint = CosmicAppTheme.colors.textSecondary)
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Secure SSL Encrypted Payment", color = Color.Gray, fontSize = 12.sp)
+                Text("Secure SSL Encrypted Payment", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.textSecondary)
             }
             Spacer(modifier = Modifier.height(8.dp))
         }

@@ -2,31 +2,25 @@ package com.astrohark.app.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -40,7 +34,6 @@ import com.astrohark.app.R
 import com.astrohark.app.data.repository.AuthRepository
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import kotlinx.coroutines.launch
-import kotlin.math.min
 
 class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,207 +55,178 @@ fun LoginScreen() {
 
     var phoneNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    var showError by remember { mutableStateOf(false) }
 
-    val glassShape = RoundedCornerShape(28.dp)
-    val glassBorder = Color.White.copy(alpha = 0.35f)
-    val glassSurface = Color.White.copy(alpha = 0.14f)
-    val glowPrimary = Color(0xFF6BE6FF).copy(alpha = 0.35f)
-    val glowSecondary = Color(0xFF9B7BFF).copy(alpha = 0.28f)
-
-    val canSubmit = phoneNumber.length == 10 && !isLoading
-
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF0E1226),
-                        Color(0xFF1A1E3A),
-                        Color(0xFF2B1C3C)
-                    )
-                )
-            )
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
+            .background(CosmicAppTheme.colors.bgStart)
+            .verticalScroll(rememberScrollState())
     ) {
-        // Ambient orbs
-        Box(
-            modifier = Modifier
-                .size(220.dp)
-                .offset(x = (-120).dp, y = (-160).dp)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(glowPrimary, Color.Transparent),
-                        radius = 240f
-                    ),
-                    shape = CircleShape
-                )
-        )
-        Box(
-            modifier = Modifier
-                .size(260.dp)
-                .offset(x = 140.dp, y = (-80).dp)
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(glowSecondary, Color.Transparent),
-                        radius = 280f
-                    ),
-                    shape = CircleShape
-                )
-        )
-
-        // Glass Card Container
+        // Top Illustration Area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(26.dp, glassShape, clip = false)
-                .clip(glassShape)
-                .background(glassSurface)
-                .border(1.dp, glassBorder, glassShape)
-                .padding(28.dp)
+                .weight(1.2f)
+                .background(CosmicAppTheme.colors.surfaceGradient),
+            contentAlignment = Alignment.Center
         ) {
-            // Gloss layer
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.35f),
-                                Color.Transparent,
-                                Color.White.copy(alpha = 0.10f)
-                            ),
-                            start = Offset(0f, 0f),
-                            end = Offset(600f, 800f)
-                        )
-                    )
-                    .alpha(0.55f)
+            Image(
+                painter = painterResource(id = R.drawable.login_illustration),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(1.0f),
+                contentScale = ContentScale.Crop
             )
+        }
 
+        // Bottom Cocoa Card
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(topStart = AstroDimens.RadiusLarge, topEnd = AstroDimens.RadiusLarge),
+            color = CosmicAppTheme.colors.cardBg,
+            border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
+        ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(AstroDimens.Large),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Spinning Logo Animation
-                val infiniteTransition = rememberInfiniteTransition(label = "logo_spin")
-                val angle by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(1200, easing = LinearEasing)
-                    ),
-                    label = "rotation"
-                )
-
-                Image(
-                    painter = painterResource(id = R.drawable.app_logo),
-                    contentDescription = "Logo",
-                    modifier = Modifier
-                        .size(88.dp)
-                        .padding(bottom = 18.dp)
-                        .then(if (isLoading) Modifier.rotate(angle) else Modifier),
-                    contentScale = ContentScale.Fit
-                )
-
                 Text(
-                    text = "Welcome Back",
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    modifier = Modifier.padding(bottom = 6.dp)
+                    text = "Welcome to Astrohark!",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = CosmicAppTheme.colors.accent,
+                    modifier = Modifier.fillMaxWidth()
                 )
-
                 Text(
-                    text = "Sign in to continue to Astrohark",
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.75f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 28.dp)
+                    text = "Securely verify with your mobile number",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CosmicAppTheme.colors.textSecondary,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
                 )
 
-                OutlinedTextField(
-                    value = phoneNumber,
-                    onValueChange = {
-                        val digits = it.filter { ch -> ch.isDigit() }
-                        phoneNumber = digits.take(10)
-                        if (showError && phoneNumber.length == 10) {
-                            showError = false
-                        }
-                    },
-                    label = { Text("Enter Mobile Number", color = Color.White.copy(alpha = 0.8f)) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 18.dp),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    isError = showError && phoneNumber.length != 10,
-                    supportingText = {
-                        val count = min(phoneNumber.length, 10)
-                        val helper = if (showError && phoneNumber.length != 10) {
-                            "10 digit number required"
-                        } else {
-                            "$count/10"
-                        }
-                        Text(helper, color = Color.White.copy(alpha = 0.7f))
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.White.copy(alpha = 0.7f),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.35f),
-                        errorBorderColor = Color(0xFFFF6B6B),
-                        focusedContainerColor = Color.White.copy(alpha = 0.08f),
-                        unfocusedContainerColor = Color.White.copy(alpha = 0.06f),
-                        errorContainerColor = Color.White.copy(alpha = 0.08f),
-                        cursorColor = Color.White
+                // Log in or Sign up Divider
+                Row(
+                    modifier = Modifier.padding(vertical = AstroDimens.Medium),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f))
+                    Text(
+                        text = "Log in or Sign up",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = CosmicAppTheme.colors.textSecondary,
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
-                )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f))
+                }
 
-                Button(
+                // Phone Input with Country Code
+                Surface(
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                    color = CosmicAppTheme.colors.bgStart,
+                    border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = AstroDimens.Medium),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🇮🇳", fontSize = 24.sp)
+                        Text("+91", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(start = 8.dp), color = CosmicAppTheme.colors.textPrimary)
+                        Icon(Icons.Default.ArrowDropDown, null, tint = CosmicAppTheme.colors.textPrimary)
+                        
+                        Box(modifier = Modifier.width(1.dp).fillMaxHeight(0.6f).background(CosmicAppTheme.colors.cardStroke).padding(horizontal = 8.dp))
+                        
+                        TextField(
+                            value = phoneNumber,
+                            onValueChange = { if (it.length <= 10) phoneNumber = it.filter { char -> char.isDigit() } },
+                            placeholder = { Text("Enter Mobile number", color = CosmicAppTheme.colors.textSecondary.copy(alpha = 0.5f)) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                cursorColor = CosmicAppTheme.colors.accent,
+                                focusedTextColor = CosmicAppTheme.colors.textPrimary,
+                                unfocusedTextColor = CosmicAppTheme.colors.textPrimary
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(AstroDimens.Medium))
+
+                // Send OTP Button
+                com.astrohark.app.ui.theme.components.AstroButton(
+                    text = "SEND OTP",
                     onClick = {
-                        if (phoneNumber.length != 10) {
-                            showError = true
-                            return@Button
+                        if (phoneNumber.length < 10) {
+                            Toast.makeText(context, "Enter 10 digit number", Toast.LENGTH_SHORT).show()
+                            return@AstroButton
                         }
                         isLoading = true
                         scope.launch {
                             try {
-                                val result = repository.sendOtp(phoneNumber.trim())
+                                val fullPhone = "91${phoneNumber.trim()}"
+                                val result = repository.sendOtp(fullPhone)
                                 if (result.isSuccess) {
                                     val intent = Intent(context, OtpVerificationActivity::class.java)
-                                    intent.putExtra("phone", phoneNumber.trim())
+                                    intent.putExtra("phone", fullPhone)
                                     context.startActivity(intent)
-                                    (context as? AppCompatActivity)?.finish()
                                 } else {
-                                    showError = true
+                                    Toast.makeText(context, "Error: ${result.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()
                                 }
-                            } catch (e: Exception) {
-                                showError = true
                             } finally {
                                 isLoading = false
                             }
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    enabled = canSubmit,
-                    shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.45f)),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.White.copy(alpha = 0.18f),
-                        contentColor = Color.White,
-                        disabledContainerColor = Color.White.copy(alpha = 0.08f),
-                        disabledContentColor = Color.White.copy(alpha = 0.5f)
-                    )
+                    modifier = Modifier.fillMaxWidth(),
+                    isLoading = isLoading
+                )
+
+                // Or Divider
+                Row(
+                    modifier = Modifier.padding(vertical = AstroDimens.Medium),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (isLoading) {
-                        Text("Sending...")
-                    } else {
-                        Text("Get OTP", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    }
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f))
+                    Text(
+                        text = "Or",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = CosmicAppTheme.colors.textSecondary,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                    HorizontalDivider(modifier = Modifier.weight(1f), color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f))
+                }
+
+                // Email Button
+                OutlinedButton(
+                    onClick = { /* Handle Email Login */ },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                    border = BorderStroke(1.dp, CosmicAppTheme.colors.accent),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = CosmicAppTheme.colors.accent)
+                ) {
+                    Icon(Icons.Default.Email, null, tint = CosmicAppTheme.colors.accent)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Continue with Email ID", style = MaterialTheme.typography.labelLarge)
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                // Footer
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = AstroDimens.Large, bottom = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text("By signing up, you agree to our ", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.textSecondary)
+                    Text("Terms of Use", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent, modifier = Modifier.clickable { })
+                    Text(" and ", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.textSecondary)
+                    Text("Privacy Policy", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent, modifier = Modifier.clickable { })
                 }
             }
         }

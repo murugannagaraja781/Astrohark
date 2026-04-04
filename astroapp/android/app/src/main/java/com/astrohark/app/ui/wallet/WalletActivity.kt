@@ -304,51 +304,102 @@ fun WalletScreen(
                     }
                 }
 
-                // 2. Balance Card (Premium Gold Aesthetic)
+                // 2. Balance Card (Premium Black/Gold Aesthetic)
                 item {
                     val cardGradient = Brush.linearGradient(
                         colors = listOf(
-                            Color(0xFFBF953F),
-                            Color(0xFFFCF6BA),
-                            Color(0xFFB38728),
-                            Color(0xFFFBF5B7),
-                            Color(0xFFAA771C)
+                            Color(0xFF1E1E2C),
+                            Color(0xFF2D2D44)
                         )
                     )
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(200.dp)
-                            .shadow(AstroDimens.ElevationMedium, RoundedCornerShape(AstroDimens.RadiusLarge), spotColor = goldPrimary.copy(0.4f))
-                            .clip(RoundedCornerShape(AstroDimens.RadiusLarge))
+                            .shadow(24.dp, RoundedCornerShape(24.dp), spotColor = goldPrimary.copy(alpha = 0.3f))
+                            .clip(RoundedCornerShape(24.dp))
                             .background(cardGradient)
+                            .border(1.dp, goldPrimary.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
                     ) {
-                        // Decorative Inner Glow
-                        Box(modifier = Modifier.fillMaxSize().background(Brush.radialGradient(listOf(Color.White.copy(0.2f), Color.Transparent), center = Offset(50f, 50f))))
-                        
-                        Column(modifier = Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                                Column {
-                                    Text(stringResource(R.string.total_balance), color = Color.Black.copy(0.6f), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                                    Text("₹ ${balance.toInt()}", style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Black, fontSize = 42.sp), color = Color.Black)
+                        // Decorative Elements
+                        Box(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+                            // Chip Icon Placeholder
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp, 30.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(goldPrimary.copy(alpha = 0.6f))
+                                    .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                                    .align(Alignment.TopStart)
+                            )
+                            
+                            Icon(
+                                Icons.Rounded.AccountBalanceWallet, 
+                                null, 
+                                tint = goldPrimary.copy(alpha = 0.1f), 
+                                modifier = Modifier.size(120.dp).align(Alignment.BottomEnd).offset(x = 20.dp, y = 20.dp)
+                            )
+
+                            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
+                                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                                    Spacer(modifier = Modifier.width(44.dp))
+                                    Text(
+                                        "ASTROHARK PLATINUM", 
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = goldPrimary.copy(alpha = 0.8f),
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 2.sp
+                                    )
+                                }
+                                
+                                Column(modifier = Modifier.padding(top = 10.dp)) {
+                                    Text(
+                                        stringResource(R.string.total_balance).uppercase(), 
+                                        color = Color.White.copy(0.6f), 
+                                        fontSize = 11.sp, 
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp
+                                    )
+                                    Text(
+                                        "₹ ${"%,.2f".format(balance)}", 
+                                        style = MaterialTheme.typography.displaySmall.copy(
+                                            fontWeight = FontWeight.Black, 
+                                            fontSize = 38.sp,
+                                            letterSpacing = 1.sp
+                                        ), 
+                                        color = Color.White
+                                    )
                                     if (superBalance > 0.0) {
-                                        Surface(color = colors.bgStart, shape = RoundedCornerShape(8.dp), modifier = Modifier.padding(top = 4.dp)) {
-                                            Text("SUPER: ₹ ${superBalance.toInt()}", color = goldPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
-                                        }
+                                        Text(
+                                            "SUPER WALLET: ₹ ${superBalance.toInt()}", 
+                                            color = goldPrimary, 
+                                            fontSize = 12.sp, 
+                                            fontWeight = FontWeight.ExtraBold, 
+                                            modifier = Modifier.padding(top = 4.dp)
+                                        )
                                     }
                                 }
-                                Icon(Icons.Rounded.AccountBalanceWallet, null, tint = Color.Black.copy(0.12f), modifier = Modifier.size(64.dp))
-                            }
-                            Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.Bottom) {
-                                Column {
-                                    Text(stringResource(R.string.prosperity_account), color = Color.Black.copy(0.8f), fontWeight = FontWeight.Black, fontSize = 16.sp)
-                                    Text("Rule: 70% Main, 30% Super Wallet", color = Color.Black.copy(0.5f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+
+                                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.Bottom) {
+                                    Text(
+                                        stringResource(R.string.valid_user).uppercase(), 
+                                        color = Color.White.copy(0.4f), 
+                                        fontSize = 10.sp, 
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 1.sp
+                                    )
+                                    Image(
+                                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(40.dp).graphicsLayer(alpha = 0.6f),
+                                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(goldPrimary)
+                                    )
                                 }
-                                Text(stringResource(R.string.valid_user), color = Color.Black.copy(0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
                 }
+
 
                 // 3. Recharge & Trust Section
                 item {

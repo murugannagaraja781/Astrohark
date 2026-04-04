@@ -2,8 +2,9 @@ package com.astrohark.app.utils
 
 object Localization {
     // English Strings
+    // English Strings
     private val english = mapOf(
-        "home_title" to "astrohark",
+        "home_title" to "AstroHark",
         "home" to "Home",
         "profile" to "Profile",
         "settings" to "Settings",
@@ -93,9 +94,10 @@ object Localization {
         "home_welcome" to "Welcome, %s",
         "wallet_balance" to "Wallet Balance",
         "add_money" to "Add Money",
-        "quick_actions" to "Quick Actions",
+        "quick_actions" to "Quick Services",
         "chat" to "Chat",
         "call" to "Call",
+        "video_call_mini" to "Video Call",
         "featured_guide" to "Featured Guide",
         "zodiac_insights" to "Zodiac Insights",
         "daily_rituals" to "Daily Rituals",
@@ -124,7 +126,7 @@ object Localization {
 
     // Tamil Strings
     private val tamil = mapOf(
-        "home_title" to "ஆஸ்ட்ரோ 5 ஸ்டார்",
+        "home_title" to "AstroHark",
         "home" to "முகப்பு",
         "profile" to "சுயவிவரம்",
         "settings" to "அமைப்புகள்",
@@ -171,7 +173,7 @@ object Localization {
         "lord" to "அதிபதி",
         "category" to "வகை",
         "daily_prediction" to "இன்றைய பலன்",
-        "ok" to "சரி",
+        "ok" to "OK",
         "personal_details" to "தனிப்பட்ட விவரங்கள்",
         "partner_details" to "துணைவர் விவரங்கள்",
         "dob" to "பிறந்த தேதி",
@@ -211,12 +213,13 @@ object Localization {
         "bank_details" to "வங்கி விவரங்கள் (A/C, IFSC)",
         "upi_id" to "UPI விவரம்",
         "please_fill_required" to "சிவப்பு நட்சத்திரம் (*) உள்ள கட்டாய புலங்களை நிரப்பவும்",
-        "home_welcome" to "வரவேற்கிறோம் %s",
+        "home_welcome" to "AstroHark",
         "wallet_balance" to "வாலட் இருப்பு",
         "add_money" to "பணம் சேர்க்க",
-        "quick_actions" to "விரைவு சேவைகள்",
+        "quick_actions" to "விரைவும் சேவைகள்",
         "chat" to "சாட்",
         "call" to "அழைப்பு",
+        "video_call_mini" to "வீடியோ",
         "featured_guide" to "சிறப்பு வழிகாட்டி",
         "zodiac_insights" to "ராசி பலன்கள்",
         "daily_rituals" to "தினசரி வழிபாடுகள்",
@@ -243,6 +246,7 @@ object Localization {
         "refer_desc" to "நண்பர்களை அழைத்து வாலட் பணத்தை அள்ளுங்கள்"
     )
 
+
     fun get(key: String, isTamil: Boolean): String {
         return if (isTamil) {
             tamil[key] ?: english[key] ?: key
@@ -251,3 +255,4 @@ object Localization {
         }
     }
 }
+

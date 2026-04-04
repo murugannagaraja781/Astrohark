@@ -1786,48 +1786,28 @@ io.on('connection', (socket) => {
       if (!fromUserId) return cb({ ok: false, error: 'Not registered' });
       if (!toUserId || !type) return cb({ ok: false, error: 'Missing fields' });
 
-      // Get target user from DB
       const toUser = await User.findOne({ userId: toUserId });
       const fromUser = await User.findOne({ userId: fromUserId });
 
-      if (!toUser) {
-        return cb({ ok: false, error: 'User not found' });
-      }
+      if (!toUser) return cb({ ok: false, error: 'User not found' });
 
-      // Rule: Main Balance must be > 0 to start any session
       if (fromUser && fromUser.role === 'client' && (fromUser.walletBalance || 0) <= 0) {
         return cb({ ok: false, error: 'Insufficient Main Balance. Please recharge your main wallet to start.' });
       }
 
-      // Check if astrologer is available (MANUAL ONLY)
-      const isAvailable = toUser.isAvailable === true;
-
-      // ALLOW CALL even if offline -> Logic will fall back to FCM below
-      // if (!isAvailable) {
-      //   return cb({ ok: false, error: 'Astrologer is offline' });
-      // }
-
       if (userActiveSession.has(toUserId)) {
-        const existingSessionId = userActiveSession.get(toUserId);
-        const existingSession = activeSessions.get(existingSessionId);
-
-        if (!existingSession) {
-          // Ghost session cleanup
-          console.log(`[Session] Ghost session ${existingSessionId} detected for ${toUserId}. Auto-cleaning.`);
+        const existingId = userActiveSession.get(toUserId);
+        const existingS = activeSessions.get(existingId);
+        if (!existingS) {
           userActiveSession.delete(toUserId);
-        }
-        else if (existingSession.users.includes(fromUserId)) {
-          // Same caller retrying
-          console.log(`[Session] Stale session ${existingSessionId} detected between ${fromUserId} and ${toUserId}. Auto-cleaning.`);
-          await endSessionRecord(existingSessionId);
+        } else if (existingS.users.includes(fromUserId)) {
+          await endSessionRecord(existingId);
         } else {
           return cb({ ok: false, error: 'User busy' });
         }
       }
 
       const sessionId = crypto.randomUUID();
-
-      // Resolve roles
       let clientId = null;
       let astrologerId = null;
 
@@ -1856,85 +1836,59 @@ io.on('connection', (socket) => {
       userActiveSession.set(fromUserId, sessionId);
       userActiveSession.set(toUserId, sessionId);
 
-      // Try socket notification (might fail if in background - that's OK!)
       let socketSent = false;
       io.to(toUserId).emit('incoming-session', {
         sessionId,
         fromUserId,
-        callerName: fromUser?.name || 'Client',  // FIX: Add caller name for display
+        callerName: fromUser?.name || 'Client',
         type,
         birthData: birthData || null
       });
       socketSent = true;
-      console.log(`[Session] Socket notification sent to room: ${toUserId}`);
 
-      // IMPROVED: Send FCM Push Notification as BACKUP (even if socket sent)
-      // This ensures the call reaches the user if socket message is missed/dropped
-      // The Android app handles duplicate by showing only one IncomingCallActivity
       if (toUser && toUser.fcmToken) {
         const fcmData = {
           type: 'INCOMING_CALL',
-          sessionId: sessionId,
+          sessionId,
           callType: type,
           callerName: fromUser?.name || 'Client',
           callerId: fromUserId,
           timestamp: Date.now().toString(),
           birthData: JSON.stringify(birthData || {})
         };
-
-        const fcmNotification = {
+        const fcmNotif = {
           title: '📞 Incoming Call',
           body: `${fromUser?.name || 'Someone'} is calling you`
         };
-
-        sendFcmV1Push(toUser.fcmToken, fcmData, fcmNotification, toUserId)
-          .then(result => {
-             console.log(`[FCM v1] Session Push to ${toUserId}: Success=${result.success} (socketSent=${socketSent})`);
-          })
-          .catch(err => {
-             console.error('[FCM v1] Push error:', err.message);
-          });
+        sendFcmV1Push(toUser.fcmToken, fcmData, fcmNotif, toUserId).catch(e => console.error("FCM Error", e));
       }
 
       console.log(`Session request: ${sessionId} (${type})`);
       cb({ ok: true, sessionId });
 
-      // --- MISSED CALL TIMEOUT (25s) ---
       setTimeout(async () => {
         const s = activeSessions.get(sessionId);
         if (s && s.status === 'ringing') {
-          console.log(`[Session] Ringing timeout for ${sessionId}. Marking as MISSED.`);
           io.to(fromUserId).emit('session-ended', { sessionId, reason: 'no_answer' });
           io.to(toUserId).emit('session-ended', { sessionId, reason: 'missed' });
 
-          // --- MISS LOGIC START ---
           const astro = await User.findOne({ userId: toUserId });
           if (astro && astro.role === 'astrologer') {
-            // USER REQUEST: Do NOT force offline on missed call. Stay Online.
-            // astro.isOnline = false;
-            // astro.isAvailable = false;
-            // await astro.save();
-            // broadcastAstroUpdate();
-
-            // Notify Super Admin
             const reasonMsg = `Missed Call Alert: ${astro.name} failed to answer in 30s. Still Online.`;
             io.to('superadmin').emit('admin-notification', { text: reasonMsg, type: 'missed_call', astroId: toUserId });
 
-            // Log to text file
             const logMsg = `[${new Date().toISOString()}] MISSED CALL: Astrologer ${astro.name} (${astro.phone}) missed a call from ${fromUserId}. Staying ONLINE.\n`;
-            const fs = require('fs');
-            fs.appendFile('missed_calls_log.txt', logMsg, (err) => {
+            require('fs').appendFile('missed_calls_log.txt', logMsg, (err) => {
               if (err) console.error('Error writing to log file', err);
             });
           }
-          // --- MISS LOGIC END ---
 
           userActiveSession.delete(fromUserId);
           userActiveSession.delete(toUserId);
           activeSessions.delete(sessionId);
-          await Session.updateOne({ sessionId }, { status: 'missed', endTime: Date.now() }).catch(() => { });
+          Session.updateOne({ sessionId }, { status: 'missed', endTime: Date.now() }).catch(() => { });
         }
-      }, 30000); // 30 Seconds Timeout
+      }, 30000);
     } catch (err) {
       console.error('request-session error', err);
       cb({ ok: false, error: 'Internal error' });

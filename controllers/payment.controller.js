@@ -1,10 +1,14 @@
 const crypto = require('crypto');
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const Razorpay = require('razorpay');
 const User = require('../models/User');
 const Payment = require('../models/Payment');
 const { paymentTokens } = require('../services/socketStore');
-const phonepeConfig = require('../config/phonepe');
-const { formatImageUrl } = require('../utils/formatImage');
+const razorpayConfig = require('../config/razorpay');
+
+const razorpay = new Razorpay({
+    key_id: razorpayConfig.KEY_ID,
+    key_secret: razorpayConfig.KEY_SECRET,
+});
 
 exports.createToken = async (req, res) => {
     try {
@@ -87,6 +91,7 @@ exports.createPayment = async (req, res) => {
             amount = tokenData.amount;
             baseAmount = tokenData.baseAmount || amount;
             gstAmount = tokenData.gstAmount || 0;
+            couponCode = tokenData.couponCode || couponCode;
         } else {
             baseAmount = parseFloat(amount);
             gstAmount = baseAmount * 0.18;
@@ -95,88 +100,54 @@ exports.createPayment = async (req, res) => {
 
         if (!amount || !userId) return res.json({ ok: false, error: 'Missing data' });
 
-        const userObj = await User.findOne({ userId });
-        const userMobile = ((userObj && userObj.phone) ? userObj.phone : "9999999999").replace(/[^0-9]/g, '').slice(-10);
-        const merchantTransactionId = "MT" + Date.now() + Math.round(Math.random() * 1000);
-
         if (couponCode === 'WELCOME50') couponBonus = baseAmount * 0.50;
 
+        const order = await razorpay.orders.create({
+            amount: Math.round(amount * 100), // Razorpay expects paisa
+            currency: "INR",
+            receipt: "rcpt_" + Date.now(),
+        });
+
         await Payment.create({
-            transactionId: merchantTransactionId, merchantTransactionId,
+            transactionId: order.id,
+            merchantTransactionId: order.id,
             userId, amount, baseAmount, gstAmount, status: 'pending',
             withGst: true, isApp: !!isApp, isSuperWallet: !!isSuperWallet || !!couponBonus,
             offerPercentage: parseFloat(offerPercentage || 0),
             couponCode: couponCode || null, couponBonus
         });
 
-        const cleanUserId = userId.replace(/[^a-zA-Z0-9]/g, '') || "User";
-        const BASE_URL = process.env.BASE_URL || 'https://astrohark.com';
-
-        const payload = {
-            merchantId: phonepeConfig.MERCHANT_ID,
-            merchantTransactionId,
-            merchantUserId: cleanUserId,
-            amount: Math.round(amount * 100),
-            redirectUrl: `${BASE_URL}/api/payment/callback`,
-            redirectMode: isApp ? "GET" : "POST",
-            callbackUrl: `${BASE_URL}/api/payment/callback${isApp ? '?isApp=true&txnId=' + merchantTransactionId : ''}`,
-            mobileNumber: userMobile,
-            paymentInstrument: { type: "PAY_PAGE" }
-        };
-
-        if (isApp) payload.redirectUrl = "astrohark://payment-success";
-
-        const base64Payload = Buffer.from(JSON.stringify(payload)).toString('base64');
-        const stringToSign = base64Payload + "/pg/v1/pay" + phonepeConfig.SALT_KEY;
-        const sha256 = crypto.createHash('sha256').update(stringToSign).digest('hex');
-        const checksum = sha256 + "###" + phonepeConfig.SALT_INDEX;
-
-        const response = await fetch(`${phonepeConfig.HOST_URL}/pg/v1/pay`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-VERIFY': checksum,
-                'accept': 'application/json'
-            },
-            body: JSON.stringify({ request: base64Payload })
-        }).then(r => r.json());
-
-        if (response.success) {
-            res.json({
-                ok: true, merchantTransactionId,
-                paymentUrl: response.data.instrumentResponse?.redirectInfo?.url,
-                intentUrl: response.data.instrumentResponse?.intentUrl
-            });
-        } else {
-            res.json({ ok: false, error: response.message || 'PhonePe error' });
-        }
+        res.json({
+            ok: true,
+            orderId: order.id,
+            amount: order.amount,
+            key: razorpayConfig.KEY_ID
+        });
     } catch (e) {
-        console.error(e);
-        res.json({ ok: false, error: 'Internal error' });
+        console.error("Razorpay Order Error:", e);
+        res.json({ ok: false, error: 'Failed to create payment order' });
     }
 };
 
 exports.callback = async (req, res) => {
     try {
-        let decoded = {};
-        if (req.body.response) {
-            decoded = JSON.parse(Buffer.from(req.body.response, 'base64').toString('utf-8'));
-        } else {
-            decoded = req.body.code ? req.body : req.query;
+        const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+        const hmac = crypto.createHmac('sha256', razorpayConfig.KEY_SECRET);
+        hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+        const generated_signature = hmac.digest('hex');
+
+        if (generated_signature !== razorpay_signature) {
+            console.error("Razorpay Signature mismatch!");
+            return res.json({ ok: false, error: 'Invalid signature' });
         }
 
-        const merchantTransactionId = decoded.data?.merchantTransactionId || decoded.merchantTransactionId || req.query.txnId;
-        const code = decoded.code;
+        const payment = await Payment.findOne({ transactionId: razorpay_order_id });
+        if (!payment) return res.json({ ok: false, error: 'Payment record not found' });
 
-        const payment = await Payment.findOne({ merchantTransactionId });
-        if (!payment) return res.redirect('/wallet?status=failure&reason=not_found');
-
-        const isSuccess = code === 'PAYMENT_SUCCESS' || code === 'SUCCESS';
-        const redirectIsApp = payment.isApp || req.query.isApp === 'true';
-
-        if (isSuccess && payment.status !== 'success') {
+        if (payment.status !== 'success') {
             payment.status = 'success';
-            payment.providerRefId = decoded.data?.providerReferenceId || decoded.providerReferenceId;
+            payment.providerRefId = razorpay_payment_id;
             await payment.save();
 
             const user = await User.findOne({ userId: payment.userId });
@@ -186,21 +157,14 @@ exports.callback = async (req, res) => {
                     user.superWalletBalance = (user.superWalletBalance || 0) + payment.couponBonus;
                 }
                 await user.save();
+                console.log(`[Razorpay] Wallet Credited: ${user.name} +₹${payment.baseAmount}`);
             }
-        } else if (!isSuccess) {
-            payment.status = 'failed';
-            await payment.save();
         }
 
-        if (redirectIsApp) {
-            const scheme = isSuccess ? 'astrohark://payment-success' : 'astrohark://payment-failed';
-            return res.send(`<html><script>window.location.href="${scheme}?status=${status}";</script></html>`);
-        }
-
-        res.redirect(`/wallet?status=${isSuccess ? 'success' : 'failure'}`);
+        res.json({ ok: true, status: 'success' });
     } catch (e) {
-        console.error(e);
-        res.redirect('/wallet?status=failure');
+        console.error("Razorpay Callback Error:", e);
+        res.json({ ok: false, error: 'Verification failed' });
     }
 };
 

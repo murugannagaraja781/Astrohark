@@ -1877,7 +1877,7 @@ io.on('connection', (socket) => {
           sessionId: sessionId,
           callType: type,
           callerName: fromUser?.name || 'Client',
-          callerId: fromUserId, // Fixed: callerUserId -> callerId
+          callerId: fromUserId,
           timestamp: Date.now().toString(),
           birthData: JSON.stringify(birthData || {})
         };
@@ -1887,6 +1887,14 @@ io.on('connection', (socket) => {
           body: `${fromUser?.name || 'Someone'} is calling you`
         };
 
+        sendFcmV1Push(toUser.fcmToken, fcmData, fcmNotification, toUserId)
+          .then(result => {
+             console.log(`[FCM v1] Session Push to ${toUserId}: Success=${result.success} (socketSent=${socketSent})`);
+          })
+          .catch(err => {
+             console.error('[FCM v1] Push error:', err.message);
+          });
+      }
 
       console.log(`Session request: ${sessionId} (${type})`);
       cb({ ok: true, sessionId });

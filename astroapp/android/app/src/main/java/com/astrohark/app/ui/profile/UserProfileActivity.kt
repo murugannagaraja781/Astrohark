@@ -37,13 +37,6 @@ import com.astrohark.app.ui.components.SettingsItem
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.ui.theme.AstroDimens
 import com.astrohark.app.utils.Constants
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Smartphone
-import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material3.*
-import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.*
@@ -55,6 +48,7 @@ import java.io.FileOutputStream
 class UserProfileActivity : ComponentActivity() {
     private lateinit var tokenManager: TokenManager
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         tokenManager = TokenManager(this)
@@ -70,6 +64,7 @@ class UserProfileActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
     tokenManager: TokenManager,

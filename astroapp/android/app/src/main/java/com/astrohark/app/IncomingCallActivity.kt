@@ -339,7 +339,7 @@ fun IncomingCallScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CosmicAppTheme.colors.surfaceGradient)
+            .background(CosmicAppTheme.backgroundBrush)
     ) {
         // Decorative background elements (optional, but adds premium feel)
         Column(

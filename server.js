@@ -104,7 +104,7 @@ try {
 
 
 // Send FCM v1 Push Notification
-async function sendFcmV1Push(fcmToken, data, notification) {
+async function sendFcmV1Push(fcmToken, data, notification, userId = null) {
   if (!fcmAuth) {
     console.warn('[FCM v1] Not initialized - skipping push');
     return { success: false, error: 'FCM not initialized' };
@@ -147,8 +147,27 @@ async function sendFcmV1Push(fcmToken, data, notification) {
       console.log('[FCM v1] Push sent successfully:', result.name);
       return { success: true, messageId: result.name };
     } else {
-      console.error('[FCM v1] Push failed:', result.error?.message || JSON.stringify(result));
-      return { success: false, error: result.error?.message };
+      const errorMsg = result.error?.message || JSON.stringify(result);
+      console.error('[FCM v1] Push failed:', errorMsg);
+      
+      const isInvalidToken = (response.status === 404 || 
+                              errorMsg.includes('Requested entity was not found') || 
+                              errorMsg.includes('UNREGISTERED') ||
+                              errorMsg.includes('INVALID_ARGUMENT'));
+
+      if (isInvalidToken) {
+        if (userId) {
+          console.warn(`[FCM v1] Token for user ${userId} is invalid, cleaning up...`);
+          try {
+            await User.updateOne({ userId }, { $unset: { fcmToken: "" } });
+          } catch (dbErr) {
+            console.error('[FCM v1] Failed to clear invalid token from DB:', dbErr.message);
+          }
+        }
+        return { success: false, error: 'INVALID_TOKEN', originalError: errorMsg };
+      }
+      
+      return { success: false, error: errorMsg };
     }
   } catch (err) {
     console.error('[FCM v1] Send error:', err.message);
@@ -160,7 +179,7 @@ async function sendFcmV1Push(fcmToken, data, notification) {
 initFcmAuth();
 
 const app = express();
-app.set('trust proxy', 1); // Fix for express-rate-limit when behind reverse proxy
+app.set('trust proxy', 1); // Standard for one-hop reverse proxy (like Nginx)
 const server = http.createServer(app);
 const io = new Server(server);
 app.set('io', io);
@@ -210,7 +229,8 @@ app.use(cors({ origin: "*" }));
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // limit each IP to 1000 requests per windowMs
-  message: 'Too many requests from this IP, please try again after 15 minutes'
+  message: 'Too many requests from this IP, please try again after 15 minutes',
+  validate: false
 });
 app.use(globalLimiter);
 
@@ -218,7 +238,8 @@ app.use(globalLimiter);
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: 'Too many API requests, please try again later'
+  message: 'Too many API requests, please try again later',
+  validate: false
 });
 app.use('/api/', apiLimiter);
 
@@ -1866,20 +1887,6 @@ io.on('connection', (socket) => {
           body: `${fromUser?.name || 'Someone'} is calling you`
         };
 
-        sendFcmV1Push(toUser.fcmToken, fcmData, fcmNotification)
-          .then(result => {
-            console.log(`[FCM v1] Session Push to ${toUserId}: Success=${result.success} (socketSent=${socketSent})`);
-            if (!result.success && (result.error?.includes('Requested entity was not found') || result.error === 'UNREGISTERED')) {
-              // Token is stale/invalid
-              User.updateOne({ userId: toUserId }, { $unset: { fcmToken: 1 } })
-                .then(() => console.log(`[FCM v1] Invalid token removed for ${toUserId}`))
-                .catch(e => console.error('Token removal error', e));
-            }
-          })
-          .catch(err => {
-            console.error('[FCM v1] Session Push Error:', err.message);
-          });
-      }
 
       console.log(`Session request: ${sessionId} (${type})`);
       cb({ ok: true, sessionId });
@@ -2183,7 +2190,7 @@ io.on('connection', (socket) => {
         };
 
         // Data-only message for background handling
-        await sendFcmV1Push(toUser.fcmToken, payload, null);
+        await sendFcmV1Push(toUser.fcmToken, payload, null, toUserId);
         console.log(`Chat push sent to ${toUserId} from ${fromUserId}`);
       }
     } catch (e) {
@@ -2214,7 +2221,7 @@ io.on('connection', (socket) => {
           body: messageText.substring(0, 100)
         };
 
-        await sendFcmV1Push(toUser.fcmToken, payload, notification);
+        await sendFcmV1Push(toUser.fcmToken, payload, notification, toUserId);
       }
     } catch (e) { console.error('Chat Push Error:', e); }
   }
@@ -2893,7 +2900,7 @@ io.on('connection', (socket) => {
           title: "Withdrawal Approved! 💰",
           body: `Your withdrawal of ₹${w.amount} has been approved. The amount will be credited to your bank account within 2 working days.`
         };
-        sendFcmV1Push(u.fcmToken, fcmData, fcmNotification).catch(e => console.error("FCM Error:", e));
+        sendFcmV1Push(u.fcmToken, fcmData, fcmNotification, u.userId).catch(e => console.error("FCM Error:", e));
       }
 
       cb({ ok: true, balance: u.walletBalance });
@@ -3027,7 +3034,7 @@ io.on('connection', (socket) => {
         const promises = chunk.map(u => {
           const fcmData = { type: 'marketing_offer', title, body };
           const fcmNotif = { title, body };
-          return sendFcmV1Push(u.fcmToken, fcmData, fcmNotif)
+          return sendFcmV1Push(u.fcmToken, fcmData, fcmNotif, u.userId)
             .then(res => res.success ? 1 : 0)
             .catch(() => 0);
         });
@@ -3154,7 +3161,7 @@ app.post('/api/call/initiate', async (req, res) => {
         body: 'Tap to answer video call'
       };
 
-      const fcmResult = await sendFcmV1Push(astro.fcmToken, fcmData, fcmNotification);
+      const fcmResult = await sendFcmV1Push(astro.fcmToken, fcmData, fcmNotification, receiverId);
       console.log(`[FCM v1] Sent Push to ${receiverId} | Success: ${fcmResult.success}`);
     } else {
       console.log(`[FCM v1] No Token for ${receiverId}. Call might fail if app is killed.`);

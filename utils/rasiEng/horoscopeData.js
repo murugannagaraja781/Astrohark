@@ -24,31 +24,31 @@ async function fetchDailyHoroscope(date) {
         const response = await fetch(url);
         if (!response.ok) {
             console.warn(`[Horoscope] Failed to fetch for ${date}: ${response.status} ${response.statusText}`);
-            // Attempt to fetch yesterday's data as fallback
-            const yesterday = DateTime.fromISO(date).minus({ days: 1 }).toFormat('yyyy-MM-dd');
-            console.log(`[Horoscope] Attempting fallback to ${yesterday}`);
-
-            const fallbackUrl = `${BASE_URL}/horoscope_${yesterday}.json`;
-            const fallbackRes = await fetch(fallbackUrl);
-
-            if (!fallbackRes.ok) {
-                throw new Error(`Failed to fetch horoscope for ${date} and fallback ${yesterday}`);
-            }
-            // Use fallback response
-            let data = await fallbackRes.json();
-            // Process data (duplicated logic, ideally refactor, but kept inline for safety)
-            if (Array.isArray(data) && data[0] && data[0].content && data[0].content.parts) {
-                let text = data[0].content.parts[0].text;
-                text = text.replace(/```json\n?|```/g, '').trim();
-                try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    console.error('Failed to parse inner JSON from Gemini response (fallback):', e);
-                    return null;
+            
+            // Try up to 3 previous days in sequence
+            for (let i = 1; i <= 3; i++) {
+                const retryDate = DateTime.fromISO(date).minus({ days: i }).toFormat('yyyy-MM-dd');
+                console.log(`[Horoscope] Attempting fallback to ${retryDate} (Attempt ${i}/3)`);
+                const fallbackUrl = `${BASE_URL}/horoscope_${retryDate}.json`;
+                const fallbackRes = await fetch(fallbackUrl);
+                
+                if (fallbackRes.ok) {
+                    let data = await fallbackRes.json();
+                    if (Array.isArray(data) && data[0] && data[0].content && data[0].content.parts) {
+                        let text = data[0].content.parts[0].text;
+                        text = text.replace(/```json\n?|```/g, '').trim();
+                        try {
+                            data = JSON.parse(text);
+                        } catch (e) {
+                            console.error(`Failed to parse fallback JSON for ${retryDate}:`, e);
+                            continue; // Try next day
+                        }
+                    }
+                    cache.set(date, data);
+                    return data;
                 }
             }
-            cache.set(date, data); // Cache it as today's data to avoid re-fetching
-            return data;
+            throw new Error(`Failed to fetch horoscope after 3 fallbacks`);
         }
 
         let data = await response.json();

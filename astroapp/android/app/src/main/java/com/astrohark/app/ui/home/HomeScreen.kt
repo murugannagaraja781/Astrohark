@@ -607,7 +607,7 @@ fun HomeScreen(
                     when (selectedTab) {
                         0 -> {
                             // --- HOME TAB ---
-                            item { WalletDashboard(walletBalance) { onWalletClick() } }
+                            item { WalletDashboard(walletBalance, isTamil) { onWalletClick() } }
                             
                             item { TopServicesSection(isTamil) }
                             item {
@@ -684,7 +684,7 @@ fun HomeScreen(
                                 Column(modifier = Modifier.padding(20.dp)) {
                                     Text("My Account", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold))
                                     Spacer(modifier = Modifier.height(20.dp))
-                                    WalletDashboard(walletBalance) { onWalletClick() }
+                                    WalletDashboard(walletBalance, isTamil) { onWalletClick() }
                                     Spacer(modifier = Modifier.height(24.dp))
                                     ProfileItem("Personal Profile", Icons.Rounded.Person) { onDrawerItemClick("profile") }
                                     ProfileItem("Transaction History", Icons.Rounded.AccountBalanceWallet) { onWalletClick() }
@@ -938,7 +938,7 @@ fun HomeTopBar(
 }
 
 @Composable
-fun WalletDashboard(balance: Double, onAddMoneyClick: () -> Unit) {
+fun WalletDashboard(balance: Double, isTamil: Boolean, onAddMoneyClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1156,7 +1156,7 @@ fun FeaturedGuideCard(astro: Astrologer, isTamil: Boolean, onConsultClick: (Astr
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 AstrologerActionButton(Localization.get("chat", isTamil), Icons.Rounded.Chat, true, Color(0xFF00BFA5), { onConsultClick(astro) }, Modifier.weight(1f))
-                AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, Color(0xFFE87A1E), { onConsultClick(astro) }, Modifier.weight(1f))
+                AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, true, Color(0xFFE87A1E), { onConsultClick(astro) }, Modifier.weight(1f))
                 AstrologerActionButton(if(isTamil) "வீடியோ" else "Video", Icons.Rounded.VideoCall, true, Color(0xFFD32F2F), { onConsultClick(astro) }, Modifier.weight(1f))
             }
         }
@@ -1535,7 +1535,7 @@ fun ProfileItem(label: String, icon: ImageVector, onClick: () -> Unit) {
 }
 
 @Composable
-fun RasiGridSection(onClick: (ComposeRasiItem) -> Unit) {
+fun RasiGridSection(isTamil: Boolean, onClick: (ComposeRasiItem) -> Unit) {
     val rasiItems = listOf(
         ComposeRasiItem(1, "Aries", com.astrohark.app.R.drawable.ic_rasi_aries_premium, AriesRed),
         ComposeRasiItem(2, "Taurus", com.astrohark.app.R.drawable.ic_rasi_taurus_premium_copy, TaurusGreen),
@@ -1569,7 +1569,7 @@ fun RasiGridSection(onClick: (ComposeRasiItem) -> Unit) {
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     for (item in rowItems) {
-                        RasiItemView(item, onClick)
+                        RasiItemView(item, isTamil, onClick)
                     }
                 }
             }

@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.astrohark.app.R
 import com.astrohark.app.data.repository.AuthRepository
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {

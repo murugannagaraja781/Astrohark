@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.focus.FocusRequester
@@ -36,6 +37,7 @@ import com.astrohark.app.R
 import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.data.repository.AuthRepository
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import kotlinx.coroutines.launch
 
 class OtpVerificationActivity : AppCompatActivity() {
@@ -91,17 +93,16 @@ class OtpVerificationActivity : AppCompatActivity() {
                 val user = result.getOrThrow()
                 tokenManager.saveUserSession(user)
                 
-                // FCM token registration skipped for brevity but usually included
-                
                 Toast.makeText(this@OtpVerificationActivity, "Welcome ${user.name}", Toast.LENGTH_SHORT).show()
                 val intent = when (user.role) {
                     "astrologer" -> Intent(this@OtpVerificationActivity, com.astrohark.app.ui.astro.AstrologerDashboardActivity::class.java)
+                    "admin" -> Intent(this@OtpVerificationActivity, com.astrohark.app.ui.admin.SuperPowerAdminDashboardActivity::class.java)
                     else -> Intent(this@OtpVerificationActivity, com.astrohark.app.ui.home.HomeActivity::class.java)
                 }
                 startActivity(intent)
                 finishAffinity()
             } else {
-                Toast.makeText(this@OtpVerificationActivity, "Invalid OTP", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@OtpVerificationActivity, result.exceptionOrNull()?.message ?: "Invalid OTP", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -118,6 +119,7 @@ fun OtpScreen(
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(300)
         focusRequester.requestFocus()
     }
 
@@ -175,9 +177,12 @@ fun OtpScreen(
                 // OTP Input Boxes
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier.clickable { focusRequester.requestFocus() }
+                    modifier = Modifier.fillMaxWidth().clickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null
+                    ) { focusRequester.requestFocus() }
                 ) {
-                    // Optimized hidden input
+                    // Optimized hidden input - fills the area to capture focus
                     androidx.compose.foundation.text.BasicTextField(
                         value = otp,
                         onValueChange = { 
@@ -187,7 +192,8 @@ fun OtpScreen(
                         },
                         modifier = Modifier
                             .focusRequester(focusRequester)
-                            .size(1.dp),
+                            .matchParentSize()
+                            .alpha(0f),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
                             imeAction = androidx.compose.ui.text.input.ImeAction.Done

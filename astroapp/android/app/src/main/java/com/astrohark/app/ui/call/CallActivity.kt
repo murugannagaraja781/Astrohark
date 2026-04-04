@@ -46,6 +46,7 @@ import com.astrohark.app.data.remote.SocketManager
 import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.data.model.AuthResponse
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers

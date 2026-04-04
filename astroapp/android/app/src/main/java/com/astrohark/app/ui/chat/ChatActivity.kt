@@ -37,6 +37,7 @@ import com.astrohark.app.R
 import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.data.remote.SocketManager
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import com.astrohark.app.utils.SoundManager
 import org.json.JSONObject
 import java.util.UUID

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import com.astrohark.app.data.api.ApiClient
 import com.astrohark.app.ui.theme.CosmicAppTheme
+import com.astrohark.app.ui.theme.AstroDimens
 import com.astrohark.app.utils.Localization
 import com.google.gson.JsonObject
 import kotlinx.coroutines.launch

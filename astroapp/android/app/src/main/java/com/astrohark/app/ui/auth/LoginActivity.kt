@@ -63,21 +63,7 @@ fun LoginScreen() {
             .background(CosmicAppTheme.colors.bgStart)
             .verticalScroll(rememberScrollState())
     ) {
-        // Top Illustration Area
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1.2f)
-                .background(CosmicAppTheme.backgroundBrush),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.login_illustration),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(1.0f),
-                contentScale = ContentScale.Crop
-            )
-        }
+        // Top Illustration Area Removed
 
         // Bottom Cocoa Card
         Surface(
@@ -189,33 +175,7 @@ fun LoginScreen() {
                     isLoading = isLoading
                 )
 
-                // Or Divider
-                Row(
-                    modifier = Modifier.padding(vertical = AstroDimens.Medium),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f))
-                    Text(
-                        text = "Or",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = CosmicAppTheme.colors.textSecondary,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    HorizontalDivider(modifier = Modifier.weight(1f), color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f))
-                }
-
-                // Email Button
-                OutlinedButton(
-                    onClick = { /* Handle Email Login */ },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
-                    border = BorderStroke(1.dp, CosmicAppTheme.colors.accent),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = CosmicAppTheme.colors.accent)
-                ) {
-                    Icon(Icons.Default.Email, null, tint = CosmicAppTheme.colors.accent)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Continue with Email ID", style = MaterialTheme.typography.labelLarge)
-                }
+                Spacer(modifier = Modifier.height(AstroDimens.Large))
 
                 Spacer(modifier = Modifier.weight(1f))
 

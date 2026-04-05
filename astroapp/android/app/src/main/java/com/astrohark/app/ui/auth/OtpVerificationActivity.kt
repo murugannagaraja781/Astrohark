@@ -123,56 +123,43 @@ fun OtpScreen(
         focusRequester.requestFocus()
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CosmicAppTheme.colors.bgStart)
-            .verticalScroll(rememberScrollState())
+            .background(CosmicAppTheme.colors.bgStart),
+        contentAlignment = Alignment.Center
     ) {
-        // Top Illustration Area
-        Box(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(1.2f)
-                .background(CosmicAppTheme.backgroundBrush),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.otp_illustration),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(1.0f),
-                contentScale = ContentScale.Crop
-            )
-        }
-
-        // Bottom Cocoa Card
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(topStart = AstroDimens.RadiusLarge, topEnd = AstroDimens.RadiusLarge),
-            color = CosmicAppTheme.colors.cardBg,
-            border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
+                .padding(AstroDimens.Large)
+                .shadow(elevation = 20.dp, shape = RoundedCornerShape(24.dp), spotColor = CosmicAppTheme.colors.accent),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(AstroDimens.Large),
+                    .padding(AstroDimens.Large)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Verification Code",
                     style = MaterialTheme.typography.headlineMedium,
                     color = CosmicAppTheme.colors.accent,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
                     text = "Please enter the OTP code sent to your number",
                     style = MaterialTheme.typography.bodyMedium,
                     color = CosmicAppTheme.colors.textSecondary,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                 )
 
-                Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 // OTP Input Boxes
                 Box(
@@ -182,7 +169,6 @@ fun OtpScreen(
                         indication = null
                     ) { focusRequester.requestFocus() }
                 ) {
-                    // Optimized hidden input - fills the area to capture focus
                     androidx.compose.foundation.text.BasicTextField(
                         value = otp,
                         onValueChange = { 
@@ -220,7 +206,7 @@ fun OtpScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(AstroDimens.Medium))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 com.astrohark.app.ui.theme.components.AstroButton(
                     text = "SUBMIT",
@@ -234,7 +220,7 @@ fun OtpScreen(
                     isLoading = isLoading
                 )
 
-                Spacer(modifier = Modifier.height(AstroDimens.Medium))
+                Spacer(modifier = Modifier.height(24.dp))
                 
                 Text(
                     text = "Didn't receive the OTP? Resend",

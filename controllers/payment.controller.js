@@ -135,7 +135,8 @@ exports.createPayment = async (req, res) => {
         console.error("Razorpay Order Error Details:", {
             statusCode: e.statusCode,
             description: e.error ? e.error.description : 'Unknown',
-            code: e.error ? e.error.code : 'Unknown'
+            code: e.error ? e.error.code : 'Unknown',
+            usingKey: keyId ? keyId.substring(0, 10) + "..." : 'None'
         });
         res.json({ ok: false, error: 'Failed to create payment order' });
     }

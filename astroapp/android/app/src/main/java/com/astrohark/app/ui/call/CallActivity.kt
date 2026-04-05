@@ -218,7 +218,8 @@ class CallActivity : ComponentActivity() {
         sessionId = intent.getStringExtra("sessionId")
         isInitiator = intent.getBooleanExtra("isInitiator", false)
         val rawType = intent.getStringExtra("type") ?: intent.getStringExtra("callType") ?: "video"
-        callType = if (rawType.lowercase() == "audio" || rawType.lowercase() == "voice") "audio" else "video"
+        val lowerType = rawType.lowercase()
+        callType = if (lowerType == "audio" || lowerType == "voice" || lowerType == "call") "audio" else "video"
 
         // Initial state sync
         isVideoEnabledState = (callType == "video")

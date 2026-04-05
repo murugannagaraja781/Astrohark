@@ -309,7 +309,12 @@ fun IntakeScreen(
             day = d.optInt("day", 0).toString().takeIf { it != "0" } ?: ""
             month = d.optInt("month", 0).toString().takeIf { it != "0" } ?: ""
             year = d.optInt("year", 0).toString().takeIf { it != "0" } ?: ""
-            hour = d.optInt("hour", 0).toString()
+            
+            // Fix: Convert stored 24h hour to 12h + AM/PM
+            val storedHour = d.optInt("hour", 0)
+            val h12 = if (storedHour > 12) (storedHour - 12) else if (storedHour == 0) 12 else storedHour
+            amPm = if (storedHour >= 12) "PM" else "AM"
+            hour = h12.toString()
             minute = d.optInt("minute", 0).toString()
 
             gender = d.optString("gender", "Male")
@@ -329,8 +334,13 @@ fun IntakeScreen(
                 pDay = pd.optInt("day").toString()
                 pMonth = pd.optInt("month").toString()
                 pYear = pd.optInt("year").toString()
-                pHour = pd.optInt("hour").toString()
+                
+                val pStoredHour = pd.optInt("hour", 0)
+                val ph12 = if (pStoredHour > 12) (pStoredHour - 12) else if (pStoredHour == 0) 12 else pStoredHour
+                pAmPm = if (pStoredHour >= 12) "PM" else "AM"
+                pHour = ph12.toString()
                 pMinute = pd.optInt("minute").toString()
+                
                 pLat = pd.optDouble("latitude", 0.0)
                 pLon = pd.optDouble("longitude", 0.0)
                 pTz = pd.optDouble("timezone", 5.5)
@@ -361,8 +371,13 @@ fun IntakeScreen(
             day = prefs.getInt("day", 0).toString().takeIf { it != "0" } ?: ""
             month = prefs.getInt("month", 0).toString().takeIf { it != "0" } ?: ""
             year = prefs.getInt("year", 0).toString().takeIf { it != "0" } ?: ""
-            hour = prefs.getInt("hour", 0).toString()
+            
+            val defHour = prefs.getInt("hour", 12)
+            val defH12 = if (defHour > 12) (defHour - 12) else if (defHour == 0) 12 else defHour
+            amPm = if (defHour >= 12) "PM" else "AM"
+            hour = defH12.toString()
             minute = prefs.getInt("minute", 0).toString()
+            
             gender = prefs.getString("gender", "Male") ?: "Male"
             occupation = prefs.getString("occupation", "") ?: ""
             maritalStatus = prefs.getString("maritalStatus", "Single") ?: "Single"
@@ -641,13 +656,15 @@ fun IntakeScreen(
             Box(modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Scrollable content area
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
                     // Personal Details Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -811,402 +828,183 @@ fun IntakeScreen(
                                     disabledContainerColor = Color.Transparent
                                 )
                             )
-
-                            OutlinedTextField(
-                                value = timezoneDisplay,
-                                onValueChange = {},
-                                label = { Text("Timezone") },
-                                readOnly = true,
-                                enabled = false,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = ChocolateBrown,
-                                    disabledBorderColor = Color.Gray,
-                                    disabledLabelColor = ChocolateBrown,
-                                    disabledContainerColor = Color.Transparent
-                                )
-                            )
-
-                            // Optional
-                            OutlinedTextField(
-                                value = occupation,
-                                onValueChange = { occupation = it },
-                                label = { Text("Occupation (Optional)") },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = ChocolateBrown,
-                                    focusedLabelColor = ChocolateBrown,
-                                    cursorColor = ChocolateBrown
-                                )
-                            )
-
-                            ChoiceChipGroup(
-                                label = Localization.get("marital_status", isTamil),
-                                selected = maritalStatus,
-                                items = listOf("Single", "Married", "Divorced", "Widowed"),
-                                isTamil = isTamil,
-                                onSelect = { maritalStatus = it }
-                            )
-
-                            ChoiceChipGroup(
-                                label = Localization.get("topic", isTamil),
-                                selected = topic,
-                                items = listOf(
-                                    "Career / Job",
-                                    "Marriage / Relationship",
-                                    "Health",
-                                    "Finance",
-                                    "Legal",
-                                    "General"
-                                ),
-                                isTamil = isTamil,
-                                onSelect = { topic = it }
-                            )
                         }
                     }
-
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.3f), thickness = 1.dp)
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (callType != "match") {
-                            Checkbox(
-                                checked = includePartner,
-                                onCheckedChange = { includePartner = it },
-                                colors = CheckboxDefaults.colors(checkedColor = ChocolateBrown)
-                            )
-                            Text(
-                                "Include Partner Details",
-                                modifier = Modifier.padding(start = 8.dp),
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold
-                            )
-                        } else {
-                            Text(
-                                Localization.get("partner_details", isTamil),
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                fontSize = 20.sp
-                            )
-                        }
-                    }
-
-                    if (includePartner) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(24.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(24.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = pName,
-                                    onValueChange = { pName = it },
-                                    label = { Text(Localization.get("full_name", isTamil)) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        focusedBorderColor = ChocolateBrown,
-                                        focusedLabelColor = ChocolateBrown,
-                                        cursorColor = ChocolateBrown
-                                    )
-                                )
-                                Text(Localization.get("dob", isTamil), fontWeight = FontWeight.Bold, color = ChocolateBrown)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    OutlinedTextField(
-                                        value = pDay,
-                                        onValueChange = { if (it.length <= 2) pDay = it },
-                                        label = { Text("DD") },
-                                        modifier = Modifier.weight(1f),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
-                                    )
-                                    OutlinedTextField(
-                                        value = pMonth,
-                                        onValueChange = { if (it.length <= 2) pMonth = it },
-                                        label = { Text("MM") },
-                                        modifier = Modifier.weight(1f),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
-                                    )
-                                    OutlinedTextField(
-                                        value = pYear,
-                                        onValueChange = { if (it.length <= 4) pYear = it },
-                                        label = { Text("YYYY") },
-                                        modifier = Modifier.weight(1.5f),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
-                                    )
-                                    IconButton(onClick = {
-                                        val cal = Calendar.getInstance()
-                                        DatePickerDialog(context, { _, py, pm, pd ->
-                                            pYear = py.toString()
-                                            pMonth = (pm + 1).toString()
-                                            pDay = pd.toString()
-                                        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
-                                    }) {
-                                        Icon(Icons.Default.AutoAwesome, "Pick", tint = ChocolateBrown)
-                                    }
-                                }
-
-                                Text(Localization.get("tob", isTamil), fontWeight = FontWeight.Bold, color = ChocolateBrown)
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    OutlinedTextField(
-                                        value = pHour,
-                                        onValueChange = { if (it.length <= 2) pHour = it },
-                                        label = { Text("HH") },
-                                        modifier = Modifier.weight(1f),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
-                                    )
-                                    OutlinedTextField(
-                                        value = pMinute,
-                                        onValueChange = { if (it.length <= 2) pMinute = it },
-                                        label = { Text("MM") },
-                                        modifier = Modifier.weight(1f),
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        shape = RoundedCornerShape(12.dp),
-                                        colors = OutlinedTextFieldDefaults.colors(focusedTextColor = ChocolateBrown, unfocusedTextColor = ChocolateBrown)
-                                    )
-                                    TextButton(onClick = { pAmPm = if (pAmPm == "AM") "PM" else "AM" }) {
-                                        Text(pAmPm, color = ChocolateBrown, fontWeight = FontWeight.Bold)
-                                    }
-                                    IconButton(onClick = {
-                                        TimePickerDialog(context, { _, ph, pm ->
-                                            val hTyped = if (ph > 12) (ph - 12) else if (ph == 0) 12 else ph
-                                            pHour = hTyped.toString()
-                                            pMinute = String.format("%02d", pm)
-                                            pAmPm = if (ph >= 12) "PM" else "AM"
-                                        }, 12, 0, false).show()
-                                    }) {
-                                        Icon(Icons.Default.AutoFixHigh, "Pick", tint = ChocolateBrown)
-                                    }
-                                }
-                                Text(
-                                    Localization.get("pob", isTamil),
-                                    fontWeight = FontWeight.Bold,
-                                    color = ChocolateBrown
-                                )
-                                OutlinedTextField(
-                                    value = pCityName,
-                                    onValueChange = {},
-                                    label = { Text("City") },
-                                    readOnly = true,
-                                    enabled = false,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { launchPartnerLocationPicker() },
-                                    trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = ChocolateBrown) },
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        disabledTextColor = ChocolateBrown,
-                                        disabledBorderColor = Color.Gray,
-                                        disabledLabelColor = ChocolateBrown,
-                                        disabledContainerColor = Color.Transparent
-                                    )
-                                )
-                                OutlinedTextField(
-                                    value = partnerTimezoneDisplay,
-                                    onValueChange = {},
-                                    label = { Text("Timezone") },
-                                    readOnly = true,
-                                    enabled = false,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = OutlinedTextFieldDefaults.colors(
-                                        disabledTextColor = ChocolateBrown,
-                                        disabledBorderColor = Color.Gray,
-                                        disabledLabelColor = ChocolateBrown,
-                                        disabledContainerColor = Color.Transparent
-                                    )
-                                )
-                            }
-                        }
-                    }
-
-                    Button(
-                        onClick = { submit() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp)
-                            .shadow(
-                                elevation = 12.dp,
-                                shape = RoundedCornerShape(20.dp),
-                                spotColor = ChocolateBrown
-                            ),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = ChocolateBrown)
-                    ) {
-                        Text(
-                            if (isEditMode) "Update Details" else Localization.get("submit_consultation", isTamil),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
-                        )
-                    }
-
-                    Spacer(Modifier.height(32.dp))
                 }
 
-                // Vibrant Green Booking Confirmed Dialog
-                if (isWaiting) {
-                    val months = listOf("", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-                    val mName = months.getOrElse(month.toIntOrNull() ?: 0) { "" }
-                    val displayDate = "$day $mName, $year"
-                    val displayTime = "$hour:$minute $amPm $timezoneDisplay"
-                    val sessionType = if (callType == "match") "Relationship Matching" else "Full Natal Chart Reading"
-
-                    Dialog(onDismissRequest = { /* Prevent dismiss */ }) {
-                        Box(
+                // Fixed Footer Button
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter),
+                    color = Color(0xFF140F0A),
+                    shadowElevation = 8.dp
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Button(
+                            onClick = { submit() },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .shadow(
-                                    elevation = 20.dp,
-                                    shape = RoundedCornerShape(24.dp),
-                                    spotColor = Color(0xFFFFD54F),
-                                    ambientColor = Color(0xFFF5C518)
-                                )
-                                .background(
-                                    brush = Brush.verticalGradient(
-                                        colors = listOf(Color(0xFFE87A1E), Color(0xFFD4700B))
-                                    ),
-                                    shape = RoundedCornerShape(24.dp)
-                                )
-                                .border(1.dp, Color(0xFFFFD54F).copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                                .height(48.dp)
+                                .shadow(8.dp, RoundedCornerShape(12.dp), spotColor = Color(0xFFFF7F00)),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7F00))
                         ) {
-                            Column(
-                                modifier = Modifier.padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            Text(
+                                if (isEditMode) "UPDATE DETAILS" else "START CONSOLATION",
+                                color = Color.White,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 15.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Vibrant Green Booking Confirmed Dialog
+        if (isWaiting) {
+            val months = listOf("", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+            val mName = months.getOrElse(month.toIntOrNull() ?: 0) { "" }
+            val displayDate = "$day $mName, $year"
+            val displayTime = "$hour:$minute $amPm $timezoneDisplay"
+            val sessionType = if (callType == "match") "Relationship Matching" else "Full Natal Chart Reading"
+
+            Dialog(onDismissRequest = { /* Prevent dismiss */ }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(
+                            elevation = 20.dp,
+                            shape = RoundedCornerShape(24.dp),
+                            spotColor = Color(0xFFFFD54F),
+                            ambientColor = Color(0xFFF5C518)
+                        )
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(Color(0xFFE87A1E), Color(0xFFD4700B))
+                            ),
+                            shape = RoundedCornerShape(24.dp)
+                        )
+                        .border(1.dp, Color(0xFFFFD54F).copy(alpha = 0.5f), RoundedCornerShape(24.dp))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(80.dp)
+                                .shadow(10.dp, CircleShape, spotColor = Color(0xFFFFD54F))
+                                .background(Color(0xFFF5C518).copy(alpha = 0.2f), CircleShape)
+                                .border(2.dp, Color(0xFFFFD54F), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                contentDescription = "Cosmic",
+                                tint = Color.White,
+                                modifier = Modifier.size(40.dp)
+                            )
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
+                        Text(
+                            "Your cosmic journey\nbegins soon!",
+                            style = MaterialTheme.typography.headlineSmall,
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Text(
+                            "The stars have aligned for your session. Get ready to uncover your destiny in the emerald sky.",
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+
+                        Spacer(Modifier.height(24.dp))
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+                                .padding(16.dp)
+                        ) {
+                            Text(
+                                "SESSION TYPE",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White.copy(alpha = 0.6f)
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                // Celestial Icon Placeholder (Glow Effect)
-                                Box(
-                                    modifier = Modifier
-                                        .size(80.dp)
-                                        .shadow(10.dp, CircleShape, spotColor = Color(0xFFFFD54F))
-                                        .background(Color(0xFFF5C518).copy(alpha = 0.2f), CircleShape)
-                                        .border(2.dp, Color(0xFFFFD54F), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        Icons.Default.AutoAwesome,
-                                        contentDescription = "Cosmic",
-                                        tint = Color.White,
-                                        modifier = Modifier.size(40.dp)
-                                    )
-                                }
-
-                                Spacer(Modifier.height(24.dp))
-
                                 Text(
-                                    "Your cosmic journey\nbegins soon!",
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    textAlign = TextAlign.Center,
+                                    sessionType,
+                                    style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White
+                                    color = Color(0xFF69F0AE) // Mint
                                 )
+                                Icon(Icons.Default.AutoFixHigh, "", tint = Color(0xFF69F0AE), modifier = Modifier.size(20.dp))
+                            }
 
-                                Spacer(Modifier.height(8.dp))
+                            Divider(
+                                modifier = Modifier.padding(vertical = 12.dp),
+                                color = Color.White.copy(alpha = 0.1f)
+                            )
 
-                                Text(
-                                    "The stars have aligned for your session. Get ready to uncover your destiny in the emerald sky.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    textAlign = TextAlign.Center,
-                                    color = Color.White.copy(alpha = 0.8f)
-                                )
-
-                                Spacer(Modifier.height(24.dp))
-
-                                // Details Box
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color.Black.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        "SESSION TYPE",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color.White.copy(alpha = 0.6f)
-                                    )
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            sessionType,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFF69F0AE) // Mint
-                                        )
-                                        Icon(Icons.Default.AutoFixHigh, "", tint = Color(0xFF69F0AE), modifier = Modifier.size(20.dp))
-                                    }
-
-                                    Divider(
-                                        modifier = Modifier.padding(vertical = 12.dp),
-                                        color = Color.White.copy(alpha = 0.1f)
-                                    )
-
-                                    Row(modifier = Modifier.fillMaxWidth()) {
-                                        Column(Modifier.weight(1f)) {
-                                            Text("DATE", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
-                                            Text(displayDate, style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
-                                        }
-                                        Column(Modifier.weight(1f)) {
-                                            Text("TIME", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
-                                            Text(displayTime, style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
-                                        }
-                                    }
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("DATE", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
+                                    Text(displayDate, style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
                                 }
-
-                                Spacer(Modifier.height(24.dp))
-
-                                // Connecting...
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        color = Color(0xFF69F0AE),
-                                        strokeWidth = 2.dp
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        "Connecting... ${waitTimeLeft}s",
-                                        color = Color.White.copy(alpha = 0.9f),
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-
-                                Spacer(Modifier.height(16.dp))
-
-                                Button(
-                                    onClick = { isWaiting = false },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(48.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color.Black.copy(alpha = 0.3f),
-                                        contentColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(50)
-                                ) {
-                                    Text("Cancel Request", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                Column(Modifier.weight(1f)) {
+                                    Text("TIME", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.6f))
+                                    Text(displayTime, style = MaterialTheme.typography.bodyMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
                                 }
                             }
+                        }
+
+                        Spacer(Modifier.height(24.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color(0xFF69F0AE),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Connecting... ${waitTimeLeft}s",
+                                color = Color.White.copy(alpha = 0.9f),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Button(
+                            onClick = { isWaiting = false },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Black.copy(alpha = 0.3f),
+                                contentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(50)
+                        ) {
+                            Text("Cancel Request", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -1238,7 +1036,7 @@ fun ChoiceChipGroup(
         ) {
             items.forEach { item ->
                 val isItemSelected = selected == item
-                val localizedItem = Localization.get(item.lowercase().replace(" ", "_"), isTamil)
+                val localizedItem = item // Force English names for chips
 
                 Surface(
                     onClick = { onSelect(item) },

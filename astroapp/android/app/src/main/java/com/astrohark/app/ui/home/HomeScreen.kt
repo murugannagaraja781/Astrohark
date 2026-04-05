@@ -413,12 +413,12 @@ fun HomeScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
                 ) {
-                    Text(Localization.get("recharge_now", isTamil), color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("RECHARGE NOW", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLowBalanceDialog = false }) {
-                    Text(Localization.get("later", isTamil), color = CosmicAppTheme.colors.textSecondary)
+                    Text("LATER", color = CosmicAppTheme.colors.textSecondary)
                 }
             },
             containerColor = CosmicAppTheme.colors.cardBg,
@@ -997,7 +997,7 @@ fun WalletDashboard(balance: Double, isTamil: Boolean, onAddMoneyClick: () -> Un
                     Icon(androidx.compose.material.icons.Icons.Default.Add, null, tint = Color.Black, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = Localization.get("add_money", isTamil),
+                        text = "Add Money",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.ExtraBold,
                         color = Color.Black
@@ -1023,9 +1023,9 @@ fun QuickActionsSection(isTamil: Boolean, onAction: (String) -> Unit) {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            QuickActionItem(Localization.get("chat", isTamil), androidx.compose.material.icons.Icons.Rounded.Chat, Color(0xFF00BFA5), Modifier.weight(1f)) { onAction("chat") }
-            QuickActionItem(Localization.get("call", isTamil), androidx.compose.material.icons.Icons.Rounded.Call, Color(0xFFE87A1E), Modifier.weight(1f)) { onAction("call") }
-            QuickActionItem(Localization.get("video_call_mini", isTamil), androidx.compose.material.icons.Icons.Rounded.VideoCall, Color(0xFFD32F2F), Modifier.weight(1f)) { onAction("video") }
+            QuickActionItem("Chat", androidx.compose.material.icons.Icons.Rounded.Chat, Color(0xFF00BFA5), Modifier.weight(1f)) { onAction("chat") }
+            QuickActionItem("Call", androidx.compose.material.icons.Icons.Rounded.Call, Color(0xFFE87A1E), Modifier.weight(1f)) { onAction("call") }
+            QuickActionItem("Video", androidx.compose.material.icons.Icons.Rounded.VideoCall, Color(0xFFD32F2F), Modifier.weight(1f)) { onAction("video") }
         }
     }
 }
@@ -1171,13 +1171,13 @@ fun AstrologerCard(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (astro.isChatOnline) {
-                    AstrologerActionButton(Localization.get("chat", isTamil), Icons.Rounded.Chat, true, Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
+                    AstrologerActionButton("Chat", Icons.Rounded.Chat, true, Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
                 }
                 if (astro.isAudioOnline) {
-                    AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, true, Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
+                    AstrologerActionButton("Call", Icons.Rounded.Call, true, Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
                 }
                 if (astro.isVideoOnline) {
-                    AstrologerActionButton(if(isTamil) "வீடியோ" else "Video", Icons.Rounded.VideoCall, true, Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
+                    AstrologerActionButton("Video", Icons.Rounded.VideoCall, true, Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
                 }
             }
         }
@@ -1327,19 +1327,19 @@ fun HomeBottomBar(selectedTab: Int, isTamil: Boolean, onTabSelected: (Int) -> Un
         shadowElevation = 24.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
-         Row(
+          Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(vertical = 8.dp),
+                .padding(vertical = 4.dp), // Reduced vertical padding
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BottomNavItem(Localization.get("home", isTamil), androidx.compose.material.icons.Icons.Rounded.Home, selectedTab == 0) { onTabSelected(0) }
-            BottomNavItem(if(isTamil) "கலந்தாய்வு" else "Consult", androidx.compose.material.icons.Icons.Rounded.Groups, selectedTab == 1) { onTabSelected(1) }
-            BottomNavItem(if(isTamil) "வழிபாடுகள்" else "Rituals", androidx.compose.material.icons.Icons.Rounded.Eco, selectedTab == 2) { onTabSelected(2) }
-            BottomNavItem(if(isTamil) "கற்றல்" else "Academy", androidx.compose.material.icons.Icons.Rounded.School, selectedTab == 4) { onTabSelected(4) }
-            BottomNavItem(Localization.get("profile", isTamil), androidx.compose.material.icons.Icons.Rounded.Person, selectedTab == 3) { onTabSelected(3) }
+            BottomNavItem("Home", androidx.compose.material.icons.Icons.Rounded.Home, selectedTab == 0) { onTabSelected(0) }
+            BottomNavItem("Consult", androidx.compose.material.icons.Icons.Rounded.Groups, selectedTab == 1) { onTabSelected(1) }
+            BottomNavItem("Rituals", androidx.compose.material.icons.Icons.Rounded.Eco, selectedTab == 2) { onTabSelected(2) }
+            BottomNavItem("Academy", androidx.compose.material.icons.Icons.Rounded.School, selectedTab == 4) { onTabSelected(4) }
+            BottomNavItem("Profile", androidx.compose.material.icons.Icons.Rounded.Person, selectedTab == 3) { onTabSelected(3) }
         }
     }
 }
@@ -1352,10 +1352,10 @@ fun BottomNavItem(label: String, icon: ImageVector, isSelected: Boolean, onClick
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 4.dp) // Reduced padding for compact look
     ) {
         Icon(
             imageVector = icon,
@@ -1877,7 +1877,7 @@ fun StickyFooterButtons(
                 Icon(imageVector = androidx.compose.material.icons.Icons.Rounded.Call, contentDescription = null, modifier = Modifier.size(20.dp), tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = Localization.get("talk_now", isTamil),
+                    text = "TALK NOW",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
                     color = Color.White
                 )

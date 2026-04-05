@@ -57,38 +57,39 @@ fun LoginScreen() {
     var phoneNumber by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CosmicAppTheme.colors.bgStart)
-            .verticalScroll(rememberScrollState())
+            .background(CosmicAppTheme.colors.bgStart),
+        contentAlignment = Alignment.Center
     ) {
-        // Top Illustration Area Removed
-
-        // Bottom Cocoa Card
-        Surface(
+        Card(
             modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(topStart = AstroDimens.RadiusLarge, topEnd = AstroDimens.RadiusLarge),
-            color = CosmicAppTheme.colors.cardBg,
-            border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
+                .fillMaxWidth()
+                .padding(AstroDimens.Large)
+                .shadow(elevation = 20.dp, shape = RoundedCornerShape(24.dp), spotColor = CosmicAppTheme.colors.accent),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(AstroDimens.Large),
+                    .padding(AstroDimens.Large)
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Welcome to Astrohark!",
                     style = MaterialTheme.typography.headlineMedium,
                     color = CosmicAppTheme.colors.accent,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
                     text = "Securely verify with your mobile number",
                     style = MaterialTheme.typography.bodyMedium,
                     color = CosmicAppTheme.colors.textSecondary,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
                 )
 
@@ -177,16 +178,19 @@ fun LoginScreen() {
 
                 Spacer(modifier = Modifier.height(AstroDimens.Large))
 
-                Spacer(modifier = Modifier.weight(1f))
-
-                // Footer
+                // Terms and Conditions
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = AstroDimens.Large, bottom = 8.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Text("By signing up, you agree to our ", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.textSecondary)
-                    Text("Terms of Use", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent, modifier = Modifier.clickable { })
-                    Text(" and ", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.textSecondary)
+                    Text("By signing up, you agree to our ", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.textSecondary, textAlign = TextAlign.Center)
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text("Terms ", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent, modifier = Modifier.clickable { })
+                    Text("& ", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.textSecondary)
                     Text("Privacy Policy", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent, modifier = Modifier.clickable { })
                 }
             }

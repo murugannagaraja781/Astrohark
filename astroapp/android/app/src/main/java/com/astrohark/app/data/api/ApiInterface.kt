@@ -90,5 +90,8 @@ interface ApiInterface {
 
     @POST("api/admin/astrologers/approve")
     suspend fun approveAstrologer(@Body request: com.google.gson.JsonObject): Response<com.google.gson.JsonObject>
+
+    @retrofit2.http.GET("api/app-config")
+    suspend fun getAppConfig(): Response<com.google.gson.JsonObject>
 }
 

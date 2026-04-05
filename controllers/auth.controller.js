@@ -12,8 +12,9 @@ exports.sendOtp = async (req, res) => {
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
     // Bypasses
-    if (phone === '9876543210') return res.json({ ok: true });
-    if (phone === '8000000001' || phone === '9000000001') {
+    const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+    if (cleanPhone === '9876543210') return res.json({ ok: true });
+    if (cleanPhone === '8000000001' || cleanPhone === '9000000001') {
         otpStore.set(phone, { otp: '0101', expires: Date.now() + 300000 });
         return res.json({ ok: true });
     }
@@ -29,7 +30,8 @@ exports.verifyOtp = async (req, res) => {
     const SERVER_URL = req.app.get('SERVER_URL');
 
     // Super Admin Backdoor
-    if (phone === '9876543210' && otp === '1369') {
+    const cleanPhoneVerify = phone.replace(/[^0-9]/g, '').slice(-10);
+    if (cleanPhoneVerify === '9876543210' && otp === '1369') {
         let user = await User.findOne({ phone });
         if (!user) {
             user = await User.create({
@@ -50,7 +52,7 @@ exports.verifyOtp = async (req, res) => {
     }
 
     // --- Test Astrologer Account ---
-    if (phone === '8000000001' && otp === '0101') {
+    if (cleanPhoneVerify === '8000000001' && otp === '0101') {
         let user = await User.findOne({ phone });
         if (!user) {
             user = await User.create({
@@ -85,7 +87,7 @@ exports.verifyOtp = async (req, res) => {
     }
 
     // --- Test Client Account ---
-    if (phone === '9000000001' && otp === '0101') {
+    if (cleanPhoneVerify === '9000000001' && otp === '0101') {
         let user = await User.findOne({ phone });
         if (!user) {
             user = await User.create({

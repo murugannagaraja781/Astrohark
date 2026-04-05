@@ -14,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -34,7 +35,7 @@ import com.astrohark.app.data.local.ThemeManager
 import com.astrohark.app.ui.theme.ThemePalette
 import com.astrohark.app.data.api.ApiClient
 import kotlinx.coroutines.launch
-import org.json.JSONObject
+import com.google.gson.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 
 class SuperPowerAdminDashboardActivity : ComponentActivity() {
@@ -149,7 +150,8 @@ fun PendingAstrologersTab() {
             items(astrologers) { astro ->
                 AdminAstroCard(astro) { updated ->
                     if (updated) {
-                         astrologers = astrologers.filter { it.get("userId").asString != astro.get("userId").asString }
+                        val currentId = astro.get("userId").getAsString()
+                        astrologers = astrologers.filter { it.get("userId").getAsString() != currentId }
                     }
                 }
             }
@@ -160,8 +162,8 @@ fun PendingAstrologersTab() {
 @Composable
 fun AdminAstroCard(astro: com.google.gson.JsonObject, onUpdate: (Boolean) -> Unit) {
     val scope = rememberCoroutineScope()
-    val userId = astro.get("userId").asString
-    val name = astro.get("name").asString
+    val userId = astro.get("userId").getAsString()
+    val name = astro.get("name").getAsString()
 
     Card(
         modifier = Modifier.fillMaxWidth(),

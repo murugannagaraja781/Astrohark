@@ -4447,6 +4447,13 @@
       const logoutBtn = document.getElementById('headerLogoutBtn');
       const walletBalanceSpan = document.getElementById('clientWallet');
 
+      if (logoutBtn) {
+        logoutBtn.onclick = () => {
+          localStorage.removeItem('astro_session');
+          location.reload();
+        };
+      }
+
       if (user.role === 'guest') {
         if (loginBtn) loginBtn.style.display = 'block';
         if (referBtn) referBtn.style.display = 'none';

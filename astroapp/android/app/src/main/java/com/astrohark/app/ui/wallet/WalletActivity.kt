@@ -7,7 +7,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -393,7 +395,7 @@ fun WalletScreen(
                                         letterSpacing = 1.sp
                                     )
                                     Image(
-                                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                        painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
                                         contentDescription = null,
                                         modifier = Modifier.size(40.dp).graphicsLayer(alpha = 0.6f),
                                         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(goldPrimary)

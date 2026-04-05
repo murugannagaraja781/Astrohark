@@ -58,6 +58,8 @@ import androidx.compose.animation.core.*
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import com.google.gson.JsonObject
+import com.google.gson.JsonElement
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.astrohark.app.utils.Localization
@@ -308,7 +310,7 @@ fun HomeScreen(
                 if (json != null && json.has("ok") && json.get("ok").asBoolean) {
                     val config = json.getAsJsonObject("config")
                     if (config.has("shareLink")) {
-                        shareLink = config.get("shareLink").asString
+                        shareLink = config.get("shareLink").getAsString()
                     }
                 }
             }
@@ -1238,7 +1240,6 @@ fun RasiItemView(item: ComposeRasiItem, isTamil: Boolean, onClick: (ComposeRasiI
 }
 
 // --- 4. ASTROLOGER CARD (Green Border, Animation, Shadow) ---
-@Composable
 // Retired in favor of unified card
 @Composable
 fun ZodiacInsightsSection(isTamil: Boolean, onRasiClick: (ComposeRasiItem) -> Unit) {
@@ -2055,5 +2056,4 @@ fun AstrologerShimmerItem() {
                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(22.dp))
         )
     }
-}
 }

@@ -455,6 +455,40 @@ app.post('/upload', upload.single('file'), (req, res) => {
   // ... (keeping upload logic if valid) ...
   return res.json({ ok: true, url: req.file ? '/uploads/' + req.file.filename : '' });
 });
+
+app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId || !req.file) {
+      return res.status(400).json({ ok: false, error: 'Missing userId or image' });
+    }
+
+    const imageUrl = 'uploads/' + req.file.filename;
+    const user = await User.findOneAndUpdate(
+      { userId },
+      { $set: { image: imageUrl } },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ ok: false, error: 'User not found' });
+    }
+
+    // Broadcast if astrologer to update client list
+    if (user.role === 'astrologer') {
+      const io = req.app.get('io');
+      const SERVER_URL = req.app.get('SERVER_URL');
+      const { broadcastAstroUpdate } = require('./services/astrologer.service');
+      broadcastAstroUpdate(io, SERVER_URL);
+    }
+
+    res.json({ ok: true, image: imageUrl });
+  } catch (err) {
+    console.error('Profile pic upload error:', err);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/astrohark';
 
 // Helper function to check if MongoDB is connected

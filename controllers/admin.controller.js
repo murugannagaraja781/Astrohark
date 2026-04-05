@@ -67,3 +67,24 @@ exports.updateBalance = async (req, res) => {
         res.json({ ok: false, error: error.message });
     }
 };
+
+exports.getPendingAstrologers = async (req, res) => {
+    try {
+        const list = await User.find({ role: 'astrologer', approvalStatus: 'pending' }).sort({ createdAt: -1 });
+        res.json({ ok: true, list });
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};
+
+exports.approveAstrologer = async (req, res) => {
+    try {
+        const { userId, status } = req.body; // status: 'approved' or 'rejected'
+        const user = await User.findOneAndUpdate({ userId }, { approvalStatus: status }, { new: true });
+        if (!user) return res.json({ ok: false, error: 'User not found' });
+        res.json({ ok: true, status: user.approvalStatus });
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};
+

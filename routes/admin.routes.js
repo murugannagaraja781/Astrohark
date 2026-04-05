@@ -9,5 +9,8 @@ router.post('/banners', adminController.addBanner);
 router.get('/deletion-requests', adminController.getDeletionRequests);
 router.post('/process-deletion', adminController.processDeletion);
 router.post('/update-balance', adminController.updateBalance);
+router.get('/astrologers/pending', adminController.getPendingAstrologers);
+router.post('/astrologers/approve', adminController.approveAstrologer);
+
 
 module.exports = router;

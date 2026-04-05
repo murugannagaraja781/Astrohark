@@ -27,11 +27,14 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.ui.theme.AppTheme
 import com.astrohark.app.data.local.ThemeManager
 import com.astrohark.app.ui.theme.ThemePalette
-
+import com.astrohark.app.data.api.ApiClient
+import kotlinx.coroutines.launch
+import org.json.JSONObject
 import androidx.compose.material3.ExperimentalMaterial3Api
 
 class SuperPowerAdminDashboardActivity : ComponentActivity() {
@@ -55,18 +58,10 @@ class SuperPowerAdminDashboardActivity : ComponentActivity() {
                 }
 
                 SuperPowerScreen(
-                    onBannerPicked = { uri ->
-                        // ThemeManager.setBannerUri(this, uri.toString())
-                        Toast.makeText(this, "Banner Update Disabled", Toast.LENGTH_SHORT).show()
-                    },
                     onThemeSelected = { theme ->
                         ThemeManager.setTheme(this, theme)
                         Toast.makeText(this, "Theme Applied: ${theme.title}", Toast.LENGTH_SHORT).show()
-                        recreate() // Reload to apply theme immediately
-                    },
-                    onFontColorPicked = { color ->
-                        // ThemeManager.setCustomFontColor(this, color)
-                        Toast.makeText(this, "Font Color Update Disabled", Toast.LENGTH_SHORT).show()
+                        recreate() 
                     }
                 )
             }
@@ -78,87 +73,161 @@ class SuperPowerAdminDashboardActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SuperPowerScreen(
-    onBannerPicked: (Uri) -> Unit,
-    onThemeSelected: (AppTheme) -> Unit,
-    onFontColorPicked: (Int) -> Unit
+    onThemeSelected: (AppTheme) -> Unit
 ) {
-    val context = LocalContext.current
-    val currentTheme by ThemeManager.currentTheme.collectAsState()
-    // val bannerUri by ThemeManager.bannerUriFlow.collectAsState()
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let { onBannerPicked(it) }
-    }
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Approval", "Branding", "Reports")
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Admin Dashboard", color = MaterialTheme.colorScheme.onBackground) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            // 1. Theme Selection Grid
-            Text(
-                "Select Astrology Theme",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.weight(1f)
-            ) {
-                items(AppTheme.values()) { theme ->
-                    ThemeCard(
-                        theme = theme,
-                        isSelected = theme == currentTheme,
-                        onClick = { onThemeSelected(theme) }
+            Column(modifier = Modifier.background(MaterialTheme.colorScheme.background)) {
+                CenterAlignedTopAppBar(
+                    title = { Text("Super Admin Console", fontWeight = FontWeight.Black) },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background
                     )
+                )
+                TabRow(selectedTabIndex = selectedTab, containerColor = MaterialTheme.colorScheme.background) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title, fontWeight = if(selectedTab == index) FontWeight.Bold else FontWeight.Normal) }
+                        )
+                    }
                 }
             }
+        }
+    ) { padding ->
+        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+            when (selectedTab) {
+                0 -> PendingAstrologersTab()
+                1 -> BrandingTab(onThemeSelected)
+                else -> Box(Modifier.fillMaxSize()) { Text("More features coming soon", modifier = Modifier.align(Alignment.Center)) }
+            }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(24.dp))
+@Composable
+fun PendingAstrologersTab() {
+    val scope = rememberCoroutineScope()
+    var astrologers by remember { mutableStateOf<List<com.google.gson.JsonObject>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
 
-            // Banner and Font Color customization disabled for stability
-            Text(
-                "Customize (Disabled)",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.secondary
-            )
+    fun refreshList() {
+        isLoading = true
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val res = ApiClient.api.getPendingAstrologers()
+                if (res.isSuccessful) {
+                    val list = res.body()?.getAsJsonArray("list")?.toList()?.map { it.asJsonObject } ?: emptyList()
+                    astrologers = list
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 
-            Spacer(modifier = Modifier.height(24.dp))
+    LaunchedEffect(Unit) {
+        refreshList()
+    }
 
-            // Page customization logic temporarily disabled or needs PageThemeManager verification.
-            // Assuming PageThemeManager exists as utils.PageThemeManager. If deleted, this will fail.
-            // Leaving as is but wrapping safely? No way to try-catch compilation.
-            // If PageThemeManager was in utils, it might be gone.
-            // User script: "DELETE app/utils/ThemeManager.kt".
-            // Did not say delete PageThemeManager.kt. Assuming it exists.
+    if (isLoading) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+    } else if (astrologers.isEmpty()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No pending requests") }
+    } else {
+        androidx.compose.foundation.lazy.LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(astrologers) { astro ->
+                AdminAstroCard(astro) { updated ->
+                    if (updated) {
+                         astrologers = astrologers.filter { it.get("userId").asString != astro.get("userId").asString }
+                    }
+                }
+            }
+        }
+    }
+}
 
-             // 4. Page Specific Customization
-            Text(
-                "Customize Page Colors",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+@Composable
+fun AdminAstroCard(astro: com.google.gson.JsonObject, onUpdate: (Boolean) -> Unit) {
+    val scope = rememberCoroutineScope()
+    val userId = astro.get("userId").asString
+    val name = astro.get("name").asString
 
-            // ... (Rest of Page logic assumed ok or we can comment it out if risky)
-            // Ideally we need to check if PageThemeManager exists.
-            // But let's assume it does.
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text("Phone: ${astro.get("phone").asString}", fontSize = 14.sp)
+            Text("Experience: ${astro.get("astrologyExperience")?.asString ?: "N/A"}", fontSize = 14.sp)
+            Text("Role: ${astro.get("role")?.asString ?: "N/A"}", fontSize = 14.sp)
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { 
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                             val resp = ApiClient.api.approveAstrologer(com.google.gson.JsonObject().apply {
+                                 addProperty("userId", userId)
+                                 addProperty("status", "approved")
+                             })
+                             if (resp.isSuccessful) onUpdate(true)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                    modifier = Modifier.weight(1f)
+                ) { Text("Approve", color = Color.White) }
+                
+                Button(
+                    onClick = { 
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                             val resp = ApiClient.api.approveAstrologer(com.google.gson.JsonObject().apply {
+                                 addProperty("userId", userId)
+                                 addProperty("status", "rejected")
+                             })
+                             if (resp.isSuccessful) onUpdate(true)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
+                    modifier = Modifier.weight(1f)
+                ) { Text("Reject", color = Color.White) }
+            }
+        }
+    }
+}
+
+@Composable
+fun BrandingTab(onThemeSelected: (AppTheme) -> Unit) {
+    val currentTheme by ThemeManager.currentTheme.collectAsState()
+    
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Visual Branding", style = MaterialTheme.typography.titleLarge)
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(AppTheme.values()) { theme ->
+                ThemeCard(
+                    theme = theme,
+                    isSelected = theme == currentTheme,
+                    onClick = { onThemeSelected(theme) }
+                )
+            }
         }
     }
 }
@@ -171,7 +240,7 @@ fun ThemeCard(theme: AppTheme, isSelected: Boolean, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = palette.cardBg),
         shape = RoundedCornerShape(12.dp),
         border = if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, palette.accent) else null,
-        modifier = Modifier.height(80.dp)
+        modifier = Modifier.height(100.dp)
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
             Text(

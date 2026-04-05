@@ -376,7 +376,6 @@ fun HomeScreen(
     var isTamil by rememberSaveable { mutableStateOf(true) }
 
     // Logic to filter astrologers based on selection
-    val filteredAstros = remember(selectedFilter, astrologers) {
     val filteredAstros = remember(astrologers, selectedFilter) {
         if (selectedFilter == "All") astrologers
         else astrologers.filter { astro ->
@@ -389,6 +388,7 @@ fun HomeScreen(
              }
         }
     }
+
 
     var showLowBalanceDialog by remember { mutableStateOf(false) }
 
@@ -1337,6 +1337,7 @@ fun HomeBottomBar(selectedTab: Int, isTamil: Boolean, onTabSelected: (Int) -> Un
             BottomNavItem(Localization.get("home", isTamil), androidx.compose.material.icons.Icons.Rounded.Home, selectedTab == 0) { onTabSelected(0) }
             BottomNavItem(if(isTamil) "கலந்தாய்வு" else "Consult", androidx.compose.material.icons.Icons.Rounded.Groups, selectedTab == 1) { onTabSelected(1) }
             BottomNavItem(if(isTamil) "வழிபாடுகள்" else "Rituals", androidx.compose.material.icons.Icons.Rounded.Eco, selectedTab == 2) { onTabSelected(2) }
+            BottomNavItem(if(isTamil) "கற்றல்" else "Academy", androidx.compose.material.icons.Icons.Rounded.School, selectedTab == 4) { onTabSelected(4) }
             BottomNavItem(Localization.get("profile", isTamil), androidx.compose.material.icons.Icons.Rounded.Person, selectedTab == 3) { onTabSelected(3) }
         }
     }
@@ -1934,10 +1935,10 @@ fun ConsultationHistoryCard(item: SessionHistoryItem) {
 
             Spacer(modifier = Modifier.height(12.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                val totalSec = item.duration / 1000
+                val totalSec = (item.duration / 1000).toLong()
                 val mins = totalSec / 60
                 val secs = totalSec % 60
-                val duraText = if (mins > 0) "${mins}m ${secs}s" else "${secs}s"
+                val duraText = if (mins > 0L) "${mins}m ${secs}s" else "${secs}s"
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(androidx.compose.material.icons.Icons.Rounded.Schedule, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
@@ -2054,4 +2055,5 @@ fun AstrologerShimmerItem() {
                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(22.dp))
         )
     }
+}
 }

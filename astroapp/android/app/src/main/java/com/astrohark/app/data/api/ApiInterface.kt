@@ -85,6 +85,10 @@ interface ApiInterface {
     @retrofit2.http.GET("api/config/webrtc")
     suspend fun getWebRTCConfig(): Response<com.google.gson.JsonObject>
 
-    @retrofit2.http.GET("api/config/app")
-    suspend fun getAppConfig(): Response<com.google.gson.JsonObject>
+    @retrofit2.http.GET("api/admin/astrologers/pending")
+    suspend fun getPendingAstrologers(): Response<com.google.gson.JsonObject>
+
+    @POST("api/admin/astrologers/approve")
+    suspend fun approveAstrologer(@Body request: com.google.gson.JsonObject): Response<com.google.gson.JsonObject>
 }
+

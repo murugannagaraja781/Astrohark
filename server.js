@@ -2519,7 +2519,10 @@ io.on('connection', (socket) => {
     try {
       const { toUserId, birthData } = data || {};
       const fromUserId = socketToUser.get(socket.id);
-      if (!fromUserId || !toUserId) return cb({ ok: false, error: 'Invalid data' });
+      if (!fromUserId || !toUserId) {
+        if (typeof cb === 'function') return cb({ ok: false, error: 'Invalid data' });
+        return;
+      }
 
       // Send birth chart data to astrologer
       io.to(toUserId).emit('client-birth-chart', {
@@ -2527,11 +2530,37 @@ io.on('connection', (socket) => {
         birthData
       });
 
-      cb({ ok: true });
+      if (typeof cb === 'function') cb({ ok: true });
       console.log(`Birth chart sent from ${fromUserId} to ${toUserId}`);
     } catch (err) {
       console.error('client-birth-chart error', err);
-      cb({ ok: false, error: err.message });
+      if (typeof cb === 'function') cb({ ok: false, error: err.message });
+    }
+  });
+
+  socket.on('client-birth-chart-manual', (data, cb) => {
+    try {
+      const { toUserId, birthData } = data || {};
+      const fromUserId = socketToUser.get(socket.id);
+      if (!fromUserId || !toUserId) {
+        if (typeof cb === 'function') return cb({ ok: false, error: 'Invalid data' });
+        return;
+      }
+
+      // Send birth chart data to astrologer
+      const sId = userSockets.get(toUserId);
+      if (sId) {
+        io.to(sId).emit('client-birth-chart', {
+          fromUserId,
+          birthData
+        });
+      }
+
+      if (typeof cb === 'function') cb({ ok: true });
+      console.log(`Birth chart sent manually from ${fromUserId} to ${toUserId}`);
+    } catch (err) {
+      console.error('client-birth-chart-manual error', err);
+      if (typeof cb === 'function') cb({ ok: false, error: err.message });
     }
   });
 

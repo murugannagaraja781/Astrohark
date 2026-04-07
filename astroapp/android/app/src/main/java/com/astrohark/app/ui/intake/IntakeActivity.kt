@@ -78,6 +78,7 @@ class IntakeActivity : ComponentActivity() {
         partnerImage = intent.getStringExtra("partnerImage")
         isEditMode = intent.getBooleanExtra("isEditMode", false)
         targetUserId = intent.getStringExtra("targetUserId")
+        val isMatching = intent.getBooleanExtra("isMatching", false)
 
         val dataStr = intent.getStringExtra("existingData")
         if (dataStr != null) {
@@ -92,6 +93,7 @@ class IntakeActivity : ComponentActivity() {
                     partnerImage = partnerImage,
                     callType = type,
                     isEditMode = isEditMode,
+                    isMatching = isMatching,
                     existingData = existingData,
                     targetUserId = targetUserId,
                     tokenManager = tokenManager,
@@ -100,7 +102,7 @@ class IntakeActivity : ComponentActivity() {
                         navigateToSession(sessionId, callType)
                     },
                     onUnanswered = {
-                        Toast.makeText(this, "Astrologer is busy. Please try again later.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "No response from astrologer", Toast.LENGTH_LONG).show()
                         finish()
                     }
                 )
@@ -138,6 +140,7 @@ fun IntakeScreen(
     partnerImage: String?,
     callType: String?,
     isEditMode: Boolean,
+    isMatching: Boolean,
     existingData: JSONObject?,
     targetUserId: String?,
     tokenManager: TokenManager,
@@ -162,61 +165,65 @@ fun IntakeScreen(
     var hour by remember { mutableStateOf("") }
     var minute by remember { mutableStateOf("") }
     var amPm by remember { mutableStateOf("AM") }
-    var unknownTime by remember { mutableStateOf(false) }
 
     // Place
-    var countryName by remember { mutableStateOf("") }
-    var stateName by remember { mutableStateOf("") }
     var cityName by remember { mutableStateOf("") }
     var timezoneId by remember { mutableStateOf<String?>(null) }
     var latitude by remember { mutableStateOf<Double?>(null) }
     var longitude by remember { mutableStateOf<Double?>(null) }
     var timezone by remember { mutableStateOf<Double?>(null) }
 
-    // Additional
-    var occupation by remember { mutableStateOf("") }
-    var maritalStatus by remember { mutableStateOf("Single") }
-    var topic by remember { mutableStateOf("General") }
+    // Partner State
+    var pName by remember { mutableStateOf("") }
+    var pGender by remember { mutableStateOf("Female") }
+    var pDay by remember { mutableStateOf("") }
+    var pMonth by remember { mutableStateOf("") }
+    var pYear by remember { mutableStateOf("") }
+    var pHour by remember { mutableStateOf("") }
+    var pMinute by remember { mutableStateOf("") }
+    var pAmPm by remember { mutableStateOf("AM") }
+    var pCityName by remember { mutableStateOf("") }
+    var pTimezoneId by remember { mutableStateOf<String?>(null) }
+    var pLatitude by remember { mutableStateOf<Double?>(null) }
+    var pLongitude by remember { mutableStateOf<Double?>(null) }
+    var pTimezone by remember { mutableStateOf<Double?>(null) }
+
+    var locationPickerTarget by remember { mutableStateOf("me") } // "me" or "partner"
 
     // Logic State
     var isWaiting by remember { mutableStateOf(false) }
-    var waitTimeLeft by remember { mutableStateOf(30) }
     var waitingSessionId by remember { mutableStateOf<String?>(null) }
-    var activeCitySearchTarget by remember { mutableStateOf("client") }
 
-    val specificCityLauncher = rememberLauncherForActivityResult(
+    // Location Picker
+    val placeLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
             val d = result.data!!
             val fullName = d.getStringExtra("name") ?: ""
             val cityRes = d.getStringExtra("city") ?: ""
-            val stateRes = d.getStringExtra("state") ?: ""
-            val countryRes = d.getStringExtra("country") ?: ""
-            val tzId = d.getStringExtra("timezoneId")
+            val tzId = d.getStringExtra("timezoneId") ?: ""
             val latRes = d.getDoubleExtra("lat", 0.0)
             val lonRes = d.getDoubleExtra("lon", 0.0)
 
-            val parsed = if (cityRes.isBlank() && stateRes.isBlank() && countryRes.isBlank()) {
-                parsePlaceName(fullName)
+            if (locationPickerTarget == "me") {
+                cityName = if (cityRes.isNotBlank()) cityRes else fullName
+                timezoneId = tzId
+                latitude = latRes
+                longitude = lonRes
             } else {
-                Triple(cityRes, stateRes, countryRes)
+                pCityName = if (cityRes.isNotBlank()) cityRes else fullName
+                pTimezoneId = tzId
+                pLatitude = latRes
+                pLongitude = lonRes
             }
-            
-            cityName = parsed.first
-            stateName = parsed.second
-            countryName = parsed.third
-            timezoneId = tzId?.takeIf { it.isNotBlank() }
-            latitude = latRes
-            longitude = lonRes
         }
     }
 
-    val timezoneDisplay = remember(timezoneId) { timezoneId ?: "" }
-
-    val launchLocationPicker = {
-        activeCitySearchTarget = "client"
-        specificCityLauncher.launch(Intent(context, com.astrohark.app.ui.city.CitySearchActivity::class.java))
+    val launchLocationPicker = { target: String ->
+        locationPickerTarget = target
+        val intent = Intent(context, com.astrohark.app.ui.city.CitySearchActivity::class.java)
+        placeLauncher.launch(intent)
     }
 
     LaunchedEffect(Unit) {
@@ -233,13 +240,17 @@ fun IntakeScreen(
     }
 
     fun submit() {
-        if (name.isBlank() || cityName.isBlank() || day.isBlank() || month.isBlank() || year.isBlank()) {
+        if (name.isBlank() || cityName.isBlank() || day.isBlank() || month.isBlank() || year.isBlank() || hour.isBlank() || minute.isBlank()) {
             Toast.makeText(context, "Please fill required fields", Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (isMatching && (pName.isBlank() || pCityName.isBlank() || pDay.isBlank() || pMonth.isBlank() || pYear.isBlank() || pHour.isBlank() || pMinute.isBlank())) {
+            Toast.makeText(context, "Please fill all partner details", Toast.LENGTH_SHORT).show()
             return
         }
         val hour24 = if (amPm == "PM" && hour.toInt() < 12) hour.toInt() + 12 else if (amPm == "AM" && hour.toInt() == 12) 0 else hour.toInt()
         
-        val birthData = JSONObject().apply {
+        val payload = JSONObject().apply {
             put("name", name)
             put("gender", gender)
             put("day", day.toInt())
@@ -248,16 +259,27 @@ fun IntakeScreen(
             put("hour", hour24)
             put("minute", minute.toInt())
             put("city", cityName)
-            put("state", stateName)
-            put("country", countryName)
             put("latitude", latitude)
             put("longitude", longitude)
-            put("timezone", timezone ?: 5.5)
+            put("timezone", timezoneId)
+            put("isMatching", isMatching)
+            if (isMatching) {
+               val partner = JSONObject()
+               partner.put("name", pName)
+               partner.put("gender", pGender)
+               partner.put("dob", "$pYear-$pMonth-$pDay")
+               partner.put("tob", "$pHour:$pMinute $pAmPm")
+               partner.put("pob", pCityName)
+               partner.put("lat", pLatitude)
+               partner.put("lon", pLongitude)
+               partner.put("timezone", pTimezoneId)
+               put("partnerData", partner)
+            }
         }
         
         if (partnerId != null && callType != null) {
             SocketManager.init()
-            SocketManager.requestSession(partnerId, callType, birthData) { response ->
+            SocketManager.requestSession(partnerId, callType, payload) { response ->
                 if (response?.optBoolean("ok") == true) {
                     waitingSessionId = response.optString("sessionId")
                     scope.launch { isWaiting = true }
@@ -322,11 +344,14 @@ fun IntakeScreen(
                         val textFieldColors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White, 
                             unfocusedTextColor = Color.White,
+                            disabledTextColor = Color.White,
                             focusedBorderColor = CosmicAppTheme.colors.accent,
                             unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            disabledBorderColor = Color.White.copy(alpha = 0.3f),
                             cursorColor = CosmicAppTheme.colors.accent,
                             focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
-                            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
+                            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                            disabledPlaceholderColor = Color.White.copy(alpha = 0.5f)
                         )
 
                         OutlinedTextField(
@@ -351,9 +376,9 @@ fun IntakeScreen(
 
                         Text(Localization.get("dob", isTamil), style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AstroDimens.XSmall), verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(value = day, onValueChange = { if(it.length <= 2) day = it }, placeholder = { Text("DD", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
-                            OutlinedTextField(value = month, onValueChange = { if(it.length <= 2) month = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
-                            OutlinedTextField(value = year, onValueChange = { if(it.length <= 4) year = it }, placeholder = { Text("YYYY", fontSize = 12.sp) }, modifier = Modifier.weight(1.3f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = day, onValueChange = { if(it.length <= 2) day = it }, placeholder = { Text("DD", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = month, onValueChange = { if(it.length <= 2) month = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = year, onValueChange = { if(it.length <= 4) year = it }, placeholder = { Text("YYYY", fontSize = 12.sp) }, modifier = Modifier.weight(1.3f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
                             IconButton(onClick = {
                                 val cal = Calendar.getInstance()
                                 DatePickerDialog(context, { _, py, pm, pd ->
@@ -382,7 +407,7 @@ fun IntakeScreen(
                         }
 
                         Text(Localization.get("pob", isTamil), style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
-                        Box(modifier = Modifier.fillMaxWidth().clickable { launchLocationPicker() }) {
+                        Box(modifier = Modifier.fillMaxWidth().clickable { launchLocationPicker("me") }) {
                             OutlinedTextField(
                                 value = cityName,
                                 onValueChange = {},
@@ -394,6 +419,68 @@ fun IntakeScreen(
                                 shape = RoundedCornerShape(AstroDimens.RadiusSmall),
                                 colors = textFieldColors
                             )
+                        }
+
+                        if (isMatching) {
+                            Spacer(Modifier.height(16.dp))
+                            Divider(color = CosmicAppTheme.colors.accent.copy(alpha = 0.2f), thickness = 1.dp)
+                            Spacer(Modifier.height(16.dp))
+                            
+                            Text(
+                                text = if (isTamil) "துணை விவரங்கள்" else "Partner Details",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = CosmicAppTheme.colors.accent
+                            )
+
+                            OutlinedTextField(
+                                value = pName,
+                                onValueChange = { pName = it },
+                                placeholder = { Text(if (isTamil) "துணையின் பெயர்" else "Partner's Full Name", fontSize = 14.sp) },
+                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                singleLine = true,
+                                shape = RoundedCornerShape(AstroDimens.RadiusSmall),
+                                colors = textFieldColors
+                            )
+
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Text("${Localization.get("gender", isTamil)}:", style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textPrimary)
+                                RadioButton(selected = pGender == "Male", onClick = { pGender = "Male" }, colors = RadioButtonDefaults.colors(selectedColor = CosmicAppTheme.colors.accent))
+                                Text(Localization.get("male", isTamil), style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textSecondary)
+                                RadioButton(selected = pGender == "Female", onClick = { pGender = "Female" }, colors = RadioButtonDefaults.colors(selectedColor = CosmicAppTheme.colors.accent))
+                                Text(Localization.get("female", isTamil), style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textSecondary)
+                            }
+
+                            Text(Localization.get("dob", isTamil), style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AstroDimens.XSmall), verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(value = pDay, onValueChange = { if(it.length <= 2) pDay = it }, placeholder = { Text("DD", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                                OutlinedTextField(value = pMonth, onValueChange = { if(it.length <= 2) pMonth = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                                OutlinedTextField(value = pYear, onValueChange = { if(it.length <= 4) pYear = it }, placeholder = { Text("YYYY", fontSize = 12.sp) }, modifier = Modifier.weight(1.3f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            }
+
+                            Text(Localization.get("tob", isTamil), style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AstroDimens.XSmall), verticalAlignment = Alignment.CenterVertically) {
+                                OutlinedTextField(value = pHour, onValueChange = { if(it.length <= 2) pHour = it }, placeholder = { Text("HH", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                                OutlinedTextField(value = pMinute, onValueChange = { if(it.length <= 2) pMinute = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                                TextButton(onClick = { pAmPm = if (pAmPm == "AM") "PM" else "AM" }) {
+                                    Text(pAmPm, color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold)
+                                }
+                            }
+
+                            Text(Localization.get("pob", isTamil), style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
+                            Box(modifier = Modifier.fillMaxWidth().clickable { launchLocationPicker("partner") }) {
+                                OutlinedTextField(
+                                    value = pCityName,
+                                    onValueChange = {},
+                                    placeholder = { Text(Localization.get("city", isTamil), fontSize = 14.sp) },
+                                    readOnly = true,
+                                    enabled = false,
+                                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                                    trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(22.dp)) },
+                                    shape = RoundedCornerShape(AstroDimens.RadiusSmall),
+                                    colors = textFieldColors
+                                )
+                            }
                         }
 
                         Spacer(Modifier.height(12.dp))

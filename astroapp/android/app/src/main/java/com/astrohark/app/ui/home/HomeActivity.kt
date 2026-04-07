@@ -202,6 +202,9 @@ class HomeActivity : AppCompatActivity() {
         loadDailyHoroscope()
         loadAstrologers()
 
+        // Automatic Referral Check
+        checkAndApplyAutomaticReferral()
+
         // Setup Socket for real-time updates
         setupSocket()
     }
@@ -491,7 +494,11 @@ class HomeActivity : AppCompatActivity() {
                 startActivity(intent)
             }
             "Horoscope Match" -> {
-                Toast.makeText(this, "Horoscope Match - Coming Soon!", Toast.LENGTH_SHORT).show()
+                val intent = Intent(this, com.astrohark.app.ui.intake.IntakeActivity::class.java).apply {
+                    putExtra("type", "match")
+                    putExtra("isMatching", true)
+                }
+                startActivity(intent)
             }
             "Daily Horoscope" -> {
                 val intent = Intent(this, com.astrohark.app.ui.rasipalan.RasipalanActivity::class.java)
@@ -510,7 +517,6 @@ class HomeActivity : AppCompatActivity() {
         val session = tokenManager.getUserSession() ?: return
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Use Socket or API. Since we have SocketManager, let's use a custom emit or just HTTP for simplicity here
                 val requestBody = JSONObject().apply {
                     put("userId", session.userId)
                     put("referralCode", code)
@@ -527,22 +533,34 @@ class HomeActivity : AppCompatActivity() {
                     withContext(Dispatchers.Main) {
                         if (response.isSuccessful && json.optBoolean("ok")) {
                             Toast.makeText(this@HomeActivity, json.optString("message", "Success!"), Toast.LENGTH_LONG).show()
-                            // Refresh balance
+                            tokenManager.clearPendingReferral() // Clear it after success
                             refreshWalletBalance()
-                            // Update session isNewUser locally
                             val updated = session.copy(isNewUser = false)
                             tokenManager.saveUserSession(updated)
                             _isNewUser.value = false
                         } else {
-                            Toast.makeText(this@HomeActivity, json.optString("message", "Invalid Code"), Toast.LENGTH_SHORT).show()
+                            // If auto-applying fails, we don't spam toasts unless it was manual
+                            // But for manual click, it will still trigger this.
+                            val msg = json.optString("message", "Invalid Code")
+                            if (code != tokenManager.getPendingReferral()) {
+                                Toast.makeText(this@HomeActivity, msg, Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(this@HomeActivity, "Error applying code", Toast.LENGTH_SHORT).show()
-                }
+                Log.e(TAG, "Error applying referral", e)
             }
+        }
+    }
+
+    private fun checkAndApplyAutomaticReferral() {
+        val pendingCode = tokenManager.getPendingReferral()
+        val session = tokenManager.getUserSession()
+        
+        if (pendingCode != null && session?.isNewUser == true) {
+            Log.d(TAG, "Auto-applying referral code: $pendingCode")
+            applyReferralCode(pendingCode)
         }
     }
 }

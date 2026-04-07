@@ -12,6 +12,8 @@ data class PaymentInitiateRequest(
 data class PaymentInitiateResponse(
     val ok: Boolean,
     val merchantTransactionId: String?,
+    val orderId: String?,
+    val key: String?,
     val paymentUrl: String?,
     val error: String?,
     val useWebFlow: Boolean?

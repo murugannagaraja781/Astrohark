@@ -231,22 +231,30 @@ fun FreeHoroscopeScreen(
                         val textFieldColors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.White, 
                             unfocusedTextColor = Color.White,
+                            disabledTextColor = Color.White,
                             focusedBorderColor = CosmicAppTheme.colors.accent,
                             unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            disabledBorderColor = Color.White.copy(alpha = 0.3f),
                             cursorColor = CosmicAppTheme.colors.accent,
                             focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
                             unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                            disabledPlaceholderColor = Color.White.copy(alpha = 0.5f),
                             focusedLabelColor = CosmicAppTheme.colors.accent,
-                            unfocusedLabelColor = Color.White.copy(alpha = 0.7f)
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
+                            disabledLabelColor = CosmicAppTheme.colors.accent.copy(alpha = 0.5f)
                         )
 
                         // Name
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            placeholder = { Text("Full Name", fontSize = 14.sp) }, // Fixed: Placeholder instead of label
+                            placeholder = { Text("Full Name", fontSize = 14.sp) }, 
                             modifier = Modifier.fillMaxWidth().height(52.dp),
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                capitalization = KeyboardCapitalization.Words,
+                                imeAction = ImeAction.Next
+                            ),
                             shape = RoundedCornerShape(AstroDimens.RadiusSmall),
                             colors = textFieldColors
                         )
@@ -277,9 +285,9 @@ fun FreeHoroscopeScreen(
                             horizontalArrangement = Arrangement.spacedBy(AstroDimens.XSmall),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedTextField(value = day, onValueChange = { if (it.length <= 2) day = it }, placeholder = { Text("DD", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
-                            OutlinedTextField(value = month, onValueChange = { if (it.length <= 2) month = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
-                            OutlinedTextField(value = year, onValueChange = { if (it.length <= 4) year = it }, placeholder = { Text("YYYY", fontSize = 12.sp) }, modifier = Modifier.weight(1.3f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = day, onValueChange = { if (it.length <= 2) day = it }, placeholder = { Text("DD", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = month, onValueChange = { if (it.length <= 2) month = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = year, onValueChange = { if (it.length <= 4) year = it }, placeholder = { Text("YYYY", fontSize = 12.sp) }, modifier = Modifier.weight(1.3f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
                             IconButton(
                                 onClick = {
                                     val cal = Calendar.getInstance()

@@ -144,6 +144,9 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
 
+    // Razorpay
+    implementation("com.razorpay:checkout:1.6.40")
+
     // Install Referrer
     implementation("com.android.installreferrer:installreferrer:2.2")
 }

@@ -241,6 +241,26 @@ app.use('/api/', apiLimiter);
 // Global to store server URL for absolute image paths
 let SERVER_URL = process.env.SERVER_URL || '';
 
+// Temporary Test Route (will remove after testing)
+app.get('/api/test-link', async (req, res) => {
+  try {
+     const user = await User.findOne({ userId: { $exists: true } });
+     if (!user) return res.send("No users in database to test with.");
+     
+     const response = await fetch(`${SERVER_URL || 'http://localhost:3000'}/api/payment/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.userId, amount: 100 })
+     });
+     const data = await response.json();
+     if (data.token) {
+        res.send(`Test Link: ${SERVER_URL || 'http://localhost:3000'}/payment.html?token=${data.token}`);
+     } else {
+        res.json(data);
+     }
+  } catch (e) { res.status(500).send(e.message); }
+});
+
 // Middleware to capture host for absolute image paths
 app.use((req, res, next) => {
   if (!SERVER_URL) {
@@ -3324,6 +3344,12 @@ app.get('/payment-failed', (req, res) => {
 
 // 3. Payment History API
 
+// ===== PhonePe SDK Configuration =====
+const PHONEPE_MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID;
+const PHONEPE_SALT_KEY = process.env.PHONEPE_SALT_KEY;
+const PHONEPE_SALT_INDEX = process.env.PHONEPE_SALT_INDEX;
+const PHONEPE_HOST_URL = process.env.PHONEPE_HOST_URL || "https://api.phonepe.com/apis/hermes";
+
 // ===== PhonePe SDK API (Native App Payment) =====
 
 // PhonePe SDK Init - For React Native PhonePe SDK
@@ -3345,11 +3371,14 @@ app.post('/api/phonepe/init', async (req, res) => {
     const cleanUserId = userId.replace(/[^a-zA-Z0-9]/g, '');
 
     // Create Pending Payment Record
+    const baseAmount = Math.floor(amount / 1.18);
     await Payment.create({
       transactionId: merchantTransactionId,
       merchantTransactionId,
       userId,
       amount,
+      baseAmount,
+      gstAmount: amount - baseAmount,
       status: 'pending'
     });
 
@@ -3416,11 +3445,14 @@ app.post('/api/phonepe/sign', async (req, res) => {
     const cleanUserId = userId.replace(/[^a-zA-Z0-9]/g, '');
 
     // Record intent in DB
+    const baseAmount = Math.floor(amount / 1.18);
     await Payment.create({
       transactionId: merchantTransactionId,
       merchantTransactionId,
       userId,
       amount,
+      baseAmount,
+      gstAmount: amount - baseAmount,
       status: 'pending'
     });
 
@@ -3452,6 +3484,152 @@ app.post('/api/phonepe/sign', async (req, res) => {
   } catch (e) {
     console.error("PhonePe Sign Error:", e);
     res.status(500).json({ ok: false, error: 'Signing failed' });
+  }
+});
+
+// PhonePe STATUS API - Used by Android App to verify after return
+app.get('/api/phonepe/status/:transactionId', async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    if (!transactionId) return res.status(400).json({ ok: false, error: 'transactionId required' });
+
+    // Header construction: SHA256("/pg/v1/status/{merchantId}/{transactionId}" + saltKey) + "###" + saltIndex
+    const endpoint = `/pg/v1/status/${PHONEPE_MERCHANT_ID}/${transactionId}`;
+    const stringToSign = endpoint + PHONEPE_SALT_KEY;
+    const sha256 = crypto.createHash('sha256').update(stringToSign).digest('hex');
+    const checksum = sha256 + "###" + PHONEPE_SALT_INDEX;
+
+    const response = await fetch(`${PHONEPE_HOST_URL}${endpoint}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-VERIFY': checksum,
+        'X-MERCHANT-ID': PHONEPE_MERCHANT_ID,
+        'accept': 'application/json'
+      }
+    });
+
+    const data = await response.json();
+    console.log(`[PhonePe Status Check] TXN: ${transactionId} ->`, JSON.stringify(data));
+
+    if (data.success && data.code === "PAYMENT_SUCCESS") {
+      // Find and update payment record if not success yet
+      const payment = await Payment.findOne({ transactionId });
+      if (payment && payment.status !== 'success') {
+        payment.status = 'success';
+        payment.providerRefId = data.data?.providerReferenceId || '';
+        await payment.save();
+
+        // Credit Wallet
+        const user = await User.findOne({ userId: payment.userId });
+        if (user) {
+          user.walletBalance = (user.walletBalance || 0) + parseFloat(payment.baseAmount || payment.amount || 0);
+          await user.save();
+          console.log(`[PhonePe SUCCESS] Wallet credited for ${user.name} +₹${payment.baseAmount || payment.amount}`);
+        }
+      }
+      res.json({ ok: true, status: 'success', data: data.data });
+    } else {
+      res.json({ ok: false, status: 'failed', message: data.message });
+    }
+  } catch (e) {
+    console.error("PhonePe Status Check Error:", e);
+    res.status(500).json({ ok: false, error: 'Verification failed' });
+  }
+});
+
+/**
+ * PhonePe Server Callback Handler
+ */
+app.post('/api/phonepe/callback', async (req, res) => {
+  try {
+    const { response } = req.body;
+    if (!response) {
+       console.error('[PhonePe Callback] No response field in body');
+       return res.status(400).send('No response');
+    }
+
+    // Decode Base64 Response
+    const decodedStr = Buffer.from(response, 'base64').toString('utf8');
+    const decoded = JSON.parse(decodedStr);
+    console.log('[PhonePe Callback Received]', decoded);
+
+    const transactionId = decoded.data?.merchantTransactionId;
+    const success = decoded.success;
+    const code = decoded.code;
+
+    if (transactionId) {
+       const payment = await Payment.findOne({ transactionId });
+       if (!payment) {
+          console.error(`[PhonePe Callback] Payment record not found for TXN: ${transactionId}`);
+          return res.status(200).send('TXN NOT FOUND'); // Still 200 to acknowledge callback
+       }
+
+       if (success && code === "PAYMENT_SUCCESS") {
+          if (payment.status !== 'success') {
+             payment.status = 'success';
+             payment.providerRefId = decoded.data?.providerReferenceId || '';
+             await payment.save();
+
+             // Credit Wallet
+             const user = await User.findOne({ userId: payment.userId });
+             if (user) {
+                user.walletBalance = (user.walletBalance || 0) + parseFloat(payment.baseAmount || payment.amount || 0);
+                await user.save();
+                console.log(`[PhonePe CALLBACK CREDITED] ${user.name} +₹${payment.baseAmount || payment.amount}`);
+                
+                // Referral Logic hook (same as Razorpay)
+                if (user.referredBy) {
+                  const successCount = await Payment.countDocuments({ 
+                      userId: user.userId, 
+                      status: 'success'
+                  });
+                  if (successCount === 1) {
+                      const referrer = await User.findOne({ userId: user.referredBy });
+                      if (referrer) {
+                          referrer.walletBalance = (referrer.walletBalance || 0) + 81;
+                          referrer.totalEarnings = (referrer.totalEarnings || 0) + 81;
+                          referrer.referralCount = (referrer.referralCount || 0) + 1;
+                          await referrer.save();
+
+                          await Payment.create({
+                              transactionId: `REF_${crypto.randomBytes(8).toString('hex')}`,
+                              userId: referrer.userId,
+                              amount: 81,
+                              baseAmount: 81,
+                              gstAmount: 0,
+                              status: 'success',
+                              reason: 'referral'
+                          });
+                      }
+                  }
+                }
+
+                // WebSocket Update
+                const io = req.app.get('io');
+                const { userSockets } = require('./services/socketStore');
+                if (userSockets.has(user.userId)) {
+                   io.to(userSockets.get(user.userId)).emit('wallet-update', {
+                      balance: user.walletBalance,
+                      superBalance: user.superWalletBalance
+                   });
+                }
+             }
+          }
+       } else {
+          if (payment.status === 'pending') {
+             payment.status = 'failed';
+             await payment.save();
+          }
+       }
+    }
+
+    // Acknowledge PhonePe that we received the callback
+    res.status(200).send('OK');
+
+  } catch (e) {
+    console.error("PhonePe Callback Error:", e);
+    res.status(500).send('Error');
   }
 });
 

@@ -710,6 +710,7 @@ fun HomeScreen(
                             item {
                                 ReferralScreen(
                                     referralCode = referralCode,
+                                    baseShareUrl = shareLink,
                                     isTamil = isTamil,
                                     isNewUser = isNewUser,
                                     onApplyReferral = onApplyReferral
@@ -1703,6 +1704,7 @@ fun TopServicesSection(isTamil: Boolean) {
                     "match" -> {
                         val intent = Intent(context, com.astrohark.app.ui.intake.IntakeActivity::class.java).apply {
                             putExtra("type", "match")
+                            putExtra("isMatching", true)
                         }
                         context.startActivity(intent)
                     }
@@ -2077,13 +2079,14 @@ fun AstrologerShimmerItem() {
 @Composable
 fun ReferralScreen(
     referralCode: String?,
+    baseShareUrl: String,
     isTamil: Boolean,
     isNewUser: Boolean,
     onApplyReferral: (String) -> Unit
 ) {
     val context = LocalContext.current
     var referralInput by remember { mutableStateOf("") }
-    val shareLink = "https://play.google.com/store/apps/details?id=com.astrohark.app&referrer=${referralCode ?: ""}"
+    val shareLink = "$baseShareUrl&referrer=${referralCode ?: ""}"
 
     Column(
         modifier = Modifier

@@ -336,14 +336,37 @@
         }
 
         function closeWithSuccess() {
-            if (window.AndroidBridge) window.AndroidBridge.onPaymentComplete('success');
-            window.location.href = "astrohark://payment-success?status=success";
+            if (window.AndroidBridge) {
+                window.AndroidBridge.onPaymentComplete('success');
+            }
+            
+            const isApp = new URLSearchParams(window.location.search).get('isApp') === 'true';
+            if (isApp) {
+                window.location.href = "astrohark://payment-success?status=success";
+            } else {
+                showLoading(false);
+                document.getElementById('paymentView').innerHTML = `
+                    <div style="padding:40px; color:#4ADE80;">
+                        <i class="fas fa-check-circle" style="font-size:4rem; margin-bottom:20px;"></i>
+                        <h2>Payment Successful!</h2>
+                        <p style="color:#9CA3AF; margin-top:10px;">You can now return to the app or close this tab.</p>
+                    </div>
+                `;
+            }
         }
 
         function closePage() {
-            if (window.AndroidBridge) window.AndroidBridge.onPaymentComplete('failed');
-            window.location.href = "astrohark://payment-failed?status=failed";
-            window.close();
+            if (window.AndroidBridge) {
+                window.AndroidBridge.onPaymentComplete('failed');
+            }
+            
+            const isApp = new URLSearchParams(window.location.search).get('isApp') === 'true';
+            if (isApp) {
+                window.location.href = "astrohark://payment-failed?status=failed";
+                window.close();
+            } else {
+                showError('Failed', 'The payment session was cancelled or failed.');
+            }
         }
 
         window.onload = verifyToken;

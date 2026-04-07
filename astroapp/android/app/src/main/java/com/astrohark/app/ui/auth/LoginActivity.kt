@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.shadow
 import com.astrohark.app.R
 import com.astrohark.app.data.repository.AuthRepository
 import com.astrohark.app.ui.theme.CosmicAppTheme
@@ -55,6 +56,7 @@ fun LoginScreen() {
     val scope = rememberCoroutineScope()
 
     var phoneNumber by remember { mutableStateOf("") }
+    var referralCode by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     Box(
@@ -147,6 +149,22 @@ fun LoginScreen() {
 
                 Spacer(modifier = Modifier.height(AstroDimens.Medium))
 
+                // Optional Referral Code
+                OutlinedTextField(
+                    value = referralCode,
+                    onValueChange = { referralCode = it.uppercase() },
+                    label = { Text("Referral Code (Optional)", fontSize = 14.sp) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = CosmicAppTheme.colors.accent,
+                        focusedLabelColor = CosmicAppTheme.colors.accent
+                    ),
+                    leadingIcon = { Icon(Icons.Default.Email, null, tint = CosmicAppTheme.colors.accent) }
+                )
+
+                Spacer(modifier = Modifier.height(AstroDimens.Large))
+
                 // Send OTP Button
                 com.astrohark.app.ui.theme.components.AstroButton(
                     text = "SEND OTP",
@@ -163,6 +181,7 @@ fun LoginScreen() {
                                 if (result.isSuccess) {
                                     val intent = Intent(context, OtpVerificationActivity::class.java)
                                     intent.putExtra("phone", fullPhone)
+                                    intent.putExtra("referralCode", referralCode.trim())
                                     context.startActivity(intent)
                                 } else {
                                     Toast.makeText(context, "Error: ${result.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()

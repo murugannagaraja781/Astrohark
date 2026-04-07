@@ -83,7 +83,7 @@ import com.astrohark.app.data.local.TokenManager
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BannerSection(banners: List<Banner>, onBannerClick: (Banner) -> Unit) {
+fun BannerSection(banners: List<com.astrohark.app.data.model.Banner>, onBannerClick: (com.astrohark.app.data.model.Banner) -> Unit) {
     if (banners.isEmpty()) return
 
     val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { banners.size })
@@ -259,6 +259,10 @@ fun PremiumCard(
     }
 }
 
+
+
+
+
 @Composable
 fun HomeScreen(
     walletBalance: Double,
@@ -266,8 +270,8 @@ fun HomeScreen(
     horoscope: String,
     astrologers: List<Astrologer>,
     isLoading: Boolean,
-    banners: List<Banner>,
-    onBannerClick: (Banner) -> Unit,
+    banners: List<com.astrohark.app.data.model.Banner>,
+    onBannerClick: (com.astrohark.app.data.model.Banner) -> Unit,
     onChatClick: (Astrologer) -> Unit,
     onCallClick: (Astrologer, String) -> Unit,
     onRasiClick: (ComposeRasiItem) -> Unit,
@@ -409,7 +413,7 @@ fun HomeScreen(
                 Button(
                     onClick = {
                         showLowBalanceDialog = false
-                        onBannerClick(Banner(id = "", imageUrl = "")) // Open default wallet via banner logic
+                        onBannerClick(com.astrohark.app.data.model.Banner(id = "", imageUrl = "")) // Open default wallet via banner logic
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
                 ) {
@@ -450,14 +454,14 @@ fun HomeScreen(
                             Box(contentAlignment = Alignment.Center) { Text("1", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(if(isTamil) "உங்கள் Referral Code-ஐ நண்பர்களுக்கு பகிருங்கள்." else "Share your referral code with friends.", fontSize = 14.sp)
+                        Text(if(isTamil) "உங்கள் Referral Code-ஐ நண்பர்களுக்கு பகிருங்கள். அவர்கள் இணையும் போது ₹188 பெறுவார்கள்!" else "Share your referral code with friends. They get ₹188 on signup!", fontSize = 14.sp)
                     }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
                         Surface(shape = CircleShape, color = CosmicAppTheme.colors.accent, modifier = Modifier.size(24.dp)) {
                             Box(contentAlignment = Alignment.Center) { Text("2", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(if(isTamil) "உங்கள் நண்பர் இணைந்தவுடன் உங்களுக்கு ₹20 போனஸ் கிடைக்கும்!" else "Get ₹20 bonus when your friend joins!", fontSize = 14.sp)
+                        Text(if(isTamil) "உங்கள் நண்பர் முதல் ரீசார்ஜ் செய்தவுடன் உங்களுக்கு ₹81 போனஸ் கிடைக்கும்!" else "Get ₹81 bonus when they make their first recharge!", fontSize = 14.sp)
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -486,7 +490,9 @@ fun HomeScreen(
                     Button(
                         onClick = {
                             // Share via WhatsApp
-                            val msg = "Astrohark செயலியில் இணையுங்கள்! என் Referral Code: ${referralCode ?: ""}. இணைந்து ₹10 போனஸ் பெறுங்கள்: $shareLink"
+                            val msg = if (isTamil) 
+                                "Astrohark செயலியில் இணையுங்கள்! நீங்கள் இணைய என் Referral Code: ${referralCode ?: ""} -ஐ பயன்படுத்தினால் ₹188 போனஸ் கிடைக்கும். முதல் ரீசார்ஜ் செய்ய மறந்துவிடாதீர்கள்! $shareLink"
+                                else "Join Astrohark! Use my Referral Code: ${referralCode ?: ""} and get ₹188 bonus on signup. Don't forget to make your first recharge! $shareLink"
                             val intent = Intent(Intent.ACTION_VIEW).apply {
                                 data = Uri.parse("https://api.whatsapp.com/send?text=${Uri.encode(msg)}")
                             }
@@ -586,7 +592,7 @@ fun HomeScreen(
                         isGuest = isGuest,
                         isTamil = isTamil,
                         onTabSelected = { selectedTab = it },
-                        onLoginClick = { onBannerClick(Banner(id = "", imageUrl = "")) }
+                        onLoginClick = { onBannerClick(com.astrohark.app.data.model.Banner(id = "", imageUrl = "")) }
                     )
                 }
                 HomeBottomBar(

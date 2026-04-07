@@ -14,8 +14,8 @@ const PaymentSchema = new mongoose.Schema({
     isApp: { type: Boolean, default: false },
     isSuperWallet: { type: Boolean, default: false },
     offerPercentage: { type: Number, default: 0 },
-    couponCode: String,
-    couponBonus: { type: Number, default: 0 }
+    couponBonus: { type: Number, default: 0 },
+    reason: { type: String, default: 'recharge' } // 'recharge', 'referral', etc.
 });
 
 PaymentSchema.index({ userId: 1 });

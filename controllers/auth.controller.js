@@ -120,11 +120,26 @@ exports.verifyOtp = async (req, res) => {
         if (user && user.isBanned) return res.json({ ok: false, error: 'Account Banned' });
 
         if (!user) {
+            const { referralCode: codeApplied } = req.body;
+            let referredBy = null;
+            let initialBalance = 108; // Standard bonus
+
+            if (codeApplied) {
+                const referrer = await User.findOne({ referralCode: codeApplied.trim().toUpperCase() });
+                if (referrer) {
+                    referredBy = referrer.userId;
+                    initialBalance = 188; // Referral bonus
+                }
+            }
+
             const userId = crypto.randomUUID();
             const name = `User_${crypto.randomBytes(2).toString('hex')}`;
             user = await User.create({
                 userId, phone, name, role: 'client',
-                referralCode: await generateUniqueReferralCode(name)
+                walletBalance: initialBalance,
+                referredBy: referredBy,
+                referralCode: await generateUniqueReferralCode(name),
+                isNewUser: true
             });
         } else if (!user.referralCode) {
             user.referralCode = await generateUniqueReferralCode(user.name);
@@ -138,6 +153,7 @@ exports.verifyOtp = async (req, res) => {
             totalEarnings: user.totalEarnings || 0,
             image: formatImageUrl(user.image, user.name, SERVER_URL),
             referralCode: user.referralCode, isNewUser: user.isNewUser,
+            referredBy: user.referredBy,
             approvalStatus: user.approvalStatus, documentStatus: user.documentStatus
         });
     } catch (e) {

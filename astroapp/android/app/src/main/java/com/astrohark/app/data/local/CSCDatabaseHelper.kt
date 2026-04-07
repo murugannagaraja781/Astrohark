@@ -24,7 +24,9 @@ class CSCDatabaseHelper(private val context: Context) : SQLiteOpenHelper(context
 
     private fun checkDataBase(): Boolean {
         val dbFile = File(DB_PATH + DB_NAME)
-        return dbFile.exists()
+        // If file exists, check if it's reasonably sized (the asset is ~109MB)
+        // If it's too small, it might be a corrupted/partial first copy.
+        return dbFile.exists() && dbFile.length() > 10 * 1024 * 1024 // At least 10MB
     }
 
     private fun copyDataBase() {

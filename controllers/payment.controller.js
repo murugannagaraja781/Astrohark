@@ -169,6 +169,39 @@ exports.callback = async (req, res) => {
                 if (payment.couponBonus > 0) {
                     user.superWalletBalance = (user.superWalletBalance || 0) + payment.couponBonus;
                 }
+                
+                // Rule 4: Referrer Reward (The "Hook")
+                // Only if it's the user's first successful recharge
+                if (user.referredBy) {
+                    const successCount = await Payment.countDocuments({ 
+                        userId: user.userId, 
+                        status: 'success',
+                        reason: 'recharge' 
+                    });
+                    
+                    if (successCount === 1) { // This is the first one (just set to success)
+                        const referrer = await User.findOne({ userId: user.referredBy });
+                        if (referrer) {
+                            referrer.walletBalance = (referrer.walletBalance || 0) + 81;
+                            referrer.totalEarnings = (referrer.totalEarnings || 0) + 81;
+                            referrer.referralCount = (referrer.referralCount || 0) + 1;
+                            await referrer.save();
+
+                            // Rule 5: Tracking record
+                            await Payment.create({
+                                transactionId: `REF_${crypto.randomBytes(8).toString('hex')}`,
+                                userId: referrer.userId,
+                                amount: 81,
+                                baseAmount: 81,
+                                gstAmount: 0,
+                                status: 'success',
+                                reason: 'referral'
+                            });
+                            console.log(`[Referral Reward] Credited ₹81 to Referrer: ${referrer.name} for User: ${user.name}`);
+                        }
+                    }
+                }
+
                 await user.save();
                 console.log(`[Razorpay] Wallet Credited: ${user.name} +₹${payment.baseAmount}`);
             }

@@ -356,21 +356,28 @@ fun FreeHoroscopeScreen(
                         Text("Place of Birth", style = MaterialTheme.typography.titleSmall, color = CosmicAppTheme.colors.accent)
 
                         // City (Read-only + Picker)
-                        OutlinedTextField(
-                             value = cityName,
-                             onValueChange = {},
-                             label = { Text("City") },
-                             readOnly = true,
-                             modifier = Modifier
-                                 .fillMaxWidth()
-                                 .clickable { launchLocationPicker() },
-                             trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = CosmicAppTheme.colors.accent) },
-                             shape = RoundedCornerShape(AstroDimens.RadiusMedium),
-                             colors = OutlinedTextFieldDefaults.colors(
-                                 focusedBorderColor = CosmicAppTheme.colors.accent,
-                                 disabledBorderColor = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.5f)
-                             )
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { launchLocationPicker() }
+                        ) {
+                            OutlinedTextField(
+                                value = cityName,
+                                onValueChange = {},
+                                label = { Text("Select City of Birth") },
+                                readOnly = true,
+                                enabled = false, // Disable target focus so Box consumes the click
+                                modifier = Modifier.fillMaxWidth(),
+                                trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = CosmicAppTheme.colors.accent) },
+                                shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    disabledTextColor = CosmicAppTheme.colors.textPrimary,
+                                    disabledLabelColor = CosmicAppTheme.colors.accent,
+                                    disabledBorderColor = CosmicAppTheme.colors.accent,
+                                    disabledTrailingIconColor = CosmicAppTheme.colors.accent
+                                )
+                            )
+                        }
 
                         // Timezone Display
                         OutlinedTextField(

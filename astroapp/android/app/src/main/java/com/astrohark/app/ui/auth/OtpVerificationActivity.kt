@@ -52,18 +52,19 @@ class OtpVerificationActivity : AppCompatActivity() {
             finish()
             return
         }
+        val referralCode = intent.getStringExtra("referralCode")
 
         setContent {
             CosmicAppTheme {
                 OtpScreen(
                     phone = phone,
-                    onVerifyOtp = { otp -> verifyOtp(phone, otp) }
+                    onVerifyOtp = { otp -> verifyOtp(phone, otp, referralCode) }
                 )
             }
         }
     }
 
-    private fun verifyOtp(phone: String, otp: String) {
+    private fun verifyOtp(phone: String, otp: String, referralCode: String? = null) {
         if (otp.length != 4) {
             Toast.makeText(this, "Enter 4 digit OTP", Toast.LENGTH_SHORT).show()
             return

@@ -102,8 +102,8 @@ exports.createPayment = async (req, res) => {
 
         if (couponCode === 'WELCOME50') couponBonus = baseAmount * 0.50;
 
-        const keyId = razorpayConfig.KEY_ID;
-        const keySecret = razorpayConfig.KEY_SECRET;
+        let keyId = razorpayConfig.KEY_ID;
+        let keySecret = razorpayConfig.KEY_SECRET;
 
         if (!keyId || !keySecret) {
             console.error("Razorpay Error: KEY_ID or KEY_SECRET is missing from environment variables!");
@@ -132,13 +132,14 @@ exports.createPayment = async (req, res) => {
             key: keyId
         });
     } catch (e) {
+        let keyId = razorpayConfig.KEY_ID;
         console.error("Razorpay Order Error Details:", {
+            errorDescription: e.error ? e.error.description : (e.description || 'Unknown'),
+            errorCode: e.error ? e.error.code : (e.code || 'Unknown'),
             statusCode: e.statusCode,
-            description: e.error ? e.error.description : 'Unknown',
-            code: e.error ? e.error.code : 'Unknown',
             usingKey: keyId ? keyId.substring(0, 10) + "..." : 'None'
         });
-        res.json({ ok: false, error: 'Failed to create payment order' });
+        res.json({ ok: false, error: 'Could not create payment order. ' + (e.error ? e.error.description : 'Please try again.') });
     }
 };
 

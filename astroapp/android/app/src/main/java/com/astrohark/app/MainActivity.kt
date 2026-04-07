@@ -32,6 +32,9 @@ import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.ui.home.HomeActivity
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.utils.Constants
+import com.android.installreferrer.api.InstallReferrerClient
+import com.android.installreferrer.api.InstallReferrerStateListener
+import com.android.installreferrer.api.ReferrerDetails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -60,6 +63,9 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         tokenManager = TokenManager(this)
+
+        handleIntent(intent)
+        checkInstallReferrer()
 
         setContent {
             CosmicAppTheme {
@@ -104,6 +110,53 @@ class MainActivity : AppCompatActivity() {
         } else {
             proceedToNextScreen()
         }
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        val data = intent?.data
+        if (data != null && (data.scheme == "astrohark" || data.scheme == "astro5") && data.host == "referral") {
+            val code = data.lastPathSegment
+            if (!code.isNullOrBlank()) {
+                Log.d(TAG, "Captured deep link referral code: $code")
+                tokenManager.savePendingReferral(code)
+            }
+        }
+    }
+
+    private fun checkInstallReferrer() {
+        // Only check if user is NOT logged in and we don't already have a pending referral
+        if (tokenManager.isLoggedIn() || tokenManager.getPendingReferral() != null) return
+
+        val referrerClient = InstallReferrerClient.newBuilder(this).build()
+        referrerClient.startConnection(object : InstallReferrerStateListener {
+            override fun onInstallReferrerSetupFinished(responseCode: Int) {
+                when (responseCode) {
+                    InstallReferrerClient.InstallReferrerResponse.OK -> {
+                        try {
+                            val response: ReferrerDetails = referrerClient.installReferrer
+                            val referrerUrl = response.installReferrer
+                            Log.d(TAG, "Install Referrer URL: $referrerUrl")
+                            
+                            // Example: utm_source=google-play&utm_medium=organic&referrer=MYCODE
+                            if (referrerUrl != null && referrerUrl.contains("referrer=")) {
+                                val code = referrerUrl.split("referrer=").lastOrNull()?.split("&")?.firstOrNull()
+                                if (!code.isNullOrBlank()) {
+                                    Log.d(TAG, "Captured install referral code: $code")
+                                    tokenManager.savePendingReferral(code)
+                                }
+                            }
+                            referrerClient.endConnection()
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error reading referrer details", e)
+                        }
+                    }
+                    else -> Log.d(TAG, "InstallReferrer setup finished with code: $responseCode")
+                }
+            }
+            override fun onInstallReferrerServiceDisconnected() {
+                // Try again later if needed
+            }
+        })
     }
 
     private fun proceedToNextScreen() {

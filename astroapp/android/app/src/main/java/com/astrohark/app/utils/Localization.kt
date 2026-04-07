@@ -121,7 +121,10 @@ object Localization {
         "referral_code" to "Referral Code",
         "claim" to "Claim",
         "refer_win" to "🎁 Refer & Win!",
-        "refer_desc" to "Invite friends and earn rewards"
+        "refer_desc" to "Invite friends and earn rewards",
+        "connecting_title" to "Connecting to Astrologer...",
+        "connecting_subtitle" to "Please stay on this screen while we establish a secure connection",
+        "cancel_request" to "Cancel Request"
     )
 
     // Tamil Strings
@@ -243,7 +246,10 @@ object Localization {
         "referral_code" to "Referral Code",
         "claim" to "Claim",
         "refer_win" to "🎁 பரிசு வெல்லுங்கள்!",
-        "refer_desc" to "நண்பர்களை அழைத்து வாலட் பணத்தை அள்ளுங்கள்"
+        "refer_desc" to "நண்பர்களை அழைத்து வாலட் பணத்தை அள்ளுங்கள்",
+        "connecting_title" to "ஜோதிடருடன் இணைகிறது...",
+        "connecting_subtitle" to "இணைப்பு உறுதி செய்யப்படும் வரை தயவுசெய்து காத்திருக்கவும்",
+        "cancel_request" to "ரத்து செய்"
     )
 
 

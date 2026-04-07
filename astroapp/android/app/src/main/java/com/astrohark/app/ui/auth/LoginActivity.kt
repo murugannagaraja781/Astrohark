@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.shadow
 import com.astrohark.app.R
+import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.data.repository.AuthRepository
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.ui.theme.AstroDimens
@@ -58,6 +59,15 @@ fun LoginScreen() {
     var phoneNumber by remember { mutableStateOf("") }
     var referralCode by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+
+    val tokenManager = remember { TokenManager(context) }
+
+    LaunchedEffect(Unit) {
+        val pending = tokenManager.getPendingReferral()
+        if (!pending.isNullOrBlank()) {
+            referralCode = pending
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -182,6 +192,12 @@ fun LoginScreen() {
                                     val intent = Intent(context, OtpVerificationActivity::class.java)
                                     intent.putExtra("phone", fullPhone)
                                     intent.putExtra("referralCode", referralCode.trim())
+                                    
+                                    // If we are using the pending referral, we can clear it now that it's being processed
+                                    if (referralCode.trim() == tokenManager.getPendingReferral()) {
+                                        tokenManager.clearPendingReferral()
+                                    }
+                                    
                                     context.startActivity(intent)
                                 } else {
                                     Toast.makeText(context, "Error: ${result.exceptionOrNull()?.message}", Toast.LENGTH_SHORT).show()

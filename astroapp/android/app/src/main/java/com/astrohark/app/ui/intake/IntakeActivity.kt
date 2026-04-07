@@ -288,134 +288,205 @@ fun IntakeScreen(
                 )
             },
             bottomBar = {
-                Surface(modifier = Modifier.fillMaxWidth(), color = Color(0xFF140F0A), shadowElevation = 8.dp) {
-                    Box(modifier = Modifier.padding(16.dp)) {
-                        Button(
-                            onClick = { submit() },
-                            modifier = Modifier.fillMaxWidth().height(48.dp).shadow(8.dp, RoundedCornerShape(12.dp)),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7F00))
-                        ) {
-                            Text(if (isEditMode) "UPDATE DETAILS" else "START CONSULTATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        }
-                    }
-                }
+                // Moved button into scrollable column for better organization as requested
             }
         ) { padding ->
+            val scrollState = rememberScrollState()
             Column(
-                modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .imePadding()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = AstroDimens.Small, vertical = 12.dp), 
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF1C140E)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Text(Localization.get("personal_details", isTamil), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = CosmicAppTheme.colors.accent)
+                    Column(
+                        modifier = Modifier.padding(horizontal = AstroDimens.Small, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = Localization.get("personal_details", isTamil),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = CosmicAppTheme.colors.accent
+                        )
                         
+                        val textFieldColors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White, 
+                            unfocusedTextColor = Color.White,
+                            focusedBorderColor = CosmicAppTheme.colors.accent,
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            cursorColor = CosmicAppTheme.colors.accent,
+                            focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
+                        )
+
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
-                            label = { Text(Localization.get("full_name", isTamil)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White, 
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = CosmicAppTheme.colors.accent,
-                                focusedLabelColor = CosmicAppTheme.colors.accent
-                            )
+                            placeholder = { Text(Localization.get("full_name", isTamil), fontSize = 14.sp) },
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            singleLine = true,
+                            shape = RoundedCornerShape(AstroDimens.RadiusSmall),
+                            colors = textFieldColors
                         )
 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("${Localization.get("gender", isTamil)}:", color = CosmicAppTheme.colors.textPrimary, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.width(16.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                            Text("${Localization.get("gender", isTamil)}:", style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textPrimary)
+                            Spacer(Modifier.width(8.dp))
                             RadioButton(selected = gender == "Male", onClick = { gender = "Male" }, colors = RadioButtonDefaults.colors(selectedColor = CosmicAppTheme.colors.accent))
-                            Text(Localization.get("male", isTamil), color = CosmicAppTheme.colors.textSecondary)
-                            Spacer(Modifier.width(16.dp))
+                            Text(Localization.get("male", isTamil), style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textSecondary)
+                            Spacer(Modifier.width(12.dp))
                             RadioButton(selected = gender == "Female", onClick = { gender = "Female" }, colors = RadioButtonDefaults.colors(selectedColor = CosmicAppTheme.colors.accent))
-                            Text(Localization.get("female", isTamil), color = CosmicAppTheme.colors.textSecondary)
+                            Text(Localization.get("female", isTamil), style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textSecondary)
                         }
 
-                        // Date of Birth
-                        Text(Localization.get("dob", isTamil), style = MaterialTheme.typography.titleSmall, color = CosmicAppTheme.colors.accent)
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(value = day, onValueChange = { if(it.length <= 2) day = it }, label = { Text("DD") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                            OutlinedTextField(value = month, onValueChange = { if(it.length <= 2) month = it }, label = { Text("MM") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                            OutlinedTextField(value = year, onValueChange = { if(it.length <= 4) year = it }, label = { Text("YYYY") }, modifier = Modifier.weight(1.5f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                        Text(Localization.get("dob", isTamil), style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AstroDimens.XSmall), verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedTextField(value = day, onValueChange = { if(it.length <= 2) day = it }, placeholder = { Text("DD", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = month, onValueChange = { if(it.length <= 2) month = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = year, onValueChange = { if(it.length <= 4) year = it }, placeholder = { Text("YYYY", fontSize = 12.sp) }, modifier = Modifier.weight(1.3f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
                             IconButton(onClick = {
                                 val cal = Calendar.getInstance()
                                 DatePickerDialog(context, { _, py, pm, pd ->
-                                    year = py.toString()
-                                    month = (pm + 1).toString()
-                                    day = pd.toString()
+                                    year = py.toString(); month = (pm + 1).toString(); day = pd.toString()
                                 }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
-                            }) {
-                                Icon(Icons.Default.AutoFixHigh, "Pick", tint = CosmicAppTheme.colors.accent)
+                            }, modifier = Modifier.size(40.dp)) {
+                                Icon(Icons.Default.AutoFixHigh, "Pick", tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(24.dp))
                             }
                         }
 
-                        // Time of Birth
-                        Text(Localization.get("tob", isTamil), style = MaterialTheme.typography.titleSmall, color = CosmicAppTheme.colors.accent)
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(value = hour, onValueChange = { if(it.length <= 2) hour = it }, label = { Text("HH") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                            OutlinedTextField(value = minute, onValueChange = { if(it.length <= 2) minute = it }, label = { Text("MM") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                            TextButton(onClick = { amPm = if (amPm == "AM") "PM" else "AM" }) {
-                                Text(amPm, color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold)
+                        Text(Localization.get("tob", isTamil), style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(AstroDimens.XSmall), verticalAlignment = Alignment.CenterVertically) {
+                            OutlinedTextField(value = hour, onValueChange = { if(it.length <= 2) hour = it }, placeholder = { Text("HH", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = minute, onValueChange = { if(it.length <= 2) minute = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            TextButton(onClick = { amPm = if (amPm == "AM") "PM" else "AM" }, modifier = Modifier.height(44.dp)) {
+                                Text(amPm, color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                             IconButton(onClick = {
                                 TimePickerDialog(context, { _, ph, pm ->
                                     val hTyped = if (ph > 12) (ph - 12) else if (ph == 0) 12 else ph
-                                    hour = hTyped.toString()
-                                    minute = String.format("%02d", pm)
-                                    amPm = if (ph >= 12) "PM" else "AM"
+                                    hour = hTyped.toString(); minute = String.format("%02d", pm); amPm = if (ph >= 12) "PM" else "AM"
                                 }, 12, 0, false).show()
-                            }) {
-                                Icon(Icons.Default.AutoAwesome, "Pick", tint = CosmicAppTheme.colors.accent)
+                            }, modifier = Modifier.size(40.dp)) {
+                                Icon(Icons.Default.AutoAwesome, "Pick", tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(24.dp))
                             }
                         }
 
-                        // City (Read-only + Picker)
-                        Text(Localization.get("pob", isTamil), style = MaterialTheme.typography.titleSmall, color = CosmicAppTheme.colors.accent)
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { launchLocationPicker() }
-                        ) {
+                        Text(Localization.get("pob", isTamil), style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
+                        Box(modifier = Modifier.fillMaxWidth().clickable { launchLocationPicker() }) {
                             OutlinedTextField(
                                 value = cityName,
                                 onValueChange = {},
-                                label = { Text(Localization.get("city", isTamil)) },
+                                placeholder = { Text(Localization.get("city", isTamil), fontSize = 14.sp) },
                                 readOnly = true,
                                 enabled = false,
-                                modifier = Modifier.fillMaxWidth(),
-                                trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = CosmicAppTheme.colors.accent) },
-                                shape = RoundedCornerShape(12.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    disabledTextColor = Color.White,
-                                    disabledLabelColor = CosmicAppTheme.colors.accent,
-                                    disabledBorderColor = CosmicAppTheme.colors.accent.copy(alpha = 0.5f),
-                                    disabledTrailingIconColor = CosmicAppTheme.colors.accent
-                                )
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
+                                trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(22.dp)) },
+                                shape = RoundedCornerShape(AstroDimens.RadiusSmall),
+                                colors = textFieldColors
                             )
                         }
+
+                        Spacer(Modifier.height(12.dp))
+
+                        Button(
+                            onClick = { submit() },
+                            modifier = Modifier.fillMaxWidth().height(54.dp).shadow(8.dp, RoundedCornerShape(AstroDimens.RadiusMedium)),
+                            shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7F00))
+                        ) {
+                            Text(if (isEditMode) "UPDATE DETAILS" else "START CONSULTATION", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                        }
+
+                        Text(
+                            text = if (isTamil) "அனைத்து விவரங்களையும் சரிபார்க்கவும்" else "Please verify all details",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = CosmicAppTheme.colors.textSecondary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
                 }
             }
         }
 
         if (isWaiting) {
+            LaunchedEffect(isWaiting) {
+                waitTimeLeft = 30
+                while (waitTimeLeft > 0 && isWaiting) {
+                    delay(1000)
+                    waitTimeLeft--
+                }
+                if (waitTimeLeft <= 0) {
+                    onUnanswered()
+                    isWaiting = false
+                }
+            }
+
             Dialog(onDismissRequest = { isWaiting = false }) {
-                Box(modifier = Modifier.fillMaxWidth().background(Color(0xFF1C140E), RoundedCornerShape(24.dp)).padding(24.dp)) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = Color(0xFFFF7F00))
-                        Spacer(Modifier.height(16.dp))
-                        Text("Connecting to Astrologer...", color = Color.White)
-                        Spacer(Modifier.height(24.dp))
-                        Button(onClick = { isWaiting = false }, colors = ButtonDefaults.buttonColors(containerColor = Color.Red)) {
-                            Text("Cancel Request", color = Color.White)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .border(1.dp, Brush.linearGradient(listOf(Color(0xFFFFD700), Color(0xFFFF8C00))), RoundedCornerShape(24.dp)),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1C140E)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(20.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(
+                                progress = { waitTimeLeft / 30f },
+                                modifier = Modifier.size(80.dp),
+                                color = Color(0xFFFFD700),
+                                strokeWidth = 6.dp,
+                                trackColor = Color(0xFF332211)
+                            )
+                            Text(
+                                text = waitTimeLeft.toString(),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFFFD700)
+                            )
+                        }
+                        
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = Localization.get("connecting_title", isTamil),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = Localization.get("connecting_subtitle", isTamil),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.6f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                        Button(
+                            onClick = { isWaiting = false },
+                            modifier = Modifier.fillMaxWidth().height(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBD2C2C))
+                        ) {
+                            Text(Localization.get("cancel_request", isTamil), color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }

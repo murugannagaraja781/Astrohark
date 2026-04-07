@@ -497,9 +497,6 @@ class HomeActivity : AppCompatActivity() {
                 val intent = Intent(this, com.astrohark.app.ui.rasipalan.RasipalanActivity::class.java)
                 startActivity(intent)
             }
-            "Astro Academy" -> {
-                Toast.makeText(this, "Astro Academy - Coming Soon!", Toast.LENGTH_SHORT).show()
-            }
             "Free  Star Services" -> {
                 Toast.makeText(this, "Free Star Services - Coming Soon!", Toast.LENGTH_SHORT).show()
             }

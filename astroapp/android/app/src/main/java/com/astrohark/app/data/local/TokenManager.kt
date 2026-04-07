@@ -88,4 +88,19 @@ class TokenManager(context: Context) {
     fun setLastDate(date: String) {
         sharedPreferences.edit().putString("last_progress_date", date).apply()
     }
+
+    // Pending Referral Code Management
+    fun savePendingReferral(code: String) {
+        if (code.isNotBlank()) {
+            sharedPreferences.edit().putString("pending_referral", code.uppercase()).apply()
+        }
+    }
+
+    fun getPendingReferral(): String? {
+        return sharedPreferences.getString("pending_referral", null)
+    }
+
+    fun clearPendingReferral() {
+        sharedPreferences.edit().remove("pending_referral").apply()
+    }
 }

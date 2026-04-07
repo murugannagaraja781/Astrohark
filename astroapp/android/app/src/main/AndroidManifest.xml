@@ -98,6 +98,14 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Deep Link for Automatic Referral -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="astrohark" android:host="referral" />
+                <data android:scheme="astro5" android:host="referral" />
+            </intent-filter>
         </activity>
 
         <activity android:name=".ui.guest.GuestDashboardActivity" />

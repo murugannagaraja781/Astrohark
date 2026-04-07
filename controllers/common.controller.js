@@ -54,11 +54,12 @@ const GlobalSettings = require('../models/GlobalSettings');
 
 exports.getAppConfig = async (req, res) => {
     try {
-        const shareLink = await GlobalSettings.findOne({ key: 'shareLink' });
+        const shareLinkRecord = await GlobalSettings.findOne({ key: 'shareLink' });
         res.json({
             ok: true,
             config: {
-                shareLink: shareLink ? shareLink.value : "https://play.google.com/store/apps/details?id=com.astrohark.app"
+                shareLink: shareLinkRecord ? shareLinkRecord.value : process.env.PLAYSTORE_URL || "https://play.google.com/store/apps/details?id=com.astrohark.app",
+                deepLinkPrefix: process.env.DEEP_LINK_PREFIX || "astrohark://referral/"
             }
         });
     } catch (error) {

@@ -693,7 +693,7 @@ fun HomeScreen(
                             // --- PROFILE / ACCOUNT TAB ---
                             item {
                                 Column(modifier = Modifier.padding(20.dp)) {
-                                    Text("My Account", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold))
+                                    Text("My Account", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = CosmicAppTheme.colors.textPrimary)
                                     Spacer(modifier = Modifier.height(20.dp))
                                     WalletDashboard(walletBalance, isTamil) { onWalletClick() }
                                     Spacer(modifier = Modifier.height(24.dp))
@@ -702,6 +702,18 @@ fun HomeScreen(
                                     ProfileItem("Help & Support", Icons.Rounded.Help) { onDrawerItemClick("settings") }
                                     ProfileItem("Logout", Icons.Rounded.Logout) { onLogoutClick() }
                                 }
+                            }
+                        }
+
+                        4 -> {
+                            // --- REFERRAL TAB ---
+                            item {
+                                ReferralScreen(
+                                    referralCode = referralCode,
+                                    isTamil = isTamil,
+                                    isNewUser = isNewUser,
+                                    onApplyReferral = onApplyReferral
+                                )
                             }
                         }
                     }
@@ -976,9 +988,9 @@ fun WalletDashboard(balance: Double, isTamil: Boolean, onAddMoneyClick: () -> Un
             ) {
                 Column {
                     Text(
-                        text = Localization.get("wallet_balance", isTamil),
+                        text = Localization.get("wallet_balance", false), // Forcing English as requested
                         style = MaterialTheme.typography.labelMedium,
-                        color = CosmicAppTheme.colors.accent.copy(alpha = 0.7f),
+                        color = CosmicAppTheme.colors.accent.copy(alpha = 0.8f),
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     )
@@ -997,7 +1009,8 @@ fun WalletDashboard(balance: Double, isTamil: Boolean, onAddMoneyClick: () -> Un
                     onClick = onAddMoneyClick,
                     colors = ButtonDefaults.buttonColors(containerColor = CosmicAppTheme.colors.accent),
                     shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     modifier = Modifier.height(44.dp)
                 ) {
                     Icon(androidx.compose.material.icons.Icons.Default.Add, null, tint = Color.Black, modifier = Modifier.size(18.dp))
@@ -1344,7 +1357,7 @@ fun HomeBottomBar(selectedTab: Int, isTamil: Boolean, onTabSelected: (Int) -> Un
             BottomNavItem("Home", androidx.compose.material.icons.Icons.Rounded.Home, selectedTab == 0) { onTabSelected(0) }
             BottomNavItem("Consult", androidx.compose.material.icons.Icons.Rounded.Groups, selectedTab == 1) { onTabSelected(1) }
             BottomNavItem("Rituals", androidx.compose.material.icons.Icons.Rounded.Eco, selectedTab == 2) { onTabSelected(2) }
-            BottomNavItem("Academy", androidx.compose.material.icons.Icons.Rounded.School, selectedTab == 4) { onTabSelected(4) }
+            BottomNavItem(if(isTamil) "பரிந்துரை" else "Referral", androidx.compose.material.icons.Icons.Rounded.Redeem, selectedTab == 4) { onTabSelected(4) }
             BottomNavItem("Profile", androidx.compose.material.icons.Icons.Rounded.Person, selectedTab == 3) { onTabSelected(3) }
         }
     }
@@ -1654,7 +1667,6 @@ fun TopServicesSection(isTamil: Boolean) {
             "இலவச ஜாதகம்" to com.astrohark.app.R.drawable.ic_free_kundali,
             "ஜாதகப் பொருத்தம்" to com.astrohark.app.R.drawable.ic_match,
             "தினசரி ராசிபலன்" to com.astrohark.app.R.drawable.ic_daily_horoscope,
-            "அஸ்ட்ரோ அகாடமி" to com.astrohark.app.R.drawable.ic_academy,
             "இலவச சேவைகள்" to com.astrohark.app.R.drawable.ic_free_services
         )
     } else {
@@ -1662,7 +1674,6 @@ fun TopServicesSection(isTamil: Boolean) {
             "Free\nHoroscope" to com.astrohark.app.R.drawable.ic_free_kundali,
             "Horoscope\nMatch" to com.astrohark.app.R.drawable.ic_match,
             "Daily\nHoroscope" to com.astrohark.app.R.drawable.ic_daily_horoscope,
-            "Astro\nAcademy" to com.astrohark.app.R.drawable.ic_academy,
             "Free\nServices" to com.astrohark.app.R.drawable.ic_free_services
         )
     }
@@ -2061,5 +2072,169 @@ fun AstrologerShimmerItem() {
                 .background(brush)
                 .border(1.dp, Color.White.copy(alpha = 0.05f), RoundedCornerShape(22.dp))
         )
+    }
+}
+@Composable
+fun ReferralScreen(
+    referralCode: String?,
+    isTamil: Boolean,
+    isNewUser: Boolean,
+    onApplyReferral: (String) -> Unit
+) {
+    val context = LocalContext.current
+    var referralInput by remember { mutableStateOf("") }
+    val shareLink = "https://play.google.com/store/apps/details?id=com.astrohark.app&referrer=${referralCode ?: ""}"
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = Localization.get("refer_win", isTamil),
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            color = CosmicAppTheme.colors.accent,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = Localization.get("refer_desc", isTamil),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
+        )
+
+        // Referral Steps
+        AstroCard(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                ReferStepRow("1", if(isTamil) "உங்கள் Referral Code-ஐ நண்பர்களுக்கு பகிருங்கள். அவர்கள் இணையும் போது ₹188 பெறுவார்கள்!" else "Share your referral code with friends. They get ₹188 on signup!", isTamil)
+                ReferStepRow("2", if(isTamil) "உங்கள் நண்பர் முதல் ரீசார்ஜ் செய்தவுடன் உங்களுக்கு ₹81 போனஸ் கிடைக்கும்!" else "Get ₹81 bonus when they make their first recharge!", isTamil)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Your Code Card
+        AstroCard(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = 8.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = if(isTamil) "உங்கள் குறியீடு" else "YOUR CODE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                        .border(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                        .clickable {
+                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            val clip = android.content.ClipData.newPlainText("Referral Code", referralCode ?: "")
+                            clipboard.setPrimaryClip(clip)
+                            Toast.makeText(context, "Code Copied!", Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = referralCode ?: "REF123",
+                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
+                        color = CosmicAppTheme.colors.accent
+                    )
+                    Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy", tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = {
+                val msg = if (isTamil) 
+                    "Astrohark செயலியில் இணையுங்கள்! நீங்கள் இணைய என் Referral Code: ${referralCode ?: ""} -ஐ பயன்படுத்தினால் ₹188 போனஸ் கிடைக்கும். $shareLink"
+                    else "Join Astrohark! Use my Referral Code: ${referralCode ?: ""} and get ₹188 bonus on signup. $shareLink"
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse("https://api.whatsapp.com/send?text=${Uri.encode(msg)}")
+                }
+                context.startActivity(intent)
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)),
+            modifier = Modifier.fillMaxWidth().height(56.dp).shadow(4.dp, RoundedCornerShape(16.dp)),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(24.dp), tint = Color.White)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(Localization.get("whatsapp_share", isTamil), fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+        }
+
+        if (isNewUser) {
+            Spacer(modifier = Modifier.height(32.dp))
+            Divider(color = Color.Gray.copy(alpha = 0.1f))
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            Text(
+                text = if(isTamil) "உங்களிடம் Referral Code உள்ளதா?" else "Do you have a Referral Code?",
+                style = MaterialTheme.typography.titleSmall,
+                color = CosmicAppTheme.colors.textPrimary
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = referralInput,
+                    onValueChange = { referralInput = it },
+                    placeholder = { Text("Enter Code", fontSize = 14.sp) },
+                    modifier = Modifier.weight(1f).height(54.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = CosmicAppTheme.colors.accent,
+                        unfocusedBorderColor = Color.Gray.copy(alpha = 0.3f),
+                        focusedPlaceholderColor = Color.Gray,
+                        unfocusedPlaceholderColor = Color.Gray
+                    )
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Button(
+                    onClick = {
+                        if (referralInput.isNotEmpty()) {
+                            onApplyReferral(referralInput)
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),
+                    modifier = Modifier.height(54.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(Localization.get("claim", isTamil), fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ReferStepRow(num: String, text: String, isTamil: Boolean) {
+    Row(verticalAlignment = Alignment.Top) {
+        Surface(
+            shape = CircleShape,
+            color = CosmicAppTheme.colors.accent.copy(alpha = 0.1f),
+            modifier = Modifier.size(28.dp).border(1.dp, CosmicAppTheme.colors.accent, CircleShape)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(num, color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            }
+        }
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = CosmicAppTheme.colors.textPrimary)
     }
 }

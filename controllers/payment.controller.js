@@ -105,6 +105,8 @@ exports.createPayment = async (req, res) => {
         let keyId = razorpayConfig.KEY_ID;
         let keySecret = razorpayConfig.KEY_SECRET;
 
+        console.log(`[Razorpay Debug] Attempting order creation with KeyID: ${keyId?.substring(0, 10)}... (Secret length: ${keySecret?.length})`);
+
         if (!keyId || !keySecret) {
             console.error("Razorpay Error: KEY_ID or KEY_SECRET is missing from environment variables!");
             return res.json({ ok: false, error: 'Payment gateway configuration error' });

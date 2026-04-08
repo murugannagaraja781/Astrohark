@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const User = require('../models/User');
 const Payment = require('../models/Payment');
-const { paymentTokens } = require('../services/socketStore');
+const { paymentTokens, userSockets } = require('../services/socketStore');
 const razorpayConfig = require('../config/razorpay');
 
 const razorpay = new Razorpay({
@@ -147,6 +147,7 @@ exports.createPayment = async (req, res) => {
 
 exports.callback = async (req, res) => {
     try {
+        const io = req.app.get('io');
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
         const hmac = crypto.createHmac('sha256', razorpayConfig.KEY_SECRET);
@@ -190,6 +191,15 @@ exports.callback = async (req, res) => {
                             referrer.referralCount = (referrer.referralCount || 0) + 1;
                             await referrer.save();
 
+                            // Emit for referrer
+                            const refSocketId = userSockets.get(referrer.userId);
+                            if (io && refSocketId) {
+                                io.to(refSocketId).emit('wallet-update', {
+                                    balance: referrer.walletBalance,
+                                    superBalance: referrer.superWalletBalance
+                                });
+                            }
+
                             // Rule 5: Tracking record
                             await Payment.create({
                                 transactionId: `REF_${crypto.randomBytes(8).toString('hex')}`,
@@ -207,6 +217,16 @@ exports.callback = async (req, res) => {
 
                 await user.save();
                 console.log(`[Razorpay] Wallet Credited: ${user.name} +₹${payment.baseAmount}`);
+
+                // Emit for the user who paid
+                const socketId = userSockets.get(user.userId);
+                if (io && socketId) {
+                    io.to(socketId).emit('wallet-update', {
+                        balance: user.walletBalance,
+                        superBalance: user.superWalletBalance
+                    });
+                    console.log(`[Socket] Wallet update emitted to user: ${user.name}`);
+                }
             }
         }
 

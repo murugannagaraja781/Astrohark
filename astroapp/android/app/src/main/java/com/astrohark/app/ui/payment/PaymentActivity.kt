@@ -21,7 +21,8 @@ import com.phonepe.intent.sdk.api.models.transaction.TransactionRequest
 import com.phonepe.intent.sdk.api.models.transaction.paymentMode.PayPagePaymentMode
 import com.phonepe.intent.sdk.api.PhonePeKt
 import com.razorpay.Checkout
-import com.razorpay.PaymentResultListener
+import com.razorpay.PaymentData
+import com.razorpay.PaymentResultWithDataListener
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import org.json.JSONObject
@@ -30,7 +31,7 @@ import org.json.JSONObject
  * PaymentActivity - Handles Razorpay Native & Web Fallback.
  * Also supports PhonePe via SDK.
  */
-class PaymentActivity : AppCompatActivity(), PaymentResultListener {
+class PaymentActivity : AppCompatActivity(), PaymentResultWithDataListener {
 
     companion object {
         private const val TAG = "PaymentActivity"
@@ -41,7 +42,7 @@ class PaymentActivity : AppCompatActivity(), PaymentResultListener {
     private lateinit var tokenManager: TokenManager
     private lateinit var statusText: TextView
     private lateinit var webView: android.webkit.WebView
-    private var pendingTransactionId: String? = null
+    private var pendingOrderId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -116,14 +117,15 @@ class PaymentActivity : AppCompatActivity(), PaymentResultListener {
                 val response = ApiClient.api.initiatePayment(PaymentInitiateRequest(userId, amount.toInt()))
                 if (response.isSuccessful && response.body()?.ok == true) {
                     val order = response.body()!!
+                    pendingOrderId = order.orderId
+                    
                     val checkout = Checkout()
                     checkout.setKeyID(Constants.RAZORPAY_KEY)
                     
                     val options = JSONObject().apply {
                         put("name", "AstroHark")
-                        put("description", "Wallet Recharge")
                         put("order_id", order.orderId)
-                        put("amount", order.amount) // Use value from server (in paisa)
+                        put("amount", (amount * 100).toInt()) // Razorpay expects paisa
                         put("currency", "INR")
                         put("prefill.name", user.name)
                         put("prefill.contact", user.phone ?: "")
@@ -141,12 +143,38 @@ class PaymentActivity : AppCompatActivity(), PaymentResultListener {
         }
     }
 
-    override fun onPaymentSuccess(razorpayPaymentId: String?) {
+    override fun onPaymentSuccess(razorpayPaymentId: String?, data: PaymentData?) {
         Log.d(TAG, "Razorpay Success: $razorpayPaymentId")
-        handlePaymentResult("success")
+        if (data != null) {
+            verifyPaymentOnServer(data)
+        } else {
+            handlePaymentResult("success")
+        }
     }
 
-    override fun onPaymentError(code: Int, description: String?) {
+    private fun verifyPaymentOnServer(data: PaymentData) {
+        statusText.text = "Verifying Payment..."
+        lifecycleScope.launch {
+            try {
+                val body = com.google.gson.JsonObject().apply {
+                    addProperty("razorpay_order_id", data.orderId ?: pendingOrderId)
+                    addProperty("razorpay_payment_id", data.paymentId)
+                    addProperty("razorpay_signature", data.signature)
+                }
+                
+                val response = ApiClient.api.verifyPayment(body)
+                if (response.isSuccessful && response.body()?.get("ok")?.asBoolean == true) {
+                    handlePaymentResult("success")
+                } else {
+                    showError("Verification failed. If money deducted, contact support.")
+                }
+            } catch (e: Exception) {
+                showError("Verification Network Error. If money deducted, contact support.")
+            }
+        }
+    }
+
+    override fun onPaymentError(code: Int, description: String?, data: PaymentData?) {
         Log.e(TAG, "Razorpay Error: $code - $description")
         if (code == Checkout.NETWORK_ERROR) {
             showError("Network Error: Please check connection")

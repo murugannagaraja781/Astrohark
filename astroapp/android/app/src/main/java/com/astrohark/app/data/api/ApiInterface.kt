@@ -29,6 +29,9 @@ interface ApiInterface {
     @POST("api/payment/token")
     suspend fun getPaymentToken(@Body request: PaymentInitiateRequest): Response<com.google.gson.JsonObject>
 
+    @retrofit2.http.POST("api/payment/callback")
+    suspend fun verifyPayment(@Body request: com.google.gson.JsonObject): Response<com.google.gson.JsonObject>
+
     @retrofit2.http.GET("api/user/{userId}")
     suspend fun getUserProfile(@retrofit2.http.Path("userId") userId: String): Response<com.astrohark.app.data.model.AuthResponse>
 

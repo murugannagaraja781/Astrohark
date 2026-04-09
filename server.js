@@ -2715,6 +2715,18 @@ io.on('connection', (socket) => {
     } catch (e) { cb({ ok: false }); }
   });
 
+  socket.on('admin-delete-user', async (data, cb) => {
+    if (!await checkAdmin(socket.id)) return cb({ ok: false, error: 'Unauthorized' });
+    try {
+      const { userId } = data;
+      await User.deleteOne({ userId });
+      cb({ ok: true });
+    } catch (e) {
+      console.error(e);
+      cb({ ok: false, error: 'Deletion Failed' });
+    }
+  });
+
   socket.on('admin-add-wallet', async (data, cb) => {
     if (!await checkAdmin(socket.id)) return cb({ ok: false });
     try {

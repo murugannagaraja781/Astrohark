@@ -550,6 +550,7 @@
             <button class="btn-admin btn-block" onclick="toggleBan('${u.userId}', ${!u.isBanned})" style="background:${u.isBanned ? '#EF4444' : '#eee'}; color:${u.isBanned ? 'white' : '#666'};">
               <i class="fas fa-ban"></i> ${u.isBanned ? 'Unblock' : 'Block'}
             </button>
+            <button class="btn-admin" style="background:#dc2626; color:white;" onclick="deleteUser('${u.userId}')"><i class="fas fa-trash"></i> Delete</button>
           </div>
         </div>
       `;
@@ -745,6 +746,19 @@
         window.toggleBan = (uid, status) => {
             if (confirm(status ? 'Block?' : 'Unblock?')) {
                 socket.emit('admin-toggle-ban', { userId: uid, isBanned: status }, (res) => { fetchAllUsers(); });
+            }
+        };
+
+        window.deleteUser = (uid) => {
+            if (confirm('Are you ABSOLUTELY SURE you want to DELETE this user? This cannot be undone and will remove them from the database.')) {
+                socket.emit('admin-delete-user', { userId: uid }, (res) => {
+                    if (res.ok) {
+                        alert('User Deleted Successfully');
+                        fetchAllUsers();
+                    } else {
+                        alert('Error: ' + res.error);
+                    }
+                });
             }
         };
 

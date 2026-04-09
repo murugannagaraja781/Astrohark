@@ -323,60 +323,7 @@
             </div>
         </div>
 
-        <!-- Modals -->
-        <div id="adminEditModal" class="modal-overlay hidden" style="backdrop-filter: blur(10px);">
-            <div class="admin-card" style="width: 90%; max-width: 400px; padding: 30px;">
-                <h3
-                    style="font-family: var(--font-heading); color: var(--primary); text-align: center; margin-bottom: 25px;">
-                    Edit Profile</h3>
-                <input type="hidden" id="adminEditUserId">
-                <div style="text-align:center; margin-bottom:20px;">
-                    <img id="adminEditAvatar"
-                        style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); box-shadow: 0 0 20px rgba(255,127,0,0.2);">
-                    <div style="margin-top:15px;">
-                        <input type="file" id="adminAvatarFile" style="display:none;" onchange="uploadAvatar(this)">
-                        <button class="btn-admin"
-                            style="display: inline-flex; width: auto; font-size: 0.75rem; padding: 6px 15px;"
-                            onclick="document.getElementById('adminAvatarFile').click()">Change Photo</button>
-                    </div>
-                </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <input type="text" id="adminEditName" class="app-input" placeholder="Name">
-                </div>
-                <div id="adminEditAstroFields" style="display:none;">
-                    <div class="form-group" style="margin-bottom: 15px;">
-                        <input type="number" id="adminEditPrice" class="app-input" placeholder="Price">
-                    </div>
-                    <label style="color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="adminEditVerified" style="accent-color: var(--primary);"> Verified
-                        Badge
-                    </label>
-                </div>
-                <div style="display:flex; gap:12px; margin-top:30px;">
-                    <button class="btn-admin" style="background: rgba(255,255,255,0.05); color: var(--text-muted);"
-                        onclick="closeModal('adminEditModal')">Cancel</button>
-                    <button class="btn-admin" style="background: var(--primary); color: #000;"
-                        onclick="saveAdminEditUser()">Save Changes</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="screen-admin-role-modal" class="modal-overlay hidden">
-            <div class="admin-card" style="width:90%; max-width:400px;">
-                <h3>Change Role</h3>
-                <select id="adminRoleSelect" class="app-input" style="margin-bottom:20px;">
-                    <option value="client">Client</option>
-                    <option value="astrologer">Astrologer</option>
-                    <option value="superadmin">Super Admin</option>
-                </select>
-                <div style="display:flex; gap:10px;">
-                    <button class="btn-admin" style="background:#eee; color:black;"
-                        onclick="closeModal('screen-admin-role-modal')">Cancel</button>
-                    <button class="btn-admin" style="background:#3b82f6;"
-                        onclick="submitAdminRoleChange()">Save</button>
-                </div>
-            </div>
-        </div>
+        <!-- Modals Removed -->
 
         <!-- Navigation -->
         <div class="admin-nav">
@@ -545,8 +492,6 @@
           </div>
           <div class="admin-actions">
             <button class="btn-admin btn-wallet" onclick="adminWallet('${u.userId}')"><i class="fas fa-plus"></i> Wallet</button>
-            <button class="btn-admin btn-role" onclick="adminRole('${u.userId}', '${u.role}')"><i class="fas fa-user-tag"></i> Role</button>
-            <button class="btn-admin btn-role" style="background:#6366F1;" onclick="openEditUser('${u.userId}')"><i class="fas fa-edit"></i> Edit</button>
             <button class="btn-admin btn-block" onclick="toggleBan('${u.userId}', ${!u.isBanned})" style="background:${u.isBanned ? '#EF4444' : '#eee'}; color:${u.isBanned ? 'white' : '#666'};">
               <i class="fas fa-ban"></i> ${u.isBanned ? 'Unblock' : 'Block'}
             </button>
@@ -730,18 +675,7 @@
             if (amt) socket.emit('admin-add-wallet', { userId: uid, amount: parseInt(amt) }, (res) => { alert(res.msg); fetchAllUsers(); });
         };
 
-        window.adminRole = (uid, current) => {
-            roleChangeTargetId = uid;
-            document.getElementById('adminRoleSelect').value = current;
-            document.getElementById('screen-admin-role-modal').classList.remove('hidden');
-        };
-
-        window.submitAdminRoleChange = () => {
-            const role = document.getElementById('adminRoleSelect').value;
-            socket.emit('admin-update-role', { userId: roleChangeTargetId, role }, (res) => {
-                if (res.ok) { alert('Updated'); closeModal('screen-admin-role-modal'); fetchAllUsers(); }
-            });
-        };
+        // Role change logic removed
 
         window.toggleBan = (uid, status) => {
             if (confirm(status ? 'Block?' : 'Unblock?')) {
@@ -1032,38 +966,7 @@
             });
         }
 
-        window.openEditUser = (uid) => {
-            const u = adminUsersCache.find(x => x.userId === uid);
-            if (!u) return;
-            document.getElementById('adminEditUserId').value = u.userId;
-            document.getElementById('adminEditName').value = u.name;
-            document.getElementById('adminEditAvatar').src = u.image || `https://ui-avatars.com/api/?name=${u.name}`;
-            const astroFields = document.getElementById('adminEditAstroFields');
-            if (u.role === 'astrologer') {
-                astroFields.style.display = 'block';
-                document.getElementById('adminEditPrice').value = u.price || 20;
-                document.getElementById('adminEditVerified').checked = u.isVerified || false;
-            } else {
-                astroFields.style.display = 'none';
-            }
-            document.getElementById('adminEditModal').classList.remove('hidden');
-            tempAvatarUrl = null; // Reset for new edit
-        };
-
-        window.saveAdminEditUser = () => {
-            const uid = document.getElementById('adminEditUserId').value;
-            const name = document.getElementById('adminEditName').value;
-            const u = adminUsersCache.find(x => x.userId === uid);
-            const updates = { name };
-            if (tempAvatarUrl) updates.image = tempAvatarUrl;
-            if (u.role === 'astrologer') {
-                updates.price = document.getElementById('adminEditPrice').value;
-                updates.isVerified = document.getElementById('adminEditVerified').checked;
-            }
-            socket.emit('admin-update-user-details', { userId: uid, updates }, (res) => {
-                if (res.ok) { alert('Updated'); closeModal('adminEditModal'); fetchAllUsers(); }
-            });
-        };
+        // Edit user logic removed
 
         socket.on('admin-notification', (msg) => {
             // Create Popup

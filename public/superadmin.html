@@ -487,7 +487,11 @@
             </div>
             <div style="text-align:right;">
               <div style="font-weight:700; color:#059669;">₹${u.walletBalance || 0}</div>
-              <span class="user-pill">${u.role.toUpperCase()}</span>
+              <select onchange="changeUserRole('${u.userId}', this.value)" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; font-size: 0.75rem; padding: 2px 4px; margin-top: 5px; outline: none; cursor: pointer;">
+                  <option value="client" ${u.role === 'client' ? 'selected' : ''}>CLIENT</option>
+                  <option value="astrologer" ${u.role === 'astrologer' ? 'selected' : ''}>ASTROLOGER</option>
+                  <option value="superadmin" ${u.role === 'superadmin' ? 'selected' : ''}>SUPER ADMIN</option>
+              </select>
             </div>
           </div>
           <div class="admin-actions">
@@ -670,6 +674,21 @@
         }
 
         // Actions
+        window.changeUserRole = (uid, newRole) => {
+            if (confirm(`Change this user to ${newRole.toUpperCase()}?`)) {
+                socket.emit('admin-update-role', { userId: uid, role: newRole }, (res) => {
+                    if (res.ok) {
+                        alert('Role Updated Successfully');
+                        fetchAllUsers();
+                    } else {
+                        alert('Error: ' + (res.error || 'Failed to update'));
+                    }
+                });
+            } else {
+                fetchAllUsers(); // Re-render to reset dropdown
+            }
+        };
+
         window.adminWallet = (uid) => {
             const amt = prompt("Amount to ADD:");
             if (amt) socket.emit('admin-add-wallet', { userId: uid, amount: parseInt(amt) }, (res) => { alert(res.msg); fetchAllUsers(); });

@@ -2700,7 +2700,7 @@ io.on('connection', (socket) => {
       const updates = { role: data.role };
       if (data.role === 'astrologer') {
         updates.walletBalance = 0;
-        updates.approvalStatus = 'pending'; // Require approval when manually set to astrologer
+        updates.approvalStatus = 'approved'; // Automatically approve admin assigned roles
       }
       await User.updateOne({ userId: data.userId }, updates);
 

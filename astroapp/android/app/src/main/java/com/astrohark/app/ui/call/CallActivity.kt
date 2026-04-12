@@ -62,6 +62,14 @@ class CallActivity : ComponentActivity() {
     companion object {
         private const val TAG = "CallActivity"
         private const val PERMISSION_REQ_CODE = 101
+
+        private val pendingIceCandidates = LinkedList<IceCandidate>()
+
+        private var iceServers = mutableListOf(
+            PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
+            PeerConnection.IceServer.builder("turn:turn.astrohark.com:3478?transport=udp")
+                .setUsername("webrtcuser").setPassword("strongpassword123").createIceServer()
+        )
     }
 
     // Views (WebRTC Renderers) - Created programmatically
@@ -159,14 +167,6 @@ class CallActivity : ComponentActivity() {
         // Check ICE connection state and restart if needed
         checkAndRestoreConnection()
     }
-
-    private val pendingIceCandidates = LinkedList<IceCandidate>()
-
-    private var iceServers = mutableListOf(
-        PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
-        PeerConnection.IceServer.builder("turn:turn.astrohark.com:3478?transport=udp")
-            .setUsername("webrtcuser").setPassword("strongpassword123").createIceServer()
-    )
 
     // Logic internal state
     private var callType: String = "video"
@@ -300,22 +300,24 @@ class CallActivity : ComponentActivity() {
             Log.e(TAG, "Proximity lock init failed", e)
         }
 
-        // Fetch dynamic ICE/TURN servers
-        fetchIceServers()
-
-        // Check Permissions
-        if (checkPermissions()) {
-            startCallLimit()
-        } else {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
-                PERMISSION_REQ_CODE
-            )
-        }
-
         // Start Timer Delay
         timerHandler.postDelayed(timerRunnable, 1000)
+
+        // Initialize Call Logic after a small delay to ensure configs are ready
+        lifecycleScope.launch {
+            if (iceServers.size <= 2) { // Only defaults present
+                delay(800) // Give API a chance
+            }
+            if (checkPermissions()) {
+                startCallLimit()
+            } else {
+                ActivityCompat.requestPermissions(
+                    this@CallActivity,
+                    arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
+                    PERMISSION_REQ_CODE
+                )
+            }
+        }
 
         // Start Remaining Time Countdown (for astrologers only)
         if (role == "astrologer") {
@@ -544,52 +546,6 @@ class CallActivity : ComponentActivity() {
     /**
      * Restart ICE connection if it becomes unstable
      */
-    private fun fetchIceServers() {
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val client = okhttp3.OkHttpClient()
-                val request = okhttp3.Request.Builder()
-                    .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/webrtc-config")
-                    .build()
-                val response = client.newCall(request).execute()
-                if (response.isSuccessful) {
-                    val jsonStr = response.body?.string()
-                    Log.d(TAG, "ICE Config Response: $jsonStr")
-                    val json = JSONObject(jsonStr ?: "{}")
-                    if (json.optBoolean("ok")) {
-                        val serverArray = json.optJSONArray("iceServers")
-                        if (serverArray != null) {
-                            val newIceServers = mutableListOf<PeerConnection.IceServer>()
-                            for (i in 0 until serverArray.length()) {
-                                try {
-                                    val obj = serverArray.getJSONObject(i)
-                                    val urls = obj.optString("urls")
-                                    if (urls.isNotEmpty()) {
-                                        val builder = PeerConnection.IceServer.builder(urls)
-                                        if (obj.has("username")) {
-                                            builder.setUsername(obj.getString("username"))
-                                        }
-                                        if (obj.has("credential")) {
-                                            builder.setPassword(obj.getString("credential"))
-                                        }
-                                        newIceServers.add(builder.createIceServer())
-                                    }
-                                } catch (e: Exception) {
-                                    Log.e(TAG, "Error parsing individual ICE server", e)
-                                }
-                            }
-                            if (newIceServers.isNotEmpty()) {
-                                iceServers = newIceServers
-                                Log.d(TAG, "Updated with ${iceServers.size} ICE servers from API")
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to fetch ICE servers", e)
-            }
-        }
-    }
 
     private fun restartIce() {
         try {
@@ -630,6 +586,7 @@ class CallActivity : ComponentActivity() {
     private fun fetchWebRTCConfig() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
+                // Consolidation: Using standard route
                 val response = com.astrohark.app.data.api.ApiClient.api.getWebRTCConfig()
                 if (response.isSuccessful) {
                     val config = response.body()
@@ -643,20 +600,16 @@ class CallActivity : ComponentActivity() {
                         val newIceServers = mutableListOf<PeerConnection.IceServer>()
                         newIceServers.add(PeerConnection.IceServer.builder(stun).createIceServer())
                         
-                        // UDP
+                        // Add UDP and TCP variants for high compatibility
                         newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=udp")
                             .setUsername(user).setPassword(pass).createIceServer())
-                        
-                        // TCP
                         newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=tcp")
                             .setUsername(user).setPassword(pass).createIceServer())
-                            
-                        // TURNS (standard TLS)
                         newIceServers.add(PeerConnection.IceServer.builder("turns:$turn:5349")
                             .setUsername(user).setPassword(pass).createIceServer())
 
                         iceServers = newIceServers
-                        Log.d(TAG, "✓ WebRTC: Config updated from server")
+                        Log.d(TAG, "✓ WebRTC: ICE Config cached for all subsequent sessions")
                     }
                 }
             } catch (e: Exception) {

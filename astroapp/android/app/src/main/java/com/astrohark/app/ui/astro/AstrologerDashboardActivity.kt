@@ -249,30 +249,41 @@ class AstrologerDashboardActivity : ComponentActivity() {
 }
 
 // Helper function to update individual service status
-suspend fun updateServiceStatus(userId: String, service: String, enabled: Boolean) {
-    try {
-        val client = okhttp3.OkHttpClient()
-        val body = okhttp3.RequestBody.create(
-            "application/json".toMediaType(),
-            org.json.JSONObject().apply {
-                put("userId", userId)
-                put("service", service)
-                put("enabled", enabled)
-            }.toString()
-        )
-        val request = okhttp3.Request.Builder()
-            .url("https://astrohark.com/api/astrologer/service-toggle")
-            .post(body)
-            .build()
-        client.newCall(request).execute()
-
-        // Manage socket based on service status
-        if (enabled) {
-            com.astrohark.app.data.remote.SocketManager.init()
-            com.astrohark.app.data.remote.SocketManager.registerUser(userId)
+suspend fun updateServiceStatus(userId: String, service: String, enabled: Boolean, onComplete: (Boolean) -> Unit = {}) {
+    withContext(kotlinx.coroutines.Dispatchers.IO) {
+        try {
+            val client = okhttp3.OkHttpClient()
+            val body = okhttp3.RequestBody.create(
+                "application/json".toMediaType(),
+                org.json.JSONObject().apply {
+                    put("userId", userId)
+                    put("service", service)
+                    put("enabled", enabled)
+                }.toString()
+            )
+            val request = okhttp3.Request.Builder()
+                .url("https://astrohark.com/api/astrologer/service-toggle")
+                .post(body)
+                .build()
+            
+            val response = client.newCall(request).execute()
+            val success = response.isSuccessful
+            
+            if (success && enabled) {
+                // Ensure socket is active if any service is enabled
+                com.astrohark.app.data.remote.SocketManager.init()
+                com.astrohark.app.data.remote.SocketManager.registerUser(userId)
+            }
+            
+            withContext(kotlinx.coroutines.Dispatchers.Main) {
+                onComplete(success)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            withContext(kotlinx.coroutines.Dispatchers.Main) {
+                onComplete(false)
+            }
         }
-    } catch (e: Exception) {
-        e.printStackTrace()
     }
 }
 
@@ -301,9 +312,9 @@ fun AstrologerDashboardScreen(
 
     val services = remember {
         mutableStateListOf(
-            ServiceData("Chat", true, Icons.Default.Chat),
-            ServiceData("Call", true, Icons.Default.Call),
-            ServiceData("Video", true, Icons.Default.Person)
+            ServiceData("Chat", false, Icons.Default.Chat),
+            ServiceData("Call", false, Icons.Default.Call),
+            ServiceData("Video", false, Icons.Default.Person)
         )
     }
     val scrollState = rememberScrollState()
@@ -374,7 +385,8 @@ fun AstrologerDashboardScreen(
                     val body = MultipartBody.Part.createFormData("image", "profile.jpg", requestFile)
                     val userIdBody = sessionId.toRequestBody("text/plain".toMediaTypeOrNull())
 
-                    val response = ApiClient.api.uploadProfilePic(userIdBody, body)
+                    // User Request: Robust upload with userId in query too                    // User Request: Robust upload with userId in query too
+                    val response = ApiClient.api.uploadProfilePic(userIdBody, body, sessionId)
                     if (response.isSuccessful) {
                         val newImage = response.body()?.get("image")?.asString
                         if (newImage != null) {
@@ -795,9 +807,18 @@ fun AstrologerDashboardScreen(
                         context.startActivity(Intent(context, PermissionActivity::class.java))
                         Toast.makeText(context, "Please enable required permissions first", Toast.LENGTH_LONG).show()
                     } else {
+                        // Optimistically update UI
                         isChatOnline = enabled
-                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            updateServiceStatus(sessionId, "chat", enabled)
+                        scope.launch {
+                            updateServiceStatus(sessionId, "chat", enabled) { success ->
+                                if (!success) {
+                                    isChatOnline = !enabled // rollback on failure
+                                    Toast.makeText(context, "Update Failed. Check Connection.", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, if(enabled) "Chat Online" else "Chat Offline", Toast.LENGTH_SHORT).show()
+                                    refreshBalanceAndHistory() // Sync other states
+                                }
+                            }
                         }
                     }
                 },
@@ -807,8 +828,16 @@ fun AstrologerDashboardScreen(
                         Toast.makeText(context, "Please enable Speaker/Audio permissions first", Toast.LENGTH_LONG).show()
                     } else {
                         isAudioOnline = enabled
-                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            updateServiceStatus(sessionId, "audio", enabled)
+                        scope.launch {
+                            updateServiceStatus(sessionId, "audio", enabled) { success ->
+                                if (!success) {
+                                    isAudioOnline = !enabled
+                                    Toast.makeText(context, "Update Failed", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, if(enabled) "Audio Online" else "Audio Offline", Toast.LENGTH_SHORT).show()
+                                    refreshBalanceAndHistory()
+                                }
+                            }
                         }
                     }
                 },
@@ -818,8 +847,16 @@ fun AstrologerDashboardScreen(
                         Toast.makeText(context, "Please enable Camera/Audio permissions first", Toast.LENGTH_LONG).show()
                     } else {
                         isVideoOnline = enabled
-                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                            updateServiceStatus(sessionId, "video", enabled)
+                        scope.launch {
+                            updateServiceStatus(sessionId, "video", enabled) { success ->
+                                if (!success) {
+                                    isVideoOnline = !enabled
+                                    Toast.makeText(context, "Update Failed", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, if(enabled) "Video Online" else "Video Offline", Toast.LENGTH_SHORT).show()
+                                    refreshBalanceAndHistory()
+                                }
+                            }
                         }
                     }
                 }

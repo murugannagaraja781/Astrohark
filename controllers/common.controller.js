@@ -58,7 +58,7 @@ exports.getAppConfig = async (req, res) => {
         res.json({
             ok: true,
             config: {
-                shareLink: shareLinkRecord ? shareLinkRecord.value : process.env.PLAYSTORE_URL || "https://play.google.com/store/apps/details?id=com.astrohark.app",
+                shareLink: shareLinkRecord ? shareLinkRecord.value : process.env.PLAYSTORE_URL || "https://astrohark.com",
                 deepLinkPrefix: process.env.DEEP_LINK_PREFIX || "astrohark://referral/"
             }
         });

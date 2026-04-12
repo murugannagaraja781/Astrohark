@@ -1,0 +1,2 @@
+04-12 13:06:16.031  1701  2179 W SemWifiTransportLayerUtils: getApplicationCategory - IOException com.astrohark.app
+04-12 13:06:16.031  1701  2179 W System.err: java.io.FileNotFoundException: https://play.google.com/store/apps/details?id=com.astrohark.app&hl=en

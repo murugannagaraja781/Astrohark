@@ -38,6 +38,7 @@ import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.data.remote.SocketManager
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.ui.theme.AstroDimens
+import com.astrohark.app.ui.common.ModernSummaryDialog
 import com.astrohark.app.utils.SoundManager
 import org.json.JSONObject
 import java.util.UUID
@@ -131,6 +132,7 @@ class ChatActivity : ComponentActivity() {
                              Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
                         }
                     },
+                    onSessionFinished = { finishSessionAndNavigate() },
                     isAstrologer = TokenManager(this).getUserSession()?.role == "astrologer",
                     toUserId = toUserId,
                     sessionId = sessionId,
@@ -200,15 +202,6 @@ class ChatActivity : ComponentActivity() {
     private fun setupObservers() {
         viewModel.sessionSummary.observe(this) { summary ->
             timerHandler.removeCallbacks(timerRunnable)
-            val minutes = summary.duration / 60
-            val seconds = summary.duration % 60
-            val durationStr = String.format("%02d:%02d", minutes, seconds)
-            androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Chat Summary")
-                .setMessage("Duration: $durationStr\nAmount: ₹${String.format("%.2f", if (TokenManager(this).getUserSession()?.role == "astrologer") summary.earned else summary.deducted)}")
-                .setPositiveButton("Dismiss") { _, _ -> finishSessionAndNavigate() }
-                .setCancelable(false)
-                .show()
         }
         viewModel.sessionEnded.observe(this) { ended ->
             if (ended) {
@@ -307,6 +300,7 @@ fun ChatScreen(
     onEndChat: () -> Unit,
     onEditIntake: () -> Unit,
     onViewChart: () -> Unit,
+    onSessionFinished: () -> Unit,
     isAstrologer: Boolean,
     toUserId: String?,
     sessionId: String?,
@@ -436,8 +430,27 @@ fun ChatScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(CosmicAppTheme.backgroundBrush)
         ) {
+            // WhatsApp Style Background with Astrology Doodles
+            androidx.compose.foundation.Image(
+                painter = painterResource(id = com.astrohark.app.R.drawable.astrology_chat_bg),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                alpha = 0.5f // Subtle watermark
+            )
+
+            // Modern Summary Overlay
+            val summary by viewModel.sessionSummary.observeAsState()
+            if (summary != null) {
+                ModernSummaryDialog(
+                    title = "Chat Summary",
+                    duration = summary!!.duration,
+                    amount = if (isAstrologer) summary!!.earned else summary!!.deducted,
+                    isAstrologer = isAstrologer,
+                    onDismiss = { onSessionFinished() }
+                )
+            }
 
             LazyColumn(
                 state = listState,
@@ -472,8 +485,13 @@ fun ChatScreen(
 @Composable
 fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
     val isMe = msg.isSent
-    val bubbleColor = if (isMe) CosmicAppTheme.colors.accent.copy(alpha = 0.15f) else CosmicAppTheme.colors.cardBg
+    val bubbleColor = if (isMe) Color(0xFFE7FFDB) else Color.White // WhatsApp Colors
     val align = if (isMe) Alignment.End else Alignment.Start
+    val shape = if (isMe) {
+        RoundedCornerShape(12.dp, 0.dp, 12.dp, 12.dp)
+    } else {
+        RoundedCornerShape(0.dp, 12.dp, 12.dp, 12.dp)
+    }
 
     // Swipe State
     val dismissState = rememberSwipeToDismissBoxState(
@@ -581,9 +599,7 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                                     "delivered" -> Icons.Default.DoneAll
                                     else -> Icons.Default.Check
                                 }
-                                val tint = Color(0xFF2196F3)
-
-                                Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
+                                Icon(icon, null, tint = if(msg.status=="read") Color(0xFF34B7F1) else Color.Gray, modifier = Modifier.size(14.dp))
                             }
                         }
                     }
@@ -706,8 +722,8 @@ fun ChatInputBar(
                             unfocusedContainerColor = Color.Transparent,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = CosmicAppTheme.colors.textPrimary,
-                            unfocusedTextColor = CosmicAppTheme.colors.textPrimary,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
                             cursorColor = CosmicAppTheme.colors.accent
                         )
                     )

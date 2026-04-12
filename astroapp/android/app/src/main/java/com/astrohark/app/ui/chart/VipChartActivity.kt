@@ -40,12 +40,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-// --- Aesthetic Constants (Cocoa Dark Refresh) ---
-val ParchmentBase = Color(0xFF140F0A)
-val ParchmentLight = Color(0xFF1C140E)
-val ChocolateBrown = Color(0xFFFF7F00)
-val BorderColor = Color(0xFF241A12)
-val ChartLineColor = Color(0xFFA58B74).copy(alpha = 0.5f)
+// --- Aesthetic Constants (Premium Light Theme) ---
+val ParchmentBase = Color(0xFFFCF6F0) // Light Cream
+val ParchmentLight = Color(0xFFFFFFFF) // White
+val ChocolateBrown = Color(0xFFFF7F00) // Brand Orange
+val BorderColor = Color(0xFFE0D5C9)
+val ChartLineColor = Color(0xFFD4B99F).copy(alpha = 0.8f)
 
 // --- Tamil Translation Constants ---
 val signTamil = mapOf(
@@ -260,8 +260,8 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .background(ParchmentBase, RoundedCornerShape(4.dp))
-            .border(3.dp, ChocolateBrown, RoundedCornerShape(4.dp))
+            .background(ParchmentLight, RoundedCornerShape(8.dp))
+            .border(2.dp, ChocolateBrown, RoundedCornerShape(8.dp))
     ) {
         // Decorative Borders for boxes
         Canvas(modifier = Modifier.fillMaxSize()) {
@@ -339,8 +339,13 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
                                             Text(
                                                 text = planetAbbrTamil[pName] ?: pName.take(3),
                                                 fontSize = fontSize,
-                                                fontWeight = FontWeight.Bold,
-                                                color = if(pName == "As") Color.Blue else Color.Black,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                color = when {
+                                                    pName == "As" -> Color(0xFFD32F2F) // Deep Red for Asc
+                                                    pName == "Sun" -> Color(0xFFE65100)
+                                                    pName == "Moon" -> Color(0xFF1976D2)
+                                                    else -> Color(0xFF3E2723) // Dark Brown for visibility
+                                                },
                                                 lineHeight = lineHeight
                                             )
                                         }
@@ -365,12 +370,12 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
                 val dob = "${birthData.optInt("day")}-${getMonthName(birthData.optInt("month"))}-${birthData.optInt("year")}"
                 val tob = String.format("%02d:%02d", birthData.optInt("hour"), birthData.optInt("minute"))
 
-                Text(dob, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Text(tob, fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                Spacer(Modifier.height(2.dp))
-                Text(title, fontSize = 14.sp, fontWeight = FontWeight.ExtraBold, color = ChocolateBrown)
+                Text(dob, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                Text(tob, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                Spacer(Modifier.height(4.dp))
+                Text(title, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = ChocolateBrown)
                 if (starName.isNotEmpty()) {
-                    Text(starName, fontSize = 11.sp, color = Color.White.copy(alpha = 0.6f), fontWeight = FontWeight.Medium)
+                    Text(starName, fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
                 }
             }
         }

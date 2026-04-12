@@ -106,7 +106,9 @@ class IntakeActivity : ComponentActivity() {
                     onUnanswered = {
                         Toast.makeText(this, "No response from astrologer", Toast.LENGTH_LONG).show()
                         finish()
-                    }
+                    },
+                    saveForm = { saveFormData(it) },
+                    loadForm = { loadSavedFormData() }
                 )
             }
         }
@@ -132,6 +134,21 @@ class IntakeActivity : ComponentActivity() {
         }
         finish()
     }
+
+    private fun saveFormData(data: JSONObject) {
+        try {
+            val prefs = getSharedPreferences("AstroharkIntake", Context.MODE_PRIVATE)
+            prefs.edit().putString("lastForm", data.toString()).apply()
+        } catch (e: Exception) {}
+    }
+
+    private fun loadSavedFormData(): JSONObject? {
+        return try {
+            val prefs = getSharedPreferences("AstroharkIntake", Context.MODE_PRIVATE)
+            val json = prefs.getString("lastForm", null)
+            if (json != null) JSONObject(json) else null
+        } catch (e: Exception) { null }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -148,7 +165,9 @@ fun IntakeScreen(
     tokenManager: TokenManager,
     onClose: () -> Unit,
     onSessionConnected: (String, String) -> Unit,
-    onUnanswered: () -> Unit
+    onUnanswered: () -> Unit,
+    saveForm: (JSONObject) -> Unit,
+    loadForm: () -> JSONObject?
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -230,15 +249,46 @@ fun IntakeScreen(
     }
 
     LaunchedEffect(Unit) {
-        if (existingData != null) {
-            val d = existingData!!
+        var data = existingData
+        if (data == null) {
+            data = loadForm()
+        }
+
+        if (data != null) {
+            val d = data!!
             name = d.optString("name")
+            gender = d.optString("gender", "Male")
             cityName = d.optString("city")
             day = d.optInt("day", 0).toString().takeIf { it != "0" } ?: ""
             month = d.optInt("month", 0).toString().takeIf { it != "0" } ?: ""
             year = d.optInt("year", 0).toString().takeIf { it != "0" } ?: ""
-            hour = d.optInt("hour", 12).toString()
-            minute = d.optInt("minute", 0).toString()
+            
+            val h24 = d.optInt("hour", 12)
+            if (h24 >= 12) {
+                amPm = "PM"
+                hour = (if (h24 > 12) h24 - 12 else 12).toString()
+            } else {
+                amPm = "AM"
+                hour = (if (h24 == 0) 12 else h24).toString()
+            }
+            minute = d.optInt("minute", 0).toString().padStart(2, '0')
+            
+            latitude = d.optDouble("latitude", 0.0).takeIf { it != 0.0 }
+            longitude = d.optDouble("longitude", 0.0).takeIf { it != 0.0 }
+            timezoneId = d.optString("timezone").takeIf { it.isNotEmpty() }
+        }
+
+        // Listen for astrologer response
+        SocketManager.onSessionAnswered { response ->
+            val accepted = response.optBoolean("accept") // Server emits 'accept', not 'ok'
+            val sId = response.optString("sessionId")
+            if (accepted && sId == waitingSessionId) {
+                isWaiting = false
+                onSessionConnected(sId, callType ?: "audio")
+            } else if (!accepted && response.has("accept")) {
+                isWaiting = false
+                onUnanswered()
+            }
         }
     }
 
@@ -279,6 +329,9 @@ fun IntakeScreen(
                put("partnerData", partner)
             }
         }
+        
+        // Save for next time
+        saveForm(payload)
         
         if (partnerId != null && callType != null) {
             SocketManager.init()

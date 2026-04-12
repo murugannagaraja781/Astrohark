@@ -41,12 +41,12 @@ import android.os.Build
 import java.io.File
 import androidx.compose.material.icons.filled.FiberManualRecord
 import androidx.compose.material.icons.filled.Stop
-import com.astrohark.app.R
 import com.astrohark.app.data.remote.SocketManager
 import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.data.model.AuthResponse
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.ui.theme.AstroDimens
+import com.astrohark.app.ui.common.ModernSummaryDialog
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -96,6 +96,10 @@ class CallActivity : ComponentActivity() {
     private var isRecordingState by mutableStateOf(false)
     private var mediaRecorder: MediaRecorder? = null
     private var audioFile: File? = null
+
+    // Summary State
+    data class SimpleSummary(val duration: Int, val amount: Double, val reason: String)
+    private var callSummary by mutableStateOf<SimpleSummary?>(null)
 
     private var isWebRTCInitialized = false
 
@@ -262,7 +266,9 @@ class CallActivity : ComponentActivity() {
                     onShowMatch = { showMatchDisplay() },
                     isRecording = isRecordingState,
                     onToggleRecording = { toggleRecording() },
-                    isReady = isWebRTCInitialized
+                    isReady = isWebRTCInitialized,
+                    summary = callSummary,
+                    onDismissSummary = { finish() }
                 )
             }
         }
@@ -935,39 +941,31 @@ class CallActivity : ComponentActivity() {
             } catch (e: Exception) { e.printStackTrace() }
         }
 
-        SocketManager.onBillingStarted { startTime ->
+        SocketManager.onBillingStarted { info ->
             runOnUiThread {
-                statusText = "🔴 Billing Active"
+                Log.d(TAG, "Billing started event received. Initiator: $isInitiator")
+                statusText = "Connecting to ${partnerName}..."
                 isBillingActive = true
                 if (isInitiator && ::peerConnection.isInitialized) {
-                    createOffer()
+                    // Small delay to ensure other side is also ready for offer
+                    timerHandler.postDelayed({
+                        createOffer()
+                    }, 1000)
                 }
+                
+                // Temporary status for billing start
                 androidx.core.os.HandlerCompat.postDelayed(android.os.Handler(android.os.Looper.getMainLooper()), {
-                   if(statusText == "🔴 Billing Active") statusText = "" // Hide after valid
-                   isBillingActive = false // keep UI indicator small or different
-                }, null, 3000)
+                   if(statusText.contains("Connecting to")) statusText = "" 
+                }, null, 5000)
             }
         }
 
         SocketManager.onSessionEndedWithSummary { reason, deducted, earned, duration ->
             runOnUiThread {
                 timerHandler.removeCallbacks(timerRunnable)
-                val minutes = duration / 60
-                val seconds = duration % 60
-                val durationStr = String.format("%02d:%02d", minutes, seconds)
-
-                val message = when {
-                    session?.role == "astrologer" -> "Duration: $durationStr\n\nYou earned: ₹${String.format("%.2f", earned)}"
-                    reason == "insufficient_funds" -> "Call ended due to insufficient balance.\n\nDuration: $durationStr\nDeducted: ₹${String.format("%.2f", deducted)}"
-                    else -> "Duration: $durationStr\nDeducted: ₹${String.format("%.2f", deducted)}"
-                }
-
-                androidx.appcompat.app.AlertDialog.Builder(this)
-                    .setTitle(if (reason == "insufficient_funds") "⚠️ Low Balance" else "📞 Call Summary")
-                    .setMessage(message)
-                    .setPositiveButton("OK") { _, _ -> finish() }
-                    .setCancelable(false)
-                    .show()
+                isBillingActive = false
+                val amount = if (tokenManager.getUserSession()?.role == "astrologer") earned else deducted
+                callSummary = SimpleSummary(duration, amount, reason)
             }
         }
 
@@ -1275,11 +1273,24 @@ fun CallScreen(
     onShowMatch: () -> Unit,
     isRecording: Boolean = false,
     onToggleRecording: () -> Unit = {},
-    isReady: Boolean
+    isReady: Boolean,
+    summary: CallActivity.SimpleSummary? = null,
+    onDismissSummary: () -> Unit = {}
 ) {
     val colors = com.astrohark.app.ui.theme.CosmicAppTheme.colors
     val context = LocalContext.current
     
+    // Modern Summary Overlay
+    if (summary != null) {
+        ModernSummaryDialog(
+            title = if (summary.reason == "insufficient_funds") "Low Balance" else "Call Summary",
+            duration = summary.duration,
+            amount = summary.amount,
+            isAstrologer = role == "astrologer",
+            onDismiss = onDismissSummary
+        )
+    }
+
     BackHandler {
         Toast.makeText(context, "Call irugum pothu back button vela seiyathu. Mudika 'End Call' azhuthavum", Toast.LENGTH_LONG).show()
     }

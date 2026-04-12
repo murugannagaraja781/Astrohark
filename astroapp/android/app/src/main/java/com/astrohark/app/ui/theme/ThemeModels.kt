@@ -34,7 +34,7 @@ data class ThemeColors(
 object ThemePalette {
 
     // Premium Light Theme Palette
-    private val LightBg = Color(0xFFF8F9FA)      // Soft Gray/White
+    private val LightBg = Color(0xFFFFF9F2)      // Soft Warm Cream (Complements Orange)
     private val LightSurface = Color(0xFFFFFFFF) // Pure White
     private val LightAccent = Color(0xFFB8860B)  // Dark Goldenrod / Premium Gold
     private val LightTextPrimary = Color(0xFF1A1A1A) // Near Black

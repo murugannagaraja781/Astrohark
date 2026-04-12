@@ -295,8 +295,8 @@ fun HomeScreen(
     var referralInput by remember { mutableStateOf("") }
     var isApplyingReferral by remember { mutableStateOf(false) }
 
-    // Dynamic Share Link State
-    var shareLink by remember { mutableStateOf("https://play.google.com/store/apps/details?id=com.astrohark.app") }
+    // Dynamic Share Link State (Placeholder until configured in Admin Dashboard)
+    var shareLink by remember { mutableStateOf("https://astrohark.com") }
 
     // History State
     var historySessions by remember { mutableStateOf<List<SessionHistoryItem>>(emptyList()) }

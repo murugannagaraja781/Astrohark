@@ -120,4 +120,13 @@
         <item name="android:statusBarColor">#000000</item>
         <item name="android:navigationBarColor">#000000</item>
     </style>
+
+    <!-- PREMIUM PICKER THEMES -->
+    <style name="DialogPickerTheme" parent="Theme.MaterialComponents.Light.Dialog">
+        <item name="colorPrimary">#FF7F00</item> <!-- Orange/Gold -->
+        <item name="colorAccent">#FF7F00</item>
+        <item name="android:textColorPrimary">#000000</item>
+        <item name="android:windowBackground">#FFFFFF</item>
+    </style>
+
 </resources>

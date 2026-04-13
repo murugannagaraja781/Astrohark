@@ -80,7 +80,8 @@ class IntakeActivity : ComponentActivity() {
         partnerImage = intent.getStringExtra("partnerImage")
         isEditMode = intent.getBooleanExtra("isEditMode", false)
         targetUserId = intent.getStringExtra("targetUserId")
-        val isMatching = intent.getBooleanExtra("isMatching", false)
+        val isMatchingFromIntent = intent.getBooleanExtra("isMatching", false)
+        android.util.Log.d("IntakeActivity", "Init: isMatching=$isMatchingFromIntent")
 
         val dataStr = intent.getStringExtra("existingData")
         if (dataStr != null) {
@@ -95,7 +96,7 @@ class IntakeActivity : ComponentActivity() {
                     partnerImage = partnerImage,
                     callType = type,
                     isEditMode = isEditMode,
-                    isMatching = isMatching,
+                    isMatching = isMatchingFromIntent,
                     existingData = existingData,
                     targetUserId = targetUserId,
                     tokenManager = tokenManager,
@@ -276,6 +277,38 @@ fun IntakeScreen(
             latitude = d.optDouble("latitude", 0.0).takeIf { it != 0.0 }
             longitude = d.optDouble("longitude", 0.0).takeIf { it != 0.0 }
             timezoneId = d.optString("timezone").takeIf { it.isNotEmpty() }
+
+            // Partner Data
+            val pObj = d.optJSONObject("partnerData") ?: d.optJSONObject("partner")
+            if (pObj != null) {
+                pName = pObj.optString("name")
+                pGender = pObj.optString("gender", "Female")
+                val pDob = pObj.optString("dob", "")
+                if (pDob.isNotEmpty()) {
+                    val pParts = pDob.split("-")
+                    if (pParts.size >= 3) {
+                        pYear = pParts[0]
+                        pMonth = pParts[1]
+                        pDay = pParts[2]
+                    }
+                }
+                val pTob = pObj.optString("tob", "")
+                if (pTob.isNotEmpty()) {
+                    val tParts = pTob.split(" ")
+                    if (tParts.size >= 2) {
+                        pAmPm = tParts[1]
+                        val hParts = tParts[0].split(":")
+                        if (hParts.size >= 2) {
+                            pHour = hParts[0]
+                            pMinute = hParts[1]
+                        }
+                    }
+                }
+                pCityName = pObj.optString("pob").ifEmpty { pObj.optString("city") }
+                pLatitude = pObj.optDouble("lat", 0.0).takeIf { it != 0.0 } ?: pObj.optDouble("latitude", 0.0).takeIf { it != 0.0 }
+                pLongitude = pObj.optDouble("lon", 0.0).takeIf { it != 0.0 } ?: pObj.optDouble("longitude", 0.0).takeIf { it != 0.0 }
+                pTimezoneId = pObj.optString("timezone").ifEmpty { pObj.optString("tzId") }
+            }
         }
 
         // Listen for astrologer response
@@ -333,6 +366,23 @@ fun IntakeScreen(
         // Save for next time
         saveForm(payload)
         
+        if (isEditMode) {
+            val resultIntent = Intent()
+            resultIntent.putExtra("birthData", payload.toString())
+            (context as Activity).setResult(Activity.RESULT_OK, resultIntent)
+            (context as Activity).finish()
+            return
+        }
+
+        // If it was opened from Home Page for free matching
+        if (isMatching && partnerId == null) {
+            val intent = Intent(context, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
+            intent.putExtra("birthData", payload.toString())
+            context.startActivity(intent)
+            (context as Activity).finish()
+            return
+        }
+
         if (partnerId != null && callType != null) {
             SocketManager.init()
             SocketManager.requestSession(partnerId, callType, payload) { response ->
@@ -414,10 +464,18 @@ fun IntakeScreen(
                             value = name,
                             onValueChange = { name = it },
                             placeholder = { Text(Localization.get("full_name", isTamil), fontSize = 14.sp) },
-                            modifier = Modifier.fillMaxWidth().height(52.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp), // Increased height for better interaction
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
+                                capitalization = KeyboardCapitalization.Words,
+                                imeAction = ImeAction.Next
+                            ),
                             shape = RoundedCornerShape(AstroDimens.RadiusSmall),
-                            colors = textFieldColors
+                            colors = textFieldColors,
+                            enabled = true // Explicitly set to true
                         )
 
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -437,7 +495,7 @@ fun IntakeScreen(
                             OutlinedTextField(value = year, onValueChange = { if(it.length <= 4) year = it }, placeholder = { Text("YYYY", fontSize = 12.sp) }, modifier = Modifier.weight(1.3f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
                             IconButton(onClick = {
                                 val cal = Calendar.getInstance()
-                                DatePickerDialog(context, { _, py, pm, pd ->
+                                DatePickerDialog(context, com.astrohark.app.R.style.DialogPickerTheme, { _, py, pm, pd ->
                                     year = py.toString(); month = (pm + 1).toString(); day = pd.toString()
                                 }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
                             }, modifier = Modifier.size(40.dp)) {
@@ -453,7 +511,7 @@ fun IntakeScreen(
                                 Text(amPm, color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                             IconButton(onClick = {
-                                TimePickerDialog(context, { _, ph, pm ->
+                                TimePickerDialog(context, com.astrohark.app.R.style.DialogPickerTheme, { _, ph, pm ->
                                     val hTyped = if (ph > 12) (ph - 12) else if (ph == 0) 12 else ph
                                     hour = hTyped.toString(); minute = String.format("%02d", pm); amPm = if (ph >= 12) "PM" else "AM"
                                 }, 12, 0, false).show()
@@ -493,10 +551,18 @@ fun IntakeScreen(
                                 value = pName,
                                 onValueChange = { pName = it },
                                 placeholder = { Text(if (isTamil) "துணையின் பெயர்" else "Partner's Full Name", fontSize = 14.sp) },
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
                                 singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Text,
+                                    capitalization = KeyboardCapitalization.Words,
+                                    imeAction = ImeAction.Next
+                                ),
                                 shape = RoundedCornerShape(AstroDimens.RadiusSmall),
-                                colors = textFieldColors
+                                colors = textFieldColors,
+                                enabled = true
                             )
 
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -547,7 +613,14 @@ fun IntakeScreen(
                             shape = RoundedCornerShape(AstroDimens.RadiusMedium),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7F00))
                         ) {
-                            Text(if (isEditMode) "UPDATE DETAILS" else "START CONSULTATION", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                            val btnText = if (isMatching) {
+                                if (isTamil) "பொருத்தம் பார்க்க" else "START MATCHING"
+                            } else if (isEditMode) {
+                                if (isTamil) "விவரங்களை புதுப்பிக்க" else "UPDATE DETAILS"
+                            } else {
+                                if (isTamil) "ஆலோசனை தொடங்க" else "START CONSULTATION"
+                            }
+                            Text(btnText, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                         }
 
                         Text(

@@ -87,7 +87,7 @@ class CallActivity : ComponentActivity() {
     private var isInitiator = false
     private var partnerId: String? = null
     private var sessionId: String? = null
-    private var clientBirthData: JSONObject? = null
+    private var clientBirthData by mutableStateOf<JSONObject?>(null)
 
     private lateinit var tokenManager: TokenManager
     private var session: AuthResponse? = null
@@ -164,8 +164,30 @@ class CallActivity : ComponentActivity() {
              }
         }
 
-        // Check ICE connection state and restart if needed
+    // Check ICE connection state and restart if needed
         checkAndRestoreConnection()
+    }
+
+    private val matchLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
+        timerHandler.postDelayed({ isEditingIntake = false }, 3000)
+        ensureSocketConnected()
+        if (result.resultCode == RESULT_OK) {
+             val dataStr = result.data?.getStringExtra("birthData")
+             if (dataStr != null) {
+                 try {
+                     val newData = JSONObject(dataStr)
+                     clientBirthData = newData
+                     SocketManager.getSocket()?.emit("client-birth-chart", JSONObject().apply {
+                         put("sessionId", sessionId)
+                         put("toUserId", partnerId)
+                         put("birthData", newData)
+                     })
+                     val matchIntent = android.content.Intent(this, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
+                     matchIntent.putExtra("birthData", newData.toString())
+                     startActivity(matchIntent)
+                 } catch (e: Exception) { e.printStackTrace() }
+             }
+        }
     }
 
     // Logic internal state
@@ -267,6 +289,7 @@ class CallActivity : ComponentActivity() {
                     isRecording = isRecordingState,
                     onToggleRecording = { toggleRecording() },
                     isReady = isWebRTCInitialized,
+                    clientBirthData = clientBirthData,
                     summary = callSummary,
                     onDismissSummary = { finish() }
                 )
@@ -1123,12 +1146,24 @@ class CallActivity : ComponentActivity() {
     }
 
     private fun showMatchDisplay() {
-        if (clientBirthData != null) {
-            val intent = android.content.Intent(this, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
-            intent.putExtra("birthData", clientBirthData.toString())
-            startActivity(intent)
+        val hasPartner = clientBirthData?.has("partnerData") == true || clientBirthData?.has("partner") == true
+        
+        if (hasPartner) {
+            // Show result directly
+            val matchIntent = android.content.Intent(this, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
+            matchIntent.putExtra("birthData", clientBirthData.toString())
+            startActivity(matchIntent)
         } else {
-            Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
+            // Open form to fill
+            isEditingIntake = true
+            val intent = android.content.Intent(this, com.astrohark.app.ui.intake.IntakeActivity::class.java)
+            intent.putExtra("isEditMode", true)
+            intent.putExtra("isMatching", true) 
+            intent.putExtra("existingData", clientBirthData?.toString() ?: "{}")
+            if (TokenManager(this).getUserSession()?.role == "astrologer") {
+                intent.putExtra("targetUserId", partnerId)
+            }
+            matchLauncher.launch(intent)
         }
     }
 
@@ -1227,6 +1262,7 @@ fun CallScreen(
     isRecording: Boolean = false,
     onToggleRecording: () -> Unit = {},
     isReady: Boolean,
+    clientBirthData: JSONObject? = null,
     summary: CallActivity.SimpleSummary? = null,
     onDismissSummary: () -> Unit = {}
 ) {
@@ -1423,7 +1459,13 @@ fun CallScreen(
                     if (role == "astrologer") {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             ControlBtnItem(onClick = onShowRasi, icon = Icons.Default.GridView, label = "Chart", active = true)
-                            ControlBtnItem(onClick = onShowMatch, icon = Icons.Default.Favorite, label = "Match", active = true)
+                            val hasPartner = clientBirthData?.has("partnerData") == true || clientBirthData?.has("partner") == true
+                            ControlBtnItem(
+                                onClick = onShowMatch, 
+                                icon = if (hasPartner) Icons.Default.Favorite else Icons.Default.FavoriteBorder, 
+                                label = "Match", 
+                                active = hasPartner
+                            )
                         }
                     } else {
                         ControlBtnItem(onClick = onEditIntake, icon = Icons.Default.EditNote, label = "Intake", active = false)

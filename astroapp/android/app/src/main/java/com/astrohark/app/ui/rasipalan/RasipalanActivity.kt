@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.ui.draw.shadow
+import androidx.compose.material3.Divider as HorizontalDivider
 
 // Status Colors (Linked to Theme if possible, or standardized)
 private val GoodGlow = Color(0xFF22C55E)
@@ -67,79 +69,76 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
 
     LaunchedEffect(Unit) {
         try {
-            val response = withContext(Dispatchers.IO) {
-                ApiClient.api.getRasipalan()
-            }
+            val response = withContext(Dispatchers.IO) { ApiClient.api.getRasipalan() }
             if (response.isSuccessful && response.body() != null) {
                 val fullList = response.body()!!
-                // Filter if targetSignId is valid
-                dataList = if (targetSignId != -1) {
-                    fullList.filter { it.signId == targetSignId }
-                } else {
-                    fullList
-                }
+                dataList = if (targetSignId != -1) fullList.filter { it.signId == targetSignId } else fullList
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("Rasipalan", "Error fetching data", e)
         } finally {
             isLoading = false
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Color(0xFF140F0A), Color(0xFF0B0805))))
+    ) {
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = {
                         Text(
                             text = displayTitle,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = CosmicAppTheme.colors.accent)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                     containerColor = CosmicAppTheme.colors.bgStart,
-                     titleContentColor = CosmicAppTheme.colors.textPrimary
-                )
-            )
-        },
-        containerColor = CosmicAppTheme.colors.bgStart
-    ) { padding ->
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = CosmicAppTheme.colors.accent
-                )
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(AstroDimens.Medium),
-                    verticalArrangement = Arrangement.spacedBy(AstroDimens.Medium)
-                ) {
-                    items(dataList) { item ->
-                        PremiumRasipalanCard(item)
-                    }
-
-                    item {
-                        Spacer(modifier = Modifier.height(AstroDimens.Small))
-                        Text(
-                            text = "More Insights",
                             style = MaterialTheme.typography.titleLarge,
-                            color = CosmicAppTheme.colors.accent,
-                            modifier = Modifier.padding(vertical = AstroDimens.Small)
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
                         )
-                    }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        titleContentColor = Color.White
+                    )
+                )
+            }
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding).fillMaxSize()) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center),
+                        color = Color(0xFFFFD700)
+                    )
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(dataList) { item ->
+                            PremiumRasipalanCard(item)
+                        }
 
-                    // Coming Soon Sections
-                    item { ComingSoonCard("Weekly Rasi") }
-                    item { ComingSoonCard("Monthly Rasi") }
-                    item { ComingSoonCard("Yearly Rasi") }
+                        item {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Future Predictions",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color(0xFFFFD700),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
+
+                        item { ComingSoonCard("Weekly Outlook") }
+                        item { ComingSoonCard("Monthly Forecast") }
+                    }
                 }
             }
         }
@@ -148,11 +147,14 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
 
 @Composable
 fun PremiumRasipalanCard(item: RasipalanItem) {
-    com.astrohark.app.ui.theme.components.AstroCard(
-        modifier = Modifier.fillMaxWidth()
+    Card(
+        modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(20.dp)),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C140E)),
+        border = BorderStroke(1.dp, Color(0xFFFF7F00).copy(alpha = 0.3f))
     ) {
-        Column(modifier = Modifier.padding(AstroDimens.Large)) {
-            // Header
+        Column(modifier = Modifier.padding(20.dp)) {
+            // Header Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -161,49 +163,75 @@ fun PremiumRasipalanCard(item: RasipalanItem) {
                 Text(
                     text = item.signNameTa ?: item.signNameEn ?: "",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = CosmicAppTheme.colors.textPrimary
+                    color = Color.White,
+                    fontWeight = FontWeight.ExtraBold
                 )
                 Text(
-                    text = item.date ?: "",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = CosmicAppTheme.colors.accent
+                    text = item.date ?: "2024-04-13",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color(0xFFFFD700)
                 )
             }
 
-            Spacer(modifier = Modifier.height(AstroDimens.Medium))
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Short daily message
+            // Main Prediction Text
             Text(
                 text = item.prediction?.ta ?: "",
-                style = MaterialTheme.typography.bodyLarge,
-                color = CosmicAppTheme.colors.textPrimary
+                style = MaterialTheme.typography.bodyLarge.copy(lineHeight = 24.sp),
+                color = Color.White.copy(alpha = 0.9f)
             )
 
-            Spacer(modifier = Modifier.height(AstroDimens.Medium))
-            HorizontalDivider(color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f), thickness = 1.dp)
-            Spacer(modifier = Modifier.height(AstroDimens.Medium))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            // 3 Status Indicators
-            StatusIndicatorRow("தொழில் (Career)", item.details?.career)
-            StatusIndicatorRow("நிதி (Finance)", item.details?.finance)
-            StatusIndicatorRow("ஆரோக்கியம் (Health)", item.details?.health)
+            // Detailed Status Blocks
+            PremiumStatusItem("தொழில் (Career)", item.details?.career)
+            PremiumStatusItem("நிதி (Finance)", item.details?.finance)
+            PremiumStatusItem("ஆரோக்கியம் (Health)", item.details?.health)
 
-            Spacer(modifier = Modifier.height(AstroDimens.Medium))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Lucky Section
+            // Lucky Highlights Section
             Surface(
-                color = Color.Black.copy(alpha = 0.1f),
-                shape = RoundedCornerShape(AstroDimens.RadiusMedium),
-                border = BorderStroke(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.1f))
+                color = Color.White.copy(alpha = 0.05f),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, Color(0xFFFFD700).copy(alpha = 0.2f))
             ) {
                 Row(
-                    modifier = Modifier.padding(AstroDimens.Medium).fillMaxWidth(),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     LuckyStat("அதிர்ஷ்ட எண்", item.lucky?.number ?: "-")
                     LuckyStat("அதிர்ஷ்ட நிறம்", item.lucky?.color?.ta ?: "-")
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun PremiumStatusItem(label: String, detail: String?) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = Color(0xFFFFD700),
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Surface(
+            color = Color.Black.copy(alpha = 0.2f),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = detail ?: "Optimistic outlook for today.",
+                modifier = Modifier.padding(12.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = 0.8f)
+            )
         }
     }
 }

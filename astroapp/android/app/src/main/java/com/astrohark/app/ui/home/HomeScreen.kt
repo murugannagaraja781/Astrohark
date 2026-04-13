@@ -597,14 +597,14 @@ fun HomeScreen(
                     if (showFooter) {
                     StickyFooterButtons(
                         isGuest = isGuest,
-                        isTamil = isTamil,
+                        isTamil = false, // English show
                         onTabSelected = { selectedTab = it },
                         onLoginClick = { onBannerClick(com.astrohark.app.data.model.Banner(id = "", imageUrl = "")) }
                     )
                 }
                 HomeBottomBar(
                     selectedTab = selectedTab,
-                    isTamil = isTamil,
+                    isTamil = false, // English show
                     onTabSelected = {
                         if (it == 3) {
                             // Profile tab can also open wallet or just switch view
@@ -1708,17 +1708,19 @@ fun TopServicesSection(isTamil: Boolean) {
     val context = LocalContext.current
     val services: List<Pair<String, Int>> = if(isTamil) {
         listOf(
-            "இலவச ஜாதகம்" to com.astrohark.app.R.drawable.ic_free_kundali,
-            "ஜாதகப் பொருத்தம்" to com.astrohark.app.R.drawable.ic_match,
-            "தினசரி ராசிபலன்" to com.astrohark.app.R.drawable.ic_daily_horoscope,
-            "இலவச சேவைகள்" to com.astrohark.app.R.drawable.ic_free_services
+            "இலவச ஜாதகம்" to com.astrohark.app.R.drawable.ic_free_kundali_v2,
+            "ஜாதகப் பொருத்தம்" to com.astrohark.app.R.drawable.ic_match_v2,
+            "தினசரி ராசிபலன்" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
+            "Astro\nஅகாடமி" to com.astrohark.app.R.drawable.ic_academy_v2,
+            "இலவச சேவைகள்" to com.astrohark.app.R.drawable.ic_free_services_v2
         )
     } else {
         listOf(
-            "Free\nHoroscope" to com.astrohark.app.R.drawable.ic_free_kundali,
-            "Horoscope\nMatch" to com.astrohark.app.R.drawable.ic_match,
-            "Daily\nHoroscope" to com.astrohark.app.R.drawable.ic_daily_horoscope,
-            "Free\nServices" to com.astrohark.app.R.drawable.ic_free_services
+            "Free\nHoroscope" to com.astrohark.app.R.drawable.ic_free_kundali_v2,
+            "Horoscope\nMatch" to com.astrohark.app.R.drawable.ic_match_v2,
+            "Daily\nHoroscope" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
+            "Astro\nAcademy" to com.astrohark.app.R.drawable.ic_academy_v2,
+            "Free\nServices" to com.astrohark.app.R.drawable.ic_free_services_v2
         )
     }
 
@@ -1771,36 +1773,21 @@ fun TopServicesSection(isTamil: Boolean) {
 
 @Composable
 fun ServiceItem(name: String, iconRes: Int, onClick: () -> Unit) {
-    // MARKETPLACE SHORTCUT STYLE: White, 12dp, Thin Red Outline
     Card(
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         border = androidx.compose.foundation.BorderStroke(1.dp, colorResource(id = com.astrohark.app.R.color.marketplace_red)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier
-            .size(width = 80.dp, height = 90.dp)
+            .size(width = 80.dp, height = 80.dp) // Square
             .clickable { onClick() }
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Image(
                 painter = painterResource(id = iconRes),
                 contentDescription = null,
-                modifier = Modifier.size(40.dp) // Slightly larger for better visibility
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = name,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 13.sp
-                ),
-                color = Color.DarkGray
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.FillBounds
             )
         }
     }
@@ -1906,7 +1893,7 @@ fun StickyFooterButtons(
                 Icon(Icons.Rounded.Chat, null, modifier = Modifier.size(18.dp), tint = goldColor)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if(isTamil) "அரட்டை" else "Chat Now",
+                    text = "Chat Now", // Force English
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                     color = goldColor
                 )
@@ -1936,7 +1923,7 @@ fun StickyFooterButtons(
                 Icon(Icons.Rounded.Call, null, modifier = Modifier.size(18.dp), tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if(isTamil) "ஜோதிடரிடம் பேசுக" else "Talk to Astrologer",
+                    text = "Talk to Astrologer", // Force English
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
                     color = Color.White
                 )

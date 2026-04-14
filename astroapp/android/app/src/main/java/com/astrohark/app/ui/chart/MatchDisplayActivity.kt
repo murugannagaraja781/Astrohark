@@ -60,7 +60,7 @@ class MatchDisplayActivity : ComponentActivity() {
         try {
             val apiInterface = ApiClient.api
             val cGender = birthData.optString("gender")
-            val pData = birthData.optJSONObject("partner")
+            val pData = birthData.optJSONObject("partnerData") ?: birthData.optJSONObject("partner")
 
             if (pData == null) {
                 android.util.Log.e("MatchDisplay", "Partner data is null")
@@ -68,29 +68,27 @@ class MatchDisplayActivity : ComponentActivity() {
             }
 
             fun extract(json: JSONObject): com.google.gson.JsonObject {
+                val y = json.optInt("year", 1990)
+                val m = json.optInt("month", 1)
+                val d = json.optInt("day", json.optInt("date", 1))
+                val h = json.optInt("hour", 12)
+                val minVal = json.optInt("minute", 0)
+
                 return com.google.gson.JsonObject().apply {
-                    // Handle both formats: dob string or day/month/year
-                    val dob = if (json.has("dob")) {
-                        json.getString("dob")
-                    } else {
-                        val y = json.optInt("year", 2000)
-                        val m = json.optInt("month", 1)
-                        val d = json.optInt("day", 1)
-                        String.format("%04d-%02d-%02d", y, m, d)
-                    }
-
-                    val tob = if (json.has("tob")) {
-                        json.getString("tob")
-                    } else {
-                        val h = json.optInt("hour", 12)
-                        val min = json.optInt("minute", 0)
-                        String.format("%02d:%02d", h, min)
-                    }
-
-                    addProperty("dob", dob)
-                    addProperty("tob", tob)
-                    addProperty("lat", json.optDouble("latitude", 13.0827))
-                    addProperty("lng", json.optDouble("longitude", 80.2707))
+                    addProperty("name", json.optString("name", "User"))
+                    addProperty("day", d)
+                    addProperty("month", m)
+                    addProperty("year", y)
+                    addProperty("hour", h)
+                    addProperty("min", minVal)
+                    addProperty("minute", minVal)
+                    addProperty("latitude", json.optDouble("latitude", 13.0827))
+                    addProperty("longitude", json.optDouble("longitude", 80.2707))
+                    addProperty("timezone", 5.5)
+                    
+                    // Unified format for wider compatibility
+                    addProperty("dob", String.format("%04d-%02d-%02d", y, m, d))
+                    addProperty("tob", String.format("%02d:%02d", h, minVal))
                 }
             }
 

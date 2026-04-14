@@ -283,31 +283,25 @@ fun IntakeScreen(
             if (pObj != null) {
                 pName = pObj.optString("name")
                 pGender = pObj.optString("gender", "Female")
-                val pDob = pObj.optString("dob", "")
-                if (pDob.isNotEmpty()) {
-                    val pParts = pDob.split("-")
-                    if (pParts.size >= 3) {
-                        pYear = pParts[0]
-                        pMonth = pParts[1]
-                        pDay = pParts[2]
-                    }
+                
+                pDay = pObj.optString("day").takeIf { it != "0" && it.isNotEmpty() } ?: ""
+                pMonth = pObj.optString("month").takeIf { it != "0" && it.isNotEmpty() } ?: ""
+                pYear = pObj.optString("year").takeIf { it != "0" && it.isNotEmpty() } ?: ""
+                
+                val ph24 = pObj.optInt("hour", 12)
+                if (ph24 >= 12) {
+                    pAmPm = "PM"
+                    pHour = (if (ph24 > 12) ph24 - 12 else 12).toString()
+                } else {
+                    pAmPm = "AM"
+                    pHour = (if (ph24 == 0) 12 else ph24).toString()
                 }
-                val pTob = pObj.optString("tob", "")
-                if (pTob.isNotEmpty()) {
-                    val tParts = pTob.split(" ")
-                    if (tParts.size >= 2) {
-                        pAmPm = tParts[1]
-                        val hParts = tParts[0].split(":")
-                        if (hParts.size >= 2) {
-                            pHour = hParts[0]
-                            pMinute = hParts[1]
-                        }
-                    }
-                }
-                pCityName = pObj.optString("pob").ifEmpty { pObj.optString("city") }
-                pLatitude = pObj.optDouble("lat", 0.0).takeIf { it != 0.0 } ?: pObj.optDouble("latitude", 0.0).takeIf { it != 0.0 }
-                pLongitude = pObj.optDouble("lon", 0.0).takeIf { it != 0.0 } ?: pObj.optDouble("longitude", 0.0).takeIf { it != 0.0 }
-                pTimezoneId = pObj.optString("timezone").ifEmpty { pObj.optString("tzId") }
+                pMinute = pObj.optInt("minute", 0).toString().padStart(2, '0')
+                
+                pCityName = pObj.optString("city").ifEmpty { pObj.optString("pob") }
+                pLatitude = pObj.optDouble("latitude", 0.0).takeIf { it != 0.0 } ?: pObj.optDouble("lat", 0.0).takeIf { it != 0.0 }
+                pLongitude = pObj.optDouble("longitude", 0.0).takeIf { it != 0.0 } ?: pObj.optDouble("lon", 0.0).takeIf { it != 0.0 }
+                pTimezoneId = pObj.optString("timezone")
             }
         }
 
@@ -325,12 +319,14 @@ fun IntakeScreen(
         }
     }
 
+    var isMatchingLocal by remember { mutableStateOf(isMatching) }
+
     fun submit() {
         if (name.isBlank() || cityName.isBlank() || day.isBlank() || month.isBlank() || year.isBlank() || hour.isBlank() || minute.isBlank()) {
             Toast.makeText(context, "Please fill required fields", Toast.LENGTH_SHORT).show()
             return
         }
-        if (isMatching && (pName.isBlank() || pCityName.isBlank() || pDay.isBlank() || pMonth.isBlank() || pYear.isBlank() || pHour.isBlank() || pMinute.isBlank())) {
+        if (isMatchingLocal && (pName.isBlank() || pCityName.isBlank() || pDay.isBlank() || pMonth.isBlank() || pYear.isBlank() || pHour.isBlank() || pMinute.isBlank())) {
             Toast.makeText(context, "Please fill all partner details", Toast.LENGTH_SHORT).show()
             return
         }
@@ -348,16 +344,21 @@ fun IntakeScreen(
             put("latitude", latitude)
             put("longitude", longitude)
             put("timezone", timezoneId)
-            put("isMatching", isMatching)
-            if (isMatching) {
+            put("isMatching", isMatchingLocal)
+            if (isMatchingLocal) {
                val partner = JSONObject()
+               val pHour24 = if (pAmPm == "PM" && pHour.toInt() < 12) pHour.toInt() + 12 else if (pAmPm == "AM" && pHour.toInt() == 12) 0 else pHour.toInt()
+               
                partner.put("name", pName)
                partner.put("gender", pGender)
-               partner.put("dob", "$pYear-$pMonth-$pDay")
-               partner.put("tob", "$pHour:$pMinute $pAmPm")
-               partner.put("pob", pCityName)
-               partner.put("lat", pLatitude)
-               partner.put("lon", pLongitude)
+               partner.put("day", pDay.toInt())
+               partner.put("month", pMonth.toInt())
+               partner.put("year", pYear.toInt())
+               partner.put("hour", pHour24)
+               partner.put("minute", pMinute.toInt())
+               partner.put("city", pCityName)
+               partner.put("latitude", pLatitude)
+               partner.put("longitude", pLongitude)
                partner.put("timezone", pTimezoneId)
                put("partnerData", partner)
             }
@@ -535,7 +536,30 @@ fun IntakeScreen(
                             )
                         }
 
-                        if (isMatching) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White.copy(alpha = 0.05f))
+                                .clickable { isMatchingLocal = !isMatchingLocal }
+                                .padding(12.dp)
+                        ) {
+                            Checkbox(
+                                checked = isMatchingLocal,
+                                onCheckedChange = { isMatchingLocal = it },
+                                colors = CheckboxDefaults.colors(checkedColor = CosmicAppTheme.colors.accent)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = if (isTamil) "திருமணப் பொருத்தம் விவரங்களைச் சேர்க்க" else "Add Marriage Matching Details",
+                                color = Color.White,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                        }
+
+                        if (isMatchingLocal) {
                             Spacer(Modifier.height(16.dp))
                             Divider(color = CosmicAppTheme.colors.accent.copy(alpha = 0.2f), thickness = 1.dp)
                             Spacer(Modifier.height(16.dp))

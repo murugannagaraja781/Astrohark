@@ -65,6 +65,17 @@ class IncomingCallActivity : ComponentActivity() {
     private var callId: String = ""
     private var callType: String = "audio"
     private var birthData: String? = null
+    private var callerImage: String? = null
+
+    // Broadcast receiver to stop ringing when FCM cancel arrives
+    private val callControlReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "com.astrohark.app.ACTION_CANCEL_CALL") {
+                Log.d(TAG, "ACTION_CANCEL_CALL received via broadcast")
+                onCallRejected()
+            }
+        }
+    }
 
     // Auto-reject call after timeout
     private val timeoutRunnable = Runnable {
@@ -88,37 +99,86 @@ class IncomingCallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        processIntent(intent)
-
-        // CRITICAL FIX: If already in a call, ignore new incoming intent to avoid crash
-        if (!CallState.canReceiveCall(callId)) {
-            Log.w(TAG, "Already in an active call, rejecting new session: $callId")
-            finish()
-            return
-        }
-
-        setupWindowFlags()
-
-        startCallForegroundService()
-        startRingtone()
-        startVibration()
-        handler.postDelayed(timeoutRunnable, CALL_TIMEOUT_MS)
-
-        // Ensure socket is connecting
         try {
-            SocketManager.init()
-        } catch(e: Exception) { e.printStackTrace() }
+            processIntent(intent)
 
-        setContent {
-            CosmicAppTheme {
-                IncomingCallScreen(
-                    callerName = callerName,
-                    callerId = if (callerId == "Unknown" && callId.isNotEmpty()) "Room: $callId" else "Calling from: $callerId",
-                    callType = callType,
-                    onAccept = { onCallAccepted() },
-                    onReject = { onCallRejected() }
-                )
+            // CRITICAL FIX: If already in a call, ignore new incoming intent to avoid crash
+            if (!CallState.canReceiveCall(callId)) {
+                Log.w(TAG, "Already in an active call, rejecting new session: $callId")
+                finish()
+                return
             }
+
+            setupWindowFlags()
+
+            try {
+                startCallForegroundService()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start foreground service", e)
+            }
+
+            try {
+                startRingtone()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start ringtone", e)
+            }
+
+            try {
+                startVibration()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start vibration", e)
+            }
+
+            ContextCompat.registerReceiver(
+                this,
+                callControlReceiver,
+                android.content.IntentFilter("com.astrohark.app.ACTION_CANCEL_CALL"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+
+            handler.postDelayed(timeoutRunnable, CALL_TIMEOUT_MS)
+
+            // Ensure socket is connecting AND user is registered early
+            try {
+                SocketManager.init()
+                // Early registration helps ensure we are in our personal room for signaling
+                com.astrohark.app.data.local.TokenManager(this).getUserSession()?.userId?.let { uid ->
+                    SocketManager.registerUser(uid)
+                }
+
+                // Listen for session end (caller cancelled while ringing)
+                SocketManager.onSessionEnded { _ ->
+                    runOnUiThread {
+                        Log.d(TAG, "Session ended by caller while ringing")
+                        onCallRejected()
+                    }
+                }
+
+                SocketManager.onCallCancelled { _ ->
+                    runOnUiThread {
+                        Log.d(TAG, "Call explicitly cancelled by caller")
+                        onCallRejected()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Socket initialization error in IncomingCallActivity", e)
+            }
+
+            setContent {
+                CosmicAppTheme {
+                    IncomingCallScreen(
+                        callerName = callerName,
+                        callerId = if (callerId == "Unknown" && callId.isNotEmpty()) "Room: $callId" else "Calling from: $callerId",
+                        callType = callType,
+                        onAccept = { onCallAccepted() },
+                        onReject = { onCallRejected() }
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "CRITICAL CRASH in onCreate", e)
+            android.widget.Toast.makeText(this, "Call Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+            finish()
         }
     }
 
@@ -176,7 +236,10 @@ class IncomingCallActivity : ComponentActivity() {
 
     private fun startRingtone() {
         try {
-            val ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            var ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+            if (ringtoneUri == null) {
+                ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            }
 
             mediaPlayer = MediaPlayer().apply {
                 setAudioAttributes(
@@ -185,39 +248,50 @@ class IncomingCallActivity : ComponentActivity() {
                         .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
                         .build()
                 )
-                setDataSource(this@IncomingCallActivity, ringtoneUri)
+                setDataSource(this@IncomingCallActivity, ringtoneUri!!)
                 isLooping = true
                 prepare()
                 start()
             }
 
-            Log.d(TAG, "Ringtone started")
+            Log.d(TAG, "Ringtone started using URI: $ringtoneUri")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start ringtone", e)
+            mediaPlayer?.release()
+            mediaPlayer = null
         }
     }
 
     private fun startVibration() {
-        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vibratorManager.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        try {
+            vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
+                vibratorManager?.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+            }
+
+            if (vibrator == null) {
+                Log.w(TAG, "Vibrator service not available")
+                return
+            }
+
+            val pattern = longArrayOf(0, 500, 500) // delay, vibrate, sleep, repeat
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(
+                    VibrationEffect.createWaveform(pattern, 0)
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator?.vibrate(pattern, 0)
+            }
+
+            Log.d(TAG, "Vibration started")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start vibration", e)
         }
-
-        val pattern = longArrayOf(0, 500, 500) // delay, vibrate, sleep, repeat
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator?.vibrate(
-                VibrationEffect.createWaveform(pattern, 0) // 0 = repeat from index 0
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator?.vibrate(pattern, 0)
-        }
-
-        Log.d(TAG, "Vibration started")
     }
 
     private fun stopRingtoneAndVibration() {
@@ -281,6 +355,11 @@ class IncomingCallActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        try {
+            unregisterReceiver(callControlReceiver)
+        } catch (e: Exception) {
+            // Might not be registered if activity died early
+        }
         stopRingtoneAndVibration()
         handler.removeCallbacks(timeoutRunnable)
 

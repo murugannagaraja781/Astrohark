@@ -215,174 +215,190 @@ class CallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        try {
+            if (savedInstanceState != null) {
+                isEditingIntake = savedInstanceState.getBoolean("isEditingIntake")
+                val birthDataStr = savedInstanceState.getString("clientBirthData")
+                if (!birthDataStr.isNullOrEmpty()) {
+                    clientBirthData = JSONObject(birthDataStr)
+                }
+                callDurationSeconds = savedInstanceState.getInt("callDurationSeconds")
+                sessionId = savedInstanceState.getString("sessionId")
+                partnerId = savedInstanceState.getString("partnerId")
+            }
 
-        if (savedInstanceState != null) {
-            isEditingIntake = savedInstanceState.getBoolean("isEditingIntake")
-            val birthDataStr = savedInstanceState.getString("clientBirthData")
+            // --- GLOBAL STATE FIX: Mark call as active to prevent duplicate starts ---
+            val incomingSessionId = intent.getStringExtra("sessionId")
+            if (incomingSessionId.isNullOrEmpty()) {
+                Log.e(TAG, "Session ID is missing, cannot start call")
+                finish()
+                return
+            }
+            
+            CallState.isCallActive = true
+            CallState.currentSessionId = incomingSessionId
+            
+            // Fetch TURN/STUN Config from Server
+            fetchWebRTCConfig()
+
+            // Initialize WebRTC Views Programmatically
+            localView = SurfaceViewRenderer(this)
+            remoteView = SurfaceViewRenderer(this)
+
+            // Params
+            partnerId = intent.getStringExtra("partnerId")
+            partnerName = intent.getStringExtra("partnerName") ?: partnerId
+            sessionId = incomingSessionId
+            isInitiator = intent.getBooleanExtra("isInitiator", false)
+            val rawType = intent.getStringExtra("type") ?: intent.getStringExtra("callType") ?: "video"
+            val lowerType = rawType.lowercase()
+            callType = if (lowerType == "audio" || lowerType == "voice" || lowerType == "call") "audio" else "video"
+
+            // Initial state sync
+            isVideoEnabledState = (callType == "video")
+            isSpeakerOnState = (callType == "video") // Default speaker on for video, off for audio (earpiece)
+
+            val birthDataStr = intent.getStringExtra("birthData")
             if (!birthDataStr.isNullOrEmpty()) {
-                clientBirthData = JSONObject(birthDataStr)
+                 try {
+                    val obj = JSONObject(birthDataStr)
+                    if (obj.length() > 0) clientBirthData = obj
+                 } catch (e: Exception) { e.printStackTrace() }
             }
-            callDurationSeconds = savedInstanceState.getInt("callDurationSeconds")
-            sessionId = savedInstanceState.getString("sessionId")
-            partnerId = savedInstanceState.getString("partnerId")
-        }
 
-        // --- GLOBAL STATE FIX: Mark call as active to prevent duplicate starts ---
-        CallState.isCallActive = true
-        CallState.currentSessionId = intent.getStringExtra("sessionId")
-        
-        // Fetch TURN/STUN Config from Server
-        fetchWebRTCConfig()
+            tokenManager = TokenManager(this)
+            session = tokenManager.getUserSession()
+            val role = session?.role
 
-        // Initialize WebRTC Views Programmatically
-        localView = SurfaceViewRenderer(this)
-        remoteView = SurfaceViewRenderer(this)
-
-        // Params
-        partnerId = intent.getStringExtra("partnerId")
-        partnerName = intent.getStringExtra("partnerName") ?: partnerId
-        sessionId = intent.getStringExtra("sessionId")
-        isInitiator = intent.getBooleanExtra("isInitiator", false)
-        val rawType = intent.getStringExtra("type") ?: intent.getStringExtra("callType") ?: "video"
-        val lowerType = rawType.lowercase()
-        callType = if (lowerType == "audio" || lowerType == "voice" || lowerType == "call") "audio" else "video"
-
-        // Initial state sync
-        isVideoEnabledState = (callType == "video")
-        isSpeakerOnState = (callType == "video") // Default speaker on for video, off for audio (earpiece)
-
-        val birthDataStr = intent.getStringExtra("birthData")
-        if (!birthDataStr.isNullOrEmpty()) {
-             try {
-                val obj = JSONObject(birthDataStr)
-                if (obj.length() > 0) clientBirthData = obj
-             } catch (e: Exception) { e.printStackTrace() }
-        }
-
-        tokenManager = TokenManager(this)
-        session = tokenManager.getUserSession()
-        val role = session?.role
-
-        // Set Content
-        setContent {
-            CosmicAppTheme {
-                CallScreen(
-                    remoteRenderer = remoteView,
-                    localRenderer = localView,
-                    partnerName = partnerName ?: "Unknown",
-                    duration = formattedDuration,
-                    statusText = statusText,
-                    isBillingActive = isBillingActive,
-                    callType = callType,
-                    isMuted = isMutedState,
-                    isVideoEnabled = isVideoEnabledState,
-                    isSpeakerOn = isSpeakerOnState,
-                    role = role ?: "user",
-                    remainingTime = remainingTime,
-                    onToggleMic = { toggleMic() },
-                    onToggleCamera = { toggleCamera() },
-                    onToggleSpeaker = { toggleSpeaker() },
-                    onEndCall = { endCall() },
-                    onEditIntake = { openEditIntake() },
-                    onShowRasi = { showRasiChart() },
-                    onShowMatch = { showMatchDisplay() },
-                    isRecording = isRecordingState,
-                    onToggleRecording = { toggleRecording() },
-                    isReady = isWebRTCInitialized,
-                    clientBirthData = clientBirthData,
-                    summary = callSummary,
-                    onDismissSummary = { finish() }
-                )
-            }
-        }
-
-        // --- Socket Init ---
-        try {
-            SocketManager.init()
-            session?.userId?.let { uid ->
-                SocketManager.registerUser(uid)
-                if (SocketManager.getSocket()?.connected() != true) {
-                    SocketManager.getSocket()?.connect()
+            // Set Content
+            setContent {
+                CosmicAppTheme {
+                    CallScreen(
+                        remoteRenderer = remoteView,
+                        localRenderer = localView,
+                        partnerName = partnerName ?: "Unknown",
+                        duration = formattedDuration,
+                        statusText = statusText,
+                        isBillingActive = isBillingActive,
+                        callType = callType,
+                        isMuted = isMutedState,
+                        isVideoEnabled = isVideoEnabledState,
+                        isSpeakerOn = isSpeakerOnState,
+                        role = role ?: "user",
+                        remainingTime = remainingTime,
+                        onToggleMic = { toggleMic() },
+                        onToggleCamera = { toggleCamera() },
+                        onToggleSpeaker = { toggleSpeaker() },
+                        onEndCall = { endCall() },
+                        onEditIntake = { openEditIntake() },
+                        onShowRasi = { showRasiChart() },
+                        onShowMatch = { showMatchDisplay() },
+                        isRecording = isRecordingState,
+                        onToggleRecording = { toggleRecording() },
+                        isReady = isWebRTCInitialized,
+                        clientBirthData = clientBirthData,
+                        summary = callSummary,
+                        onDismissSummary = { finish() }
+                    )
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "Socket init failed", e)
-        }
 
-        // Initialize Proximity WakeLock for Audio Calls
-        try {
-            val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                // PROXIMITY_SCREEN_OFF_WAKE_LOCK is the standard way to turn off screen during calls
-                if (powerManager.isWakeLockLevelSupported(android.os.PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
-                    proximityWakeLock = powerManager.newWakeLock(android.os.PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "astrohark:ProximityLock")
+            // --- Socket Init ---
+            try {
+                SocketManager.init()
+                session?.userId?.let { uid ->
+                    SocketManager.registerUser(uid)
+                    if (SocketManager.getSocket()?.connected() != true) {
+                        SocketManager.getSocket()?.connect()
+                    }
                 }
+            } catch (e: Exception) {
+                Log.e(TAG, "Socket init failed", e)
             }
-            sensorManager = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
-        } catch (e: Exception) {
-            Log.e(TAG, "Proximity lock init failed", e)
-        }
 
-        // Start Timer Delay
-        timerHandler.postDelayed(timerRunnable, 1000)
-
-        // Initialize Call Logic after a small delay to ensure configs are ready
-        lifecycleScope.launch {
-            if (iceServers.size <= 2) { // Only defaults present
-                delay(800) // Give API a chance
+            // Initialize Proximity WakeLock for Audio Calls
+            try {
+                val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    if (powerManager.isWakeLockLevelSupported(android.os.PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
+                        proximityWakeLock = powerManager.newWakeLock(android.os.PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "astrohark:ProximityLock")
+                    }
+                }
+                sensorManager = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
+            } catch (e: Exception) {
+                Log.e(TAG, "Proximity lock init failed", e)
             }
-            if (checkPermissions()) {
-                startCallLimit()
-            } else {
-                ActivityCompat.requestPermissions(
-                    this@CallActivity,
-                    arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
-                    PERMISSION_REQ_CODE
-                )
-            }
-        }
 
-        // Start Remaining Time Countdown (for astrologers only)
-        if (role == "astrologer") {
+            // Start Timer Delay
+            timerHandler.postDelayed(timerRunnable, 1000)
+
+            // Initialize Call Logic after a small delay to ensure configs are ready
             lifecycleScope.launch {
-                while (isActive) {
-                    delay(1000)
-                    if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
-                        val parts = remainingTime.split(":")
-                        if (parts.size == 2) {
-                            val mins = parts[0].toIntOrNull() ?: 0
-                            val secs = parts[1].toIntOrNull() ?: 0
-                            val totalSecs = mins * 60 + secs - 1
-                            if (totalSecs > 0) {
-                                remainingTime = String.format("%02d:%02d", totalSecs / 60, totalSecs % 60)
-                            } else {
-                                remainingTime = "00:00"
-                                endCall() // Auto-end when time exhausted
+                if (iceServers.size <= 2) { 
+                    delay(800) 
+                }
+                if (checkPermissions()) {
+                    startCallLimit()
+                } else {
+                    ActivityCompat.requestPermissions(
+                        this@CallActivity,
+                        arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
+                        PERMISSION_REQ_CODE
+                    )
+                }
+            }
+
+            // Start Remaining Time Countdown (for astrologers only)
+            if (role == "astrologer") {
+                lifecycleScope.launch {
+                    while (isActive) {
+                        delay(1000)
+                        if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                            val parts = remainingTime.split(":")
+                            if (parts.size == 2) {
+                                val mins = parts[0].toIntOrNull() ?: 0
+                                val secs = parts[1].toIntOrNull() ?: 0
+                                val totalSecs = mins * 60 + secs - 1
+                                if (totalSecs > 0) {
+                                    remainingTime = String.format("%02d:%02d", totalSecs / 60, totalSecs % 60)
+                                } else {
+                                    remainingTime = "00:00"
+                                    endCall() // Auto-end
+                                }
                             }
                         }
                     }
                 }
-            }
-
-            // Fetch wallet and calculate initial remaining time
-            lifecycleScope.launch(Dispatchers.IO) {
-                try {
-                    val client = okhttp3.OkHttpClient()
-                    val request = okhttp3.Request.Builder()
-                        .url("https://astrohark.com/api/user/${partnerId}")
-                        .build()
-                    val response = client.newCall(request).execute()
-                    if (response.isSuccessful) {
-                        val json = JSONObject(response.body?.string() ?: "{}")
-                        val walletBalance = json.optDouble("walletBalance", 0.0)
-                        val ratePerMin = 10.0 // Default rate, ideally from partner data
-                        val totalMinutes = (walletBalance / ratePerMin).toInt()
-                        remainingTime = String.format("%02d:%02d", totalMinutes, 0)
+                
+                // Fetch wallet and calculate initial remaining time
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val client = okhttp3.OkHttpClient()
+                        val request = okhttp3.Request.Builder()
+                            .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${partnerId}")
+                            .build()
+                        val response = client.newCall(request).execute()
+                        if (response.isSuccessful) {
+                            val json = JSONObject(response.body?.string() ?: "{}")
+                            val walletBalance = json.optDouble("walletBalance", 0.0)
+                            val ratePerMin = 10.0
+                            val totalMinutes = (walletBalance / ratePerMin).toInt()
+                            remainingTime = String.format("%02d:%02d", totalMinutes, 0)
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to fetch wallet balance", e)
                     }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to fetch wallet balance", e)
+                }
+                
+                // START FOREGROUND STATUS SERVICE
+                session?.userId?.let { uid ->
+                    com.astrohark.app.AstrologerStatusService.startService(this, uid)
                 }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "FAILED TO START CALL ACTIVITY", e)
+            android.widget.Toast.makeText(this, "Setup Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+            finish()
         }
     }
 
@@ -1078,7 +1094,9 @@ class CallActivity : ComponentActivity() {
 
     private fun endCall() {
         stopBackgroundService()
+        // Send BOTH signals to ensure termination regardless of call state (ringing vs ongoing)
         SocketManager.endSession(sessionId)
+        SocketManager.cancelCall(sessionId, partnerId)
         finish()
     }
 
@@ -1459,6 +1477,7 @@ fun CallScreen(
                     if (role == "astrologer") {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             ControlBtnItem(onClick = onShowRasi, icon = Icons.Default.GridView, label = "Chart", active = true)
+                            
                             val hasPartner = clientBirthData?.has("partnerData") == true || clientBirthData?.has("partner") == true
                             ControlBtnItem(
                                 onClick = onShowMatch, 

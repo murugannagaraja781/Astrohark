@@ -249,7 +249,7 @@ class AstrologerDashboardActivity : ComponentActivity() {
 }
 
 // Helper function to update individual service status
-suspend fun updateServiceStatus(userId: String, service: String, enabled: Boolean, onComplete: (Boolean) -> Unit = {}) {
+suspend fun updateServiceStatus(context: android.content.Context, userId: String, service: String, enabled: Boolean, onComplete: (Boolean) -> Unit = {}) {
     withContext(kotlinx.coroutines.Dispatchers.IO) {
         try {
             val client = okhttp3.OkHttpClient()
@@ -262,25 +262,37 @@ suspend fun updateServiceStatus(userId: String, service: String, enabled: Boolea
                 }.toString()
             )
             val request = okhttp3.Request.Builder()
-                .url("https://astrohark.com/api/astrologer/service-toggle")
+                .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/astrologer/service-toggle")
                 .post(body)
                 .build()
             
             val response = client.newCall(request).execute()
-            val success = response.isSuccessful
+            val responseData = response.body?.string()
+            val success = response.isSuccessful && responseData != null && org.json.JSONObject(responseData).optBoolean("ok")
             
-            if (success && enabled) {
-                // Ensure socket is active if any service is enabled
-                com.astrohark.app.data.remote.SocketManager.init()
-                com.astrohark.app.data.remote.SocketManager.registerUser(userId)
+            if (success) {
+                // Background Service Management
+                if (enabled) {
+                    com.astrohark.app.AstrologerStatusService.startService(context, userId)
+                    // Ensure socket is active and registered
+                    com.astrohark.app.data.remote.SocketManager.init()
+                    com.astrohark.app.data.remote.SocketManager.registerUser(userId)
+                }
             }
             
             withContext(kotlinx.coroutines.Dispatchers.Main) {
+                if (!success) {
+                    val errorMsg = if (responseData != null) {
+                        org.json.JSONObject(responseData).optString("error", "Update Failed")
+                    } else "Server Response Error"
+                    android.widget.Toast.makeText(context, "Status Error: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
+                }
                 onComplete(success)
             }
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(kotlinx.coroutines.Dispatchers.Main) {
+                android.widget.Toast.makeText(context, "Network Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
                 onComplete(false)
             }
         }
@@ -492,18 +504,30 @@ fun AstrologerDashboardScreen(
         )
     }
 
+    val colors = object {
+        val accent = Color(0xFF00E676) // Bright Green
+        val cardBg = Color(0xFF004D40) // Tealish Green
+        val cardStroke = Color.White.copy(alpha = 0.12f)
+        val textPrimary = Color.White
+        val textSecondary = Color(0xFFA5D6A7) // Light Sage
+        val headerGradient = Brush.verticalGradient(
+            colors = listOf(Color(0xFF1B5E20), Color(0xFF00382E))
+        )
+        val bgGradient = Brush.verticalGradient(
+            colors = listOf(Color(0xFF1B5E20), Color(0xFF00332B), Color(0xFF002115))
+        )
+    }
+
     Scaffold(
-        containerColor = Color.Transparent, // Transparent to show gradient if needed, or use BgStart
+        containerColor = Color.Transparent,
         topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(CosmicAppTheme.headerBrush) // Dynamic Header Gradient
+                    .background(colors.headerGradient) // Green Gradient Header
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val colors = CosmicAppTheme.colors
-                // Skeuomorphic Avatar
                 Box(
                     modifier = Modifier
                         .size(56.dp)
@@ -612,46 +636,82 @@ fun AstrologerDashboardScreen(
             }
         }
     ) { padding ->
-        val colors = CosmicAppTheme.colors
-
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(CosmicAppTheme.backgroundBrush) // Dynamic Background
+                .background(colors.bgGradient) // Green Gradient Background
                 .verticalScroll(scrollState) // ENABLE SCROLLING
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 0. Permission Warning Banner
-            val hasOverlay = Settings.canDrawOverlays(context)
-            val hasAudio = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-            val hasCamera = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-            val hasNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-            } else true
-            val hasBatteryOptimization = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                (context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
-            } else true
+            // 0. Permission Reactive Tracking
+            var hasOverlay by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
+            var hasAudio by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) }
+            var hasCamera by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
+            var hasNotification by remember {
+                mutableStateOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                } else true)
+            }
+            var hasBatteryOptimization by remember {
+                mutableStateOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    (context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
+                } else true)
+            }
+
+            // Periodic Sync for Permissions when app resumes
+            LaunchedEffect(Unit) {
+                while(true) {
+                    hasOverlay = Settings.canDrawOverlays(context)
+                    hasAudio = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+                    hasCamera = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        hasNotification = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        hasBatteryOptimization = (context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
+                    }
+                    kotlinx.coroutines.delay(2000)
+                }
+            }
 
             if (!hasOverlay || !hasAudio || !hasCamera || !hasNotification || !hasBatteryOptimization) {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp)).clickable {
-                        context.startActivity(Intent(context, PermissionActivity::class.java))
-                    },
-                    border = BorderStroke(1.dp, Color(0xFFEF5350))
+                    colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.1f)),
+                    shape = RoundedCornerShape(24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(12.dp, RoundedCornerShape(24.dp))
+                        .clickable { context.startActivity(Intent(context, PermissionActivity::class.java)) },
+                    border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.3f))
                 ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = Color(0xFFD32F2F))
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Action Required: Enable Permissions", fontWeight = FontWeight.Bold, color = Color(0xFFB71C1C), fontSize = 14.sp)
-                            Text("Please enable Display Over Apps, Battery Optimization, and Notifications to receive calls reliably.", fontSize = 12.sp, color = Color(0xFFB71C1C))
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = Color.Red, modifier = Modifier.size(24.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text("Service Warning: Missed Calls Likely", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 16.sp)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "One or more critical permissions are disabled. You may not receive incoming call alerts.",
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (!hasOverlay) Text("• Overlay", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            if (!hasBatteryOptimization) Text("• Battery", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            if (!hasNotification) Text("• Alerts", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = { context.startActivity(Intent(context, PermissionActivity::class.java)) },
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                            modifier = Modifier.fillMaxWidth().height(40.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text("REPAIR SETTINGS", fontWeight = FontWeight.Bold, color = Color.White)
                         }
                     }
                 }
@@ -764,7 +824,7 @@ fun AstrologerDashboardScreen(
             
             // 3. Today's Progress (Glassmorphism)
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF004D40).copy(alpha = 0.6f)),
                 shape = RoundedCornerShape(24.dp),
                 modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
@@ -810,7 +870,7 @@ fun AstrologerDashboardScreen(
                         // Optimistically update UI
                         isChatOnline = enabled
                         scope.launch {
-                            updateServiceStatus(sessionId, "chat", enabled) { success ->
+                            updateServiceStatus(context, sessionId, "chat", enabled) { success ->
                                 if (!success) {
                                     isChatOnline = !enabled // rollback on failure
                                     Toast.makeText(context, "Update Failed. Check Connection.", Toast.LENGTH_SHORT).show()
@@ -829,7 +889,7 @@ fun AstrologerDashboardScreen(
                     } else {
                         isAudioOnline = enabled
                         scope.launch {
-                            updateServiceStatus(sessionId, "audio", enabled) { success ->
+                            updateServiceStatus(context, sessionId, "audio", enabled) { success ->
                                 if (!success) {
                                     isAudioOnline = !enabled
                                     Toast.makeText(context, "Update Failed", Toast.LENGTH_SHORT).show()
@@ -848,7 +908,7 @@ fun AstrologerDashboardScreen(
                     } else {
                         isVideoOnline = enabled
                         scope.launch {
-                            updateServiceStatus(sessionId, "video", enabled) { success ->
+                            updateServiceStatus(context, sessionId, "video", enabled) { success ->
                                 if (!success) {
                                     isVideoOnline = !enabled
                                     Toast.makeText(context, "Update Failed", Toast.LENGTH_SHORT).show()
@@ -870,7 +930,7 @@ fun AstrologerDashboardScreen(
                     ) {
                         rowItems.forEach { (label, icon) ->
                              Card(
-                                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF00332B).copy(alpha = 0.5f)),
                                  shape = RoundedCornerShape(24.dp),
                                  modifier = Modifier
                                      .weight(1f)
@@ -944,9 +1004,15 @@ fun ServiceTogglesCard(
     onAudioToggle: (Boolean) -> Unit,
     onVideoToggle: (Boolean) -> Unit
 ) {
-    val colors = CosmicAppTheme.colors
+    val colors = object {
+        val accent = Color(0xFF00E676)
+        val cardBg = Color(0xFF004D40)
+        val cardStroke = Color.White.copy(alpha = 0.12f)
+        val textPrimary = Color.White
+        val textSecondary = Color(0xFFA5D6A7)
+    }
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+        colors = CardDefaults.cardColors(containerColor = colors.cardBg.copy(alpha = 0.6f)),
         shape = RoundedCornerShape(24.dp),
         modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp)),
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
@@ -998,7 +1064,10 @@ fun ServiceToggleRow(
     isEnabled: Boolean,
     onToggle: (Boolean) -> Unit
 ) {
-    val colors = CosmicAppTheme.colors
+    val colors = object {
+        val accent = Color(0xFF00E676)
+        val textPrimary = Color.White
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()

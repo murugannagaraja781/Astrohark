@@ -51,8 +51,8 @@ class PermissionActivity : ComponentActivity() {
 @Composable
 fun PermissionScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
-    // State for permissions
     var hasOverlayPermission by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
     var hasAudioPermission by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
@@ -67,7 +67,6 @@ fun PermissionScreen(onBack: () -> Unit) {
             mutableStateOf(true)
         }
     }
-
     var hasBatteryOptimizationPermission by remember {
         val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
         mutableStateOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -75,7 +74,6 @@ fun PermissionScreen(onBack: () -> Unit) {
         } else true)
     }
 
-    // Update states periodically or based on lifecycle
     LaunchedEffect(Unit) {
         while(true) {
             hasOverlayPermission = Settings.canDrawOverlays(context)
@@ -92,24 +90,42 @@ fun PermissionScreen(onBack: () -> Unit) {
         }
     }
 
+    fun repairAll() {
+        if (!hasOverlayPermission) {
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
+            context.startActivity(intent)
+            Toast.makeText(context, "Please enable 'Display Over Apps'", Toast.LENGTH_LONG).show()
+        } else if (!hasBatteryOptimizationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:${context.packageName}")
+            }
+            context.startActivity(intent)
+        } else if (!hasAudioPermission || !hasCameraPermission || (!hasNotificationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)) {
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+            }
+            context.startActivity(intent)
+            Toast.makeText(context, "Please enable required permissions in Settings", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(context, "All settings are perfect!", Toast.LENGTH_SHORT).show()
+            onBack()
+        }
+    }
+
     Scaffold(
-        containerColor = CosmicAppTheme.colors.bgStart,
+        containerColor = Color.Black,
         topBar = {
             CenterAlignedTopAppBar(
                 title = { 
-                    Text(
-                        text = "App Permissions",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = CosmicAppTheme.colors.accent,
-                        fontWeight = FontWeight.Bold
-                    ) 
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = CosmicAppTheme.colors.accent)
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("App Permissions", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("For Reliable Calls", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.5f))
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = CosmicAppTheme.colors.bgStart)
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back", tint = Color.White) }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.Black)
             )
         }
     ) { padding ->
@@ -117,103 +133,68 @@ fun PermissionScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(CosmicAppTheme.backgroundBrush)
-                .padding(AstroDimens.Medium)
+                .background(com.astrohark.app.ui.theme.CosmicAppTheme.backgroundBrush)
+                .padding(20.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(AstroDimens.Medium)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                "For the best experience as an Astrologer, please enable the following permissions. These are required to receive calls even when the app is closed.",
-                color = CosmicAppTheme.colors.textSecondary,
-                fontSize = 14.sp,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            // 1. Overlay Permission
-            PermissionItem(
-                title = "Display Over Other Apps",
-                description = "Required to show the incoming call screen when you are using other apps.",
-                icon = Icons.Default.Layers,
-                isGranted = hasOverlayPermission,
-                onEnable = {
-                    val intent = Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:${context.packageName}")
+            // Header Card
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f)),
+                shape = RoundedCornerShape(24.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+            ) {
+                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Shield, null, tint = Color(0xFFE6C15A), modifier = Modifier.size(40.dp))
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        "Enabling all permissions ensures your phone is ready to receive consultations even when locked.",
+                        color = Color.White.copy(alpha = 0.8f),
+                        fontSize = 13.sp,
+                        lineHeight = 18.sp
                     )
-                    context.startActivity(intent)
                 }
-            )
-
-            // 2. Battery Optimization
-            PermissionItem(
-                title = "Disable Battery Optimization",
-                description = "Required to keep the app active in background so you don't miss any calls/chats.",
-                icon = Icons.Default.BatteryChargingFull,
-                isGranted = hasBatteryOptimizationPermission,
-                onEnable = {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        try {
-                            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                                data = Uri.parse("package:${context.packageName}")
-                            }
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-                            context.startActivity(intent)
-                        }
-                    }
-                }
-            )
-
-            // 3. Audio Permission
-            PermissionItem(
-                title = "Microphone Access",
-                description = "Required for audio calls and voice consultation.",
-                icon = Icons.Default.Mic,
-                isGranted = hasAudioPermission,
-                onEnable = {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", context.packageName, null)
-                    }
-                    context.startActivity(intent)
-                }
-            )
-
-            // 4. Camera Permission
-            PermissionItem(
-                title = "Camera Access",
-                description = "Required for video consultation.",
-                icon = Icons.Default.Videocam,
-                isGranted = hasCameraPermission,
-                onEnable = {
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.fromParts("package", context.packageName, null)
-                    }
-                    context.startActivity(intent)
-                }
-            )
-
-            // 5. Notification Permission
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                PermissionItem(
-                    title = "Notifications",
-                    description = "Alerts about new chat and call requests.",
-                    icon = Icons.Default.Notifications,
-                    isGranted = hasNotificationPermission,
-                    onEnable = {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        }
-                        context.startActivity(intent)
-                    }
-                )
             }
 
-            Spacer(modifier = Modifier.height(AstroDimens.Medium))
+            PermissionItemRow("Display Over Other Apps", "Needed for Full-Screen Call UI", Icons.Default.Layers, hasOverlayPermission) {
+                context.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}")))
+            }
 
-            com.astrohark.app.ui.theme.components.AstroButton(
-                text = "I have enabled all",
-                onClick = onBack,
+            PermissionItemRow("Ignore Battery Limits", "Prevents system from closing the app", Icons.Default.BatteryChargingFull, hasBatteryOptimizationPermission) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply { data = Uri.parse("package:${context.packageName}") }
+                    context.startActivity(intent)
+                }
+            }
+
+            PermissionItemRow("Microphone & Camera", "Used during Live Consultations", Icons.Default.Videocam, hasAudioPermission && hasCameraPermission) {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.fromParts("package", context.packageName, null) }
+                context.startActivity(intent)
+            }
+
+            PermissionItemRow("Notifications", "Alerts for new chat/call requests", Icons.Default.Notifications, hasNotificationPermission) {
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.fromParts("package", context.packageName, null) }
+                context.startActivity(intent)
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = { repairAll() },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = if (hasOverlayPermission && hasBatteryOptimizationPermission) Color(0xFFEAB308) else Color.Red)
+            ) {
+                Icon(if (hasOverlayPermission && hasBatteryOptimizationPermission) Icons.Default.CheckCircle else Icons.Default.Build, null)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(if (hasOverlayPermission && hasBatteryOptimizationPermission && hasAudioPermission) "ALL SETTINGS OK" else "REPAIR SETTINGS", fontWeight = FontWeight.ExtraBold)
+            }
+            
+            Text(
+                "Note: Battery optimization must be 'Allowed' or 'Unrestricted' for this app.",
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                color = Color.White.copy(alpha = 0.4f),
+                fontSize = 11.sp,
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -221,56 +202,29 @@ fun PermissionScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun PermissionItem(
-    title: String,
-    description: String,
-    icon: ImageVector,
-    isGranted: Boolean,
-    onEnable: () -> Unit
-) {
+fun PermissionItemRow(title: String, desc: String, icon: ImageVector, granted: Boolean, onClick: () -> Unit) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
-        shape = RoundedCornerShape(AstroDimens.RadiusMedium),
-        modifier = Modifier.fillMaxWidth(),
-        border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f)),
-        elevation = CardDefaults.cardElevation(2.dp)
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = if (granted) 0.05f else 0.15f))
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        if (isGranted) Color(0xFF4CAF50).copy(alpha = 0.15f)
-                        else CosmicAppTheme.colors.accent.copy(alpha = 0.15f),
-                        RoundedCornerShape(AstroDimens.RadiusSmall)
-                    ),
+                modifier = Modifier.size(44.dp).background(if (granted) Color(0xFF10B981).copy(alpha = 0.1f) else Color.White.copy(alpha = 0.1f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (isGranted) Color(0xFF4CAF50) else CosmicAppTheme.colors.accent
-                )
+                Icon(icon, null, tint = if (granted) Color(0xFF10B981) else Color.White.copy(alpha = 0.4f))
             }
-
             Spacer(modifier = Modifier.width(16.dp))
-
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.textPrimary, fontSize = 16.sp)
-                Text(description, fontSize = 12.sp, color = CosmicAppTheme.colors.textSecondary)
+                Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(desc, color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
             }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            if (isGranted) {
-                Icon(Icons.Default.CheckCircle, contentDescription = "Enabled", tint = Color(0xFF4CAF50))
+            if (granted) {
+                Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF10B981), modifier = Modifier.size(24.dp))
             } else {
-                TextButton(onClick = onEnable) {
-                    Text("ENABLE", color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold)
-                }
+                Icon(Icons.Default.ChevronRight, null, tint = Color.White.copy(alpha = 0.3f))
             }
         }
     }

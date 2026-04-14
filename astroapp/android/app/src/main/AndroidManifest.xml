@@ -26,6 +26,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
@@ -83,13 +85,9 @@
         android:name=".AstrologerApp"
         android:networkSecurityConfig="@xml/network_security_config"
         android:extractNativeLibs="true"
-        tools:targetApi="34">
-
-        <!--
-            MainActivity: Entry point for user registration
-            - Standard launch mode
-            - Shown in launcher
-        -->
+        tools:targetApi="35">
+        
+        <!-- ... existing activities ... -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -171,18 +169,6 @@
             </intent-filter>
         </activity>
 
-        <!--
-            IncomingCallActivity: Full-screen incoming call UI
-
-            WHY THESE FLAGS ARE CRITICAL:
-            - showWhenLocked: Shows activity even when device is locked
-            - turnScreenOn: Turns on the screen when activity starts
-            - excludeFromRecents: Don't show in recent apps (it's a transient UI)
-            - noHistory: Don't keep in activity stack
-            - launchMode="singleInstance": Only one instance, brings existing to front
-
-            Without these flags, the incoming call UI won't show on locked devices!
-        -->
         <activity
             android:name=".IncomingCallActivity"
             android:exported="false"
@@ -194,16 +180,6 @@
             android:taskAffinity=""
             android:theme="@style/Theme.FCMCallApp.FullScreen" />
 
-        <!--
-            FCMService: Handles incoming FCM messages
-
-            WHY THIS IS THE KEY COMPONENT:
-            - This service receives FCM messages even when app is killed
-            - Android's FCM infrastructure has special permission to wake apps
-            - Without this, you cannot receive calls when app is not running
-
-            The exported="false" with MESSAGING_EVENT filter is the correct pattern.
-        -->
         <service
             android:name=".FCMService"
             android:exported="false">
@@ -212,21 +188,19 @@
             </intent-filter>
         </service>
 
-        <!--
-            CallForegroundService: Keeps call processing alive
-
-            WHY THIS MATTERS:
-            - Android can kill any activity/service at any time
-            - Foreground services have higher priority and show persistent notification
-            - foregroundServiceType="phoneCall" tells Android this is a call
-            - Without this, your call handling might be killed mid-process
-        -->
         <service
             android:name=".CallForegroundService"
             android:exported="false"
             android:foregroundServiceType="phoneCall|microphone" />
 
-        <!-- Required meta-data for FCM default notification channel -->
+        <service
+            android:name=".AstrologerStatusService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse|dataSync">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                      android:value="Maintaining socket connection for astrologer availability status" />
+        </service>
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="incoming_calls" />

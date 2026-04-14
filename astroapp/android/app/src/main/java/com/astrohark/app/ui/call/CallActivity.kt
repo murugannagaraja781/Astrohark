@@ -704,6 +704,7 @@ class CallActivity : ComponentActivity() {
             SocketManager.registerUser(myUserId) { success ->
                 if (success) {
                     runOnUiThread {
+                        Log.d(TAG, "Initiator: Sending session-connect for $sessionId")
                         val connectPayload = JSONObject().apply {
                              put("sessionId", sessionId)
                         }
@@ -716,13 +717,20 @@ class CallActivity : ComponentActivity() {
             SocketManager.registerUser(myUserId) { success ->
                 if (success) {
                     runOnUiThread {
-                        val payload = JSONObject().apply {
-                            put("sessionId", sessionId)
-                            put("toUserId", partnerId)
-                            put("accept", true)
+                        val isNewRequest = intent.getBooleanExtra("isNewRequest", false)
+                        if (isNewRequest) {
+                            Log.d(TAG, "Recipient: session already answered in previous activity. Skipping redundant answer-session.")
+                        } else {
+                            Log.d(TAG, "Recipient: Sending answer-session (accept: true) for $sessionId")
+                            val payload = JSONObject().apply {
+                                put("sessionId", sessionId)
+                                put("toUserId", partnerId)
+                                put("accept", true)
+                            }
+                            SocketManager.getSocket()?.emit("answer-session", payload)
                         }
-                        SocketManager.getSocket()?.emit("answer-session", payload)
 
+                        Log.d(TAG, "Recipient: Sending session-connect for $sessionId")
                         val connectPayload = JSONObject().apply {
                             put("sessionId", sessionId)
                         }

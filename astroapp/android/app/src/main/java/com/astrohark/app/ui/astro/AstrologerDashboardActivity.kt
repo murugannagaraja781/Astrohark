@@ -506,15 +506,15 @@ fun AstrologerDashboardScreen(
 
     val colors = object {
         val accent = Color(0xFF00E676) // Bright Green
-        val cardBg = Color(0xFF004D40) // Tealish Green
-        val cardStroke = Color.White.copy(alpha = 0.12f)
+        val cardBg = Color(0xFF00382E) // Dark Green
+        val cardStroke = Color.White.copy(alpha = 0.15f)
         val textPrimary = Color.White
         val textSecondary = Color(0xFFA5D6A7) // Light Sage
         val headerGradient = Brush.verticalGradient(
             colors = listOf(Color(0xFF1B5E20), Color(0xFF00382E))
         )
         val bgGradient = Brush.verticalGradient(
-            colors = listOf(Color(0xFF1B5E20), Color(0xFF00332B), Color(0xFF002115))
+            colors = listOf(Color(0xFF00382E), Color(0xFF002115))
         )
     }
 
@@ -824,33 +824,33 @@ fun AstrologerDashboardScreen(
             
             // 3. Today's Progress (Glassmorphism)
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF004D40).copy(alpha = 0.6f)),
+                colors = CardDefaults.cardColors(containerColor = colors.cardBg.copy(alpha = 0.8f)),
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+                modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp)),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
             ) {
                 Row(
                    modifier = Modifier.padding(20.dp),
                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Today's Progress", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
+                        Text("Today's Progress", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color.White)
                         val totalHours = 12.0
                         val completedHours = (todayProgress / 100.0) * totalHours
-                        Text("$todayProgress% completed (${String.format("%.1f", completedHours)} hours)", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
+                        Text("$todayProgress% session target (${String.format("%.1f", completedHours)} hrs)", fontSize = 13.sp, color = colors.textSecondary)
                     }
                     Box(contentAlignment = Alignment.Center) {
                          CircularProgressIndicator(
-                             progress = todayProgress / 100f,
+                             progress = (todayProgress / 100f).coerceIn(0f, 1f),
                              trackColor = Color.White.copy(alpha = 0.1f),
                              color = colors.accent,
-                             modifier = Modifier.size(56.dp),
-                             strokeWidth = 6.dp
+                             modifier = Modifier.size(64.dp),
+                             strokeWidth = 7.dp
                          )
                          Text(
                              "$todayProgress%",
                              color = Color.White,
-                             fontSize = 11.sp,
+                             fontSize = 12.sp,
                              fontWeight = FontWeight.Bold
                          )
                     }
@@ -1006,49 +1006,49 @@ fun ServiceTogglesCard(
 ) {
     val colors = object {
         val accent = Color(0xFF00E676)
-        val cardBg = Color(0xFF004D40)
-        val cardStroke = Color.White.copy(alpha = 0.12f)
+        val cardBg = Color(0xFF00382E)
         val textPrimary = Color.White
         val textSecondary = Color(0xFFA5D6A7)
     }
     Card(
-        colors = CardDefaults.cardColors(containerColor = colors.cardBg.copy(alpha = 0.6f)),
-        shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp)),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
+        colors = CardDefaults.cardColors(containerColor = colors.cardBg.copy(alpha = 0.85f)),
+        shape = RoundedCornerShape(26.dp),
+        modifier = Modifier.fillMaxWidth().shadow(16.dp, RoundedCornerShape(26.dp)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 "Service Availability",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = colors.textPrimary
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
+                color = colors.textPrimary,
+                letterSpacing = 0.5.sp
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+            Text("Switch on to receive user requests", fontSize = 12.sp, color = colors.textSecondary)
+            
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Chat Toggle
             ServiceToggleRow(
-                label = "Chat",
+                label = "Chat Service",
                 icon = Icons.Default.Chat,
                 isEnabled = isChatOnline,
                 onToggle = onChatToggle
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Audio Call Toggle
             ServiceToggleRow(
-                label = "Audio Call",
+                label = "Voice Consultation",
                 icon = Icons.Default.Call,
                 isEnabled = isAudioOnline,
                 onToggle = onAudioToggle
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Video Call Toggle
             ServiceToggleRow(
-                label = "Video Call",
+                label = "Video Consultation",
                 icon = androidx.compose.material.icons.Icons.Default.VideoCall,
                 isEnabled = isVideoOnline,
                 onToggle = onVideoToggle
@@ -1065,51 +1065,66 @@ fun ServiceToggleRow(
     onToggle: (Boolean) -> Unit
 ) {
     val colors = object {
-        val accent = Color(0xFF00E676)
+        val accent = Color(0xFF25D366) // WhatsApp Green style
         val textPrimary = Color.White
     }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if (isEnabled) Color(0xFF4CAF50).copy(alpha = 0.08f)
-                else Color.Gray.copy(alpha = 0.05f),
-                RoundedCornerShape(12.dp)
+                if (isEnabled) Color(0xFF1B5E20).copy(alpha = 0.3f)
+                else Color.White.copy(alpha = 0.05f),
+                RoundedCornerShape(16.dp)
             )
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .border(
+                1.dp,
+                if (isEnabled) colors.accent.copy(alpha = 0.2f) else Color.Transparent,
+                RoundedCornerShape(16.dp)
+            )
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            icon,
-            contentDescription = label,
-            tint = if (isEnabled) Color(0xFF4CAF50) else Color.Gray,
-            modifier = Modifier.size(22.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            label,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Medium,
-            color = colors.textPrimary,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            if (isEnabled) "ON" else "OFF",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (isEnabled) Color(0xFF4CAF50) else Color.Gray
-        )
-        Spacer(modifier = Modifier.width(8.dp))
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(
+                    if (isEnabled) colors.accent.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.05f),
+                    CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = label,
+                tint = if (isEnabled) colors.accent else Color.Gray.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                label,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (isEnabled) Color.White else Color.White.copy(alpha = 0.7f)
+            )
+            Text(
+                if (isEnabled) "Ready for work" else "Inactive",
+                fontSize = 11.sp,
+                color = if (isEnabled) colors.accent.copy(alpha = 0.8f) else Color.Gray
+            )
+        }
         Switch(
             checked = isEnabled,
             onCheckedChange = { onToggle(it) },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = colors.accent,
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
+                uncheckedThumbColor = Color.Gray.copy(alpha = 0.8f),
+                uncheckedTrackColor = Color.White.copy(alpha = 0.1f),
+                uncheckedBorderColor = Color.Transparent
             ),
-            modifier = Modifier.scale(0.85f)
+            modifier = Modifier.scale(0.9f)
         )
     }
 }

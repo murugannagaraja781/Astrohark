@@ -45,6 +45,8 @@ import kotlinx.coroutines.delay
 import com.astrohark.app.data.remote.SocketManager
 import com.astrohark.app.utils.CallState
 
+import org.json.JSONObject
+
 /**
  * IncomingCallActivity - Full-screen incoming call UI
  */
@@ -59,6 +61,7 @@ class IncomingCallActivity : ComponentActivity() {
     private var vibrator: Vibrator? = null
     private val handler = Handler(Looper.getMainLooper())
     private var shouldStopServiceOnDestroy = true
+    private var hasEmittedAnswer = false
 
     private var callerId: String = ""
     private var callerName: String = ""
@@ -314,6 +317,21 @@ class IncomingCallActivity : ComponentActivity() {
         stopRingtoneAndVibration()
         handler.removeCallbacks(timeoutRunnable)
 
+        // --- STABILITY FIX: Emit answer-session immediately for better responsiveness ---
+        if (!hasEmittedAnswer) {
+            hasEmittedAnswer = true
+            try {
+                val payload = JSONObject().apply {
+                    put("sessionId", callId)
+                    put("toUserId", callerId)
+                    put("type", callType)
+                    put("accept", true)
+                }
+                SocketManager.getSocket()?.emit("answer-session", payload)
+                Log.d(TAG, "Emitted answer-session (accept) immediately from IncomingCallActivity")
+            } catch (e: Exception) { Log.e(TAG, "Failed to emit answer-session on accept", e) }
+        }
+
         val intent: Intent
         if (callType == "chat") {
             intent = Intent(this, com.astrohark.app.ui.chat.ChatActivity::class.java).apply {
@@ -329,14 +347,12 @@ class IncomingCallActivity : ComponentActivity() {
                 putExtra("partnerId", callerId)
                 putExtra("partnerName", callerName)
                 putExtra("isInitiator", false)
+                putExtra("isNewRequest", true) // Signal to CallActivity to NOT re-emit answer-session
                 putExtra("callType", callType)
                 putExtra("birthData", birthData)
             }
         }
         startActivity(intent)
-
-        // --- FIX: Do NOT stop service here. Let CallActivity take over ---
-        // stopService(Intent(this, CallForegroundService::class.java))
 
         shouldStopServiceOnDestroy = false
         finish()

@@ -169,6 +169,7 @@ object SocketManager {
     fun onSessionEnded(listener: (JSONObject?) -> Unit) {
         socket?.off("session-ended")
         socket?.on("session-ended") { args ->
+            Log.d(TAG, "SocketEvent: session-ended received")
             val data = if (args != null && args.isNotEmpty()) args[0] as? JSONObject else null
             listener(data)
         }
@@ -177,6 +178,7 @@ object SocketManager {
     fun onCallCancelled(listener: (JSONObject) -> Unit) {
         socket?.off("call-cancelled")
         socket?.on("call-cancelled") { args ->
+            Log.d(TAG, "SocketEvent: call-cancelled received")
             if (args != null && args.isNotEmpty()) {
                 val data = args[0] as JSONObject
                 listener(data)

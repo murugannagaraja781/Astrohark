@@ -94,6 +94,8 @@ class ChatActivity : ComponentActivity() {
         }
     }
 
+    private var hasEmittedAnswer = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
@@ -101,6 +103,7 @@ class ChatActivity : ComponentActivity() {
             com.astrohark.app.data.remote.SocketManager.init()
             com.astrohark.app.data.remote.SocketManager.ensureConnection()
             window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            
             handleIntent(intent)
 
             val role = TokenManager(this).getUserSession()?.role
@@ -147,10 +150,21 @@ class ChatActivity : ComponentActivity() {
             setupObservers()
             timerHandler.post(timerRunnable)
 
-            if (role == "astrologer") {
-                 TokenManager(this).getUserSession()?.userId?.let { uid ->
-                     com.astrohark.app.AstrologerStatusService.startService(this, uid)
-                 }
+            val myUserId = TokenManager(this).getUserSession()?.userId
+            if (role == "astrologer" && myUserId != null) {
+                com.astrohark.app.AstrologerStatusService.startService(this, myUserId)
+            }
+
+            // --- STABILITY FIX: Immediate registration and answer emission ---
+            if (myUserId != null) {
+                SocketManager.registerUser(myUserId) {
+                    if (pendingAccept && !hasEmittedAnswer && sessionId != null && toUserId != null) {
+                        pendingAccept = false
+                        hasEmittedAnswer = true
+                        viewModel.acceptSession(sessionId!!, toUserId!!)
+                        android.util.Log.d("ChatActivity", "Immediate answer-session emitted for $sessionId")
+                    }
+                }
             }
 
             // Listen for client birth data updates during session

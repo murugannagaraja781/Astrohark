@@ -45,10 +45,12 @@ class AstrologerStatusService : Service() {
         Log.d(TAG, "Service Created")
     }
 
+    private var currentUserId: String? = null
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val userId = intent?.getStringExtra("userId")
+        currentUserId = intent?.getStringExtra("userId")
         
-        Log.d(TAG, "Service Started for user: $userId")
+        Log.d(TAG, "Service Started for user: $currentUserId")
 
         val notification = createNotification("You are Currently Online", "Awaiting incoming calls/chats...")
         
@@ -67,9 +69,9 @@ class AstrologerStatusService : Service() {
         }
 
         // Ensure Socket is alive and registered
-        if (userId != null) {
+        if (currentUserId != null) {
             SocketManager.init()
-            SocketManager.registerUser(userId)
+            SocketManager.registerUser(currentUserId!!)
         }
 
         return START_STICKY 
@@ -111,5 +113,27 @@ class AstrologerStatusService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "Service Destroyed")
+        
+        // Notify server to go offline on service destruction
+        currentUserId?.let { uid ->
+            Thread {
+                try {
+                    val client = okhttp3.OkHttpClient()
+                    listOf("chat", "audio", "video").forEach { serviceType ->
+                        val url = "${com.astrohark.app.utils.Constants.SERVER_URL}/api/astrologer/service-toggle"
+                        val body = okhttp3.FormBody.Builder()
+                            .add("astrologerId", uid)
+                            .add("serviceType", serviceType)
+                            .add("status", "false")
+                            .build()
+                        val request = okhttp3.Request.Builder().url(url).post(body).build()
+                        client.newCall(request).execute()
+                    }
+                    Log.d(TAG, "Successfully notified server: OFFLINE for $uid")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to notify server of offline status on destroy", e)
+                }
+            }.start()
+        }
     }
 }

@@ -228,27 +228,34 @@ class CallActivity : ComponentActivity() {
             }
 
             // --- GLOBAL STATE FIX: Mark call as active to prevent duplicate starts ---
-            val incomingSessionId = intent.getStringExtra("sessionId")
+            val incomingSessionId = intent.getStringExtra("sessionId") ?: savedInstanceState?.getString("sessionId")
             if (incomingSessionId.isNullOrEmpty()) {
-                Log.e(TAG, "Session ID is missing, cannot start call")
+                Log.e(TAG, "CRITICAL: Session ID is missing, cannot start call")
+                Toast.makeText(this, "Session Link Expired", Toast.LENGTH_SHORT).show()
                 finish()
                 return
             }
             
-            CallState.isCallActive = true
-            CallState.currentSessionId = incomingSessionId
+            sessionId = incomingSessionId
+            partnerId = intent.getStringExtra("partnerId") ?: savedInstanceState?.getString("partnerId") ?: "unknown"
+            partnerName = intent.getStringExtra("partnerName") ?: intent.getStringExtra("userName") ?: partnerId
             
+            CallState.isCallActive = true
+            CallState.currentSessionId = sessionId
+            
+            // Initialize WebRTC Core as early as possible
+            try {
+                if (!::eglBase.isInitialized) eglBase = EglBase.create()
+                val options = PeerConnectionFactory.InitializationOptions.builder(this).createInitializationOptions()
+                PeerConnectionFactory.initialize(options)
+            } catch (e: Exception) { Log.e(TAG, "WebRTC Core Init Failed", e) }
+
             // Fetch TURN/STUN Config from Server
             fetchWebRTCConfig()
 
             // Initialize WebRTC Views Programmatically
             localView = SurfaceViewRenderer(this)
             remoteView = SurfaceViewRenderer(this)
-
-            // Params
-            partnerId = intent.getStringExtra("partnerId")
-            partnerName = intent.getStringExtra("partnerName") ?: partnerId
-            sessionId = incomingSessionId
             isInitiator = intent.getBooleanExtra("isInitiator", false)
             val rawType = intent.getStringExtra("type") ?: intent.getStringExtra("callType") ?: "video"
             val lowerType = rawType.lowercase()
@@ -744,18 +751,19 @@ class CallActivity : ComponentActivity() {
     private fun initWebRTC(): Boolean {
         if (isWebRTCInitialized) return true
         try {
-            eglBase = EglBase.create()
-            val options = PeerConnectionFactory.InitializationOptions.builder(this).createInitializationOptions()
-            PeerConnectionFactory.initialize(options)
-
-            peerConnectionFactory = PeerConnectionFactory.builder()
-                .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true))
-                .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglBase.eglBaseContext))
-                .createPeerConnectionFactory()
+            if (!::eglBase.isInitialized) eglBase = EglBase.create()
+            
+            // Only create factory if it hasn't been created yet
+            if (!::peerConnectionFactory.isInitialized) {
+                peerConnectionFactory = PeerConnectionFactory.builder()
+                    .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true))
+                    .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglBase.eglBaseContext))
+                    .createPeerConnectionFactory()
+            }
         } catch (t: Throwable) {
-            Log.e(TAG, "CRITICAL: WebRTC Factory init failed", t)
+            Log.e(TAG, "CRITICAL: WebRTC Factory creation failed", t)
             runOnUiThread {
-                Toast.makeText(this, "Camera/Audio engine failed. Please restart app.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Hardware engine failed. Please restart app.", Toast.LENGTH_LONG).show()
             }
             return false
         }
@@ -1133,11 +1141,21 @@ class CallActivity : ComponentActivity() {
         } catch (e: Exception) {}
 
         try {
-            if (::peerConnection.isInitialized) peerConnection.close()
+            if (::peerConnection.isInitialized) {
+                peerConnection.dispose() 
+            }
             videoCapturer?.stopCapture()
             videoCapturer?.dispose()
-            if (::localView.isInitialized) localView.release()
-            if (::remoteView.isInitialized) remoteView.release()
+            
+            if (::localView.isInitialized) {
+                localView.clearImage()
+                localView.release()
+            }
+            if (::remoteView.isInitialized) {
+                remoteView.clearImage()
+                remoteView.release()
+            }
+            
             if (::peerConnectionFactory.isInitialized) peerConnectionFactory.dispose()
             if (::eglBase.isInitialized) eglBase.release()
         } catch (e: Throwable) {

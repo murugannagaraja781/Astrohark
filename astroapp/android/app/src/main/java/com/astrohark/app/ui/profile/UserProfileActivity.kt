@@ -272,7 +272,7 @@ fun UserProfileScreen(
                             OutlinedButton(
                                 onClick = {
                                     val user = tokenManager.getUserSession()
-                                    if (user?.role == "astrologer") {
+                                    if (user != null && user.userId != null && user.role == "astrologer") {
                                         // Set all services to offline before logout
                                         val sessionId = user.userId
                                         scope.launch(Dispatchers.IO) {

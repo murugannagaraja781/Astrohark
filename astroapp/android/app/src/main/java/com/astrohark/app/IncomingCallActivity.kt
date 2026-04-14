@@ -244,20 +244,23 @@ class IncomingCallActivity : ComponentActivity() {
                 ringtoneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             }
 
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                        .build()
-                )
-                setDataSource(this@IncomingCallActivity, ringtoneUri!!)
-                isLooping = true
-                prepare()
-                start()
+            ringtoneUri?.let { uri ->
+                mediaPlayer = MediaPlayer().apply {
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                            .build()
+                    )
+                    setDataSource(this@IncomingCallActivity, uri)
+                    isLooping = true
+                    prepare()
+                    start()
+                }
+                Log.d(TAG, "Ringtone started using URI: $uri")
+            } ?: run {
+                Log.e(TAG, "Ringtone URI is null, cannot start audio")
             }
-
-            Log.d(TAG, "Ringtone started using URI: $ringtoneUri")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start ringtone", e)
             mediaPlayer?.release()

@@ -446,7 +446,30 @@ fun AstrologerDashboardScreen(
         tokenManager.setDailyProgress(todayProgress)
 
         refreshBalanceAndHistory()
-        // Availability and Status are fetched from DB in refreshBalanceAndHistory()
+        
+        // --- CRITICAL FIX: Ensure astrologer is OFFLINE by default on every app launch ---
+        // This prevents the "always online" issue.
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val services = listOf("chat", "audio", "video")
+                val client = okhttp3.OkHttpClient()
+                services.forEach { type ->
+                    val url = "${com.astrohark.app.utils.Constants.SERVER_URL}/api/astrologer/service-toggle"
+                    val body = okhttp3.FormBody.Builder()
+                        .add("astrologerId", sessionId)
+                        .add("serviceType", type)
+                        .add("status", "false")
+                        .build()
+                    val request = okhttp3.Request.Builder().url(url).post(body).build()
+                    client.newCall(request).execute()
+                }
+                // Update local UI states after forcing offline or server
+                isChatOnline = false
+                isAudioOnline = false
+                isVideoOnline = false
+                android.util.Log.d("AstroDashboard", "✓ Forced initial offline state on launch")
+            } catch (e: Exception) { e.printStackTrace() }
+        }
     }
 
     if (showWithdrawDialog) {

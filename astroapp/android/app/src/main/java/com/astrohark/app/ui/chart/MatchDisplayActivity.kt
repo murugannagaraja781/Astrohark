@@ -60,7 +60,7 @@ class MatchDisplayActivity : ComponentActivity() {
         try {
             val apiInterface = ApiClient.api
             val cGender = birthData.optString("gender")
-            val pData = birthData.optJSONObject("partnerData") ?: birthData.optJSONObject("partner")
+            val pData = birthData.optJSONObject("partner")
 
             if (pData == null) {
                 android.util.Log.e("MatchDisplay", "Partner data is null")
@@ -68,27 +68,29 @@ class MatchDisplayActivity : ComponentActivity() {
             }
 
             fun extract(json: JSONObject): com.google.gson.JsonObject {
-                val y = json.optInt("year", 1990)
-                val m = json.optInt("month", 1)
-                val d = json.optInt("day", json.optInt("date", 1))
-                val h = json.optInt("hour", 12)
-                val minVal = json.optInt("minute", 0)
-
                 return com.google.gson.JsonObject().apply {
-                    addProperty("name", json.optString("name", "User"))
-                    addProperty("day", d)
-                    addProperty("month", m)
-                    addProperty("year", y)
-                    addProperty("hour", h)
-                    addProperty("min", minVal)
-                    addProperty("minute", minVal)
-                    addProperty("latitude", json.optDouble("latitude", 13.0827))
-                    addProperty("longitude", json.optDouble("longitude", 80.2707))
-                    addProperty("timezone", 5.5)
-                    
-                    // Unified format for wider compatibility
-                    addProperty("dob", String.format("%04d-%02d-%02d", y, m, d))
-                    addProperty("tob", String.format("%02d:%02d", h, minVal))
+                    // Handle both formats: dob string or day/month/year
+                    val dob = if (json.has("dob")) {
+                        json.getString("dob")
+                    } else {
+                        val y = json.optInt("year", 2000)
+                        val m = json.optInt("month", 1)
+                        val d = json.optInt("day", 1)
+                        String.format("%04d-%02d-%02d", y, m, d)
+                    }
+
+                    val tob = if (json.has("tob")) {
+                        json.getString("tob")
+                    } else {
+                        val h = json.optInt("hour", 12)
+                        val min = json.optInt("minute", 0)
+                        String.format("%02d:%02d", h, min)
+                    }
+
+                    addProperty("dob", dob)
+                    addProperty("tob", tob)
+                    addProperty("lat", json.optDouble("latitude", 13.0827))
+                    addProperty("lng", json.optDouble("longitude", 80.2707))
                 }
             }
 
@@ -110,7 +112,7 @@ class MatchDisplayActivity : ComponentActivity() {
                 add("girlData", girlData)
             }
 
-            val response = apiInterface.getMatchPorutham(payload) // Use Tamil Porutham endpoint
+            val response = apiInterface.getRasiEngMatching(payload)
             if (response.isSuccessful && response.body() != null) {
                 val jsonResponse = response.body()!!.toString()
                 android.util.Log.d("MatchDisplay", "API Response: ${jsonResponse.take(200)}")
@@ -196,12 +198,12 @@ class MatchDisplayActivity : ComponentActivity() {
             </head>
             <body>
                 <div class="card">
-                    <h2>திருமணப் பொருத்தம்</h2>
-                    <div id="content">நட்சத்திரங்களை ஆய்வு செய்கிறது...</div>
+                    <h2>Marriage Compatibility</h2>
+                    <div id="content">Analyzing stars...</div>
                 </div>
 
                 <div class="card" id="dosha-card" style="display:none;">
-                    <h2>தோஷ ஆய்வு</h2>
+                    <h2>Dosha Analysis</h2>
                     <div id="dosha-content"></div>
                 </div>
 
@@ -212,17 +214,13 @@ class MatchDisplayActivity : ComponentActivity() {
                         let html = '';
 
                         if (data) {
-                            html += '<div class="info-row"><span class="info-label">ஆண் நட்சத்திரம்</span><span class="info-value">' + data.boy.nakshatra + ' (' + data.boy.rasi + ')</span></div>';
-                            html += '<div class="info-row"><span class="info-label">பெண் நட்சத்திரம்</span><span class="info-value">' + data.girl.nakshatra + ' (' + data.girl.rasi + ')</span></div>';
+                            html += '<div class="info-row"><span class="info-label">Boy Star</span><span class="info-value">' + data.boy.nakshatra + ' (' + data.boy.rasi + ')</span></div>';
+                            html += '<div class="info-row"><span class="info-label">Girl Star</span><span class="info-value">' + data.girl.nakshatra + ' (' + data.girl.rasi + ')</span></div>';
 
                             html += '<div class="score-box">' + (data.totalScore || 0) + ' / ' + (data.maxScore || 36) + '</div>';
 
-                            let verdictTxt = data.verdict;
-                            if(verdictTxt === 'Advisable') verdictTxt = 'பொருத்தம் உண்டு';
-                            if(verdictTxt === 'Not Advisable') verdictTxt = 'பொருத்தம் இல்லை';
-                            
                             const verdictClass = data.verdict === 'Advisable' ? 'verdict-advisable' : 'verdict-not';
-                            html += '<div class="verdict ' + verdictClass + '">' + verdictTxt + '</div>';
+                            html += '<div class="verdict ' + verdictClass + '">' + data.verdict + '</div>';
 
                             const list = data.poruthams;
                             if (Array.isArray(list)) {
@@ -245,17 +243,14 @@ class MatchDisplayActivity : ComponentActivity() {
                             let dHtml = '';
                             const formatDosha = (label, d) => {
                                 const cls = d.hasDosha ? 'bad' : 'good';
-                                const dLabel = label === 'Male' ? 'ஆண்' : 'பெண்';
-                                const dStatus = d.hasDosha ? 'தோஷம் உள்ளது' : 'தோஷம் இல்லை';
-                                return '<div class="info-row"><span class="info-label">' + dLabel + '</span><span class="' + cls + '">' + dStatus + '</span></div>' +
+                                return '<div class="info-row"><span class="info-label">' + label + '</span><span class="' + cls + '">' + (d.hasDosha ? 'Dosha Found' : 'No Dosha') + '</span></div>' +
                                        '<div style="font-size:12px; color:#888; margin-bottom:10px;">' + (d.desc || d.details || '') + '</div>';
                             };
                             dHtml += formatDosha('Male', data.boyDosha);
                             dHtml += formatDosha('Female', data.girlDosha);
 
                             if (data.sandhi) {
-                                const sStatus = data.sandhi.hasSandhi ? 'தசா சந்தி உள்ளது' : 'தசா சந்தி இல்லை';
-                                dHtml += '<div class="info-row"><span class="info-label">தசா சந்தி</span><span class="info-value">' + sStatus + '</span></div>';
+                                dHtml += '<div class="info-row"><span class="info-label">Dasha Sandhi</span><span class="info-value">' + (data.sandhi.hasSandhi ? 'Overlap Detected' : 'Safe') + '</span></div>';
                             }
 
                             document.getElementById('dosha-content').innerHTML = dHtml;

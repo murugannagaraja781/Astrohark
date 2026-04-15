@@ -140,15 +140,6 @@ class FCMService : FirebaseMessagingService() {
 
             when (messageType) {
                 "INCOMING_CALL" -> handleIncomingCall(data)
-                "CANCEL_CALL", "CALL_CANCELLED", "CALL_ENDED", "SESSION_ENDED" -> {
-                    Log.d(TAG, "Call cancelled/ended via FCM: $data")
-                    val notificationManager = getSystemService(NotificationManager::class.java)
-                    notificationManager.cancel(CALL_NOTIFICATION_ID)
-                    
-                    // Broadcast to IncomingCallActivity if it's open
-                    val cancelIntent = Intent("com.astrohark.app.ACTION_CANCEL_CALL")
-                    sendBroadcast(cancelIntent)
-                }
                 "INCOMING_CHAT" -> {
                     val callerName = data["callerName"] ?: "Unknown"
                     val callerId = data["callerId"] ?: ""

@@ -249,53 +249,30 @@ class AstrologerDashboardActivity : ComponentActivity() {
 }
 
 // Helper function to update individual service status
-suspend fun updateServiceStatus(context: android.content.Context, userId: String, service: String, enabled: Boolean, onComplete: (Boolean) -> Unit = {}) {
-    withContext(kotlinx.coroutines.Dispatchers.IO) {
-        try {
-            val client = okhttp3.OkHttpClient()
-            val body = okhttp3.RequestBody.create(
-                "application/json".toMediaType(),
-                org.json.JSONObject().apply {
-                    put("userId", userId)
-                    put("service", service)
-                    put("enabled", enabled)
-                }.toString()
-            )
-            val request = okhttp3.Request.Builder()
-                .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/astrologer/service-toggle")
-                .post(body)
-                .build()
-            
-            val response = client.newCall(request).execute()
-            val responseData = response.body?.string()
-            val success = response.isSuccessful && responseData != null && org.json.JSONObject(responseData).optBoolean("ok")
-            
-            if (success) {
-                // Background Service Management
-                if (enabled) {
-                    com.astrohark.app.AstrologerStatusService.startService(context, userId)
-                    // Ensure socket is active and registered
-                    com.astrohark.app.data.remote.SocketManager.init()
-                    com.astrohark.app.data.remote.SocketManager.registerUser(userId)
-                }
-            }
-            
-            withContext(kotlinx.coroutines.Dispatchers.Main) {
-                if (!success) {
-                    val errorMsg = if (responseData != null) {
-                        org.json.JSONObject(responseData).optString("error", "Update Failed")
-                    } else "Server Response Error"
-                    android.widget.Toast.makeText(context, "Status Error: $errorMsg", android.widget.Toast.LENGTH_LONG).show()
-                }
-                onComplete(success)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            withContext(kotlinx.coroutines.Dispatchers.Main) {
-                android.widget.Toast.makeText(context, "Network Error: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-                onComplete(false)
-            }
+suspend fun updateServiceStatus(userId: String, service: String, enabled: Boolean) {
+    try {
+        val client = okhttp3.OkHttpClient()
+        val body = okhttp3.RequestBody.create(
+            "application/json".toMediaType(),
+            org.json.JSONObject().apply {
+                put("userId", userId)
+                put("service", service)
+                put("enabled", enabled)
+            }.toString()
+        )
+        val request = okhttp3.Request.Builder()
+            .url("https://astrohark.com/api/astrologer/service-toggle")
+            .post(body)
+            .build()
+        client.newCall(request).execute()
+
+        // Manage socket based on service status
+        if (enabled) {
+            com.astrohark.app.data.remote.SocketManager.init()
+            com.astrohark.app.data.remote.SocketManager.registerUser(userId)
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
 
@@ -324,9 +301,9 @@ fun AstrologerDashboardScreen(
 
     val services = remember {
         mutableStateListOf(
-            ServiceData("Chat", false, Icons.Default.Chat),
-            ServiceData("Call", false, Icons.Default.Call),
-            ServiceData("Video", false, Icons.Default.Person)
+            ServiceData("Chat", true, Icons.Default.Chat),
+            ServiceData("Call", true, Icons.Default.Call),
+            ServiceData("Video", true, Icons.Default.Person)
         )
     }
     val scrollState = rememberScrollState()
@@ -397,8 +374,7 @@ fun AstrologerDashboardScreen(
                     val body = MultipartBody.Part.createFormData("image", "profile.jpg", requestFile)
                     val userIdBody = sessionId.toRequestBody("text/plain".toMediaTypeOrNull())
 
-                    // User Request: Robust upload with userId in query too                    // User Request: Robust upload with userId in query too
-                    val response = ApiClient.api.uploadProfilePic(userIdBody, body, sessionId)
+                    val response = ApiClient.api.uploadProfilePic(userIdBody, body)
                     if (response.isSuccessful) {
                         val newImage = response.body()?.get("image")?.asString
                         if (newImage != null) {
@@ -446,30 +422,7 @@ fun AstrologerDashboardScreen(
         tokenManager.setDailyProgress(todayProgress)
 
         refreshBalanceAndHistory()
-        
-        // --- CRITICAL FIX: Ensure astrologer is OFFLINE by default on every app launch ---
-        // This prevents the "always online" issue.
-        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try {
-                val services = listOf("chat", "audio", "video")
-                val client = okhttp3.OkHttpClient()
-                services.forEach { type ->
-                    val url = "${com.astrohark.app.utils.Constants.SERVER_URL}/api/astrologer/service-toggle"
-                    val body = okhttp3.FormBody.Builder()
-                        .add("astrologerId", sessionId)
-                        .add("serviceType", type)
-                        .add("status", "false")
-                        .build()
-                    val request = okhttp3.Request.Builder().url(url).post(body).build()
-                    client.newCall(request).execute()
-                }
-                // Update local UI states after forcing offline or server
-                isChatOnline = false
-                isAudioOnline = false
-                isVideoOnline = false
-                android.util.Log.d("AstroDashboard", "✓ Forced initial offline state on launch")
-            } catch (e: Exception) { e.printStackTrace() }
-        }
+        // Availability and Status are fetched from DB in refreshBalanceAndHistory()
     }
 
     if (showWithdrawDialog) {
@@ -527,30 +480,18 @@ fun AstrologerDashboardScreen(
         )
     }
 
-    val colors = object {
-        val accent = Color(0xFF00E676) // Bright Green
-        val cardBg = Color(0xFF00382E) // Dark Green
-        val cardStroke = Color.White.copy(alpha = 0.15f)
-        val textPrimary = Color.White
-        val textSecondary = Color(0xFFA5D6A7) // Light Sage
-        val headerGradient = Brush.verticalGradient(
-            colors = listOf(Color(0xFF1B5E20), Color(0xFF00382E))
-        )
-        val bgGradient = Brush.verticalGradient(
-            colors = listOf(Color(0xFF00382E), Color(0xFF002115))
-        )
-    }
-
     Scaffold(
-        containerColor = Color.Transparent,
+        containerColor = Color.Transparent, // Transparent to show gradient if needed, or use BgStart
         topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(colors.headerGradient) // Green Gradient Header
+                    .background(CosmicAppTheme.headerBrush) // Dynamic Header Gradient
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val colors = CosmicAppTheme.colors
+                // Skeuomorphic Avatar
                 Box(
                     modifier = Modifier
                         .size(56.dp)
@@ -659,82 +600,46 @@ fun AstrologerDashboardScreen(
             }
         }
     ) { padding ->
+        val colors = CosmicAppTheme.colors
+
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(colors.bgGradient) // Green Gradient Background
+                .background(CosmicAppTheme.backgroundBrush) // Dynamic Background
                 .verticalScroll(scrollState) // ENABLE SCROLLING
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 0. Permission Reactive Tracking
-            var hasOverlay by remember { mutableStateOf(Settings.canDrawOverlays(context)) }
-            var hasAudio by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) }
-            var hasCamera by remember { mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) }
-            var hasNotification by remember {
-                mutableStateOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                } else true)
-            }
-            var hasBatteryOptimization by remember {
-                mutableStateOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    (context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
-                } else true)
-            }
-
-            // Periodic Sync for Permissions when app resumes
-            LaunchedEffect(Unit) {
-                while(true) {
-                    hasOverlay = Settings.canDrawOverlays(context)
-                    hasAudio = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
-                    hasCamera = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        hasNotification = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-                    }
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        hasBatteryOptimization = (context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
-                    }
-                    kotlinx.coroutines.delay(2000)
-                }
-            }
+            // 0. Permission Warning Banner
+            val hasOverlay = Settings.canDrawOverlays(context)
+            val hasAudio = ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+            val hasCamera = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+            val hasNotification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            } else true
+            val hasBatteryOptimization = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                (context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
+            } else true
 
             if (!hasOverlay || !hasAudio || !hasCamera || !hasNotification || !hasBatteryOptimization) {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.1f)),
-                    shape = RoundedCornerShape(24.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .shadow(12.dp, RoundedCornerShape(24.dp))
-                        .clickable { context.startActivity(Intent(context, PermissionActivity::class.java)) },
-                    border = BorderStroke(1.dp, Color.Red.copy(alpha = 0.3f))
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp)).clickable {
+                        context.startActivity(Intent(context, PermissionActivity::class.java))
+                    },
+                    border = BorderStroke(1.dp, Color(0xFFEF5350))
                 ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = Color.Red, modifier = Modifier.size(24.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text("Service Warning: Missed Calls Likely", fontWeight = FontWeight.ExtraBold, color = Color.White, fontSize = 16.sp)
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            "One or more critical permissions are disabled. You may not receive incoming call alerts.",
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.7f)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (!hasOverlay) Text("• Overlay", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            if (!hasBatteryOptimization) Text("• Battery", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                            if (!hasNotification) Text("• Alerts", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(
-                            onClick = { context.startActivity(Intent(context, PermissionActivity::class.java)) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
-                            modifier = Modifier.fillMaxWidth().height(40.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("REPAIR SETTINGS", fontWeight = FontWeight.Bold, color = Color.White)
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(androidx.compose.material.icons.Icons.Default.Warning, contentDescription = null, tint = Color(0xFFD32F2F))
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Action Required: Enable Permissions", fontWeight = FontWeight.Bold, color = Color(0xFFB71C1C), fontSize = 14.sp)
+                            Text("Please enable Display Over Apps, Battery Optimization, and Notifications to receive calls reliably.", fontSize = 12.sp, color = Color(0xFFB71C1C))
                         }
                     }
                 }
@@ -847,33 +752,33 @@ fun AstrologerDashboardScreen(
             
             // 3. Today's Progress (Glassmorphism)
             Card(
-                colors = CardDefaults.cardColors(containerColor = colors.cardBg.copy(alpha = 0.8f)),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
                 shape = RoundedCornerShape(24.dp),
-                modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp)),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
+                modifier = Modifier.fillMaxWidth().shadow(8.dp, RoundedCornerShape(24.dp)),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
             ) {
                 Row(
                    modifier = Modifier.padding(20.dp),
                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Today's Progress", fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = Color.White)
+                        Text("Today's Progress", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color.White)
                         val totalHours = 12.0
                         val completedHours = (todayProgress / 100.0) * totalHours
-                        Text("$todayProgress% session target (${String.format("%.1f", completedHours)} hrs)", fontSize = 13.sp, color = colors.textSecondary)
+                        Text("$todayProgress% completed (${String.format("%.1f", completedHours)} hours)", fontSize = 12.sp, color = Color.White.copy(alpha = 0.6f))
                     }
                     Box(contentAlignment = Alignment.Center) {
                          CircularProgressIndicator(
-                             progress = (todayProgress / 100f).coerceIn(0f, 1f),
+                             progress = todayProgress / 100f,
                              trackColor = Color.White.copy(alpha = 0.1f),
                              color = colors.accent,
-                             modifier = Modifier.size(64.dp),
-                             strokeWidth = 7.dp
+                             modifier = Modifier.size(56.dp),
+                             strokeWidth = 6.dp
                          )
                          Text(
                              "$todayProgress%",
                              color = Color.White,
-                             fontSize = 12.sp,
+                             fontSize = 11.sp,
                              fontWeight = FontWeight.Bold
                          )
                     }
@@ -890,18 +795,9 @@ fun AstrologerDashboardScreen(
                         context.startActivity(Intent(context, PermissionActivity::class.java))
                         Toast.makeText(context, "Please enable required permissions first", Toast.LENGTH_LONG).show()
                     } else {
-                        // Optimistically update UI
                         isChatOnline = enabled
-                        scope.launch {
-                            updateServiceStatus(context, sessionId, "chat", enabled) { success ->
-                                if (!success) {
-                                    isChatOnline = !enabled // rollback on failure
-                                    Toast.makeText(context, "Update Failed. Check Connection.", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(context, if(enabled) "Chat Online" else "Chat Offline", Toast.LENGTH_SHORT).show()
-                                    refreshBalanceAndHistory() // Sync other states
-                                }
-                            }
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            updateServiceStatus(sessionId, "chat", enabled)
                         }
                     }
                 },
@@ -911,16 +807,8 @@ fun AstrologerDashboardScreen(
                         Toast.makeText(context, "Please enable Speaker/Audio permissions first", Toast.LENGTH_LONG).show()
                     } else {
                         isAudioOnline = enabled
-                        scope.launch {
-                            updateServiceStatus(context, sessionId, "audio", enabled) { success ->
-                                if (!success) {
-                                    isAudioOnline = !enabled
-                                    Toast.makeText(context, "Update Failed", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(context, if(enabled) "Audio Online" else "Audio Offline", Toast.LENGTH_SHORT).show()
-                                    refreshBalanceAndHistory()
-                                }
-                            }
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            updateServiceStatus(sessionId, "audio", enabled)
                         }
                     }
                 },
@@ -930,16 +818,8 @@ fun AstrologerDashboardScreen(
                         Toast.makeText(context, "Please enable Camera/Audio permissions first", Toast.LENGTH_LONG).show()
                     } else {
                         isVideoOnline = enabled
-                        scope.launch {
-                            updateServiceStatus(context, sessionId, "video", enabled) { success ->
-                                if (!success) {
-                                    isVideoOnline = !enabled
-                                    Toast.makeText(context, "Update Failed", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(context, if(enabled) "Video Online" else "Video Offline", Toast.LENGTH_SHORT).show()
-                                    refreshBalanceAndHistory()
-                                }
-                            }
+                        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                            updateServiceStatus(sessionId, "video", enabled)
                         }
                     }
                 }
@@ -953,7 +833,7 @@ fun AstrologerDashboardScreen(
                     ) {
                         rowItems.forEach { (label, icon) ->
                              Card(
-                                 colors = CardDefaults.cardColors(containerColor = Color(0xFF00332B).copy(alpha = 0.5f)),
+                                 colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
                                  shape = RoundedCornerShape(24.dp),
                                  modifier = Modifier
                                      .weight(1f)
@@ -1027,51 +907,45 @@ fun ServiceTogglesCard(
     onAudioToggle: (Boolean) -> Unit,
     onVideoToggle: (Boolean) -> Unit
 ) {
-    val colors = object {
-        val accent = Color(0xFF00E676)
-        val cardBg = Color(0xFF00382E)
-        val textPrimary = Color.White
-        val textSecondary = Color(0xFFA5D6A7)
-    }
+    val colors = CosmicAppTheme.colors
     Card(
-        colors = CardDefaults.cardColors(containerColor = colors.cardBg.copy(alpha = 0.85f)),
-        shape = RoundedCornerShape(26.dp),
-        modifier = Modifier.fillMaxWidth().shadow(16.dp, RoundedCornerShape(26.dp)),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f))
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.05f)),
+        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f))
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 "Service Availability",
-                fontWeight = FontWeight.ExtraBold,
-                fontSize = 18.sp,
-                color = colors.textPrimary,
-                letterSpacing = 0.5.sp
+                fontWeight = FontWeight.Bold,
+                fontSize = 16.sp,
+                color = colors.textPrimary
             )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text("Switch on to receive user requests", fontSize = 12.sp, color = colors.textSecondary)
-            
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
+            // Chat Toggle
             ServiceToggleRow(
-                label = "Chat Service",
+                label = "Chat",
                 icon = Icons.Default.Chat,
                 isEnabled = isChatOnline,
                 onToggle = onChatToggle
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
+            // Audio Call Toggle
             ServiceToggleRow(
-                label = "Voice Consultation",
+                label = "Audio Call",
                 icon = Icons.Default.Call,
                 isEnabled = isAudioOnline,
                 onToggle = onAudioToggle
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
+            // Video Call Toggle
             ServiceToggleRow(
-                label = "Video Consultation",
+                label = "Video Call",
                 icon = androidx.compose.material.icons.Icons.Default.VideoCall,
                 isEnabled = isVideoOnline,
                 onToggle = onVideoToggle
@@ -1087,67 +961,49 @@ fun ServiceToggleRow(
     isEnabled: Boolean,
     onToggle: (Boolean) -> Unit
 ) {
-    val colors = object {
-        val accent = Color(0xFF25D366) // WhatsApp Green style
-        val textPrimary = Color.White
-    }
+    val colors = CosmicAppTheme.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if (isEnabled) Color(0xFF1B5E20).copy(alpha = 0.3f)
-                else Color.White.copy(alpha = 0.05f),
-                RoundedCornerShape(16.dp)
+                if (isEnabled) Color(0xFF4CAF50).copy(alpha = 0.08f)
+                else Color.Gray.copy(alpha = 0.05f),
+                RoundedCornerShape(12.dp)
             )
-            .border(
-                1.dp,
-                if (isEnabled) colors.accent.copy(alpha = 0.2f) else Color.Transparent,
-                RoundedCornerShape(16.dp)
-            )
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .background(
-                    if (isEnabled) colors.accent.copy(alpha = 0.1f) else Color.White.copy(alpha = 0.05f),
-                    CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                icon,
-                contentDescription = label,
-                tint = if (isEnabled) colors.accent else Color.Gray.copy(alpha = 0.6f),
-                modifier = Modifier.size(20.dp)
-            )
-        }
-        Spacer(modifier = Modifier.width(14.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                label,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isEnabled) Color.White else Color.White.copy(alpha = 0.7f)
-            )
-            Text(
-                if (isEnabled) "Ready for work" else "Inactive",
-                fontSize = 11.sp,
-                color = if (isEnabled) colors.accent.copy(alpha = 0.8f) else Color.Gray
-            )
-        }
+        Icon(
+            icon,
+            contentDescription = label,
+            tint = if (isEnabled) Color(0xFF4CAF50) else Color.Gray,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            label,
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Medium,
+            color = colors.textPrimary,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            if (isEnabled) "ON" else "OFF",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (isEnabled) Color(0xFF4CAF50) else Color.Gray
+        )
+        Spacer(modifier = Modifier.width(8.dp))
         Switch(
             checked = isEnabled,
             onCheckedChange = { onToggle(it) },
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = colors.accent,
-                uncheckedThumbColor = Color.Gray.copy(alpha = 0.8f),
-                uncheckedTrackColor = Color.White.copy(alpha = 0.1f),
-                uncheckedBorderColor = Color.Transparent
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = Color.White.copy(alpha = 0.1f)
             ),
-            modifier = Modifier.scale(0.9f)
+            modifier = Modifier.scale(0.85f)
         )
     }
 }

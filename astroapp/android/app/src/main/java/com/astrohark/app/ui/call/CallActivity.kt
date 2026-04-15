@@ -62,14 +62,6 @@ class CallActivity : ComponentActivity() {
     companion object {
         private const val TAG = "CallActivity"
         private const val PERMISSION_REQ_CODE = 101
-
-        private val pendingIceCandidates = LinkedList<IceCandidate>()
-
-        private var iceServers = mutableListOf(
-            PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
-            PeerConnection.IceServer.builder("turn:turn.astrohark.com:3478?transport=udp")
-                .setUsername("webrtcuser").setPassword("strongpassword123").createIceServer()
-        )
     }
 
     // Views (WebRTC Renderers) - Created programmatically
@@ -87,7 +79,7 @@ class CallActivity : ComponentActivity() {
     private var isInitiator = false
     private var partnerId: String? = null
     private var sessionId: String? = null
-    private var clientBirthData by mutableStateOf<JSONObject?>(null)
+    private var clientBirthData: JSONObject? = null
 
     private lateinit var tokenManager: TokenManager
     private var session: AuthResponse? = null
@@ -164,31 +156,17 @@ class CallActivity : ComponentActivity() {
              }
         }
 
-    // Check ICE connection state and restart if needed
+        // Check ICE connection state and restart if needed
         checkAndRestoreConnection()
     }
 
-    private val matchLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
-        timerHandler.postDelayed({ isEditingIntake = false }, 3000)
-        ensureSocketConnected()
-        if (result.resultCode == RESULT_OK) {
-             val dataStr = result.data?.getStringExtra("birthData")
-             if (dataStr != null) {
-                 try {
-                     val newData = JSONObject(dataStr)
-                     clientBirthData = newData
-                     SocketManager.getSocket()?.emit("client-birth-chart", JSONObject().apply {
-                         put("sessionId", sessionId)
-                         put("toUserId", partnerId)
-                         put("birthData", newData)
-                     })
-                     val matchIntent = android.content.Intent(this, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
-                     matchIntent.putExtra("birthData", newData.toString())
-                     startActivity(matchIntent)
-                 } catch (e: Exception) { e.printStackTrace() }
-             }
-        }
-    }
+    private val pendingIceCandidates = LinkedList<IceCandidate>()
+
+    private var iceServers = mutableListOf(
+        PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
+        PeerConnection.IceServer.builder("turn:turn.astrohark.com:3478?transport=udp")
+            .setUsername("webrtcuser").setPassword("strongpassword123").createIceServer()
+    )
 
     // Logic internal state
     private var callType: String = "video"
@@ -215,197 +193,171 @@ class CallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try {
-            if (savedInstanceState != null) {
-                isEditingIntake = savedInstanceState.getBoolean("isEditingIntake")
-                val birthDataStr = savedInstanceState.getString("clientBirthData")
-                if (!birthDataStr.isNullOrEmpty()) {
-                    clientBirthData = JSONObject(birthDataStr)
-                }
-                callDurationSeconds = savedInstanceState.getInt("callDurationSeconds")
-                sessionId = savedInstanceState.getString("sessionId")
-                partnerId = savedInstanceState.getString("partnerId")
-            }
 
-            // --- GLOBAL STATE FIX: Mark call as active to prevent duplicate starts ---
-            val incomingSessionId = intent.getStringExtra("sessionId") ?: savedInstanceState?.getString("sessionId")
-            if (incomingSessionId.isNullOrEmpty()) {
-                Log.e(TAG, "CRITICAL: Session ID is missing, cannot start call")
-                Toast.makeText(this, "Session Link Expired", Toast.LENGTH_SHORT).show()
-                finish()
-                return
-            }
-            
-            sessionId = incomingSessionId
-            partnerId = intent.getStringExtra("partnerId") ?: savedInstanceState?.getString("partnerId") ?: "unknown"
-            partnerName = intent.getStringExtra("partnerName") ?: intent.getStringExtra("userName") ?: partnerId
-            
-            CallState.isCallActive = true
-            CallState.currentSessionId = sessionId
-            
-            // Initialize WebRTC Core as early as possible
-            try {
-                if (!::eglBase.isInitialized) eglBase = EglBase.create()
-                val options = PeerConnectionFactory.InitializationOptions.builder(this).createInitializationOptions()
-                PeerConnectionFactory.initialize(options)
-            } catch (e: Exception) { Log.e(TAG, "WebRTC Core Init Failed", e) }
-
-            // Fetch TURN/STUN Config from Server
-            fetchWebRTCConfig()
-
-            // Initialize WebRTC Views Programmatically
-            localView = SurfaceViewRenderer(this)
-            remoteView = SurfaceViewRenderer(this)
-            isInitiator = intent.getBooleanExtra("isInitiator", false)
-            val rawType = intent.getStringExtra("type") ?: intent.getStringExtra("callType") ?: "video"
-            val lowerType = rawType.lowercase()
-            callType = if (lowerType == "audio" || lowerType == "voice" || lowerType == "call") "audio" else "video"
-
-            // Initial state sync
-            isVideoEnabledState = (callType == "video")
-            isSpeakerOnState = (callType == "video") // Default speaker on for video, off for audio (earpiece)
-
-            val birthDataStr = intent.getStringExtra("birthData")
+        if (savedInstanceState != null) {
+            isEditingIntake = savedInstanceState.getBoolean("isEditingIntake")
+            val birthDataStr = savedInstanceState.getString("clientBirthData")
             if (!birthDataStr.isNullOrEmpty()) {
-                 try {
-                    val obj = JSONObject(birthDataStr)
-                    if (obj.length() > 0) clientBirthData = obj
-                 } catch (e: Exception) { e.printStackTrace() }
+                clientBirthData = JSONObject(birthDataStr)
             }
+            callDurationSeconds = savedInstanceState.getInt("callDurationSeconds")
+            sessionId = savedInstanceState.getString("sessionId")
+            partnerId = savedInstanceState.getString("partnerId")
+        }
 
-            tokenManager = TokenManager(this)
-            session = tokenManager.getUserSession()
-            val role = session?.role
+        // --- GLOBAL STATE FIX: Mark call as active to prevent duplicate starts ---
+        CallState.isCallActive = true
+        CallState.currentSessionId = intent.getStringExtra("sessionId")
+        
+        // Fetch TURN/STUN Config from Server
+        fetchWebRTCConfig()
 
-            // Set Content
-            setContent {
-                CosmicAppTheme {
-                    CallScreen(
-                        remoteRenderer = remoteView,
-                        localRenderer = localView,
-                        partnerName = partnerName ?: "Unknown",
-                        duration = formattedDuration,
-                        statusText = statusText,
-                        isBillingActive = isBillingActive,
-                        callType = callType,
-                        isMuted = isMutedState,
-                        isVideoEnabled = isVideoEnabledState,
-                        isSpeakerOn = isSpeakerOnState,
-                        role = role ?: "user",
-                        remainingTime = remainingTime,
-                        onToggleMic = { toggleMic() },
-                        onToggleCamera = { toggleCamera() },
-                        onToggleSpeaker = { toggleSpeaker() },
-                        onEndCall = { endCall() },
-                        onEditIntake = { openEditIntake() },
-                        onShowRasi = { showRasiChart() },
-                        onShowMatch = { showMatchDisplay() },
-                        isRecording = isRecordingState,
-                        onToggleRecording = { toggleRecording() },
-                        isReady = isWebRTCInitialized,
-                        clientBirthData = clientBirthData,
-                        summary = callSummary,
-                        onDismissSummary = { finish() }
-                    )
+        // Initialize WebRTC Views Programmatically
+        localView = SurfaceViewRenderer(this)
+        remoteView = SurfaceViewRenderer(this)
+
+        // Params
+        partnerId = intent.getStringExtra("partnerId")
+        partnerName = intent.getStringExtra("partnerName") ?: partnerId
+        sessionId = intent.getStringExtra("sessionId")
+        isInitiator = intent.getBooleanExtra("isInitiator", false)
+        val rawType = intent.getStringExtra("type") ?: intent.getStringExtra("callType") ?: "video"
+        val lowerType = rawType.lowercase()
+        callType = if (lowerType == "audio" || lowerType == "voice" || lowerType == "call") "audio" else "video"
+
+        // Initial state sync
+        isVideoEnabledState = (callType == "video")
+        isSpeakerOnState = (callType == "video") // Default speaker on for video, off for audio (earpiece)
+
+        val birthDataStr = intent.getStringExtra("birthData")
+        if (!birthDataStr.isNullOrEmpty()) {
+             try {
+                val obj = JSONObject(birthDataStr)
+                if (obj.length() > 0) clientBirthData = obj
+             } catch (e: Exception) { e.printStackTrace() }
+        }
+
+        tokenManager = TokenManager(this)
+        session = tokenManager.getUserSession()
+        val role = session?.role
+
+        // Set Content
+        setContent {
+            CosmicAppTheme {
+                CallScreen(
+                    remoteRenderer = remoteView,
+                    localRenderer = localView,
+                    partnerName = partnerName ?: "Unknown",
+                    duration = formattedDuration,
+                    statusText = statusText,
+                    isBillingActive = isBillingActive,
+                    callType = callType,
+                    isMuted = isMutedState,
+                    isVideoEnabled = isVideoEnabledState,
+                    isSpeakerOn = isSpeakerOnState,
+                    role = role ?: "user",
+                    remainingTime = remainingTime,
+                    onToggleMic = { toggleMic() },
+                    onToggleCamera = { toggleCamera() },
+                    onToggleSpeaker = { toggleSpeaker() },
+                    onEndCall = { endCall() },
+                    onEditIntake = { openEditIntake() },
+                    onShowRasi = { showRasiChart() },
+                    onShowMatch = { showMatchDisplay() },
+                    isRecording = isRecordingState,
+                    onToggleRecording = { toggleRecording() },
+                    isReady = isWebRTCInitialized,
+                    summary = callSummary,
+                    onDismissSummary = { finish() }
+                )
+            }
+        }
+
+        // --- Socket Init ---
+        try {
+            SocketManager.init()
+            session?.userId?.let { uid ->
+                SocketManager.registerUser(uid)
+                if (SocketManager.getSocket()?.connected() != true) {
+                    SocketManager.getSocket()?.connect()
                 }
             }
+        } catch (e: Exception) {
+            Log.e(TAG, "Socket init failed", e)
+        }
 
-            // --- Socket Init ---
-            try {
-                SocketManager.init()
-                session?.userId?.let { uid ->
-                    SocketManager.registerUser(uid)
-                    if (SocketManager.getSocket()?.connected() != true) {
-                        SocketManager.getSocket()?.connect()
-                    }
+        // Initialize Proximity WakeLock for Audio Calls
+        try {
+            val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                // PROXIMITY_SCREEN_OFF_WAKE_LOCK is the standard way to turn off screen during calls
+                if (powerManager.isWakeLockLevelSupported(android.os.PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
+                    proximityWakeLock = powerManager.newWakeLock(android.os.PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "astrohark:ProximityLock")
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Socket init failed", e)
             }
+            sensorManager = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
+        } catch (e: Exception) {
+            Log.e(TAG, "Proximity lock init failed", e)
+        }
 
-            // Initialize Proximity WakeLock for Audio Calls
-            try {
-                val powerManager = getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    if (powerManager.isWakeLockLevelSupported(android.os.PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
-                        proximityWakeLock = powerManager.newWakeLock(android.os.PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, "astrohark:ProximityLock")
-                    }
-                }
-                sensorManager = getSystemService(android.content.Context.SENSOR_SERVICE) as android.hardware.SensorManager
-            } catch (e: Exception) {
-                Log.e(TAG, "Proximity lock init failed", e)
-            }
+        // Fetch dynamic ICE/TURN servers
+        fetchIceServers()
 
-            // Start Timer Delay
-            timerHandler.postDelayed(timerRunnable, 1000)
+        // Check Permissions
+        if (checkPermissions()) {
+            startCallLimit()
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
+                PERMISSION_REQ_CODE
+            )
+        }
 
-            // Initialize Call Logic after a small delay to ensure configs are ready
+        // Start Timer Delay
+        timerHandler.postDelayed(timerRunnable, 1000)
+
+        // Start Remaining Time Countdown (for astrologers only)
+        if (role == "astrologer") {
             lifecycleScope.launch {
-                if (iceServers.size <= 2) { 
-                    delay(800) 
-                }
-                if (checkPermissions()) {
-                    startCallLimit()
-                } else {
-                    ActivityCompat.requestPermissions(
-                        this@CallActivity,
-                        arrayOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO),
-                        PERMISSION_REQ_CODE
-                    )
-                }
-            }
-
-            // Start Remaining Time Countdown (for astrologers only)
-            if (role == "astrologer") {
-                lifecycleScope.launch {
-                    while (isActive) {
-                        delay(1000)
-                        if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
-                            val parts = remainingTime.split(":")
-                            if (parts.size == 2) {
-                                val mins = parts[0].toIntOrNull() ?: 0
-                                val secs = parts[1].toIntOrNull() ?: 0
-                                val totalSecs = mins * 60 + secs - 1
-                                if (totalSecs > 0) {
-                                    remainingTime = String.format("%02d:%02d", totalSecs / 60, totalSecs % 60)
-                                } else {
-                                    remainingTime = "00:00"
-                                    endCall() // Auto-end
-                                }
+                while (isActive) {
+                    delay(1000)
+                    if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                        val parts = remainingTime.split(":")
+                        if (parts.size == 2) {
+                            val mins = parts[0].toIntOrNull() ?: 0
+                            val secs = parts[1].toIntOrNull() ?: 0
+                            val totalSecs = mins * 60 + secs - 1
+                            if (totalSecs > 0) {
+                                remainingTime = String.format("%02d:%02d", totalSecs / 60, totalSecs % 60)
+                            } else {
+                                remainingTime = "00:00"
+                                endCall() // Auto-end when time exhausted
                             }
                         }
                     }
                 }
-                
-                // Fetch wallet and calculate initial remaining time
-                lifecycleScope.launch(Dispatchers.IO) {
-                    try {
-                        val client = okhttp3.OkHttpClient()
-                        val request = okhttp3.Request.Builder()
-                            .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${partnerId}")
-                            .build()
-                        val response = client.newCall(request).execute()
-                        if (response.isSuccessful) {
-                            val json = JSONObject(response.body?.string() ?: "{}")
-                            val walletBalance = json.optDouble("walletBalance", 0.0)
-                            val ratePerMin = 10.0
-                            val totalMinutes = (walletBalance / ratePerMin).toInt()
-                            remainingTime = String.format("%02d:%02d", totalMinutes, 0)
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to fetch wallet balance", e)
+            }
+
+            // Fetch wallet and calculate initial remaining time
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val client = okhttp3.OkHttpClient()
+                    val request = okhttp3.Request.Builder()
+                        .url("https://astrohark.com/api/user/${partnerId}")
+                        .build()
+                    val response = client.newCall(request).execute()
+                    if (response.isSuccessful) {
+                        val json = JSONObject(response.body?.string() ?: "{}")
+                        val walletBalance = json.optDouble("walletBalance", 0.0)
+                        val ratePerMin = 10.0 // Default rate, ideally from partner data
+                        val totalMinutes = (walletBalance / ratePerMin).toInt()
+                        remainingTime = String.format("%02d:%02d", totalMinutes, 0)
                     }
-                }
-                
-                // START FOREGROUND STATUS SERVICE
-                session?.userId?.let { uid ->
-                    com.astrohark.app.AstrologerStatusService.startService(this, uid)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to fetch wallet balance", e)
                 }
             }
-        } catch (e: Exception) {
-            Log.e(TAG, "FAILED TO START CALL ACTIVITY", e)
-            android.widget.Toast.makeText(this, "Setup Error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
-            finish()
         }
     }
 
@@ -592,6 +544,52 @@ class CallActivity : ComponentActivity() {
     /**
      * Restart ICE connection if it becomes unstable
      */
+    private fun fetchIceServers() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val client = okhttp3.OkHttpClient()
+                val request = okhttp3.Request.Builder()
+                    .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/webrtc-config")
+                    .build()
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val jsonStr = response.body?.string()
+                    Log.d(TAG, "ICE Config Response: $jsonStr")
+                    val json = JSONObject(jsonStr ?: "{}")
+                    if (json.optBoolean("ok")) {
+                        val serverArray = json.optJSONArray("iceServers")
+                        if (serverArray != null) {
+                            val newIceServers = mutableListOf<PeerConnection.IceServer>()
+                            for (i in 0 until serverArray.length()) {
+                                try {
+                                    val obj = serverArray.getJSONObject(i)
+                                    val urls = obj.optString("urls")
+                                    if (urls.isNotEmpty()) {
+                                        val builder = PeerConnection.IceServer.builder(urls)
+                                        if (obj.has("username")) {
+                                            builder.setUsername(obj.getString("username"))
+                                        }
+                                        if (obj.has("credential")) {
+                                            builder.setPassword(obj.getString("credential"))
+                                        }
+                                        newIceServers.add(builder.createIceServer())
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Error parsing individual ICE server", e)
+                                }
+                            }
+                            if (newIceServers.isNotEmpty()) {
+                                iceServers = newIceServers
+                                Log.d(TAG, "Updated with ${iceServers.size} ICE servers from API")
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to fetch ICE servers", e)
+            }
+        }
+    }
 
     private fun restartIce() {
         try {
@@ -632,7 +630,6 @@ class CallActivity : ComponentActivity() {
     private fun fetchWebRTCConfig() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                // Consolidation: Using standard route
                 val response = com.astrohark.app.data.api.ApiClient.api.getWebRTCConfig()
                 if (response.isSuccessful) {
                     val config = response.body()
@@ -646,16 +643,20 @@ class CallActivity : ComponentActivity() {
                         val newIceServers = mutableListOf<PeerConnection.IceServer>()
                         newIceServers.add(PeerConnection.IceServer.builder(stun).createIceServer())
                         
-                        // Add UDP and TCP variants for high compatibility
+                        // UDP
                         newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=udp")
                             .setUsername(user).setPassword(pass).createIceServer())
+                        
+                        // TCP
                         newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=tcp")
                             .setUsername(user).setPassword(pass).createIceServer())
+                            
+                        // TURNS (standard TLS)
                         newIceServers.add(PeerConnection.IceServer.builder("turns:$turn:5349")
                             .setUsername(user).setPassword(pass).createIceServer())
 
                         iceServers = newIceServers
-                        Log.d(TAG, "✓ WebRTC: ICE Config cached for all subsequent sessions")
+                        Log.d(TAG, "✓ WebRTC: Config updated from server")
                     }
                 }
             } catch (e: Exception) {
@@ -711,7 +712,6 @@ class CallActivity : ComponentActivity() {
             SocketManager.registerUser(myUserId) { success ->
                 if (success) {
                     runOnUiThread {
-                        Log.d(TAG, "Initiator: Sending session-connect for $sessionId")
                         val connectPayload = JSONObject().apply {
                              put("sessionId", sessionId)
                         }
@@ -724,20 +724,13 @@ class CallActivity : ComponentActivity() {
             SocketManager.registerUser(myUserId) { success ->
                 if (success) {
                     runOnUiThread {
-                        val isNewRequest = intent.getBooleanExtra("isNewRequest", false)
-                        if (isNewRequest) {
-                            Log.d(TAG, "Recipient: session already answered in previous activity. Skipping redundant answer-session.")
-                        } else {
-                            Log.d(TAG, "Recipient: Sending answer-session (accept: true) for $sessionId")
-                            val payload = JSONObject().apply {
-                                put("sessionId", sessionId)
-                                put("toUserId", partnerId)
-                                put("accept", true)
-                            }
-                            SocketManager.getSocket()?.emit("answer-session", payload)
+                        val payload = JSONObject().apply {
+                            put("sessionId", sessionId)
+                            put("toUserId", partnerId)
+                            put("accept", true)
                         }
+                        SocketManager.getSocket()?.emit("answer-session", payload)
 
-                        Log.d(TAG, "Recipient: Sending session-connect for $sessionId")
                         val connectPayload = JSONObject().apply {
                             put("sessionId", sessionId)
                         }
@@ -751,19 +744,18 @@ class CallActivity : ComponentActivity() {
     private fun initWebRTC(): Boolean {
         if (isWebRTCInitialized) return true
         try {
-            if (!::eglBase.isInitialized) eglBase = EglBase.create()
-            
-            // Only create factory if it hasn't been created yet
-            if (!::peerConnectionFactory.isInitialized) {
-                peerConnectionFactory = PeerConnectionFactory.builder()
-                    .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true))
-                    .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglBase.eglBaseContext))
-                    .createPeerConnectionFactory()
-            }
+            eglBase = EglBase.create()
+            val options = PeerConnectionFactory.InitializationOptions.builder(this).createInitializationOptions()
+            PeerConnectionFactory.initialize(options)
+
+            peerConnectionFactory = PeerConnectionFactory.builder()
+                .setVideoEncoderFactory(DefaultVideoEncoderFactory(eglBase.eglBaseContext, true, true))
+                .setVideoDecoderFactory(DefaultVideoDecoderFactory(eglBase.eglBaseContext))
+                .createPeerConnectionFactory()
         } catch (t: Throwable) {
-            Log.e(TAG, "CRITICAL: WebRTC Factory creation failed", t)
+            Log.e(TAG, "CRITICAL: WebRTC Factory init failed", t)
             runOnUiThread {
-                Toast.makeText(this, "Hardware engine failed. Please restart app.", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Camera/Audio engine failed. Please restart app.", Toast.LENGTH_LONG).show()
             }
             return false
         }
@@ -1110,9 +1102,7 @@ class CallActivity : ComponentActivity() {
 
     private fun endCall() {
         stopBackgroundService()
-        // Send BOTH signals to ensure termination regardless of call state (ringing vs ongoing)
         SocketManager.endSession(sessionId)
-        SocketManager.cancelCall(sessionId, partnerId)
         finish()
     }
 
@@ -1141,21 +1131,11 @@ class CallActivity : ComponentActivity() {
         } catch (e: Exception) {}
 
         try {
-            if (::peerConnection.isInitialized) {
-                peerConnection.dispose() 
-            }
+            if (::peerConnection.isInitialized) peerConnection.close()
             videoCapturer?.stopCapture()
             videoCapturer?.dispose()
-            
-            if (::localView.isInitialized) {
-                localView.clearImage()
-                localView.release()
-            }
-            if (::remoteView.isInitialized) {
-                remoteView.clearImage()
-                remoteView.release()
-            }
-            
+            if (::localView.isInitialized) localView.release()
+            if (::remoteView.isInitialized) remoteView.release()
             if (::peerConnectionFactory.isInitialized) peerConnectionFactory.dispose()
             if (::eglBase.isInitialized) eglBase.release()
         } catch (e: Throwable) {
@@ -1190,24 +1170,12 @@ class CallActivity : ComponentActivity() {
     }
 
     private fun showMatchDisplay() {
-        val hasPartner = clientBirthData?.has("partnerData") == true || clientBirthData?.has("partner") == true
-        
-        if (hasPartner) {
-            // Show result directly
-            val matchIntent = android.content.Intent(this, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
-            matchIntent.putExtra("birthData", clientBirthData.toString())
-            startActivity(matchIntent)
+        if (clientBirthData != null) {
+            val intent = android.content.Intent(this, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
+            intent.putExtra("birthData", clientBirthData.toString())
+            startActivity(intent)
         } else {
-            // Open form to fill
-            isEditingIntake = true
-            val intent = android.content.Intent(this, com.astrohark.app.ui.intake.IntakeActivity::class.java)
-            intent.putExtra("isEditMode", true)
-            intent.putExtra("isMatching", true) 
-            intent.putExtra("existingData", clientBirthData?.toString() ?: "{}")
-            if (TokenManager(this).getUserSession()?.role == "astrologer") {
-                intent.putExtra("targetUserId", partnerId)
-            }
-            matchLauncher.launch(intent)
+            Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -1306,7 +1274,6 @@ fun CallScreen(
     isRecording: Boolean = false,
     onToggleRecording: () -> Unit = {},
     isReady: Boolean,
-    clientBirthData: JSONObject? = null,
     summary: CallActivity.SimpleSummary? = null,
     onDismissSummary: () -> Unit = {}
 ) {
@@ -1503,14 +1470,7 @@ fun CallScreen(
                     if (role == "astrologer") {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             ControlBtnItem(onClick = onShowRasi, icon = Icons.Default.GridView, label = "Chart", active = true)
-                            
-                            val hasPartner = clientBirthData?.has("partnerData") == true || clientBirthData?.has("partner") == true
-                            ControlBtnItem(
-                                onClick = onShowMatch, 
-                                icon = if (hasPartner) Icons.Default.Favorite else Icons.Default.FavoriteBorder, 
-                                label = "Match", 
-                                active = hasPartner
-                            )
+                            ControlBtnItem(onClick = onShowMatch, icon = Icons.Default.Favorite, label = "Match", active = true)
                         }
                     } else {
                         ControlBtnItem(onClick = onEditIntake, icon = Icons.Default.EditNote, label = "Intake", active = false)

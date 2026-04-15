@@ -178,7 +178,7 @@ fun FreeHoroscopeScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(Color(0xFF140F0A), Color(0xFF0B0805))))
+            .background(CosmicAppTheme.backgroundBrush)
     ) {
         Scaffold(
             containerColor = Color.Transparent,
@@ -187,9 +187,7 @@ fun FreeHoroscopeScreen(
                     title = {
                         Text(
                             "Free Horoscope",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.titleLarge
                         )
                     },
                     navigationIcon = {
@@ -197,13 +195,13 @@ fun FreeHoroscopeScreen(
                             Icon(
                                 Icons.Default.ArrowBack,
                                 contentDescription = "Back",
-                                tint = Color.White
+                                tint = CosmicAppTheme.colors.accent
                             )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = Color.Transparent,
-                        titleContentColor = Color.White
+                        titleContentColor = CosmicAppTheme.colors.textPrimary
                     )
                 )
             }
@@ -212,27 +210,24 @@ fun FreeHoroscopeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .imePadding()
+                    .imePadding() // Ensure keyboard doesn't hide fields
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(AstroDimens.Small),
+                verticalArrangement = Arrangement.spacedBy(AstroDimens.Small)
             ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1C140E)),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                // Main Form Card
+                com.astrohark.app.ui.theme.components.AstroCard(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.padding(horizontal = AstroDimens.Small, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Personal Details",
+                            text = "Enter Your Birth Details",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = CosmicAppTheme.colors.accent
+                            color = CosmicAppTheme.colors.accent,
+                            fontWeight = FontWeight.Bold
                         )
 
                         val textFieldColors = OutlinedTextFieldDefaults.colors(
@@ -244,58 +239,61 @@ fun FreeHoroscopeScreen(
                             disabledBorderColor = Color.White.copy(alpha = 0.3f),
                             cursorColor = CosmicAppTheme.colors.accent,
                             focusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
-                            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f)
+                            unfocusedPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                            disabledPlaceholderColor = Color.White.copy(alpha = 0.5f),
+                            focusedLabelColor = CosmicAppTheme.colors.accent,
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
+                            disabledLabelColor = CosmicAppTheme.colors.accent.copy(alpha = 0.5f)
                         )
 
+                        // Name
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
                             placeholder = { Text("Full Name", fontSize = 14.sp) }, 
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
+                            modifier = Modifier.fillMaxWidth().height(52.dp),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Words,
-                                imeAction = ImeAction.Next,
-                                keyboardType = KeyboardType.Text
+                                imeAction = ImeAction.Next
                             ),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = textFieldColors,
-                            enabled = true
+                            shape = RoundedCornerShape(AstroDimens.RadiusSmall),
+                            colors = textFieldColors
                         )
 
+                        // Gender
                         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                            Text("Gender:", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                            Text("Gender:", style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textPrimary)
                             Spacer(Modifier.width(8.dp))
                             RadioButton(
                                 selected = gender == "Male",
                                 onClick = { gender = "Male" },
                                 colors = RadioButtonDefaults.colors(selectedColor = CosmicAppTheme.colors.accent)
                             )
-                            Text("Male", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                            Text("Male", style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textSecondary)
                             Spacer(Modifier.width(12.dp))
                             RadioButton(
                                 selected = gender == "Female",
                                 onClick = { gender = "Female" },
                                 colors = RadioButtonDefaults.colors(selectedColor = CosmicAppTheme.colors.accent)
                             )
-                            Text("Female", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                            Text("Female", style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textSecondary)
                         }
 
+                        // Date of Birth
                         Text("Date of Birth", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(AstroDimens.XSmall),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedTextField(value = day, onValueChange = { if (it.length <= 2) day = it }, placeholder = { Text("DD", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(52.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(12.dp), colors = textFieldColors)
-                            OutlinedTextField(value = month, onValueChange = { if (it.length <= 2) month = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(52.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(12.dp), colors = textFieldColors)
-                            OutlinedTextField(value = year, onValueChange = { if (it.length <= 4) year = it }, placeholder = { Text("YYYY", fontSize = 12.sp) }, modifier = Modifier.weight(1.3f).height(52.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(12.dp), colors = textFieldColors)
+                            OutlinedTextField(value = day, onValueChange = { if (it.length <= 2) day = it }, placeholder = { Text("DD", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = month, onValueChange = { if (it.length <= 2) month = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = year, onValueChange = { if (it.length <= 4) year = it }, placeholder = { Text("YYYY", fontSize = 12.sp) }, modifier = Modifier.weight(1.3f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
                             IconButton(
                                 onClick = {
                                     val cal = Calendar.getInstance()
-                                    DatePickerDialog(context, com.astrohark.app.R.style.DialogPickerTheme, { _, py, pm, pd ->
+                                    DatePickerDialog(context, { _, py, pm, pd ->
                                         year = py.toString(); month = (pm + 1).toString(); day = pd.toString()
                                     }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show()
                                 },
@@ -305,20 +303,21 @@ fun FreeHoroscopeScreen(
                             }
                         }
 
+                        // Time of Birth
                         Text("Time of Birth", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(AstroDimens.XSmall),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            OutlinedTextField(value = hour, onValueChange = { if (it.length <= 2) hour = it }, placeholder = { Text("HH", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(52.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(12.dp), colors = textFieldColors)
-                            OutlinedTextField(value = minute, onValueChange = { if (it.length <= 2) minute = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(52.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(12.dp), colors = textFieldColors)
+                            OutlinedTextField(value = hour, onValueChange = { if (it.length <= 2) hour = it }, placeholder = { Text("HH", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
+                            OutlinedTextField(value = minute, onValueChange = { if (it.length <= 2) minute = it }, placeholder = { Text("MM", fontSize = 12.sp) }, modifier = Modifier.weight(1f).height(50.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), shape = RoundedCornerShape(AstroDimens.RadiusSmall), colors = textFieldColors)
                             TextButton(onClick = { amPm = if (amPm == "AM") "PM" else "AM" }, modifier = Modifier.height(44.dp)) {
                                 Text(amPm, color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                             }
                             IconButton(
                                 onClick = {
-                                    TimePickerDialog(context, com.astrohark.app.R.style.DialogPickerTheme, { _, ph, pm ->
+                                    TimePickerDialog(context, { _, ph, pm ->
                                         val hTyped = if (ph > 12) (ph - 12) else if (ph == 0) 12 else ph
                                         hour = hTyped.toString(); minute = String.format("%02d", pm); amPm = if (ph >= 12) "PM" else "AM"
                                     }, 12, 0, false).show()
@@ -329,7 +328,7 @@ fun FreeHoroscopeScreen(
                             }
                         }
 
-                        Text("Place of Birth", style = MaterialTheme.typography.labelSmall, color = CosmicAppTheme.colors.accent)
+                        // City
                         Box(modifier = Modifier.fillMaxWidth().clickable { launchLocationPicker() }) {
                             OutlinedTextField(
                                 value = cityName,
@@ -337,25 +336,28 @@ fun FreeHoroscopeScreen(
                                 placeholder = { Text("City of Birth", fontSize = 14.sp) },
                                 readOnly = true,
                                 enabled = false,
-                                modifier = Modifier.fillMaxWidth().height(52.dp),
+                                modifier = Modifier.fillMaxWidth().height(50.dp),
                                 trailingIcon = { Icon(Icons.Default.LocationOn, "Pick", tint = CosmicAppTheme.colors.accent, modifier = Modifier.size(22.dp)) },
-                                shape = RoundedCornerShape(12.dp),
+                                shape = RoundedCornerShape(AstroDimens.RadiusSmall),
                                 colors = textFieldColors
                             )
                         }
 
+                        // Timezone Display (Simplified)
                         if (timezoneDisplay.isNotBlank()) {
                             Text(
                                 text = "Timezone: $timezoneDisplay",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = CosmicAppTheme.colors.textSecondary,
                                 modifier = Modifier.padding(start = 4.dp)
                             )
                         }
 
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(12.dp))
 
-                        Button(
+                        // Generate Button
+                        com.astrohark.app.ui.theme.components.AstroButton(
+                            text = "Generate Rasi Chart",
                             onClick = {
                                 if (validateInputs(name, day, month, year, hour, minute, cityName, timezoneOffset)) {
                                     isLoading = true
@@ -383,19 +385,12 @@ fun FreeHoroscopeScreen(
                                     Toast.makeText(context, "Please fill all details", Toast.LENGTH_SHORT).show()
                                 }
                             },
-                            modifier = Modifier.fillMaxWidth().height(54.dp).shadow(8.dp, RoundedCornerShape(12.dp)),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF7F00))
-                        ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
-                            } else {
-                                Text("GENERATE RASI CHART", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
-                            }
-                        }
+                            modifier = Modifier.fillMaxWidth().height(54.dp).shadow(8.dp, RoundedCornerShape(AstroDimens.RadiusMedium)),
+                            isLoading = isLoading
+                        )
                     }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
     }

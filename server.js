@@ -478,25 +478,19 @@ app.post('/upload', upload.single('file'), (req, res) => {
 
 app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {
   try {
-    // Robust check for userId in body or query
-    const userId = req.body.userId || req.query.userId;
-    console.log(`[Upload] Profile pic request for: ${userId}, file: ${req.file?.filename}`);
-    
+    const { userId } = req.body;
     if (!userId || !req.file) {
-      console.warn('[Upload] Failed: Missing userId or image');
       return res.status(400).json({ ok: false, error: 'Missing userId or image' });
     }
 
     const imageUrl = 'uploads/' + req.file.filename;
-    // Use returnDocument: 'after' to fix deprecation warning
     const user = await User.findOneAndUpdate(
       { userId },
       { $set: { image: imageUrl } },
-      { returnDocument: 'after' }
+      { new: true }
     );
 
     if (!user) {
-      console.warn(`[Upload] Failed: User ${userId} not found`);
       return res.status(404).json({ ok: false, error: 'User not found' });
     }
 
@@ -508,7 +502,6 @@ app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {
       broadcastAstroUpdate(io, SERVER_URL);
     }
 
-    console.log(`[Upload] Success: ${userId} updated with ${imageUrl}`);
     res.json({ ok: true, image: imageUrl });
   } catch (err) {
     console.error('Profile pic upload error:', err);

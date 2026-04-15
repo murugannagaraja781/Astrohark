@@ -118,7 +118,7 @@ class CallForegroundService : Service() {
             .setAutoCancel(false)
             .build()
 
-        startServiceInternal(notification, isMicRequired = false, isVideoRequired = false)
+        startServiceInternal(notification, isMicRequired = false)
 
         return START_NOT_STICKY
     }
@@ -206,22 +206,20 @@ class CallForegroundService : Service() {
         startServiceInternal(notification, isMicRequired = true)
     }
 
-    private fun startServiceInternal(notification: Notification, isMicRequired: Boolean = false, isVideoRequired: Boolean = true) {
+    private fun startServiceInternal(notification: Notification, isMicRequired: Boolean = false) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
 
             if (isMicRequired && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // For Android 11+, we can add MICROPHONE type
                 type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
-            }
-            
-            if (isVideoRequired && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
             }
 
             try {
                 startForeground(NOTIFICATION_ID, notification, type)
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting foreground service with type $type", e)
+                // Fallback to basic start if it fails
                 startForeground(NOTIFICATION_ID, notification)
             }
         } else {

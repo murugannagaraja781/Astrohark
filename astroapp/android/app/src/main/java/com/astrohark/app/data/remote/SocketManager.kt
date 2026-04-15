@@ -137,14 +137,6 @@ object SocketManager {
         socket?.emit("end-session", payload)
     }
 
-    fun cancelCall(sessionId: String?, toUserId: String?) {
-        val payload = JSONObject().apply {
-            put("sessionId", sessionId)
-            put("toUserId", toUserId)
-        }
-        socket?.emit("cancel-call", payload)
-    }
-
     fun getHistory(sessionId: String, callback: ((List<JSONObject>) -> Unit)) {
         val payload = JSONObject().apply {
             put("sessionId", sessionId)
@@ -166,36 +158,24 @@ object SocketManager {
         })
     }
 
-    fun onSessionEnded(listener: (JSONObject?) -> Unit) {
-        socket?.off("session-ended")
-        socket?.on("session-ended") { args ->
-            Log.d(TAG, "SocketEvent: session-ended received")
-            val data = if (args != null && args.isNotEmpty()) args[0] as? JSONObject else null
-            listener(data)
-        }
-    }
-
-    fun onCallCancelled(listener: (JSONObject) -> Unit) {
-        socket?.off("call-cancelled")
-        socket?.on("call-cancelled") { args ->
-            Log.d(TAG, "SocketEvent: call-cancelled received")
-            if (args != null && args.isNotEmpty()) {
-                val data = args[0] as JSONObject
-                listener(data)
-            }
+    fun onSessionEnded(listener: () -> Unit) {
+        socket?.on("session-ended") {
+            listener()
         }
     }
 
     fun onSessionEndedWithSummary(listener: (reason: String, deducted: Double, earned: Double, duration: Int) -> Unit) {
-        onSessionEnded { data ->
+        socket?.off("session-ended")
+        socket?.on("session-ended") { args ->
             var reason = "ended"
             var deducted = 0.0
             var earned = 0.0
             var duration = 0
 
-            if (data != null) {
-                reason = data.optString("reason", "ended") ?: "ended"
-                val summary = data.optJSONObject("summary")
+            if (args != null && args.isNotEmpty()) {
+                val data = args[0] as? JSONObject
+                reason = data?.optString("reason", "ended") ?: "ended"
+                val summary = data?.optJSONObject("summary")
                 if (summary != null) {
                     deducted = summary.optDouble("deducted", 0.0)
                     earned = summary.optDouble("earned", 0.0)

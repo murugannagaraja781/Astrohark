@@ -83,8 +83,7 @@ interface ApiInterface {
     @POST("api/user/profile-pic")
     suspend fun uploadProfilePic(
         @retrofit2.http.Part("userId") userId: okhttp3.RequestBody,
-        @retrofit2.http.Part image: okhttp3.MultipartBody.Part,
-        @retrofit2.http.Query("userId") userIdQuery: String? = null
+        @retrofit2.http.Part image: okhttp3.MultipartBody.Part
     ): Response<com.google.gson.JsonObject>
     @retrofit2.http.GET("api/config/webrtc")
     suspend fun getWebRTCConfig(): Response<com.google.gson.JsonObject>

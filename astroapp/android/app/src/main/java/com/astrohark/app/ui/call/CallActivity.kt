@@ -1144,11 +1144,16 @@ class CallActivity : ComponentActivity() {
         } catch (e: Exception) {}
 
         try {
+            // Camera release (MANDATORY) to prevent memory leak and OS killing process
+            if (videoCapturer != null) {
+                videoCapturer?.stopCapture()
+                videoCapturer?.dispose()
+                videoCapturer = null
+            }
+            
             if (::peerConnection.isInitialized) {
                 peerConnection.dispose() 
             }
-            videoCapturer?.stopCapture()
-            videoCapturer?.dispose()
             
             if (::localView.isInitialized) {
                 localView.clearImage()
@@ -1165,6 +1170,30 @@ class CallActivity : ComponentActivity() {
             Log.e(TAG, "Error destroying WebRTC resources", e)
         }
         stopBackgroundService()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        try {
+            // Camera release (MANDATORY) in background for Android 14+ specific policy
+            if (callType == "video" && videoCapturer != null && isVideoEnabled) {
+                videoCapturer?.stopCapture()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        try {
+            // Restart camera if coming back to foreground
+            if (callType == "video" && videoCapturer != null && isVideoEnabled && isWebRTCInitialized) {
+                videoCapturer?.startCapture(640, 480, 30)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun createCameraCapturer(enumerator: CameraEnumerator): VideoCapturer? {

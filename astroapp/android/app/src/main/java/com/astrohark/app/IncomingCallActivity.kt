@@ -62,6 +62,8 @@ class IncomingCallActivity : ComponentActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private var shouldStopServiceOnDestroy = true
     private var hasEmittedAnswer = false
+    private var isCallActivityOpen = false
+    private var isServiceStarted = false
 
     private var callerId: String = ""
     private var callerName: String = ""
@@ -236,12 +238,18 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     private fun startCallForegroundService() {
-        val serviceIntent = Intent(this, CallForegroundService::class.java).apply {
-            putExtra("callerName", callerName)
-            putExtra("callId", callId)
+        if (!isServiceStarted) {
+            try {
+                val serviceIntent = Intent(this, CallForegroundService::class.java).apply {
+                    putExtra("callerName", callerName)
+                    putExtra("callId", callId)
+                }
+                ContextCompat.startForegroundService(this, serviceIntent)
+                isServiceStarted = true
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start foreground service", e)
+            }
         }
-
-        ContextCompat.startForegroundService(this, serviceIntent)
     }
 
     private fun startRingtone() {
@@ -323,6 +331,7 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     private fun onCallAccepted() {
+        Log.d("CALL_DEBUG", "Accept clicked")
         Log.d(TAG, "Call accepted: $callId")
         stopRingtoneAndVibration()
         handler.removeCallbacks(timeoutRunnable)
@@ -362,10 +371,16 @@ class IncomingCallActivity : ComponentActivity() {
                 putExtra("birthData", birthData)
             }
         }
-        startActivity(intent)
-
-        shouldStopServiceOnDestroy = false
-        finish()
+        
+        Log.d("CALL_DEBUG", "Starting CallActivity")
+        if (!isCallActivityOpen) {
+            isCallActivityOpen = true
+            runOnUiThread {
+                startActivity(intent)
+                shouldStopServiceOnDestroy = false
+                finish()
+            }
+        }
     }
 
     private fun onCallRejected() {

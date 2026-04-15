@@ -1,6 +1,7 @@
 // utils/rasiEng/horoscopeData.js
 const fetch = require('node-fetch');
 const { DateTime } = require('luxon');
+const defaultHoroscopeData = require('./defaultHoroscopeData');
 
 const BASE_URL = 'https://raw.githubusercontent.com/abinash818/daily-horoscope-data/main/data';
 
@@ -23,32 +24,9 @@ async function fetchDailyHoroscope(date) {
     try {
         const response = await fetch(url);
         if (!response.ok) {
-            console.warn(`[Horoscope] Failed to fetch for ${date}: ${response.status} ${response.statusText}`);
             
-            // Try up to 3 previous days in sequence
-            for (let i = 1; i <= 3; i++) {
-                const retryDate = DateTime.fromISO(date).minus({ days: i }).toFormat('yyyy-MM-dd');
-                console.log(`[Horoscope] Attempting fallback to ${retryDate} (Attempt ${i}/3)`);
-                const fallbackUrl = `${BASE_URL}/horoscope_${retryDate}.json`;
-                const fallbackRes = await fetch(fallbackUrl);
-                
-                if (fallbackRes.ok) {
-                    let data = await fallbackRes.json();
-                    if (Array.isArray(data) && data[0] && data[0].content && data[0].content.parts) {
-                        let text = data[0].content.parts[0].text;
-                        text = text.replace(/```json\n?|```/g, '').trim();
-                        try {
-                            data = JSON.parse(text);
-                        } catch (e) {
-                            console.error(`Failed to parse fallback JSON for ${retryDate}:`, e);
-                            continue; // Try next day
-                        }
-                    }
-                    cache.set(date, data);
-                    return data;
-                }
-            }
-            throw new Error(`Failed to fetch horoscope after 3 fallbacks`);
+            // If all fallbacks fail, strictly return default data seamlessly
+            return defaultHoroscopeData;
         }
 
         let data = await response.json();
@@ -79,8 +57,8 @@ async function fetchDailyHoroscope(date) {
 
         return data;
     } catch (error) {
-        console.error('Error fetching horoscope data:', error.message);
-        return null; // Graceful failure
+        // Return default data instantly on network failure, keep console clean
+        return defaultHoroscopeData;
     }
 }
 

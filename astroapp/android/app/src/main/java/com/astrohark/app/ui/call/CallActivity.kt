@@ -417,6 +417,14 @@ class CallActivity : ComponentActivity() {
             }
         }
         ensureSocketConnected()
+        try {
+            // Restart camera if coming back to foreground
+            if (callType == "video" && videoCapturer != null && isVideoEnabledState && isWebRTCInitialized) {
+                videoCapturer?.startCapture(640, 480, 30)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onPause() {
@@ -425,6 +433,14 @@ class CallActivity : ComponentActivity() {
             proximityWakeLock?.release()
         }
         sensorManager?.unregisterListener(sensorListener)
+        try {
+            // Camera release (MANDATORY) in background for Android 14+ specific policy
+            if (callType == "video" && videoCapturer != null && isVideoEnabledState) {
+                videoCapturer?.stopCapture()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun toggleMic() {
@@ -1170,30 +1186,6 @@ class CallActivity : ComponentActivity() {
             Log.e(TAG, "Error destroying WebRTC resources", e)
         }
         stopBackgroundService()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        try {
-            // Camera release (MANDATORY) in background for Android 14+ specific policy
-            if (callType == "video" && videoCapturer != null && isVideoEnabled) {
-                videoCapturer?.stopCapture()
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        try {
-            // Restart camera if coming back to foreground
-            if (callType == "video" && videoCapturer != null && isVideoEnabled && isWebRTCInitialized) {
-                videoCapturer?.startCapture(640, 480, 30)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     private fun createCameraCapturer(enumerator: CameraEnumerator): VideoCapturer? {

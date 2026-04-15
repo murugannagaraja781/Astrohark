@@ -100,6 +100,26 @@ class OtpVerificationActivity : AppCompatActivity() {
                     "admin" -> Intent(this@OtpVerificationActivity, com.astrohark.app.ui.admin.SuperPowerAdminDashboardActivity::class.java)
                     else -> Intent(this@OtpVerificationActivity, com.astrohark.app.ui.home.HomeActivity::class.java)
                 }
+
+                // Register FCM Token immediately on successful login
+                try {
+                    com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val token = task.result
+                            val serverUrl = com.astrohark.app.utils.Constants.SERVER_URL
+                            lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                try {
+                                    com.astrohark.app.data.api.ApiService.register(serverUrl, user.userId, token)
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+
                 startActivity(intent)
                 finishAffinity()
             } else {

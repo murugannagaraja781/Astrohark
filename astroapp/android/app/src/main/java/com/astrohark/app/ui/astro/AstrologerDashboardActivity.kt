@@ -421,8 +421,23 @@ fun AstrologerDashboardScreen(
         }
         tokenManager.setDailyProgress(todayProgress)
 
-        refreshBalanceAndHistory()
-        // Availability and Status are fetched from DB in refreshBalanceAndHistory()
+        // Enforce default-offline status policy on app launch
+        // to comply with Android 14+ foreground service requirements
+        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                updateServiceStatus(sessionId, "chat", false)
+                updateServiceStatus(sessionId, "audio", false)
+                updateServiceStatus(sessionId, "video", false)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            withContext(kotlinx.coroutines.Dispatchers.Main) {
+                isChatEnabled = false
+                isAudioEnabled = false
+                isVideoEnabled = false
+                refreshBalanceAndHistory()
+            }
+        }
     }
 
     if (showWithdrawDialog) {

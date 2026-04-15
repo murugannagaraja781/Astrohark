@@ -56,6 +56,7 @@ class CallForegroundService : Service() {
 
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
+    private val lockObject = Any()
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -124,56 +125,60 @@ class CallForegroundService : Service() {
     }
 
     private fun acquireWakeLocks() {
-        try {
-            // CPU WakeLock - Keep CPU running even when screen is off
-            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            wakeLock = powerManager.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK,
-                "astrohark:CallWakeLock"
-            ).apply {
-                setReferenceCounted(false)
-                acquire(2 * 60 * 60 * 1000L) // 2 hours max
-            }
-            Log.d(TAG, "WakeLock acquired")
+        synchronized(lockObject) {
+            try {
+                // CPU WakeLock - Keep CPU running even when screen is off
+                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+                wakeLock = powerManager.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    "astrohark:CallWakeLock"
+                ).apply {
+                    setReferenceCounted(false)
+                    acquire(2 * 60 * 60 * 1000L) // 2 hours max
+                }
+                Log.d(TAG, "WakeLock acquired")
 
-            // WiFi Lock - Keep WiFi connection active
-            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            val lockType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                WifiManager.WIFI_MODE_FULL_LOW_LATENCY
-            } else {
-                @Suppress("DEPRECATION")
-                WifiManager.WIFI_MODE_FULL_HIGH_PERF
-            }
+                // WiFi Lock - Keep WiFi connection active
+                val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                val lockType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+                } else {
+                    @Suppress("DEPRECATION")
+                    WifiManager.WIFI_MODE_FULL_HIGH_PERF
+                }
 
-            wifiLock = wifiManager.createWifiLock(lockType, "astrohark:CallWifiLock").apply {
-                setReferenceCounted(false)
-                acquire()
+                wifiLock = wifiManager.createWifiLock(lockType, "astrohark:CallWifiLock").apply {
+                    setReferenceCounted(false)
+                    acquire()
+                }
+                Log.d(TAG, "WifiLock acquired with type: $lockType")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error acquiring WakeLocks", e)
             }
-            Log.d(TAG, "WifiLock acquired with type: $lockType")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error acquiring WakeLocks", e)
         }
     }
 
     private fun releaseWakeLocks() {
-        try {
-            wakeLock?.let {
-                if (it.isHeld) {
-                    it.release()
-                    Log.d(TAG, "WakeLock released")
+        synchronized(lockObject) {
+            try {
+                wakeLock?.let {
+                    if (it.isHeld) {
+                        it.release()
+                        Log.d(TAG, "WakeLock released")
+                    }
                 }
-            }
-            wakeLock = null
+                wakeLock = null
 
-            wifiLock?.let {
-                if (it.isHeld) {
-                    it.release()
-                    Log.d(TAG, "WifiLock released")
+                wifiLock?.let {
+                    if (it.isHeld) {
+                        it.release()
+                        Log.d(TAG, "WifiLock released")
+                    }
                 }
+                wifiLock = null
+            } catch (e: Exception) {
+                Log.e(TAG, "Error releasing WakeLocks", e)
             }
-            wifiLock = null
-        } catch (e: Exception) {
-            Log.e(TAG, "Error releasing WakeLocks", e)
         }
     }
 

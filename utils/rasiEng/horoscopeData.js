@@ -48,8 +48,7 @@ async function fetchDailyHoroscope(date) {
                     return data;
                 }
             }
-            console.warn(`[Horoscope] All fallbacks failed. Returning default data.`);
-            return require('./defaultHoroscopeData')();
+            throw new Error(`Failed to fetch horoscope after 3 fallbacks`);
         }
 
         let data = await response.json();

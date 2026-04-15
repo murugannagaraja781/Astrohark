@@ -94,73 +94,100 @@ class ChatActivity : ComponentActivity() {
         }
     }
 
+    private var hasEmittedAnswer = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Ensure socket is initialized and connected
-        com.astrohark.app.data.remote.SocketManager.init()
-        com.astrohark.app.data.remote.SocketManager.ensureConnection()
-        window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        handleIntent(intent)
+        try {
+            // Ensure socket is initialized and connected
+            com.astrohark.app.data.remote.SocketManager.init()
+            com.astrohark.app.data.remote.SocketManager.ensureConnection()
+            window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            
+            handleIntent(intent)
 
+            val role = TokenManager(this).getUserSession()?.role
 
-        // --- GLOBAL STATE FIX: Mark chat as active to prevent incoming calls during session ---
-        com.astrohark.app.utils.CallState.isCallActive = true
-        com.astrohark.app.utils.CallState.currentSessionId = sessionId
-        setContent {
-            CosmicAppTheme {
-                ChatScreen(
-                    viewModel = viewModel,
-                    sessionDuration = sessionDuration,
-                    title = intent?.getStringExtra("toUserName") ?: "Chat",
-                    onBack = { finish() },
-                    onEndChat = { endChat() },
-                    onEditIntake = {
-                        val intent = Intent(this, com.astrohark.app.ui.intake.IntakeActivity::class.java)
-                        intent.putExtra("isEditMode", true)
-                        intent.putExtra("existingData", clientBirthData?.toString())
-                        if (TokenManager(this).getUserSession()?.role == "astrologer") {
-                            intent.putExtra("targetUserId", toUserId)
-                        }
-                        editIntakeLauncher.launch(intent)
-                    },
-                    onViewChart = {
-                        if (clientBirthData != null) {
-                            val intent = Intent(this, com.astrohark.app.ui.chart.VipChartActivity::class.java)
-                            intent.putExtra("birthData", clientBirthData.toString())
-                            startActivity(intent)
-                        } else {
-                             Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    onSessionFinished = { finishSessionAndNavigate() },
-                    isAstrologer = TokenManager(this).getUserSession()?.role == "astrologer",
-                    toUserId = toUserId,
-                    sessionId = sessionId,
-                    remainingTime = remainingTime,
-                    clientBirthData = clientBirthData
-                )
+            // --- GLOBAL STATE FIX: Mark chat as active to prevent incoming calls during session ---
+            com.astrohark.app.utils.CallState.isCallActive = true
+            com.astrohark.app.utils.CallState.currentSessionId = sessionId
+            
+            setContent {
+                CosmicAppTheme {
+                    ChatScreen(
+                        viewModel = viewModel,
+                        sessionDuration = sessionDuration,
+                        title = intent?.getStringExtra("toUserName") ?: "Chat",
+                        onBack = { finish() },
+                        onEndChat = { endChat() },
+                        onEditIntake = {
+                            val intent = Intent(this, com.astrohark.app.ui.intake.IntakeActivity::class.java)
+                            intent.putExtra("isEditMode", true)
+                            intent.putExtra("existingData", clientBirthData?.toString())
+                            if (role == "astrologer") {
+                                intent.putExtra("targetUserId", toUserId)
+                            }
+                            editIntakeLauncher.launch(intent)
+                        },
+                        onViewChart = {
+                            if (clientBirthData != null) {
+                                val intent = Intent(this, com.astrohark.app.ui.chart.VipChartActivity::class.java)
+                                intent.putExtra("birthData", clientBirthData.toString())
+                                startActivity(intent)
+                            } else {
+                                 Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        onSessionFinished = { finishSessionAndNavigate() },
+                        isAstrologer = role == "astrologer",
+                        toUserId = toUserId,
+                        sessionId = sessionId,
+                        remainingTime = remainingTime,
+                        clientBirthData = clientBirthData
+                    )
+                }
             }
-        }
-        setupObservers()
-        timerHandler.post(timerRunnable)
+            setupObservers()
+            timerHandler.post(timerRunnable)
 
-        // Listen for client birth data updates during session
-        com.astrohark.app.data.remote.SocketManager.getSocket()?.on("client-birth-chart") { args ->
-            if (args != null && args.isNotEmpty()) {
-                val data = args[0] as? JSONObject
-                val updatedData = data?.optJSONObject("birthData")
-                if (updatedData != null) {
-                    runOnUiThread {
-                        clientBirthData = updatedData
-                        val myRole = TokenManager(this@ChatActivity).getUserSession()?.role
-                        if (myRole == "client") {
-                            Toast.makeText(this@ChatActivity, "Astrologer updated your birth details", Toast.LENGTH_SHORT).show()
-                        } else {
-                            Toast.makeText(this@ChatActivity, "Client updated their birth details", Toast.LENGTH_SHORT).show()
+            val myUserId = TokenManager(this).getUserSession()?.userId
+            if (role == "astrologer" && myUserId != null) {
+                com.astrohark.app.AstrologerStatusService.startService(this, myUserId)
+            }
+
+            // --- STABILITY FIX: Immediate registration and answer emission ---
+            if (myUserId != null) {
+                SocketManager.registerUser(myUserId) {
+                    if (pendingAccept && !hasEmittedAnswer && sessionId != null && toUserId != null) {
+                        pendingAccept = false
+                        hasEmittedAnswer = true
+                        viewModel.acceptSession(sessionId!!, toUserId!!)
+                        android.util.Log.d("ChatActivity", "Immediate answer-session emitted for $sessionId")
+                    }
+                }
+            }
+
+            // Listen for client birth data updates during session
+            com.astrohark.app.data.remote.SocketManager.getSocket()?.on("client-birth-chart") { args ->
+                if (args != null && args.isNotEmpty()) {
+                    val data = args[0] as? JSONObject
+                    val updatedData = data?.optJSONObject("birthData")
+                    if (updatedData != null) {
+                        runOnUiThread {
+                            clientBirthData = updatedData
+                            if (role == "client") {
+                                Toast.makeText(this@ChatActivity, "Astrologer updated your birth details", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(this@ChatActivity, "Client updated their birth details", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     }
                 }
             }
+        } catch (e: Exception) {
+            android.util.Log.e("ChatActivity", "CRITICAL SETUP ERROR", e)
+            Toast.makeText(this, "Session Setup Error: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
         }
     }
 
@@ -312,7 +339,6 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     var inputText by remember { mutableStateOf("") }
 
-    // Reply State
     // Reply State
     var replyingTo by remember { mutableStateOf<ChatMessage?>(null) }
 

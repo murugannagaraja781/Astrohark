@@ -56,7 +56,6 @@ class CallForegroundService : Service() {
 
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
-    private val lockObject = Any()
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -119,66 +118,62 @@ class CallForegroundService : Service() {
             .setAutoCancel(false)
             .build()
 
-        startServiceInternal(notification, isMicRequired = false)
+        startServiceInternal(notification, isMicRequired = false, isVideoRequired = false)
 
         return START_NOT_STICKY
     }
 
     private fun acquireWakeLocks() {
-        synchronized(lockObject) {
-            try {
-                // CPU WakeLock - Keep CPU running even when screen is off
-                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-                wakeLock = powerManager.newWakeLock(
-                    PowerManager.PARTIAL_WAKE_LOCK,
-                    "astrohark:CallWakeLock"
-                ).apply {
-                    setReferenceCounted(false)
-                    acquire(2 * 60 * 60 * 1000L) // 2 hours max
-                }
-                Log.d(TAG, "WakeLock acquired")
-
-                // WiFi Lock - Keep WiFi connection active
-                val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-                val lockType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    WifiManager.WIFI_MODE_FULL_LOW_LATENCY
-                } else {
-                    @Suppress("DEPRECATION")
-                    WifiManager.WIFI_MODE_FULL_HIGH_PERF
-                }
-
-                wifiLock = wifiManager.createWifiLock(lockType, "astrohark:CallWifiLock").apply {
-                    setReferenceCounted(false)
-                    acquire()
-                }
-                Log.d(TAG, "WifiLock acquired with type: $lockType")
-            } catch (e: Exception) {
-                Log.e(TAG, "Error acquiring WakeLocks", e)
+        try {
+            // CPU WakeLock - Keep CPU running even when screen is off
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "astrohark:CallWakeLock"
+            ).apply {
+                setReferenceCounted(false)
+                acquire(2 * 60 * 60 * 1000L) // 2 hours max
             }
+            Log.d(TAG, "WakeLock acquired")
+
+            // WiFi Lock - Keep WiFi connection active
+            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val lockType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+            } else {
+                @Suppress("DEPRECATION")
+                WifiManager.WIFI_MODE_FULL_HIGH_PERF
+            }
+
+            wifiLock = wifiManager.createWifiLock(lockType, "astrohark:CallWifiLock").apply {
+                setReferenceCounted(false)
+                acquire()
+            }
+            Log.d(TAG, "WifiLock acquired with type: $lockType")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error acquiring WakeLocks", e)
         }
     }
 
     private fun releaseWakeLocks() {
-        synchronized(lockObject) {
-            try {
-                wakeLock?.let {
-                    if (it.isHeld) {
-                        it.release()
-                        Log.d(TAG, "WakeLock released")
-                    }
+        try {
+            wakeLock?.let {
+                if (it.isHeld) {
+                    it.release()
+                    Log.d(TAG, "WakeLock released")
                 }
-                wakeLock = null
-
-                wifiLock?.let {
-                    if (it.isHeld) {
-                        it.release()
-                        Log.d(TAG, "WifiLock released")
-                    }
-                }
-                wifiLock = null
-            } catch (e: Exception) {
-                Log.e(TAG, "Error releasing WakeLocks", e)
             }
+            wakeLock = null
+
+            wifiLock?.let {
+                if (it.isHeld) {
+                    it.release()
+                    Log.d(TAG, "WifiLock released")
+                }
+            }
+            wifiLock = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Error releasing WakeLocks", e)
         }
     }
 
@@ -211,20 +206,22 @@ class CallForegroundService : Service() {
         startServiceInternal(notification, isMicRequired = true)
     }
 
-    private fun startServiceInternal(notification: Notification, isMicRequired: Boolean = false) {
+    private fun startServiceInternal(notification: Notification, isMicRequired: Boolean = false, isVideoRequired: Boolean = true) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
 
             if (isMicRequired && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                // For Android 11+, we can add MICROPHONE type
                 type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+            }
+            
+            if (isVideoRequired && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
             }
 
             try {
                 startForeground(NOTIFICATION_ID, notification, type)
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting foreground service with type $type", e)
-                // Fallback to basic start if it fails
                 startForeground(NOTIFICATION_ID, notification)
             }
         } else {

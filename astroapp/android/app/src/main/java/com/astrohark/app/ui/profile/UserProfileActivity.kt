@@ -271,11 +271,42 @@ fun UserProfileScreen(
 
                             OutlinedButton(
                                 onClick = {
-                                    tokenManager.clearSession()
-                                    SocketManager.disconnect()
-                                    val intent = Intent(context, com.astrohark.app.ui.auth.LoginActivity::class.java)
-                                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                                    context.startActivity(intent)
+                                    val user = tokenManager.getUserSession()
+                                    if (user != null && user.userId != null && user.role == "astrologer") {
+                                        // Set all services to offline before logout
+                                        val sessionId = user.userId
+                                        scope.launch(Dispatchers.IO) {
+                                            try {
+                                                val services = listOf("chat", "audio", "video")
+                                                val client = okhttp3.OkHttpClient()
+                                                services.forEach { serviceType ->
+                                                    val url = "${com.astrohark.app.utils.Constants.SERVER_URL}/api/astrologer/service-toggle"
+                                                    val body = okhttp3.FormBody.Builder()
+                                                        .add("astrologerId", sessionId)
+                                                        .add("serviceType", serviceType)
+                                                        .add("status", "false")
+                                                        .build()
+                                                    val request = okhttp3.Request.Builder().url(url).post(body).build()
+                                                    client.newCall(request).execute()
+                                                }
+                                            } catch (e: Exception) { e.printStackTrace() }
+                                            
+                                            // Finish logout on Main thread
+                                            scope.launch(Dispatchers.Main) {
+                                                tokenManager.clearSession()
+                                                SocketManager.disconnect()
+                                                val intent = Intent(context, com.astrohark.app.ui.auth.LoginActivity::class.java)
+                                                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                                context.startActivity(intent)
+                                            }
+                                        }
+                                    } else {
+                                        tokenManager.clearSession()
+                                        SocketManager.disconnect()
+                                        val intent = Intent(context, com.astrohark.app.ui.auth.LoginActivity::class.java)
+                                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                                        context.startActivity(intent)
+                                    }
                                 },
                                 modifier = Modifier.align(Alignment.CenterHorizontally).height(50.dp).padding(horizontal = 32.dp),
                                 shape = RoundedCornerShape(AstroDimens.RadiusMedium),

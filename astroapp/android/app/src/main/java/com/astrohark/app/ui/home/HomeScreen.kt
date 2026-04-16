@@ -1148,6 +1148,7 @@ fun AstrologerCard(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val isTamil = true 
+    var isFavorite by remember { mutableStateOf(false) }
 
     val statusColor = when {
         astro.isBusy -> Color(0xFFF44336) // Busy Red
@@ -1155,14 +1156,17 @@ fun AstrologerCard(
         else -> Color.Gray
     }
 
+    val isPandit = astro.name.contains("Pandit", ignoreCase = true) || 
+                  astro.skills.any { it.contains("Pandit", ignoreCase = true) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 6.dp)
-            .shadow(6.dp, RoundedCornerShape(24.dp), spotColor = Color.Black.copy(alpha = 0.1f)),
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+            .shadow(if(isPandit) 10.dp else 4.dp, RoundedCornerShape(24.dp), spotColor = if(isPandit) Color(0xFFFFD700).copy(alpha=0.2f) else Color.Black.copy(alpha = 0.05f)),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
+        border = BorderStroke(1.dp, if(isPandit) Color(0xFFFFD700).copy(alpha=0.4f) else Color(0xFFF0F0F0)),
         onClick = {
             val intent = Intent(context, com.astrohark.app.ui.profile.AstrologerProfileActivity::class.java).apply {
                 putExtra("astro_id", astro.userId)
@@ -1172,8 +1176,8 @@ fun AstrologerCard(
         }
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Reduced Image Size (Compact Look)
+            Row(verticalAlignment = Alignment.Top) {
+                // Image with Pandit Border for emphasis
                 Box(modifier = Modifier.size(75.dp)) {
                     AsyncImage(
                         model = getImageUrl(astro.image),
@@ -1181,26 +1185,64 @@ fun AstrologerCard(
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(18.dp))
-                            .border(1.dp, Color(0xFFF0F0F0), RoundedCornerShape(18.dp)),
+                            .border(if(isPandit) 2.dp else 1.dp, if(isPandit) Color(0xFFFFD700) else Color(0xFFF0F0F0), RoundedCornerShape(18.dp)),
                         contentScale = ContentScale.Crop,
                         error = painterResource(id = com.astrohark.app.R.drawable.ic_person_placeholder)
+                    )
+                    
+                    // Compact Status Dot
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(10.dp)
+                            .background(statusColor, CircleShape)
+                            .border(1.5.dp, Color.White, CircleShape)
                     )
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = astro.name,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = Color.Black,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (astro.isVerified) {
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF2196F3), modifier = Modifier.size(14.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = astro.name,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                    color = Color.Black,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (astro.isVerified) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(Icons.Filled.CheckCircle, null, tint = Color(0xFF2196F3), modifier = Modifier.size(14.dp))
+                                }
+                            }
+                            if (isPandit) {
+                                Text(
+                                    text = "Pandit • पंडित",
+                                    color = Color(0xFFD32F2F),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.ExtraBold
+                                )
+                            }
+                        }
+
+                        // Favorite Icon (Heart Filled/Empty)
+                        IconButton(
+                            onClick = { isFavorite = !isFavorite },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Rounded.Favorite else Icons.Rounded.FavoriteBorder,
+                                contentDescription = "Favorite",
+                                tint = if (isFavorite) Color.Red else Color.LightGray,
+                                modifier = Modifier.size(22.dp)
+                            )
                         }
                     }
                     
@@ -1220,31 +1262,33 @@ fun AstrologerCard(
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                             color = Color.Black
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("₹${astro.price.toInt()}/min", style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = Color(0xFFD32F2F))
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "₹${astro.price.toInt()}/min",
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Black),
+                            color = Color(0xFFC62828)
+                        )
                     }
                 }
-
-                // Online Dot
-                Box(modifier = Modifier.size(8.dp).background(statusColor, CircleShape))
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (astro.isChatOnline) {
-                    AstrologerActionButton("Chat", Icons.Rounded.Chat, true, Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
+                    AstrologerActionButton(Localization.get("chat", isTamil), Icons.Rounded.Chat, true, Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
                 }
                 if (astro.isAudioOnline) {
-                    AstrologerActionButton("Call", Icons.Rounded.Call, true, Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
+                    AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, true, Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
                 }
                 if (astro.isVideoOnline) {
-                    AstrologerActionButton("Video", Icons.Rounded.VideoCall, true, Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
+                    AstrologerActionButton(Localization.get("video", isTamil), Icons.Rounded.VideoCall, true, Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
                 }
             }
         }
     }
 }
+
 
 
 

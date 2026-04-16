@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const { GoogleAuth } = require('google-auth-library');
 
-const FCM_PROJECT_ID = 'astrohark-d487c';
+const FCM_PROJECT_ID = 'astrohark-476dc';
 let callApp = null;
 let fcmAuth = null;
 

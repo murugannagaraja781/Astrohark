@@ -135,7 +135,30 @@ object SocketManager {
     }
 
     fun emitSignal(data: JSONObject) {
+        ensureConnection()
         socket?.emit("signal", data)
+    }
+
+    /**
+     * Ensures the socket is connected and user is registered before emitting a critical signal.
+     */
+    fun emitReliable(event: String, payload: JSONObject, ack: Ack? = null) {
+        if (socket == null || !socket!!.connected()) {
+            Log.w(TAG, "Socket not connected. Attempting reconnect before emitting $event")
+            ensureConnection()
+            // Using once listener to wait for connection
+            socket?.once(Socket.EVENT_CONNECT) {
+                if (currentUserId != null) {
+                    registerUser(currentUserId!!) {
+                        socket?.emit(event, payload, ack)
+                    }
+                } else {
+                    socket?.emit(event, payload, ack)
+                }
+            }
+        } else {
+            socket?.emit(event, payload, ack)
+        }
     }
 
     fun onMessageStatus(listener: (JSONObject) -> Unit) {

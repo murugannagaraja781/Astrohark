@@ -235,6 +235,25 @@ class FCMService : FirebaseMessagingService() {
      * - The notification with fullScreenIntent IS the official way to do this
      */
     private fun handleIncomingCall(data: Map<String, String>) {
+        // --- GHOST CALL PROTECTION: Validate Timestamp ---
+        val timestampStr = data["timestamp"]
+        if (timestampStr != null) {
+            try {
+                val timestamp = timestampStr.toLong()
+                val now = System.currentTimeMillis()
+                if (now - timestamp > 45000) { // Discard if more than 45 seconds old
+                    Log.w(TAG, "Discarding GHOST CALL: Message is too old (${(now - timestamp) / 1000}s)")
+                    return
+                }
+            } catch (e: Exception) { /* Ignore parsing error */ }
+        }
+
+        // --- GHOST CALL PROTECTION: Check Active State ---
+        if (com.astrohark.app.utils.CallState.isCallActive) {
+            Log.w(TAG, "Ignoring INCOMING_CALL: A call session is already active or ringing.")
+            return
+        }
+
         val callerId = data["callerId"] ?: data["fromUserId"] ?: "Unknown"
         // FIX: Check multiple keys for name to avoid "Unknown"
         val callerName = data["callerName"]

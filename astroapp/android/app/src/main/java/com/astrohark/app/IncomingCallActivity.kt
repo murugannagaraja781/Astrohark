@@ -3,6 +3,7 @@ package com.astrohark.app
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.media.RingtoneManager
@@ -335,14 +336,40 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     private fun onCallAccepted() {
-        Log.d("CALL_DEBUG", "Accept clicked")
+        if (hasEmittedAnswer) return // Safety block
+        
         Log.d(TAG, "Call accepted: $callId")
+        
         stopRingtoneAndVibration()
         handler.removeCallbacks(timeoutRunnable)
 
-        // --- STABILITY FIX: Emit answer-session immediately for better responsiveness ---
+        // --- STABILITY FIX: Emit answer-session with Ack and wait for it before transition ---
         if (!hasEmittedAnswer) {
             hasEmittedAnswer = true
+            
+            // Prepare CallActivity intent early
+            val intent: Intent
+            if (callType == "chat") {
+                intent = Intent(this, com.astrohark.app.ui.chat.ChatActivity::class.java).apply {
+                    putExtra("sessionId", callId)
+                    putExtra("toUserId", callerId)
+                    putExtra("toUserName", callerName)
+                    putExtra("isNewRequest", true)
+                    putExtra("birthData", birthData)
+                }
+            } else {
+                intent = Intent(this, com.astrohark.app.ui.call.CallActivity::class.java).apply {
+                    putExtra("sessionId", callId)
+                    putExtra("partnerId", callerId)
+                    putExtra("partnerName", callerName)
+                    putExtra("isInitiator", false)
+                    putExtra("isNewRequest", true) // Signal to CallActivity to NOT re-emit answer-session
+                    putExtra("callType", callType)
+                    putExtra("birthData", birthData)
+                    putExtra("role", "astrologer")
+                }
+            }
+
             try {
                 val payload = JSONObject().apply {
                     put("sessionId", callId)
@@ -350,49 +377,56 @@ class IncomingCallActivity : ComponentActivity() {
                     put("type", callType)
                     put("accept", true)
                 }
-                SocketManager.getSocket()?.emit("answer-session", payload)
-                Log.d(TAG, "Emitted answer-session (accept) immediately from IncomingCallActivity")
-            } catch (e: Exception) { Log.e(TAG, "Failed to emit answer-session on accept", e) }
-        }
+                
+                Log.d(TAG, "Attempting to emit answer-session for $callId...")
+                SocketManager.emitReliable("answer-session", payload, io.socket.client.Ack { args ->
+                    Log.d(TAG, "Server acknowledged answer-session. Proceeding to CallActivity.")
+                    runOnUiThread {
+                        startCallActivity(intent, callId)
+                    }
+                })
+                
+                // Backup timer: If server doesn't respond in 1.5 seconds, PROCEED ANYWAY
+                // Reduced from 3s to 1.5s for faster experience
+                handler.postDelayed({
+                    if (!CallState.isCallActive) {
+                        Log.w(TAG, "Signaling ack delay. Forcing transition for responsiveness.")
+                        startCallActivity(intent, callId)
+                    }
+                }, 1500)
 
-        val intent: Intent
-        if (callType == "chat") {
-            intent = Intent(this, com.astrohark.app.ui.chat.ChatActivity::class.java).apply {
-                putExtra("sessionId", callId)
-                putExtra("toUserId", callerId)
-                putExtra("toUserName", callerName)
-                putExtra("isNewRequest", true)
-                putExtra("birthData", birthData)
-            }
-        } else {
-            intent = Intent(this, com.astrohark.app.ui.call.CallActivity::class.java).apply {
-                putExtra("sessionId", callId)
-                putExtra("partnerId", callerId)
-                putExtra("partnerName", callerName)
-                putExtra("isInitiator", false)
-                putExtra("isNewRequest", true) // Signal to CallActivity to NOT re-emit answer-session
-                putExtra("callType", callType)
-                putExtra("birthData", birthData)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to emit answer-session on accept", e)
+                // Fallback: proceed anyway so user isn't stuck on ringing screen
+                startCallActivity(intent, callId)
             }
         }
+    }
+
+    private fun startCallActivity(intent: Intent, callId: String) {
+        if (isDestroyed || isFinishing) return
         
-        Log.d("CALL_DEBUG", "Starting CallActivity")
+        Log.d("CALL_DEBUG", "Starting CallActivity. Current isCallActive: ${CallState.isCallActive}")
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        intent.putExtra("isNewRequest", true) // Signal to CallActivity to NOT re-emit answer-session
         
-        if (!CallState.isCallActive) {
+        if (!CallState.isCallActive || CallState.currentSessionId == callId) {
+            Log.d("CALL_DEBUG", "Proceeding with transition for $callId")
             CallState.isCallActive = true
             CallState.currentSessionId = callId
-            runOnUiThread {
-                try {
-                    startActivity(intent)
-                    shouldStopServiceOnDestroy = false
-                    finish()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to start Call/Chat activity", e)
-                    CallState.isCallActive = false // Reset on failure
-                    Toast.makeText(this, "Failed to start call: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
+            
+            try {
+                startActivity(intent)
+                Log.d("CALL_DEBUG", "startActivity called successfully")
+                shouldStopServiceOnDestroy = false
+                finish()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start activity", e)
+                CallState.isCallActive = false
+                Toast.makeText(this, "Transition failed: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+        } else {
+            Log.w("CALL_DEBUG", "Ignoring transition: Call already active for ${CallState.currentSessionId}")
         }
     }
 

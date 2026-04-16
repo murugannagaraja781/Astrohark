@@ -159,7 +159,7 @@ module.exports = (io, SERVER_URL) => {
                     messageId,
                     timestamp: Date.now().toString()
                 };
-                sendFcmV1Push(toUser.fcmToken, payload, null);
+                sendFcmV1Push(toUser.fcmToken, payload, null, toUserId);
             }
         });
 

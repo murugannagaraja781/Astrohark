@@ -46,132 +46,15 @@ if (!global.fetch) {
   global.fetch = require('node-fetch');
 }
 
-// FCM v1 API with Service Account
-const { GoogleAuth } = require('google-auth-library');
-const fs = require('fs');
+// FCM v1 API and Firebase Admin consolidated in push.service.js and config/firebase.js
+const { sendFcmV1Push } = require('./services/push.service');
+const { admin, callApp, fcmAuth } = require('./config/firebase'); 
 
-// FCM v1 Configuration
-const FCM_PROJECT_ID = 'astrohark-476dc';
-let fcmAuth = null;
-
-// Initialize FCM v1 Auth
-function initFcmAuth() {
-  try {
-    const serviceAccountPath = './firebase-service-account.json';
-    if (fs.existsSync(serviceAccountPath)) {
-      fcmAuth = new GoogleAuth({
-        keyFile: serviceAccountPath,
-        scopes: ['https://www.googleapis.com/auth/firebase.messaging']
-      });
-      console.log('[FCM v1] Initialized with service account');
-    } else {
-      console.warn('[FCM v1] Service account file not found - push notifications disabled');
-    }
-  } catch (err) {
-    console.error('[FCM v1] Init error:', err.message);
-  }
-
-}
-
-// ==========================================
-// MOBILE APP FIREBASE INITIALIZATION
-// ==========================================
+// Mobile Token Store (Legacy if not used)
 let mobileTokenStore = new Map();
-let callApp = null;
-
-try {
-  const serviceAccountPath = path.join(__dirname, 'firebase-service-account.json');
-
-  if (!fs.existsSync(serviceAccountPath)) {
-    throw new Error(`Service account file not found at: ${serviceAccountPath}`);
-  }
-
-  const firebaseServiceAccount = require(serviceAccountPath);
-  callApp = admin.initializeApp({
-    credential: admin.credential.cert(firebaseServiceAccount)
-  }, 'callApp'); // Secondary App Name
-  console.log('✓ Call App: Firebase Admin SDK initialized');
-} catch (error) {
-  console.warn('✗ Call App: Failed to initialize Firebase Admin SDK (Mobile App)');
-  console.warn('  Error:', error.message);
-  global.callAppInitError = error.message;
-}
 
 
-// Send FCM v1 Push Notification
-async function sendFcmV1Push(fcmToken, data, notification, userId = null) {
-  if (!fcmAuth) {
-    console.warn('[FCM v1] Not initialized - skipping push');
-    return { success: false, error: 'FCM not initialized' };
-  }
-
-  try {
-    const accessToken = await fcmAuth.getAccessToken();
-
-    const messagePayload = {
-      token: fcmToken,
-      data: {
-        ...data,
-        // Embed notification content in data to handle it manually in App for speed
-        title: notification ? notification.title : '',
-        body: notification ? notification.body : ''
-      },
-      android: {
-        priority: 'high',
-        ttl: '0s' // Instant delivery
-      }
-    };
-
-    const message = { message: messagePayload };
-
-    const response = await fetch(
-      `https://fcm.googleapis.com/v1/projects/${FCM_PROJECT_ID}/messages:send`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken.token || accessToken}`
-        },
-        body: JSON.stringify(message)
-      }
-    );
-
-    const result = await response.json();
-
-    if (response.ok) {
-      console.log('[FCM v1] Push sent successfully:', result.name);
-      return { success: true, messageId: result.name };
-    } else {
-      const errorMsg = result.error?.message || JSON.stringify(result);
-      console.error('[FCM v1] Push failed:', errorMsg);
-      
-      const isInvalidToken = (response.status === 404 || 
-                              errorMsg.includes('Requested entity was not found') || 
-                              errorMsg.includes('UNREGISTERED') ||
-                              errorMsg.includes('INVALID_ARGUMENT'));
-
-      if (isInvalidToken) {
-        if (userId) {
-          console.warn(`[FCM v1] Token for user ${userId} is invalid, cleaning up...`);
-          try {
-            await User.updateOne({ userId }, { $unset: { fcmToken: "" } });
-          } catch (dbErr) {
-            console.error('[FCM v1] Failed to clear invalid token from DB:', dbErr.message);
-          }
-        }
-        return { success: false, error: 'INVALID_TOKEN', originalError: errorMsg };
-      }
-      
-      return { success: false, error: errorMsg };
-    }
-  } catch (err) {
-    console.error('[FCM v1] Send error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-// Initialize FCM on server start
-initFcmAuth();
+// FCM Initialization handled by imported service
 
 const app = express();
 app.set('trust proxy', 1); // Standard for one-hop reverse proxy (like Nginx)
@@ -394,7 +277,7 @@ app.get('/api/test-fcm', async (req, res) => {
       return res.json({
         ok: false,
         status: 'NOT_INITIALIZED',
-        error: global.callAppInitError || 'FCM Auth not initialized'
+        error: 'FCM Auth not initialized'
       });
     }
 

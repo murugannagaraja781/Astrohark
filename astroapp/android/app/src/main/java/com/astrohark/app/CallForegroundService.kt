@@ -1,5 +1,6 @@
 package com.astrohark.app
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,6 +8,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.net.wifi.WifiManager
 import android.os.Build
@@ -14,6 +16,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 
 /**
  * CallForegroundService - Keeps the incoming call process alive
@@ -77,8 +80,9 @@ class CallForegroundService : Service() {
 
         if (action == "ACTION_START_CALL") {
             val partnerName = intent?.getStringExtra("partnerName") ?: "Client"
+            val callType = intent?.getStringExtra("callType") ?: "audio"
             acquireWakeLocks() // Keep CPU and WiFi active during call
-            startActiveCallForeground(partnerName)
+            startActiveCallForeground(partnerName, callType)
             return START_STICKY // Keep alive
         }
 
@@ -177,7 +181,7 @@ class CallForegroundService : Service() {
         }
     }
 
-    private fun startActiveCallForeground(partnerName: String) {
+    private fun startActiveCallForeground(partnerName: String, callType: String) {
         val notificationIntent = Intent(this, com.astrohark.app.ui.call.CallActivity::class.java).apply {
              flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
@@ -203,18 +207,23 @@ class CallForegroundService : Service() {
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
 
-        startServiceInternal(notification, isMicRequired = true)
+        val isVideo = (callType == "video")
+        startServiceInternal(notification, isMicRequired = true, isVideoRequired = isVideo)
     }
 
     private fun startServiceInternal(notification: Notification, isMicRequired: Boolean = false, isVideoRequired: Boolean = true) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
 
-            if (isMicRequired && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Only request MIC/CAMERA types if we have the actual permissions to avoid Android 14 security exceptions
+            val hasMic = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+            val hasCam = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
+
+            if (isMicRequired && hasMic && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
             }
             
-            if (isVideoRequired && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (isVideoRequired && hasCam && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
             }
 
@@ -222,7 +231,11 @@ class CallForegroundService : Service() {
                 startForeground(NOTIFICATION_ID, notification, type)
             } catch (e: Exception) {
                 Log.e(TAG, "Error starting foreground service with type $type", e)
-                startForeground(NOTIFICATION_ID, notification)
+                try {
+                    startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL)
+                } catch (e2: Exception) {
+                    startForeground(NOTIFICATION_ID, notification)
+                }
             }
         } else {
             startForeground(NOTIFICATION_ID, notification)

@@ -215,6 +215,7 @@ class CallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "CallActivity.onCreate started with intent: ${intent.extras}")
         try {
             if (savedInstanceState != null) {
                 isEditingIntake = savedInstanceState.getBoolean("isEditingIntake")
@@ -539,6 +540,7 @@ class CallActivity : ComponentActivity() {
         val serviceIntent = android.content.Intent(this, com.astrohark.app.CallForegroundService::class.java).apply {
             action = "ACTION_START_CALL"
             putExtra("partnerName", partnerName)
+            putExtra("callType", callType)
         }
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
             startForegroundService(serviceIntent)
@@ -951,8 +953,8 @@ class CallActivity : ComponentActivity() {
         }
 
         SocketManager.getSocket()?.on("client-birth-chart") { args ->
+            val data = args[0] as? JSONObject ?: return@on
             try {
-                val data = args[0] as JSONObject
                 val bData = data.optJSONObject("birthData")
                 if (bData != null) {
                     clientBirthData = bData

@@ -65,7 +65,7 @@ android {
 
     packaging {
         jniLibs {
-            useLegacyPackaging = true
+            useLegacyPackaging = false // Crucial for 16KB Page Alignment on Android 15
         }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

@@ -76,7 +76,7 @@ class ChatRepository(private val context: Context) {
         SocketManager.getSocket()?.off("chat-message")
         SocketManager.getSocket()?.on("chat-message") { args ->
             if (args != null && args.isNotEmpty()) {
-                val data = args[0] as JSONObject
+                val data = args[0] as? JSONObject ?: return@on
                 onMessage(data)
             }
         }

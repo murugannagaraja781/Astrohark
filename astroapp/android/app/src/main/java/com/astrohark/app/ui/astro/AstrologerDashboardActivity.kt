@@ -528,16 +528,16 @@ fun AstrologerDashboardScreen(
     }
 
     val colors = object {
-        val accent = Color(0xFF00E676) // Bright Green
-        val cardBg = Color(0xFF00382E) // Dark Green
+        val accent = Color(0xFFFF7A00) // Premium Vibrant Orange
+        val cardBg = Color(0xFF2E1500) // Deep Dark Orange/Brown
         val cardStroke = Color.White.copy(alpha = 0.15f)
         val textPrimary = Color.White
-        val textSecondary = Color(0xFFA5D6A7) // Light Sage
+        val textSecondary = Color(0xFFFFCCAA) // Light Peach
         val headerGradient = Brush.verticalGradient(
-            colors = listOf(Color(0xFF1B5E20), Color(0xFF00382E))
+            colors = listOf(Color(0xFF5E2400), Color(0xFF2E1500))
         )
         val bgGradient = Brush.verticalGradient(
-            colors = listOf(Color(0xFF00382E), Color(0xFF002115))
+            colors = listOf(Color(0xFF2E1500), Color(0xFF140700))
         )
     }
 
@@ -547,7 +547,7 @@ fun AstrologerDashboardScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(colors.headerGradient) // Green Gradient Header
+                    .background(colors.headerGradient) // Orange Gradient Header
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -663,7 +663,7 @@ fun AstrologerDashboardScreen(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .background(colors.bgGradient) // Green Gradient Background
+                .background(colors.bgGradient) // Orange Gradient Background
                 .verticalScroll(scrollState) // ENABLE SCROLLING
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -1028,10 +1028,10 @@ fun ServiceTogglesCard(
     onVideoToggle: (Boolean) -> Unit
 ) {
     val colors = object {
-        val accent = Color(0xFF00E676)
-        val cardBg = Color(0xFF00382E)
+        val accent = Color(0xFFFF7A00)
+        val cardBg = Color(0xFF2E1500)
         val textPrimary = Color.White
-        val textSecondary = Color(0xFFA5D6A7)
+        val textSecondary = Color(0xFFFFCCAA)
     }
     Card(
         colors = CardDefaults.cardColors(containerColor = colors.cardBg.copy(alpha = 0.85f)),
@@ -1088,14 +1088,14 @@ fun ServiceToggleRow(
     onToggle: (Boolean) -> Unit
 ) {
     val colors = object {
-        val accent = Color(0xFF25D366) // WhatsApp Green style
+        val accent = Color(0xFFFF7A00) // Premium Orange style
         val textPrimary = Color.White
     }
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                if (isEnabled) Color(0xFF1B5E20).copy(alpha = 0.3f)
+                if (isEnabled) Color(0xFF7A2000).copy(alpha = 0.4f)
                 else Color.White.copy(alpha = 0.05f),
                 RoundedCornerShape(16.dp)
             )

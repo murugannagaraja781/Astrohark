@@ -85,7 +85,7 @@ class GuestDashboardActivity : AppCompatActivity() {
         socket?.connect()
 
         socket?.on("astro-list") { args ->
-            val data = args[0] as JSONObject
+            val data = args[0] as? JSONObject ?: return@on
             val arr = data.optJSONArray("list")
             if (arr != null) {
                 updateAstrologerList(arr)

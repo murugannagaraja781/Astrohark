@@ -98,19 +98,38 @@ object SocketManager {
     fun onSessionAnswered(listener: (JSONObject) -> Unit) {
         socket?.off("session-answered")
         socket?.on("session-answered") { args ->
-            if (args != null && args.isNotEmpty()) {
-                val data = args[0] as JSONObject
-                listener(data)
+            try {
+                if (args != null && args.isNotEmpty()) {
+                    val data = args[0] as? JSONObject
+                    if (data != null) {
+                        listener(data)
+                    } else {
+                         Log.w(TAG, "session-answered received with non-JSON payload: ${args[0]}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in session-answered listener", e)
             }
         }
     }
 
     fun onSignal(listener: (JSONObject) -> Unit) {
+        socket?.on("ping") { args ->
+            if (args != null && args.isNotEmpty()) {
+                socket?.emit("pong", args[0])
+            }
+        }
         socket?.off("signal")
         socket?.on("signal") { args ->
-            if (args != null && args.isNotEmpty()) {
-                val data = args[0] as JSONObject
-                listener(data)
+            try {
+                if (args != null && args.isNotEmpty()) {
+                    val data = args[0] as? JSONObject
+                    if (data != null) {
+                        listener(data)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in signal listener", e)
             }
         }
     }
@@ -123,8 +142,10 @@ object SocketManager {
         socket?.off("message-status")
         socket?.on("message-status") { args ->
             if (args != null && args.isNotEmpty()) {
-                val data = args[0] as JSONObject
-                listener(data)
+                val data = args[0] as? JSONObject
+                if (data != null) {
+                    listener(data)
+                }
             }
         }
     }
@@ -169,9 +190,13 @@ object SocketManager {
     fun onSessionEnded(listener: (JSONObject?) -> Unit) {
         socket?.off("session-ended")
         socket?.on("session-ended") { args ->
-            Log.d(TAG, "SocketEvent: session-ended received")
-            val data = if (args != null && args.isNotEmpty()) args[0] as? JSONObject else null
-            listener(data)
+            try {
+                Log.d(TAG, "SocketEvent: session-ended received")
+                val data = if (args != null && args.isNotEmpty()) args[0] as? JSONObject else null
+                listener(data)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in session-ended listener", e)
+            }
         }
     }
 
@@ -180,8 +205,10 @@ object SocketManager {
         socket?.on("call-cancelled") { args ->
             Log.d(TAG, "SocketEvent: call-cancelled received")
             if (args != null && args.isNotEmpty()) {
-                val data = args[0] as JSONObject
-                listener(data)
+                val data = args[0] as? JSONObject
+                if (data != null) {
+                    listener(data)
+                }
             }
         }
     }
@@ -264,8 +291,10 @@ object SocketManager {
     fun onAstrologerUpdate(listener: (JSONObject) -> Unit) {
         socket?.on("astrologer-update") { args ->
             if (args != null && args.isNotEmpty()) {
-                val data = args[0] as JSONObject
-                listener(data)
+                val data = args[0] as? JSONObject
+                if (data != null) {
+                    listener(data)
+                }
             }
         }
     }
@@ -274,9 +303,11 @@ object SocketManager {
         socket?.off("incoming-session")
         socket?.on("incoming-session") { args ->
             if (args != null && args.isNotEmpty()) {
-                val data = args[0] as JSONObject
-                Log.d(TAG, "Incoming session received: $data")
-                listener(data)
+                val data = args[0] as? JSONObject
+                if (data != null) {
+                    Log.d(TAG, "Incoming session received: $data")
+                    listener(data)
+                }
             }
         }
     }

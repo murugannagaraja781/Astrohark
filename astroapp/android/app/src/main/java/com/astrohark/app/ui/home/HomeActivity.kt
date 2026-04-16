@@ -353,7 +353,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         socket?.on("astro-list") { args ->
-            val data = args[0] as JSONObject
+            val data = args[0] as? JSONObject ?: return@on
             val arr = data.optJSONArray("list") ?: JSONArray()
             val list = mutableListOf<Astrologer>()
             for (i in 0 until arr.length()) {
@@ -365,12 +365,14 @@ class HomeActivity : AppCompatActivity() {
                     it.isOnline || it.isChatOnline || it.isAudioOnline || it.isVideoOnline
                 }.thenByDescending { it.experience }
             )
-            _astrologers.value = sortedList
-            _isLoading.value = false
+            lifecycleScope.launch(Dispatchers.Main) {
+                _astrologers.value = sortedList
+                _isLoading.value = false
+            }
         }
 
         socket?.on("astrologer-update") { args ->
-            val data = args[0] as JSONArray
+            val data = args[0] as? JSONArray ?: return@on
             val list = mutableListOf<Astrologer>()
             for (i in 0 until data.length()) {
                 list.add(parseAstrologer(data.getJSONObject(i)))
@@ -387,7 +389,7 @@ class HomeActivity : AppCompatActivity() {
 
         socket?.on("astro-status-change") { args ->
             // Update individual status in list
-            val data = args[0] as JSONObject
+            val data = args[0] as? JSONObject ?: return@on
             val userId = data.optString("userId")
 
             // Check for specific service fields or fallback to master online
@@ -421,7 +423,7 @@ class HomeActivity : AppCompatActivity() {
         }
 
         socket?.on("wallet-update") { args ->
-            val data = args[0] as JSONObject
+            val data = args[0] as? JSONObject ?: return@on
             val balance = data.optDouble("balance", 0.0)
             val superBalance = data.optDouble("superBalance", 0.0)
 

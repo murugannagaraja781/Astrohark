@@ -9,5 +9,8 @@
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">astrohark.com</domain>
         <domain includeSubdomains="true">139.59.0.107</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain> <!-- Android Emulator Loopback -->
+        <domain includeSubdomains="true">192.168.1.1</domain> <!-- Common local subnet -->
+        <domain includeSubdomains="true">localhost</domain>
     </domain-config>
 </network-security-config>

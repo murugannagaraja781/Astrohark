@@ -55,16 +55,16 @@ class IncomingCallActivity : ComponentActivity() {
     companion object {
         private const val TAG = "IncomingCallActivity"
         private const val CALL_TIMEOUT_MS = 30_000L // Reject call after 30 seconds
+        
+        // GLOBAL STATE TRACKERS (must span across instance recreations)
+        var isServiceStarted = false
+        var hasEmittedAnswer = false
     }
 
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
     private val handler = Handler(Looper.getMainLooper())
     private var shouldStopServiceOnDestroy = true
-    private var hasEmittedAnswer = false
-    private var isCallActivityOpen = false
-    private var isServiceStarted = false
-
     private var callerId: String = ""
     private var callerName: String = ""
     private var callId: String = ""
@@ -113,6 +113,10 @@ class IncomingCallActivity : ComponentActivity() {
                 finish()
                 return
             }
+
+            // Mark as active immediately to block other incoming calls while ringing
+            CallState.isCallActive = true
+            CallState.currentSessionId = callId
 
             setupWindowFlags()
 
@@ -373,12 +377,21 @@ class IncomingCallActivity : ComponentActivity() {
         }
         
         Log.d("CALL_DEBUG", "Starting CallActivity")
-        if (!isCallActivityOpen) {
-            isCallActivityOpen = true
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        
+        if (!CallState.isCallActive) {
+            CallState.isCallActive = true
+            CallState.currentSessionId = callId
             runOnUiThread {
-                startActivity(intent)
-                shouldStopServiceOnDestroy = false
-                finish()
+                try {
+                    startActivity(intent)
+                    shouldStopServiceOnDestroy = false
+                    finish()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to start Call/Chat activity", e)
+                    CallState.isCallActive = false // Reset on failure
+                    Toast.makeText(this, "Failed to start call: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -405,9 +418,17 @@ class IncomingCallActivity : ComponentActivity() {
         handler.removeCallbacks(timeoutRunnable)
 
         if (shouldStopServiceOnDestroy) {
-            Log.d(TAG, "onDestroy: Stopping service (Abrupt exit)")
-            stopService(Intent(this, CallForegroundService::class.java))
-            clearAllCallNotifications()
+            Log.d(TAG, "onDestroy: Resetting CallState (Reject/Timeout/Abrupt exit)")
+            if (CallState.currentSessionId == callId) {
+                CallState.isCallActive = false
+                CallState.currentSessionId = null
+            }
+            
+            if (isServiceStarted) {
+                stopService(Intent(this, CallForegroundService::class.java))
+                clearAllCallNotifications()
+                isServiceStarted = false
+            }
         }
 
         Log.d(TAG, "IncomingCallActivity destroyed")

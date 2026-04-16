@@ -442,8 +442,8 @@ fun PlanetsTab(data: ChartData) {
 @Composable
 fun PlanetDetailSub(label: String, value: String) {
     Column {
-        Text(label, fontSize = 10.sp, color = Color.White.copy(alpha = 0.4f))
-        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.White)
+        Text(label, fontSize = 10.sp, color = Color.Gray)
+        Text(value, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
     }
 }
 
@@ -505,9 +505,9 @@ fun DashaNodeInternal(period: DashaPeriod) {
                     },
                     fontWeight = if(period.level == 1) FontWeight.Bold else FontWeight.Medium,
                     fontSize = if(period.level == 1) 16.sp else 14.sp,
-                    color = Color.White
+                    color = Color.DarkGray
                 )
-                Text("${period.start.take(10).replace("-", ".")} - ${period.end.take(10).replace("-", ".")}", fontSize = 11.sp, color = Color.White.copy(alpha = 0.5f))
+                Text("${period.start.take(10).replace("-", ".")} - ${period.end.take(10).replace("-", ".")}", fontSize = 11.sp, color = Color.Gray)
             }
 
             if (hasSub) {

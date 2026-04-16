@@ -8,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -625,106 +626,24 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     when (selectedTab) {
-                        0 -> {
-                            // --- HOME TAB ---
-                            item { WalletDashboard(walletBalance, isTamil) { onWalletClick() } }
-                            
-                            item { TopServicesSection(isTamil) }
-                            item {
-                                QuickActionsSection(isTamil) { action ->
-                                    selectedFilter = when(action) {
-                                        "chat" -> "Chat"
-                                        "call" -> "Call"
-                                        "video" -> "Video"
-                                        else -> "All"
-                                    }
-                                    selectedTab = 1 // Switch to Consult tab with filter applied
+                        0 -> HomeTab(
+                            walletBalance, isTamil, filteredAstros, isLoading, onWalletClick, onChatClick, onCallClick, onRasiClick,
+                            onAction = { action ->
+                                selectedFilter = when(action) {
+                                    "chat" -> "Chat"
+                                    "call" -> "Call"
+                                    "video" -> "Video"
+                                    else -> "All"
                                 }
+                                selectedTab = 1
                             }
-
-                            item {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                if (isLoading) AstrologerShimmerItem()
-                                else {
-                                    filteredAstros.firstOrNull()?.let { astro ->
-                                        AstrologerCard(astro, { onChatClick(it) }, { a, t -> onCallClick(a, t) }, 0)
-                                    }
-                                }
-                            }
-
-                            item {
-                                ZodiacInsightsSection(isTamil, onRasiClick)
-                            }
-
-                            item {
-                                DailyRitualsSection(isTamil)
-                            }
-
-                            item {
-                                CustomerStoriesSection(isTamil)
-                            }
-
-                            item {
-                                SupportAndPoliciesSection()
-                            }
-                        }
-                        
-                        1 -> {
-                            // --- CONSULT TAB (Listing) ---
-                            items(filteredAstros) { astro ->
-                                AstrologerCard(
-                                    astro = astro,
-                                    onChatClick = { selectedAstro -> checkBalanceAndProceed { onChatClick(selectedAstro) } },
-                                    onCallClick = { selectedAstro, type -> checkBalanceAndProceed { onCallClick(selectedAstro, type) } },
-                                    selectedTab = 1 // Use 1 for listing style
-                                )
-                            }
-                        }
-                        
-                        2 -> {
-                            // --- RITUALS TAB ---
-                            item {
-                                Column(modifier = Modifier.padding(20.dp)) {
-                                    Text("Spiritual Rituals", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold))
-                                    Spacer(modifier = Modifier.height(20.dp))
-                                    RitualCard("Morning Pooja", "Start your day with divine grace", R.mipmap.ic_launcher_round)
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    RitualCard("Full Moon Manifestation", "Align your energy with the lunar cycle", R.mipmap.ic_launcher_round)
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    RitualCard("Weekly Horoscope", "Your detailed planetary transitions", R.mipmap.ic_launcher_round)
-                                }
-                            }
-                        }
-                        
-                        3 -> {
-                            // --- PROFILE / ACCOUNT TAB ---
-                            item {
-                                Column(modifier = Modifier.padding(20.dp)) {
-                                    Text("My Account", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = CosmicAppTheme.colors.textPrimary)
-                                    Spacer(modifier = Modifier.height(20.dp))
-                                    WalletDashboard(walletBalance, isTamil) { onWalletClick() }
-                                    Spacer(modifier = Modifier.height(24.dp))
-                                    ProfileItem("Personal Profile", Icons.Rounded.Person) { onDrawerItemClick("profile") }
-                                    ProfileItem("Transaction History", Icons.Rounded.AccountBalanceWallet) { onWalletClick() }
-                                    ProfileItem("Help & Support", Icons.Rounded.Help) { onDrawerItemClick("settings") }
-                                    ProfileItem("Logout", Icons.Rounded.Logout) { onLogoutClick() }
-                                }
-                            }
-                        }
-
-                        4 -> {
-                            // --- REFERRAL TAB ---
-                            item {
-                                ReferralScreen(
-                                    referralCode = referralCode,
-                                    baseShareUrl = shareLink,
-                                    isTamil = isTamil,
-                                    isNewUser = isNewUser,
-                                    onApplyReferral = onApplyReferral
-                                )
-                            }
-                        }
+                        )
+                        1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } })
+                        2 -> RitualsTab()
+                        3 -> ProfileTab(walletBalance, isTamil, onWalletClick, onDrawerItemClick, onLogoutClick)
+                        4 -> ReferralTab(referralCode, shareLink, isTamil, isNewUser, onApplyReferral)
                     }
+
                 }
             }
         }
@@ -777,6 +696,122 @@ fun SupportAndPoliciesSection() {
             text = "© 2024 astrohark. All Rights Reserved.",
             style = MaterialTheme.typography.labelSmall,
             color = CosmicAppTheme.colors.textSecondary.copy(alpha=0.6f)
+        )
+    }
+}
+
+fun LazyListScope.HomeTab(
+    walletBalance: Double,
+    isTamil: Boolean,
+    filteredAstros: List<Astrologer>,
+    isLoading: Boolean,
+    onWalletClick: () -> Unit,
+    onChatClick: (Astrologer) -> Unit,
+    onCallClick: (Astrologer, String) -> Unit,
+    onRasiClick: (ComposeRasiItem) -> Unit,
+    onAction: (String) -> Unit
+) {
+    item { WalletDashboard(walletBalance, isTamil) { onWalletClick() } }
+    
+    item { TopServicesSection(isTamil) }
+    
+    item {
+        QuickActionsSection(isTamil) { action ->
+            onAction(action)
+        }
+    }
+
+    item {
+        Spacer(modifier = Modifier.height(8.dp))
+        if (isLoading) AstrologerShimmerItem()
+        else {
+            filteredAstros.firstOrNull()?.let { astro ->
+                AstrologerCard(astro, { onChatClick(it) }, { a, t -> onCallClick(a, t) }, 0)
+            }
+        }
+    }
+
+    item {
+        ZodiacInsightsSection(isTamil, onRasiClick)
+    }
+
+    item {
+        DailyRitualsSection(isTamil)
+    }
+
+    item {
+        CustomerStoriesSection(isTamil)
+    }
+
+    item {
+        SupportAndPoliciesSection()
+    }
+}
+
+fun LazyListScope.ConsultTab(
+    astrologers: List<Astrologer>,
+    onChatClick: (Astrologer) -> Unit,
+    onCallClick: (Astrologer, String) -> Unit
+) {
+    items(astrologers) { astro ->
+        AstrologerCard(
+            astro = astro,
+            onChatClick = onChatClick,
+            onCallClick = onCallClick,
+            selectedTab = 1
+        )
+    }
+}
+
+fun LazyListScope.RitualsTab() {
+    item {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text("Spiritual Rituals", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = Color.White)
+            Spacer(modifier = Modifier.height(20.dp))
+            RitualCard("Morning Pooja", "Start your day with divine grace", R.mipmap.ic_launcher_round)
+            Spacer(modifier = Modifier.height(12.dp))
+            RitualCard("Full Moon Manifestation", "Align your energy with the lunar cycle", R.mipmap.ic_launcher_round)
+            Spacer(modifier = Modifier.height(12.dp))
+            RitualCard("Weekly Horoscope", "Your detailed planetary transitions", R.mipmap.ic_launcher_round)
+        }
+    }
+}
+
+fun LazyListScope.ProfileTab(
+    balance: Double,
+    isTamil: Boolean,
+    onWalletClick: () -> Unit,
+    onDrawerItemClick: (String) -> Unit,
+    onLogoutClick: () -> Unit
+) {
+    item {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text("My Account", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = CosmicAppTheme.colors.textPrimary)
+            Spacer(modifier = Modifier.height(20.dp))
+            WalletDashboard(balance, isTamil) { onWalletClick() }
+            Spacer(modifier = Modifier.height(24.dp))
+            ProfileItem("Personal Profile", Icons.Rounded.Person) { onDrawerItemClick("profile") }
+            ProfileItem("Transaction History", Icons.Rounded.AccountBalanceWallet) { onWalletClick() }
+            ProfileItem("Help & Support", Icons.Rounded.Help) { onDrawerItemClick("settings") }
+            ProfileItem("Logout", Icons.Rounded.Logout) { onLogoutClick() }
+        }
+    }
+}
+
+fun LazyListScope.ReferralTab(
+    referralCode: String?,
+    shareLink: String,
+    isTamil: Boolean,
+    isNewUser: Boolean,
+    onApplyReferral: (String) -> Unit
+) {
+    item {
+        ReferralScreen(
+            referralCode = referralCode,
+            baseShareUrl = shareLink,
+            isTamil = isTamil,
+            isNewUser = isNewUser,
+            onApplyReferral = onApplyReferral
         )
     }
 }

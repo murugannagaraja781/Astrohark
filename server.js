@@ -9,7 +9,7 @@ const path = require('path');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const multer = require('multer');
-const admin = require('firebase-admin'); // Firebase Admin for Mobile App
+
 const { DateTime } = require('luxon');
 const { fetchDailyHoroscope } = require("./utils/rasiEng/horoscopeData");
 

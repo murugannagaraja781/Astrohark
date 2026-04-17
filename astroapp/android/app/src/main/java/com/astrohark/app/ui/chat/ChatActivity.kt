@@ -56,6 +56,7 @@ class ChatActivity : ComponentActivity() {
     private var chatDurationSeconds = 0
     private var remainingSeconds = 0
     private var timerHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var isTimerStarted = false
     private val timerRunnable = object : Runnable {
         override fun run() {
             chatDurationSeconds++
@@ -148,6 +149,7 @@ class ChatActivity : ComponentActivity() {
                 }
             }
             setupObservers()
+            isTimerStarted = true
             timerHandler.post(timerRunnable)
 
             val myUserId = TokenManager(this).getUserSession()?.userId
@@ -229,9 +231,13 @@ class ChatActivity : ComponentActivity() {
     private fun setupObservers() {
         viewModel.sessionSummary.observe(this) { summary ->
             timerHandler.removeCallbacks(timerRunnable)
+            // Show summary or just finish
+            Toast.makeText(this, "Chat Completed. Duration: ${summary.duration}s", Toast.LENGTH_LONG).show()
+            finishSessionAndNavigate()
         }
         viewModel.sessionEnded.observe(this) { ended ->
             if (ended) {
+                android.util.Log.d("ChatActivity", "sessionEnded observed. Summary: ${viewModel.sessionSummary.value}")
                 // If summary is null, we can finish immediately.
                 // If it's not null, sessionSummary observer will handle it.
                 if (viewModel.sessionSummary.value == null) {
@@ -241,10 +247,18 @@ class ChatActivity : ComponentActivity() {
             }
         }
         viewModel.availableMinutes.observe(this) { mins ->
+            android.util.Log.d("ChatActivity", "availableMinutes update: $mins")
             remainingSeconds = (mins * 60)
             val remMins = remainingSeconds / 60
             val remSecs = remainingSeconds % 60
             remainingTime = String.format("%02d:%02d", remMins, remSecs)
+
+            // Auto-end if balance hits 0
+            if (mins <= 0 && isTimerStarted) {
+                android.util.Log.w("ChatActivity", "Balance reached 0. Ending session.")
+                Toast.makeText(this, "Balance Exhausted. Ending...", Toast.LENGTH_SHORT).show()
+                endChat()
+            }
         }
     }
 

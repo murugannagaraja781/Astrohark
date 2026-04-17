@@ -112,6 +112,7 @@ async function endSessionRecord(sessionId, broadcastAstroUpdate) {
 
     const endTime = Date.now();
     const billableSeconds = s.elapsedBillableSeconds || 0;
+    console.log(`[Billing][endSessionRecord] sessionId=${sessionId}, billableSeconds=${billableSeconds}`);
 
     await Session.updateOne({ sessionId }, {
         endTime,
@@ -128,7 +129,7 @@ async function endSessionRecord(sessionId, broadcastAstroUpdate) {
         );
     }
 
-    if (billableSeconds > 0 && billableSeconds < 60) {
+    if (billableSeconds > 0 && billableSeconds <= 60) {
         await processBillingCharge(sessionId, billableSeconds, 1, 'early_exit');
     } else if (billableSeconds > 60) {
         const lastBilled = s.lastBilledMinute || 1;

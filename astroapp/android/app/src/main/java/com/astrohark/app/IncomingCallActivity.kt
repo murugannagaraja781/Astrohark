@@ -235,12 +235,22 @@ class IncomingCallActivity : ComponentActivity() {
 
     private fun processIntent(intent: Intent?) {
         if (intent == null) return
-        callerId = intent.getStringExtra("callerId") ?: "Unknown"
-        callerName = intent.getStringExtra("callerName") ?: callerId
-        callId = intent.getStringExtra("callId") ?: "" // Room ID
+        callerId = intent.getStringExtra("callerId") ?: intent.getStringExtra("fromUserId") ?: "Unknown"
+        callerName = intent.getStringExtra("callerName") ?: intent.getStringExtra("userName") ?: callerId
+        
+        // Try multiple session ID keys for robustness
+        callId = intent.getStringExtra("sessionId") 
+            ?: intent.getStringExtra("callId") 
+            ?: intent.getStringExtra("id") 
+            ?: ""
+            
         callType = intent.getStringExtra("callType") ?: "audio"
         birthData = intent.getStringExtra("birthData")
-        Log.d(TAG, "Processing Call Intent: $callerName ($callId) Type: $callType")
+        Log.d(TAG, "Processing Call Intent: Name=$callerName, SessionId=$callId, Type=$callType")
+        
+        if (callId.isEmpty()) {
+            Log.e(TAG, "CRITICAL: No session ID found in intent extras! Context: ${intent.extras?.keySet()}")
+        }
 
         // Cancel notification on new call
         clearAllCallNotifications()
@@ -433,6 +443,7 @@ class IncomingCallActivity : ComponentActivity() {
             CallState.currentSessionId = callId
             
             try {
+                Log.d("CALL_DEBUG", "Starting CallActivity with sessionId=$callId")
                 startActivity(intent)
                 Log.d("CALL_DEBUG", "startActivity called successfully")
                 shouldStopServiceOnDestroy = false

@@ -50,6 +50,7 @@ if (!global.fetch) {
 // FCM v1 API and Firebase Admin consolidated in push.service.js and config/firebase.js
 const { sendFcmV1Push } = require('./services/push.service');
 const callHandler = require('./socket/callHandler');
+const billingService = require('./services/billing.service');
 const { admin, callApp, fcmAuth } = require('./config/firebase'); 
 
 // Mobile Token Store (Legacy if not used)
@@ -63,6 +64,7 @@ app.set('trust proxy', 1); // Standard for one-hop reverse proxy (like Nginx)
 const server = http.createServer(app);
 const io = new Server(server);
 app.set('io', io);
+billingService.setIo(io);
 
 // WebRTC ICE/TURN Config
 const DEFAULT_ICE_SERVERS = [
@@ -1363,6 +1365,19 @@ io.on('connection', (socket) => {
 
   // Mount specialized handlers
   callHandler(io, socket, SERVER_URL, broadcastAstroUpdate);
+
+  // --- Explicit End Session (Stability Guard for Chat/Calls) ---
+  socket.on('end-session', async (data) => {
+    try {
+      const { sessionId } = data || {};
+      if (sessionId) {
+        console.log(`[Socket] end-session received for ${sessionId}`);
+        billingService.endSessionRecord(sessionId, broadcastAstroUpdate);
+      }
+    } catch (err) {
+      console.error('end-session error', err);
+    }
+  });
 
   // --- Register user ---
   // --- Register New Astrologer ---

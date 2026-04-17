@@ -59,8 +59,10 @@ class IncomingCallActivity : ComponentActivity() {
         
         // GLOBAL STATE TRACKERS (must span across instance recreations)
         var isServiceStarted = false
-        var hasEmittedAnswer = false
     }
+    
+    private var hasEmittedAnswer = false
+    private var hasStartedTransition = false
 
     private var mediaPlayer: MediaPlayer? = null
     private var vibrator: Vibrator? = null
@@ -222,6 +224,10 @@ class IncomingCallActivity : ComponentActivity() {
                     )
                 }
             }
+            // Reset flags for new call
+            hasEmittedAnswer = false
+            hasStartedTransition = false
+            
             // Reset timeout
             handler.removeCallbacks(timeoutRunnable)
             handler.postDelayed(timeoutRunnable, CALL_TIMEOUT_MS)
@@ -444,8 +450,35 @@ class IncomingCallActivity : ComponentActivity() {
 
     private fun onCallRejected() {
         Log.d(TAG, "Call rejected: $callId")
+        
+        // --- Emit Rejection to Server ---
+        if (!hasEmittedAnswer) {
+            hasEmittedAnswer = true
+            try {
+                val payload = JSONObject().apply {
+                    put("sessionId", callId)
+                    put("toUserId", callerId)
+                    put("type", callType)
+                    put("accept", false)
+                }
+                
+                Log.d(TAG, "Attempting to emit rejection for $callId...")
+                SocketManager.emitReliable("answer-session", payload, io.socket.client.Ack {
+                    Log.d(TAG, "Server acknowledged rejection for $callId")
+                })
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to emit rejection", e)
+            }
+        }
+
         stopRingtoneAndVibration()
         handler.removeCallbacks(timeoutRunnable)
+
+        // Reset CallState
+        if (CallState.currentSessionId == callId) {
+            CallState.isCallActive = false
+            CallState.currentSessionId = null
+        }
 
         // Stop foreground service
         stopService(Intent(this, CallForegroundService::class.java))

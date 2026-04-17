@@ -12,6 +12,7 @@ object SocketManager {
     private var socket: Socket? = null
     private var initialized = false
     private var currentUserId: String? = null
+    private var isRegistered = false
 
     fun init() {
         if (initialized) return
@@ -29,6 +30,7 @@ object SocketManager {
 
             socket?.on(Socket.EVENT_CONNECT) {
                 Log.d(TAG, "Socket connected: ${socket?.id()}")
+                isRegistered = false // Reset on new connection
                 if (currentUserId != null) {
                     registerUser(currentUserId!!)
                 }
@@ -66,6 +68,7 @@ object SocketManager {
             } else {
                 false
             }
+            isRegistered = success
             Log.d(TAG, "User registered: $userId, success=$success")
             callback?.invoke(success)
         })
@@ -81,6 +84,7 @@ object SocketManager {
     fun requestSession(toUserId: String, type: String, birthData: JSONObject? = null, callback: ((JSONObject?) -> Unit)? = null) {
         val payload = JSONObject().apply {
             put("toUserId", toUserId)
+            put("fromUserId", currentUserId) // Always send for robustness
             put("type", type)
             if (birthData != null) {
                 put("birthData", birthData)

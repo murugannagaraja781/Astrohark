@@ -106,6 +106,11 @@ class IncomingCallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // --- CRITICAL FIX: Reset global emission flag for this NEW call instance ---
+        hasEmittedAnswer = false
+        hasStartedTransition = false
+        
         try {
             processIntent(intent)
 
@@ -337,7 +342,14 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     private fun onCallAccepted() {
-        if (hasEmittedAnswer) return // Safety block
+        if (hasEmittedAnswer || hasStartedTransition) return // Safety block
+        
+        // Force socket connection if it's lagging
+        if (SocketManager.getSocket()?.connected() != true) {
+            Log.w(TAG, "Socket disconnected during accept. Attempting forced reconnect...")
+            SocketManager.init()
+            SocketManager.getSocket()?.connect()
+        }
         
         Log.d(TAG, "Call accepted: $callId")
         
@@ -615,7 +627,8 @@ fun IncomingCallScreen(
                 // Accept Button
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     FloatingActionButton(
-                        onClick = { if (isSocketConnected) onAccept() },
+                        // Removed strict isSocketConnected guard to allow acceptance attempts even during minor lags
+                        onClick = { onAccept() },
                         containerColor = if (isSocketConnected) Color(0xFF25D366) else Color.Gray, // WhatsApp Green
                         contentColor = Color.White,
                         modifier = Modifier.size(76.dp),

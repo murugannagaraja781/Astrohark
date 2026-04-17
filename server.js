@@ -1720,17 +1720,35 @@ io.on('connection', (socket) => {
   socket.on('request-session', async (data, cb) => {
     try {
       const { toUserId, type, birthData } = data || {};
-      const fromUserId = socketToUser.get(socket.id);
+      let fromUserId = socketToUser.get(socket.id) || data.fromUserId;
 
-      if (!fromUserId) return cb({ ok: false, error: 'Not registered' });
+      if (!fromUserId) {
+        console.warn(`[Session] unauthorized request-session from socket ${socket.id}`);
+        return cb({ ok: false, error: 'Not registered' });
+      }
+      
       if (!toUserId || !type) return cb({ ok: false, error: 'Missing fields' });
+
+      console.log(`[Session] request-session: from=${fromUserId}, to=${toUserId}, type=${type}`);
 
       const toUser = await User.findOne({ userId: toUserId });
       const fromUser = await User.findOne({ userId: fromUserId });
 
-      if (!toUser) return cb({ ok: false, error: 'User not found' });
+      if (!toUser) {
+        console.warn(`[Session] target user ${toUserId} not found`);
+        return cb({ ok: false, error: 'User not found' });
+      }
+
+      // Self-registration fix: If we have fromUserId but no mapping, restore it now
+      if (!socketToUser.has(socket.id) && fromUserId) {
+        console.log(`[Session] Restoring missing mapping for socket ${socket.id} -> ${fromUserId}`);
+        socketToUser.set(socket.id, fromUserId);
+        userSockets.set(fromUserId, socket.id);
+        socket.join(fromUserId);
+      }
 
       if (fromUser && fromUser.role === 'client' && (fromUser.walletBalance || 0) <= 0) {
+        console.warn(`[Session] Insufficient balance for client ${fromUserId}`);
         return cb({ ok: false, error: 'Insufficient Main Balance. Please recharge your main wallet to start.' });
       }
 
@@ -1888,11 +1906,19 @@ io.on('connection', (socket) => {
   socket.on('answer-session', (data, cb) => {
     try {
       const { sessionId, toUserId, type, accept } = data || {};
-      const fromUserId = socketToUser.get(socket.id);
+      let fromUserId = socketToUser.get(socket.id) || data.fromUserId;
       if (!fromUserId || !sessionId || !toUserId) {
-        console.warn(`[Session] answer-session missing data: from=${fromUserId}, session=${sessionId}, to=${toUserId}`);
+        console.warn(`[Session] answer-session missing data: from=${fromUserId}, session=${sessionId}, to=${toUserId}, socket=${socket.id}`);
         if (typeof cb === 'function') cb({ ok: false, error: 'Missing data' });
         return;
+      }
+
+      // Self-registration fix
+      if (!socketToUser.has(socket.id) && fromUserId) {
+        console.log(`[Session] Restoring mapping during answer-session for ${fromUserId}`);
+        socketToUser.set(socket.id, fromUserId);
+        userSockets.set(fromUserId, socket.id);
+        socket.join(fromUserId);
       }
 
       if (!accept) {

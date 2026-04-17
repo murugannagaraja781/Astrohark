@@ -8,7 +8,7 @@ const SessionSchema = new mongoose.Schema({
     astrologerConnectedAt: Number,
     actualBillingStart: Number,
     sessionEndAt: Number,
-    status: { type: String, enum: ['active', 'ended'], default: 'active' },
+    status: { type: String, enum: ['ringing', 'answered', 'rejected', 'missed', 'active', 'ended'], default: 'ringing' },
 
     // Legacy/Compatibility Fields
     fromUserId: String,

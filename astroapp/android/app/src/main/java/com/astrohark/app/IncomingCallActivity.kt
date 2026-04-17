@@ -74,7 +74,6 @@ class IncomingCallActivity : ComponentActivity() {
     private var callType: String = "audio"
     private var birthData: String? = null
     private var callerImage: String? = null
-    private var hasStartedTransition = false
 
     // Broadcast receiver to stop ringing when FCM cancel arrives
     private val callControlReceiver = object : android.content.BroadcastReceiver() {

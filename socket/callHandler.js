@@ -66,6 +66,14 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 if (!existingS) {
                     userActiveSession.delete(toUserId);
                 } else if (existingS.users.includes(fromUserId)) {
+                    // DEDUPLICATION: If a session between these same two users already exists and is recent (within 15s), reuse it.
+                    // This prevents "End Session" loops when users click the call button multiple times or during network retries.
+                    const age = Date.now() - (existingS.startedAt || 0);
+                    if (existingS.status === 'ringing' || age < 15000) {
+                        console.log(`[CallHandler][request-session] Deduplicating request. Reusing active session ${existingId}`);
+                        return typeof cb === 'function' && cb({ ok: true, sessionId: existingId });
+                    }
+                    console.log(`[CallHandler][request-session] Ending stale session ${existingId} to start new one.`);
                     await endSessionRecord(existingId);
                 } else {
                     return typeof cb === 'function' && cb({ ok: false, error: 'User busy' });

@@ -3,28 +3,69 @@ const { broadcastAstroUpdate } = require('../services/astrologer.service');
 
 exports.register = async (req, res) => {
     try {
-        const { name, phone, email, experience, price, skills, bio } = req.body;
-        if (!name || !phone) return res.status(400).json({ ok: false, error: 'Mandatory fields missing' });
+        const {
+            name, phone, // legacy/legacy-fallback
+            realName, displayName,
+            gender, dob, tob, pob,
+            phone1, phone2, whatsapp,
+            email, address,
+            aadhar, pan,
+            experience, profession,
+            bankDetails, upiName, upiId
+        } = req.body;
 
-        const existing = await User.findOne({ phone });
-        if (existing) return res.json({ ok: false, error: 'Phone already registered' });
+        const finalPhone = phone1 || phone;
+        const finalName = displayName || name || realName;
+        const finalRealName = realName || finalName;
+
+        if (!finalName || !finalPhone) {
+            return res.status(400).json({ ok: false, error: 'Registration failed: Name and Phone are required' });
+        }
+
+        const existing = await User.findOne({ phone: finalPhone });
+        if (existing) {
+            return res.json({ ok: false, error: 'This phone number is already registered' });
+        }
 
         const userId = 'ASTRO_' + Date.now() + Math.floor(Math.random() * 1000);
+        
         const newUser = new User({
-            userId, phone, email, name, realName: name,
-            astrologyExperience: experience, ratePerMinute: price,
-            profession: skills, bio, role: 'astrologer',
-            approvalStatus: 'pending', isVerified: false,
-            isAvailable: false, isOnline: false,
-            walletBalance: 0, totalEarnings: 0
+            userId,
+            phone: finalPhone,
+            name: finalName,
+            realName: finalRealName,
+            email: email || '',
+            gender: gender || '',
+            dob: dob || '',
+            tob: tob || '',
+            pob: pob || '',
+            cellNumber2: phone2 || '',
+            whatsAppNumber: whatsapp || '',
+            address: address || '',
+            aadharNumber: aadhar || '',
+            panNumber: pan || '',
+            astrologyExperience: experience || '',
+            profession: profession || '',
+            bankDetails: bankDetails || '',
+            upiNumber: upiName || '', // Mapping upiName to upiNumber in schema context
+            upiId: upiId || '',
+            role: 'astrologer',
+            approvalStatus: 'pending',
+            isVerified: false,
+            isAvailable: false, 
+            isOnline: false,
+            walletBalance: 0,
+            totalEarnings: 0,
+            ratePerMinute: 10, // Default rate
+            price: 10 // Sync with ratePerMinute
         });
 
         await newUser.save();
-        console.log(`[Registration] New Astrologer: ${name} (${userId})`);
-        res.json({ ok: true });
+        console.log(`[Registration] New Astrologer: ${finalName} (${userId}) - Status: Pending Approval`);
+        res.json({ ok: true, message: 'Registration submitted successfully. Awaiting admin approval.' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ ok: false, error: 'Server error' });
+        console.error('Registration Error:', error);
+        res.status(500).json({ ok: false, error: 'Deep server error during registration' });
     }
 };
 

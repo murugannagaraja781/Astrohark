@@ -562,7 +562,6 @@ async function seedDatabase() {
 // Stores are now imported from ./services/socketStore.js
 
 const OFFLINE_GRACE_PERIOD = 5 * 60 * 1000; // 5 minutes
-const SESSION_GRACE_PERIOD = 60 * 1000; // 60 seconds
 
 // --- Static Files & Root Route ---
 app.use(express.static(path.join(__dirname, 'public')));

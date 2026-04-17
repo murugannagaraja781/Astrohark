@@ -66,9 +66,11 @@ class CallActivity : ComponentActivity() {
         private val pendingIceCandidates = LinkedList<IceCandidate>()
 
         private var iceServers = mutableListOf(
-            PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
-            PeerConnection.IceServer.builder("turn:turn.astrohark.com:3478?transport=udp")
-                .setUsername("webrtcuser").setPassword("strongpassword123").createIceServer()
+            PeerConnection.IceServer.builder("stun:free.expressturn.com:3478").createIceServer(),
+            PeerConnection.IceServer.builder("turn:free.expressturn.com:3478?transport=udp")
+                .setUsername("000000002089544731").setPassword("HIzMMgt7G9eioH07AnygPJHRWGM=").createIceServer(),
+            PeerConnection.IceServer.builder("turn:free.expressturn.com:3478?transport=tcp")
+                .setUsername("000000002089544731").setPassword("HIzMMgt7G9eioH07AnygPJHRWGM=").createIceServer()
         )
     }
 
@@ -655,25 +657,54 @@ class CallActivity : ComponentActivity() {
                 if (response.isSuccessful) {
                     val config = response.body()
                     if (config != null && config.has("ok") && config.get("ok").asBoolean) {
-                        val stun = if (config.has("stunServer")) config.get("stunServer").asString else "stun:stun.l.google.com:19302"
-                        val turn = if (config.has("turnServer")) config.get("turnServer").asString else "turn.astrohark.com"
-                        val port = if (config.has("turnPort")) config.get("turnPort").asString else "3478"
-                        val user = if (config.has("turnUsername")) config.get("turnUsername").asString else "webrtcuser"
-                        val pass = if (config.has("turnPassword")) config.get("turnPassword").asString else "strongpassword123"
-
                         val newIceServers = mutableListOf<PeerConnection.IceServer>()
-                        newIceServers.add(PeerConnection.IceServer.builder(stun).createIceServer())
-                        
-                        // Add UDP and TCP variants for high compatibility
-                        newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=udp")
-                            .setUsername(user).setPassword(pass).createIceServer())
-                        newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=tcp")
-                            .setUsername(user).setPassword(pass).createIceServer())
-                        newIceServers.add(PeerConnection.IceServer.builder("turns:$turn:5349")
-                            .setUsername(user).setPassword(pass).createIceServer())
 
-                        iceServers = newIceServers
-                        Log.d(TAG, "✓ WebRTC: ICE Config cached for all subsequent sessions")
+                        // 1. Try to parse the modern 'iceServers' array if present
+                        if (config.has("iceServers")) {
+                            val arr = config.getAsJsonArray("iceServers")
+                            for (i in 0 until arr.size()) {
+                                try {
+                                    val entry = arr.get(i).asJsonObject
+                                    val urls = entry.get("urls")
+                                    val username = entry.get("username")?.asString
+                                    val credential = entry.get("credential")?.asString
+
+                                    if (urls.isJsonArray) {
+                                        val urlArr = urls.asJsonArray
+                                        val urlStrings = mutableListOf<String>()
+                                        for (j in 0 until urlArr.size()) urlStrings.add(urlArr.get(j).asString)
+                                        
+                                        val builder = PeerConnection.IceServer.builder(urlStrings)
+                                        if (username != null) builder.setUsername(username)
+                                        if (credential != null) builder.setPassword(credential)
+                                        newIceServers.add(builder.createIceServer())
+                                    } else {
+                                        val builder = PeerConnection.IceServer.builder(urls.asString)
+                                        if (username != null) builder.setUsername(username)
+                                        if (credential != null) builder.setPassword(credential)
+                                        newIceServers.add(builder.createIceServer())
+                                    }
+                                } catch (e: Exception) { Log.e(TAG, "Error parsing ice Server entry $i", e) }
+                            }
+                        }
+
+                        // 2. Fallback or Supplementary: Use legacy fields
+                        if (newIceServers.isEmpty()) {
+                            val stun = if (config.has("stunServer")) config.get("stunServer").asString else "stun:stun.l.google.com:19302"
+                            val turn = if (config.has("turnServer")) config.get("turnServer").asString else "turn.astrohark.com"
+                            val port = if (config.has("turnPort")) config.get("turnPort").asString else "3478"
+                            val user = if (config.has("turnUsername")) config.get("turnUsername").asString else "webrtcuser"
+                            val pass = if (config.has("turnPassword")) config.get("turnPassword").asString else "strongpassword123"
+
+                            newIceServers.add(PeerConnection.IceServer.builder(stun).createIceServer())
+                            newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=udp").setUsername(user).setPassword(pass).createIceServer())
+                            newIceServers.add(PeerConnection.IceServer.builder("turn:$turn:$port?transport=tcp").setUsername(user).setPassword(pass).createIceServer())
+                        }
+
+                        if (newIceServers.isNotEmpty()) {
+                            iceServers = newIceServers
+                            Log.d(TAG, "✓ WebRTC: ${iceServers.size} ICE Servers configured")
+                        }
                     }
                 }
             } catch (e: Exception) {

@@ -64,21 +64,16 @@ app.set('io', io);
 
 // WebRTC ICE/TURN Config
 const DEFAULT_ICE_SERVERS = [
-  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:free.expressturn.com:3478' },
   {
-    urls: 'turn:turn.astrohark.com:3478?transport=udp',
-    username: 'webrtcuser',
-    credential: 'strongpassword123'
+    urls: 'turn:free.expressturn.com:3478?transport=udp',
+    username: '000000002089544731',
+    credential: 'HIzMMgt7G9eioH07AnygPJHRWGM='
   },
   {
-    urls: 'turn:turn.astrohark.com:3478?transport=tcp',
-    username: 'webrtcuser',
-    credential: 'strongpassword123'
-  },
-  {
-    urls: 'turns:turn.astrohark.com:5349',
-    username: 'webrtcuser',
-    credential: 'strongpassword123'
+    urls: 'turn:free.expressturn.com:3478?transport=tcp',
+    username: '000000002089544731',
+    credential: 'HIzMMgt7G9eioH07AnygPJHRWGM='
   }
 ];
 
@@ -310,12 +305,17 @@ app.get('/api/test-fcm', async (req, res) => {
 function getWebRTCConfig() {
   return {
     ok: true,
-    stunServer: process.env.STUN_SERVER || 'stun:stun.l.google.com:19302',
-    turnServer: process.env.TURN_SERVER || 'turn.astrohark.com',
+    stunServer: process.env.STUN_SERVER || 'stun:free.expressturn.com:3478',
+    turnServer: process.env.TURN_SERVER || 'free.expressturn.com',
     turnPort: process.env.TURN_PORT || '3478',
-    turnUsername: process.env.TURN_USERNAME || 'webrtcuser',
-    turnPassword: process.env.TURN_PASSWORD || 'strongpassword123',
+    turnUsername: process.env.TURN_USERNAME || '000000002089544731',
+    turnPassword: process.env.TURN_PASSWORD || 'HIzMMgt7G9eioH07AnygPJHRWGM=',
     iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
       { urls: process.env.STUN_SERVER || 'stun:stun.l.google.com:19302' },
       {
         urls: `turn:${process.env.TURN_SERVER || 'turn.astrohark.com'}:${process.env.TURN_PORT || '3478'}?transport=udp`,

@@ -147,17 +147,29 @@ object SocketManager {
      * Ensures the socket is connected and user is registered before emitting a critical signal.
      */
     fun emitReliable(event: String, payload: JSONObject, ack: Ack? = null) {
-        if (socket == null || !socket!!.connected()) {
-            Log.w(TAG, "Socket not connected. Attempting reconnect before emitting $event")
+        // Automatically inject fromUserId if missing
+        if (!payload.has("fromUserId") && currentUserId != null) {
+            payload.put("fromUserId", currentUserId)
+        }
+
+        if (socket == null || !socket!!.connected() || !isRegistered) {
+            Log.w(TAG, "Socket or Registration state invalid for $event. currentUserId=$currentUserId, isRegistered=$isRegistered")
             ensureConnection()
-            // Using once listener to wait for connection
-            socket?.once(Socket.EVENT_CONNECT) {
-                if (currentUserId != null) {
-                    registerUser(currentUserId!!) {
+            
+            if (currentUserId != null && !isRegistered) {
+                // If we have a user but not registered, do it now and then emit
+                registerUser(currentUserId!!) { ok ->
+                    if (ok) socket?.emit(event, payload, ack)
+                    else Log.e(TAG, "Failed to register for reliable emit $event")
+                }
+            } else {
+                // Wait for next connection or generic registration success
+                socket?.once(Socket.EVENT_CONNECT) {
+                    if (currentUserId != null) {
+                        registerUser(currentUserId!!) { socket?.emit(event, payload, ack) }
+                    } else {
                         socket?.emit(event, payload, ack)
                     }
-                } else {
-                    socket?.emit(event, payload, ack)
                 }
             }
         } else {

@@ -1885,12 +1885,13 @@ io.on('connection', (socket) => {
   });
 
   // --- Answer session ---
-  socket.on('answer-session', (data) => {
+  socket.on('answer-session', (data, cb) => {
     try {
       const { sessionId, toUserId, type, accept } = data || {};
       const fromUserId = socketToUser.get(socket.id);
       if (!fromUserId || !sessionId || !toUserId) {
         console.warn(`[Session] answer-session missing data: from=${fromUserId}, session=${sessionId}, to=${toUserId}`);
+        if (typeof cb === 'function') cb({ ok: false, error: 'Missing data' });
         return;
       }
 
@@ -1909,8 +1910,11 @@ io.on('connection', (socket) => {
       console.log(
         `Session answer: sessionId=${sessionId}, type=${type}, from=${fromUserId}, to=${toUserId}, accept=${!!accept}`
       );
+      
+      if (typeof cb === 'function') cb({ ok: true });
     } catch (err) {
       console.error('answer-session error', err);
+      if (typeof cb === 'function') cb({ ok: false, error: 'Internal server error' });
     }
   });
 

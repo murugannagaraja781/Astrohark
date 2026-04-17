@@ -72,6 +72,7 @@ class IncomingCallActivity : ComponentActivity() {
     private var callType: String = "audio"
     private var birthData: String? = null
     private var callerImage: String? = null
+    private var hasStartedTransition = false
 
     // Broadcast receiver to stop ringing when FCM cancel arrives
     private val callControlReceiver = object : android.content.BroadcastReceiver() {
@@ -389,7 +390,7 @@ class IncomingCallActivity : ComponentActivity() {
                 // Backup timer: If server doesn't respond in 1.5 seconds, PROCEED ANYWAY
                 // Reduced from 3s to 1.5s for faster experience
                 handler.postDelayed({
-                    if (!CallState.isCallActive) {
+                    if (!hasStartedTransition) {
                         Log.w(TAG, "Signaling ack delay. Forcing transition for responsiveness.")
                         startCallActivity(intent, callId)
                     }
@@ -404,9 +405,8 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     private fun startCallActivity(intent: Intent, callId: String) {
-        if (isDestroyed || isFinishing) return
-        
-        Log.d("CALL_DEBUG", "Starting CallActivity. Current isCallActive: ${CallState.isCallActive}")
+        if (isDestroyed || isFinishing || hasStartedTransition) return
+        hasStartedTransition = true
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         intent.putExtra("isNewRequest", true) // Signal to CallActivity to NOT re-emit answer-session
         

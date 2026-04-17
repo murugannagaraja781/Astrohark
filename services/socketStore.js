@@ -9,6 +9,7 @@ const savedAstroStatus = new Map(); // userId -> { chat, audio, video, timestamp
 const sessionDisconnectTimeouts = new Map(); // userId -> timeoutId
 const paymentTokens = new Map();
 const otpStore = new Map();
+const SESSION_GRACE_PERIOD = 30000; // 30 seconds (Grace period for reconnection during calls)
 
 module.exports = {
     userSockets,
@@ -20,5 +21,6 @@ module.exports = {
     savedAstroStatus,
     sessionDisconnectTimeouts,
     paymentTokens,
-    otpStore
+    otpStore,
+    SESSION_GRACE_PERIOD
 };

@@ -35,7 +35,8 @@ const {
   otpStore,
   offlineTimeouts,
   savedAstroStatus,
-  sessionDisconnectTimeouts
+  sessionDisconnectTimeouts,
+  SESSION_GRACE_PERIOD
 } = require('./services/socketStore');
 
 // Razorpay Config (Separated into config/razorpay.js and handled via routes)

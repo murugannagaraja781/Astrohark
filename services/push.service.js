@@ -23,10 +23,16 @@ async function sendFcmV1Push(fcmToken, data, notification, userId = null) {
 
         const messagePayload = {
             token: fcmToken,
+            notification: notification ? {
+                title: notification.title,
+                body: notification.body,
+                image: notification.image || undefined
+            } : undefined,
             data: {
                 ...data,
-                title: notification ? notification.title : '',
-                body: notification ? notification.body : ''
+                title: notification ? notification.title : (data.title || ''),
+                body: notification ? notification.body : (data.body || ''),
+                image: notification?.image || data?.image || ''
             },
             android: {
                 priority: 'high',

@@ -2550,8 +2550,8 @@ io.on('connection', (socket) => {
       for (let i = 0; i < validUsers.length; i += chunkSize) {
         const chunk = validUsers.slice(i, i + chunkSize);
         const promises = chunk.map(u => {
-          const fcmData = { type: 'marketing_offer', title, body };
-          const fcmNotif = { title, body };
+          const fcmData = { type: 'marketing_offer', title, body, image: data.imageUrl || '' };
+          const fcmNotif = { title, body, image: data.imageUrl || '' };
           return sendFcmV1Push(u.fcmToken, fcmData, fcmNotif, u.userId)
             .then(res => res.success ? 1 : 0)
             .catch(() => 0);

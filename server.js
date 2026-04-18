@@ -2288,6 +2288,9 @@ io.on('connection', (socket) => {
       const onlineClients = await User.countDocuments({ role: 'client', userId: { $in: onlineUserIds } });
       const activeCallCount = activeSessions.size;
 
+      // Get full ledger for breakdown
+      const fullLedger = await BillingLedger.find({}).sort({ createdAt: -1 }).limit(100);
+
       const billing = billingStats[0] || {};
 
       // Map to expected format

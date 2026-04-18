@@ -2263,6 +2263,7 @@ io.on('connection', (socket) => {
   // Phase 10: Ledger Stats
   socket.on('admin-get-ledger-stats', async (data, cb) => {
     if (!await checkAdmin(socket.id)) return cb({ ok: false });
+    let fullLedger = []; 
     try {
       // Get billing stats
       const billingStats = await BillingLedger.aggregate([
@@ -2282,14 +2283,17 @@ io.on('connection', (socket) => {
       const totalAstros = await User.countDocuments({ role: 'astrologer' });
       const pendingAstros = await User.countDocuments({ role: 'astrologer', approvalStatus: 'pending' });
 
-      // Live Activity Totals (Derived from active socket map keys)
+      // Live Activity Totals (Derived from active socket maps)
       const onlineUserIds = Array.from(userSockets.keys());
+      console.log(`[AdminStats] Total Sockets: ${userSockets.size}, Online UserIds: ${onlineUserIds.length}`);
+      
       const onlineAstros = await User.countDocuments({ role: 'astrologer', userId: { $in: onlineUserIds } });
       const onlineClients = await User.countDocuments({ role: 'client', userId: { $in: onlineUserIds } });
-      const activeCallCount = activeSessions.size;
+      const activeCallCount = activeSessions ? activeSessions.size : 0;
+      console.log(`[AdminStats] onlineAstros: ${onlineAstros}, onlineClients: ${onlineClients}, activeCalls: ${activeCallCount}`);
 
-      // Get full ledger for breakdown
-      const fullLedger = await BillingLedger.find({}).sort({ createdAt: -1 }).limit(100);
+      // Fetch ledger data
+      fullLedger = await BillingLedger.find({}).sort({ createdAt: -1 }).limit(100);
 
       const billing = billingStats[0] || {};
 
@@ -2298,7 +2302,7 @@ io.on('connection', (socket) => {
         totalRevenue: billing.totalRevenue || 0,
         adminProfit: billing.totalAdminRevenue || 0,
         astroPayout: billing.totalAstroPayout || 0,
-        totalDuration: (billing.totalMinutes || 0) * 60, // Convert minutes to seconds
+        totalDuration: (billing.totalMinutes || 0) * 60,
         totalUsers: totalUsers,
         totalAstros: totalAstros,
         pendingAstros: pendingAstros,
@@ -2307,10 +2311,14 @@ io.on('connection', (socket) => {
         onlineClients: onlineClients
       };
 
-      cb({ ok: true, stats, fullLedger });
+      if (typeof cb === 'function') {
+        cb({ ok: true, stats, fullLedger });
+      }
     } catch (e) {
-      console.error(e);
-      cb({ ok: false });
+      console.error('[AdminStats] Error:', e);
+      if (typeof cb === 'function') {
+        cb({ ok: false, error: e.message, fullLedger });
+      }
     }
   });
 

@@ -38,7 +38,7 @@ module.exports = (io, SERVER_URL) => {
                     return;
                 }
 
-                User.findOne(query).then(user => {
+                User.findOne(query).then(async (user) => {
                     if (!user) {
                         if (typeof cb === 'function') cb({ ok: false, error: 'User not found' });
                         return;

@@ -2,6 +2,7 @@ const AcademyVideo = require('../models/AcademyVideo');
 const Banner = require('../models/Banner');
 const AccountDeletionRequest = require('../models/AccountDeletionRequest');
 const User = require('../models/User');
+const performanceService = require('../services/performance.service');
 
 exports.getVideos = async (req, res) => {
     const videos = await AcademyVideo.find().sort({ createdAt: -1 });
@@ -88,3 +89,13 @@ exports.approveAstrologer = async (req, res) => {
     }
 };
 
+exports.getAstrologerPerformance = async (req, res) => {
+    try {
+        const { astrologerId } = req.params;
+        const { days } = req.query;
+        const stats = await performanceService.getAstrologerPerformance(astrologerId, parseInt(days) || 30);
+        res.json(stats);
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};

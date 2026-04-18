@@ -24,9 +24,29 @@
                 <img src="images/Astrohark_icon.svg" style="height: 32px;" alt="Logo">
                 <span>Super Admin</span>
             </div>
-            <div style="display: flex; gap: 15px; align-items: center;">
+            <div style="display: flex; gap: 18px; align-items: center;">
+                <!-- Notification Bell System -->
+                <div id="admin-notif-container" style="position:relative; cursor:pointer; padding: 5px;" onclick="toggleNotifDropdown()">
+                    <i class="fas fa-bell" style="font-size:1.5rem; color: var(--primary); filter: drop-shadow(0 0 5px var(--primary-glow));"></i>
+                    <span id="notif-badge" style="display:none; position:absolute; top:0; right:0; background:#EF4444; color:#fff; font-size:0.65rem; font-weight:bold; width:18px; height:18px; line-height:18px; text-align:center; border-radius:50%; border:2px solid var(--bg-body); box-shadow: 0 0 10px rgba(239,68,68,0.5);">0</span>
+                    
+                    <!-- Notification Flyout -->
+                    <div id="notif-dropdown" class="admin-card" style="display:none; position:absolute; right:-20px; top:45px; width:340px; z-index:10002; padding:0; overflow:hidden; border: 1px solid var(--border-medium); box-shadow: 0 15px 50px rgba(0,0,0,0.6); animation: slideInRight 0.3s ease;">
+                        <div style="padding:15px; background:rgba(255,127,0,0.05); border-bottom:1px solid var(--border-soft); display:flex; justify-content:space-between; align-items:center;">
+                            <h4 style="margin:0; font-family:var(--font-heading); font-size:1rem; color:var(--primary);"><i class="fas fa-history"></i> Recent Activity</h4>
+                            <span onclick="clearNotifs(); event.stopPropagation();" style="cursor:pointer; color:var(--text-muted); font-size:0.75rem; text-decoration:underline;">Clear All</span>
+                        </div>
+                        <div id="notif-history-list" style="max-height:450px; overflow-y:auto;">
+                            <div style="padding:30px; text-align:center; color:var(--text-muted); font-size:0.9rem;">No recent notifications</div>
+                        </div>
+                        <div style="padding:10px; text-align:center; background:rgba(0,0,0,0.2); border-top:1px solid var(--border-soft);">
+                            <small style="color:var(--text-dim);">Last 50 events shown</small>
+                        </div>
+                    </div>
+                </div>
+
                 <button onclick="logout()" class="btn-admin"
-                    style="background: none; border: none; color: #EF4444; min-width: auto; padding: 8px; font-size: 1.2rem;">
+                    style="background: none; border: none; color: #EF4444; min-width: auto; padding: 8px; font-size: 1.2rem; cursor:pointer;">
                     <i class="fas fa-power-off"></i>
                 </button>
             </div>
@@ -324,6 +344,62 @@
         </div>
 
         <!-- Edit User Modal -->
+        <!-- Modal: Astrologer Performance -->
+        <div id="modal-performance" class="admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10000; overflow-y:auto; padding:20px;">
+            <div class="admin-modal-content" style="max-width: 800px; background: var(--bg-body); border: 1px solid var(--border-soft); box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h3 style="margin:0; font-family:var(--font-heading); color:var(--primary);"><i class="fas fa-chart-line"></i> Astrologer Performance</h3>
+                    <button class="close-btn" onclick="closeModal('modal-performance')" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; margin-bottom:25px;">
+                    <div class="admin-card" style="text-align:center; padding:15px; background:rgba(255,127,0,0.03);">
+                        <small style="color:var(--text-muted);">Avg. Duration</small>
+                        <div id="perf-avg-duration" style="font-size:1.4rem; font-weight:bold; color:var(--primary);">0m</div>
+                    </div>
+                    <div class="admin-card" style="text-align:center; padding:15px; background:rgba(0,255,136,0.03);">
+                        <small style="color:var(--text-muted);">Retention Rate</small>
+                        <div id="perf-retention" style="font-size:1.4rem; font-weight:bold; color:var(--accent);">0%</div>
+                    </div>
+                    <div class="admin-card" style="text-align:center; padding:15px; background:rgba(255,255,255,0.03);">
+                        <small style="color:var(--text-muted);">Total Earnings</small>
+                        <div id="perf-earnings" style="font-size:1.4rem; font-weight:bold; color:var(--text-main);">₹0</div>
+                    </div>
+                    <div class="admin-card" style="text-align:center; padding:15px; background:rgba(245,158,11,0.03);">
+                        <small style="color:var(--text-muted);">Response Rate</small>
+                        <div id="perf-response" style="font-size:1.4rem; font-weight:bold; color:#f59e0b;">0%</div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1.2fr; gap:20px;">
+                    <div class="admin-card" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-soft);">
+                        <h4 style="margin-top:0; color:var(--primary); border-bottom:1px solid var(--border-soft); padding-bottom:8px;">Earnings Breakdown</h4>
+                        <div style="margin-bottom:12px; display:flex; justify-content:space-between; font-size:0.9rem;">
+                            <span style="color:var(--text-muted);">Slab Earning (L1-L5)</span>
+                            <span id="perf-slab-earning" style="font-weight:bold; color:var(--text-main);">₹0</span>
+                        </div>
+                        <div style="margin-bottom:12px; display:flex; justify-content:space-between; font-size:0.9rem;">
+                            <span style="color:var(--text-muted);">Unlimited Earnings</span>
+                            <span id="perf-unlimited-earning" style="font-weight:bold; color:var(--text-main);">₹0</span>
+                        </div>
+                        <div style="margin-bottom:12px; display:flex; justify-content:space-between; border-top:1px solid var(--border-soft); padding-top:10px; margin-top:10px;">
+                            <span style="color:var(--accent);">Admin Commission (Share)</span>
+                            <span id="perf-admin-share" style="color:var(--accent); font-weight:bold;">₹0</span>
+                        </div>
+                        <div style="margin-top:20px; font-size:0.75rem; color:var(--text-dim); line-height:1.4;">
+                            * Stats are calculated based on completed sessions in the last 30 days.
+                        </div>
+                    </div>
+                    <div class="admin-card" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-soft);">
+                        <h4 style="margin-top:0; color:var(--primary); border-bottom:1px solid var(--border-soft); padding-bottom:8px;">Call Distribution</h4>
+                        <div style="height:210px; position:relative; margin-top:10px;">
+                            <canvas id="perfCallChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="modal-edit-user" class="admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10000; overflow-y:auto; padding:20px;">
             <div class="admin-card" style="max-width:600px; margin:40px auto; background: var(--bg-card); position:relative; box-shadow: 0 0 30px rgba(0,0,0,0.5);">
                 <span onclick="closeModal('modal-edit-user')" style="position:absolute; right:20px; top:20px; font-size:2rem; cursor:pointer; color:var(--text-muted);">&times;</span>
@@ -608,6 +684,7 @@
             </div>
           </div>
           <div class="admin-actions">
+            ${isAstro ? `<button class="btn-admin" style="background: #4F46E5; color: white;" onclick="showPerformance('${u.userId}')"><i class="fas fa-chart-line"></i> Stats</button>` : ''}
             <button class="btn-admin btn-edit" style="background: var(--primary); color: #000;" onclick="editUser('${u.userId}')"><i class="fas fa-edit"></i> Edit</button>
             <button class="btn-admin btn-wallet" onclick="adminWallet('${u.userId}')"><i class="fas fa-plus"></i> Wallet</button>
             <button class="btn-admin btn-block" onclick="toggleBan('${u.userId}', ${!u.isBanned})" style="background:${u.isBanned ? '#EF4444' : '#eee'}; color:${u.isBanned ? 'white' : '#666'};">
@@ -674,9 +751,9 @@
         // --- Offers / FCM Logic ---
         let allUsersForFcm = [];
         window.fetchOfferUsers = () => {
-            socket.emit('admin-get-users', (res) => {
-                if (res.users) {
-                    allUsersForFcm = res.users.filter(u => u.fcmToken);
+            socket.emit('get-all-users', (res) => {
+                if (res.ok && res.users) {
+                    allUsersForFcm = res.users;
                     renderFcmUserList(allUsersForFcm);
                 }
             });
@@ -685,18 +762,22 @@
         function renderFcmUserList(list) {
             const container = document.getElementById('fcmUserList');
             if (list.length === 0) {
-                container.innerHTML = '<div style="padding:10px; color:#999; text-align:center;">No users with FCM tokens found</div>';
+                container.innerHTML = '<div style="padding:10px; color:#999; text-align:center;">No users found</div>';
                 return;
             }
-            container.innerHTML = list.map(u => `
-                <div style="display:flex; align-items:center; padding:8px; border-bottom:1px solid #f3f4f6;">
-                    <input type="checkbox" class="fcm-user-checkbox" value="${u.userId}" style="margin-right:10px;">
-                    <div style="font-size:0.85rem;">
-                        <b>${u.name}</b><br>
-                        <small style="color:#666;">${u.phone} (${u.role})</small>
+            container.innerHTML = list.map(u => {
+                const hasFCM = !!u.fcmToken;
+                return `
+                <div style="display:flex; align-items:center; padding:8px; border-bottom:1px solid var(--border-soft); opacity: ${hasFCM ? '1' : '0.5'}">
+                    <input type="checkbox" class="fcm-user-checkbox" value="${u.userId}" style="margin-right:10px;" ${hasFCM ? '' : 'disabled'}>
+                    <div style="font-size:0.85rem; flex:1;">
+                        <b style="color: ${hasFCM ? 'var(--primary)' : 'inherit'}">${u.name}</b> 
+                        ${hasFCM ? '<i class="fas fa-check-circle" style="color:var(--accent); font-size:0.7rem;"></i>' : '<small>(No Token)</small>'}
+                        <br>
+                        <small style="color:var(--text-muted);">${u.phone || 'No Phone'} (${u.role})</small>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         window.searchFcmUsers = () => {
@@ -1052,26 +1133,37 @@
             `).join('');
         }
 
-        function loadWithdrawals() {
+        window.loadWithdrawals = () => {
             socket.emit('get-withdrawals', {}, (res) => {
                 const sect = document.getElementById('adminWithdrawalsSection');
-                if (res.ok && res.list?.filter(x => x.status === 'pending').length > 0) {
-                    sect.style.display = 'block';
-                    document.getElementById('adminWithdrawalsList').innerHTML = res.list.filter(x => x.status === 'pending').map(w => `
-            <div class="admin-card" style="margin-bottom:10px; border-left:4px solid #F59E0B;">
-              <div style="display:flex; justify-content:space-between;">
-                <div><b>${w.astroName}</b><br><small>${new Date(w.requestedAt).toLocaleString()}</small></div>
-                <div style="text-align:right;">
-                  <b style="color:#DC2626; font-size:1.1rem;">₹${w.amount}</b><br>
-                  <button onclick="approveW('${w._id}')" style="background:#059669; color:white; border:none; padding:4px 8px; border-radius:4px;">Approve</button>
-                  <button onclick="rejectW('${w._id}')" style="background:#DC2626; color:white; border:none; padding:4px 8px; border-radius:4px;">Reject</button>
-                </div>
-              </div>
-            </div>
-          `).join('');
-                } else { sect.style.display = 'none'; }
+                const listContainer = document.getElementById('adminWithdrawalsList');
+                if (!listContainer) return;
+
+                if (res.ok && res.list) {
+                    const pending = res.list.filter(x => x.status === 'pending');
+                    if (pending.length > 0) {
+                        sect.style.display = 'block';
+                        listContainer.innerHTML = pending.map(w => `
+                            <div class="admin-card" style="margin-bottom:10px; border-left:4px solid var(--primary); background:rgba(255,127,0,0.02);">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <div>
+                                        <b style="color:var(--text-main); font-size:1rem;">${w.astroName || 'Unknown'}</b><br>
+                                        <small style="color:var(--text-muted);">${new Date(w.requestedAt).toLocaleString()}</small>
+                                    </div>
+                                    <div style="text-align:right;">
+                                        <b style="color:var(--primary); font-size:1.1rem; display:block; margin-bottom:5px;">₹${w.amount}</b>
+                                        <button onclick="approveW('${w._id}')" class="btn-admin" style="height:28px; width:80px; font-size:0.75rem; background:var(--primary); color:#000;">Approve</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        sect.style.display = 'none';
+                        listContainer.innerHTML = '';
+                    }
+                }
             });
-        }
+        };
         window.approveW = (id) => {
             if (confirm('Are you sure you want to APPROVE this withdrawal and deduct from the wallet?')) {
                 socket.emit('approve-withdrawal', { withdrawalId: id }, (res) => {
@@ -1090,6 +1182,51 @@
                 });
             }
         };
+
+        let activePerfChart = null;
+        window.showPerformance = async (astrologerId) => {
+            document.getElementById('modal-performance').style.display = 'block';
+            
+            try {
+                const res = await fetch(`/api/admin/astrologer-performance/${astrologerId}`).then(r => r.json());
+                if(res.ok) {
+                    const m = res.metrics;
+                    document.getElementById('perf-avg-duration').innerText = m.workDepth.avgSessionDuration + 'm';
+                    document.getElementById('perf-retention').innerText = m.workDepth.retentionRate;
+                    document.getElementById('perf-earnings').innerText = '₹' + m.earnings.totalPayout;
+                    document.getElementById('perf-response').innerText = m.workDepth.responseRate;
+
+                    document.getElementById('perf-slab-earning').innerText = '₹' + m.earnings.slabEarnings;
+                    document.getElementById('perf-unlimited-earning').innerText = '₹' + m.earnings.unlimitedEarnings;
+                    document.getElementById('perf-admin-share').innerText = '₹' + m.earnings.adminShare;
+
+                    // Render Pie Chart for Call Status
+                    const ctx = document.getElementById('perfCallChart').getContext('2d');
+                    if (activePerfChart) activePerfChart.destroy();
+                    
+                    const labels = Object.keys(m.callBreakdown);
+                    const data = Object.values(m.callBreakdown);
+                    
+                    activePerfChart = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: data,
+                                backgroundColor: ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6']
+                            }]
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { size: 10 } } } }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Performance Load Error:", e);
+            }
+        };
+
 
         window.uploadAvatar = async (input) => {
             if (!input.files[0]) return;
@@ -1188,28 +1325,103 @@
             });
         }
 
-        // Edit user logic removed
+        let adminNotifications = JSON.parse(localStorage.getItem('admin_notifs') || '[]');
+        updateNotifUI();
 
         socket.on('admin-notification', (msg) => {
-            // Create Popup
+            // Add to History
+            msg.id = Date.now();
+            msg.time = new Date().toLocaleTimeString();
+            adminNotifications.unshift(msg);
+            if (adminNotifications.length > 50) adminNotifications.pop();
+            localStorage.setItem('admin_notifs', JSON.stringify(adminNotifications));
+            updateNotifUI();
+
+            // Create Visual Popup (existing behavior)
             const div = document.createElement('div');
             div.className = 'admin-notification-popup';
-            div.id = `notif-${msg.data ? msg.data.withdrawalId : Date.now()}`;
+            div.id = `notif-popup-${msg.id}`;
             div.innerHTML = `
                  <div style="font-family: var(--font-heading); font-weight: bold; margin-bottom: 10px; color: var(--primary); display: flex; align-items: center; gap: 8px;">
                     <i class="fas fa-bell"></i> ALERT
+                    <small style="margin-left:auto; opacity:0.6; font-weight:normal;">${msg.time}</small>
                  </div>
                  <div style="margin-bottom: 20px; color: var(--text-main); font-size: 0.95rem; line-height: 1.4;">${msg.text}</div>
                  <div style="display: flex; flex-direction: column; gap: 10px;">
                     ${msg.data && msg.data.withdrawalId ?
-                    `<button class="approve" onclick="approveW('${msg.data.withdrawalId}')">Process Withdrawal</button>` : ''}
+                    `<button class="approve" onclick="approveW('${msg.data.withdrawalId}'); this.parentElement.parentElement.remove();">Process Withdrawal</button>` : ''}
                     <button class="close" onclick="this.parentElement.parentElement.remove()">Dismiss</button>
                  </div>
               `;
             document.body.appendChild(div);
-
+            
+            // Auto remove visual popup after 10s
+            setTimeout(() => { if(div.parentElement) div.remove(); }, 10000);
+            
             // Sound Effect
             try { new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3').play(); } catch (e) { }
+        });
+
+        window.toggleNotifDropdown = () => {
+            const list = document.getElementById('notif-dropdown');
+            list.style.display = list.style.display === 'none' ? 'block' : 'none';
+            if (list.style.display === 'block') {
+                resetNotifBadge();
+            }
+        };
+
+        function updateNotifUI() {
+            const container = document.getElementById('notif-history-list');
+            const unreadCount = adminNotifications.filter(n => !n.read).length;
+            const badge = document.getElementById('notif-badge');
+            
+            if (unreadCount > 0) {
+                badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+
+            if (adminNotifications.length === 0) {
+                container.innerHTML = '<div style="padding:30px; text-align:center; color:var(--text-dim); font-size:0.9rem;"><i class="fas fa-ghost" style="font-size:2rem; display:block; margin-bottom:10px; opacity:0.3;"></i>No notifications found</div>';
+                return;
+            }
+
+            container.innerHTML = adminNotifications.map(n => `
+                <div style="padding:15px; border-bottom:1px solid var(--border-soft); ${!n.read ? 'background:rgba(255,127,0,0.05);' : ''} transition: all 0.2s; position:relative;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:6px; align-items:center;">
+                        <span class="user-pill" style="font-size:0.6rem; background:rgba(255,127,0,0.1); color:var(--primary); border:1px solid rgba(255,127,0,0.2);">${n.type ? n.type.toUpperCase() : 'EVENT'}</span>
+                        <span style="font-size:0.65rem; color:var(--text-dim);"><i class="far fa-clock"></i> ${n.time}</span>
+                    </div>
+                    <div style="font-size:0.88rem; color:var(--text-secondary); line-height:1.5; padding-right:10px;">${n.text}</div>
+                    ${n.data && n.data.withdrawalId ? `
+                        <div style="margin-top:10px; display:flex; gap:10px;">
+                            <button onclick="navAdmin('withdrawals'); toggleNotifDropdown()" class="btn-admin" style="height:26px; font-size:0.7rem; border:1px solid var(--primary); background:none; color:var(--primary); transition:all 0.2s;">View Details</button>
+                            <button onclick="approveW('${n.data.withdrawalId}'); event.stopPropagation()" class="btn-admin" style="height:26px; font-size:0.7rem; background:var(--primary); color:#000;">Approve Now</button>
+                        </div>
+                    ` : ''}
+                    ${!n.read ? '<div style="position:absolute; right:10px; top:15px; width:6px; height:6px; background:var(--primary); border-radius:50%;"></div>' : ''}
+                </div>
+            `).join('');
+        }
+
+        function resetNotifBadge() {
+            adminNotifications.forEach(n => n.read = true);
+            localStorage.setItem('admin_notifs', JSON.stringify(adminNotifications));
+            updateNotifUI();
+        }
+
+        window.clearNotifs = () => {
+            adminNotifications = [];
+            localStorage.removeItem('admin_notifs');
+            updateNotifUI();
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('admin-notif-container').contains(e.target)) {
+                document.getElementById('notif-dropdown').style.display = 'none';
+            }
         });
 
         init();

@@ -2284,18 +2284,8 @@ io.on('connection', (socket) => {
       const activeSessionCount = activeSessions.size;
 
       // Live Activity Totals
-      const onlineUserIds = Array.from(userSockets.keys());
-      let onlineAstros = 0;
-      let onlineClients = 0;
-
-      if (onlineUserIds.length > 0) {
-        const onlineProfiles = await User.find({ userId: { $in: onlineUserIds } }, 'role');
-        onlineProfiles.forEach(u => {
-          if (u.role === 'astrologer') onlineAstros++;
-          else if (u.role === 'user' || u.role === 'client') onlineClients++;
-        });
-      }
-
+      const onlineAstros = await User.countDocuments({ role: 'astrologer', isOnline: true });
+      const onlineClients = await User.countDocuments({ role: 'client', isOnline: true });
       const activeCallCount = activeSessions.size;
 
       const billing = billingStats[0] || {};

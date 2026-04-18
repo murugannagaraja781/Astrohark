@@ -64,13 +64,11 @@ module.exports = (io, SERVER_URL) => {
                         sessionDisconnectTimeouts.delete(userId);
                     }
 
+                    user.isOnline = true;
+                    await user.save();
+
                     if (user.role === 'astrologer') {
-                        if (user.isAvailable) {
-                            user.isOnline = true;
-                            user.save().then(() => broadcastAstroUpdate(io, SERVER_URL));
-                        } else {
-                            broadcastAstroUpdate(io, SERVER_URL);
-                        }
+                        broadcastAstroUpdate(io, SERVER_URL);
                     }
                     if (user.role === 'superadmin') {
                         socket.join('superadmin');

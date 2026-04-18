@@ -2278,14 +2278,14 @@ io.on('connection', (socket) => {
       ]);
 
       // Get user counts
-      const totalUsers = await User.countDocuments({ role: 'user' });
+      const totalUsers = await User.countDocuments({ role: 'client' });
       const totalAstros = await User.countDocuments({ role: 'astrologer' });
       const pendingAstros = await User.countDocuments({ role: 'astrologer', approvalStatus: 'pending' });
-      const activeSessionCount = activeSessions.size;
 
-      // Live Activity Totals
-      const onlineAstros = await User.countDocuments({ role: 'astrologer', isOnline: true });
-      const onlineClients = await User.countDocuments({ role: 'client', isOnline: true });
+      // Live Activity Totals (Derived from active socket map keys)
+      const onlineUserIds = Array.from(userSockets.keys());
+      const onlineAstros = await User.countDocuments({ role: 'astrologer', userId: { $in: onlineUserIds } });
+      const onlineClients = await User.countDocuments({ role: 'client', userId: { $in: onlineUserIds } });
       const activeCallCount = activeSessions.size;
 
       const billing = billingStats[0] || {};

@@ -2278,7 +2278,9 @@ io.on('connection', (socket) => {
       ]);
 
       // Get user counts
-      const totalUsers = await User.countDocuments();
+      const totalUsers = await User.countDocuments({ role: 'user' });
+      const totalAstros = await User.countDocuments({ role: 'astrologer' });
+      const pendingAstros = await User.countDocuments({ role: 'astrologer', approvalStatus: 'pending' });
       const activeSessionCount = activeSessions.size;
 
       // Get Live Online Counts
@@ -2303,6 +2305,8 @@ io.on('connection', (socket) => {
         astroPayout: billing.totalAstroPayout || 0,
         totalDuration: (billing.totalMinutes || 0) * 60, // Convert minutes to seconds
         totalUsers: totalUsers,
+        totalAstros: totalAstros,
+        pendingAstros: pendingAstros,
         activeSessions: activeSessionCount,
         onlineAstros: onlineAstros,
         onlineClients: onlineClients

@@ -207,6 +207,15 @@
                 </div>
             </div>
 
+            <!-- Tab Pending: Astrologer Approvals -->
+            <div id="admin-sect-pending" class="admin-tab-section">
+                <h2 style="margin-bottom:20px;"><i class="fas fa-user-clock"></i> Pending Astrologer Registrations</h2>
+                <p style="color:var(--text-dim); margin-bottom:20px;">Review and approve/reject new astrologer applications.</p>
+                <div id="tabPendingList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:15px;">
+                    <div class="loader"></div>
+                </div>
+            </div>
+
             <!-- Tab 4: Users -->
             <div id="admin-sect-users" class="admin-tab-section">
                 <h2 style="margin-bottom:20px;"><i class="fas fa-users"></i> User Directory</h2>
@@ -594,14 +603,16 @@
             <div class="admin-nav-item active" onclick="navAdmin('home', event)"><i
                     class="fas fa-home"></i><span>Dash</span>
             </div>
-            <div class="admin-nav-item" onclick="navAdmin('earnings', event)"><i
-                    class="fas fa-chart-pie"></i><span>Earnings</span></div>
+            <!-- <div class="admin-nav-item" onclick="navAdmin('earnings', event)"><i
+                    class="fas fa-chart-pie"></i><span>Earnings</span></div> -->
             <div class="admin-nav-item" onclick="navAdmin('performance', event)"><i
                     class="fas fa-medal" style="color:#FFD700;"></i><span>Performance</span></div>
             <div class="admin-nav-item" onclick="navAdmin('payouts', event)"><i
-                    class="fas fa-user-astronaut"></i><span>Astros</span></div>
+                    class="fas fa-user-astronaut"></i><span>Astros <small id="nav-count-astros"></small></span></div>
+            <div class="admin-nav-item" onclick="navAdmin('pending', event)"><i
+                    class="fas fa-user-clock"></i><span>Pending <small id="nav-count-pending" style="color:var(--primary);"></small></span></div>
             <div class="admin-nav-item" onclick="navAdmin('users', event)"><i
-                    class="fas fa-users"></i><span>Users</span></div>
+                    class="fas fa-users"></i><span>Users <small id="nav-count-users"></small></span></div>
             <!-- <div class="admin-nav-item" onclick="navAdmin('withdrawals', event)"><i
                     class="fas fa-money-bill-transfer"></i><span>Withdraws</span></div> -->
             <div class="admin-nav-item" onclick="navAdmin('slab', event)"><i
@@ -613,7 +624,7 @@
             <div class="admin-nav-item" onclick="navAdmin('academy', event)"><i
                     class="fas fa-graduation-cap"></i><span>Academy</span></div>
             <div class="admin-nav-item" onclick="navAdmin('notifications', event)"><i
-                    class="fas fa-bell"></i><span>Notifications</span></div>
+                    class="fas fa-bell"></i><span>Notifs <small id="nav-count-notifs" style="color:#EF4444; font-weight:bold;"></small></span></div>
             <!-- Slider Menu Hidden -->
             <!-- <div class="admin-nav-item" onclick="navAdmin('slider', event)"><i
                     class="fas fa-images"></i><span>Slider</span></div> -->
@@ -695,6 +706,12 @@
                     setText('liveCalls', res.stats.activeSessions || 0);
                     setText('liveAstros', res.stats.onlineAstros || 0);
                     setText('liveClients', res.stats.onlineClients || 0);
+
+                    // Sidebar Counts
+                    setText('nav-count-astros', '(' + (res.stats.totalAstros || 0) + ')');
+                    setText('nav-count-pending', '(' + (res.stats.pendingAstros || 0) + ')');
+                    setText('nav-count-users', '(' + (res.stats.totalUsers || 0) + ')');
+                    setText('nav-count-notifs', adminNotifications.length > 0 ? '(' + adminNotifications.length + ')' : '');
 
                     setText('footerTotalUsers', res.stats.totalUsers);
                     setText('footerRevenue', '₹' + res.stats.totalRevenue);
@@ -790,6 +807,7 @@
             if (id === 'slab') loadSlabRates();
             if (id === 'offers') fetchOfferUsers();
             if (id === 'performance') loadPerformanceLeaderboard();
+            if (id === 'pending') loadPendingAstrologers();
             if (id === 'notifications') loadFullNotifications();
             if (id === 'refunds') renderRefunds();
 
@@ -1461,38 +1479,35 @@
         // Pending Registrations
         function loadPendingAstrologers() {
             socket.emit('admin-get-pending-requests', (res) => {
-                const sect = document.getElementById('adminPendingAstrologersSection');
+                const sectHome = document.getElementById('adminPendingAstrologersSection');
+                const listHome = document.getElementById('adminPendingAstrologersList');
+                const listTab = document.getElementById('tabPendingList');
+
                 if (res.ok && res.requests && res.requests.length > 0) {
-                    sect.style.display = 'block';
-                    document.getElementById('adminPendingAstrologersList').innerHTML = res.requests.map(u => `
-                        <div class="admin-card" style="margin-bottom:10px; background:white;">
+                    if(sectHome) sectHome.style.display = 'block';
+                    const html = res.requests.map(u => `
+                        <div class="admin-card" style="margin-bottom:10px; background:rgba(255,255,255,0.01); border-left:4px solid var(--primary);">
                             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                                 <div>
-                                    <div style="font-weight:bold; font-size:1.1rem;">${u.name} (Real: ${u.realName})</div>
-                                    <div style="font-size:0.9rem; color:#555;">📱 ${u.phone}</div>
-                                    <div style="font-size:0.8rem; margin-top:5px;">
-                                        Gender: ${u.intakeDetails?.gender || u.gender}<br>
-                                        Exp: ${u.astrologyExperience} | Prof: ${u.profession}
-                                    </div>
-                                    <div style="font-size:0.8rem; margin-top:5px; color:#666;">
-                                        <i>Address: ${u.address}</i>
+                                    <div style="font-weight:bold; font-size:1.1rem; color:var(--text-main);">${u.name}</div>
+                                    <div style="font-size:0.9rem; color:var(--text-muted);">📱 ${u.phone}</div>
+                                    <div style="font-size:0.8rem; margin-top:5px; color:var(--text-dim);">
+                                        Exp: ${u.astrologyExperience} | Profession: ${u.profession}
                                     </div>
                                 </div>
                                 <div style="text-align:right;">
-                                    <button onclick="approveRegistration('${u.userId}', 'approve')"
-                                        style="background:#059669; color:white; border:none; padding:8px 12px; border-radius:6px; margin-bottom:5px; cursor:pointer;">
-                                        <i class="fas fa-check"></i> Approve
-                                    </button><br>
-                                    <button onclick="approveRegistration('${u.userId}', 'reject')"
-                                        style="background:#DC2626; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;">
-                                        <i class="fas fa-times"></i> Reject
-                                    </button>
+                                    <button onclick="approveRegistration('${u.userId}', 'approve')" class="btn-admin" style="background:#059669; color:white; margin-bottom:5px; width:90px; height:32px; font-size:0.8rem;">Approve</button><br>
+                                    <button onclick="approveRegistration('${u.userId}', 'reject')" class="btn-admin" style="background:#DC2626; color:white; width:90px; height:32px; font-size:0.8rem;">Reject</button>
                                 </div>
                             </div>
                         </div>
                     `).join('');
+
+                    if(listHome) listHome.innerHTML = html;
+                    if(listTab) listTab.innerHTML = html;
                 } else {
-                    sect.style.display = 'none';
+                    if(sectHome) sectHome.style.display = 'none';
+                    if(listTab) listTab.innerHTML = '<div class="admin-card" style="text-align:center; padding:50px; color:var(--text-dim);">No pending astrologer requests.</div>';
                 }
             });
         }

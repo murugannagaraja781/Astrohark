@@ -136,6 +136,40 @@
                 </div>
             </div>
 
+            <!-- Tab Performance: Leaderboard -->
+            <div id="admin-sect-performance" class="admin-tab-section">
+                <h2 style="margin-bottom:20px;"><i class="fas fa-medal" style="color:#FFD700;"></i> Astrologer Performance Leaderboard</h2>
+                <div class="admin-card" style="padding:0; overflow:hidden;">
+                    <table style="width:100%; border-collapse:collapse; color:var(--text-main);">
+                        <thead>
+                            <tr style="background:rgba(255,255,255,0.05); text-align:left;">
+                                <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted);">Rank / Astro</th>
+                                <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); text-align:center;">Sessions</th>
+                                <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); text-align:center;">Minutes</th>
+                                <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); text-align:center;">Unique Clients</th>
+                                <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); text-align:right;">Earnings</th>
+                                <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); text-align:center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="performanceLeaderboardBody">
+                            <!-- Data injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab Notifications: Full History -->
+            <div id="admin-sect-notifications" class="admin-tab-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 style="margin:0;"><i class="fas fa-bell"></i> System Notifications Log</h2>
+                    <button class="btn-admin" style="background:rgba(239,68,68,0.1); color:#EF4444; border:none;" onclick="clearNotifs()">Clear All History</button>
+                </div>
+                
+                <div id="adminFullNotifList" class="grid-1" style="display:grid; gap:12px;">
+                    <!-- Notification items -->
+                </div>
+            </div>
+
             <!-- Tab 4: Users -->
             <div id="admin-sect-users" class="admin-tab-section">
                 <h2 style="margin-bottom:20px;"><i class="fas fa-users"></i> User Directory</h2>
@@ -520,6 +554,8 @@
             </div>
             <div class="admin-nav-item" onclick="navAdmin('earnings', event)"><i
                     class="fas fa-chart-pie"></i><span>Earnings</span></div>
+            <div class="admin-nav-item" onclick="navAdmin('performance', event)"><i
+                    class="fas fa-medal" style="color:#FFD700;"></i><span>Performance</span></div>
             <div class="admin-nav-item" onclick="navAdmin('payouts', event)"><i
                     class="fas fa-user-astronaut"></i><span>Astros</span></div>
             <div class="admin-nav-item" onclick="navAdmin('users', event)"><i
@@ -534,6 +570,8 @@
                     class="fas fa-undo"></i><span>Refund</span></div>
             <div class="admin-nav-item" onclick="navAdmin('academy', event)"><i
                     class="fas fa-graduation-cap"></i><span>Academy</span></div>
+            <div class="admin-nav-item" onclick="navAdmin('notifications', event)"><i
+                    class="fas fa-bell"></i><span>Notifications</span></div>
             <!-- Slider Menu Hidden -->
             <!-- <div class="admin-nav-item" onclick="navAdmin('slider', event)"><i
                     class="fas fa-images"></i><span>Slider</span></div> -->
@@ -705,6 +743,8 @@
             if (id === 'withdrawals') loadAllWithdrawals();
             if (id === 'slab') loadSlabRates();
             if (id === 'offers') fetchOfferUsers();
+            if (id === 'performance') loadPerformanceLeaderboard();
+            if (id === 'notifications') loadFullNotifications();
             if (id === 'refunds') renderRefunds();
 
             document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
@@ -1227,6 +1267,71 @@
             }
         };
 
+
+        window.loadPerformanceLeaderboard = async () => {
+            const body = document.getElementById('performanceLeaderboardBody');
+            body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:50px;"><div class="loader"></div></td></tr>';
+            
+            try {
+                const res = await fetch('/api/admin/astrologers-performance').then(r => r.json());
+                if (res.ok && res.list) {
+                    if (res.list.length === 0) {
+                        body.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">No data available for this period.</td></tr>';
+                        return;
+                    }
+
+                    body.innerHTML = res.list.map((a, idx) => `
+                        <tr style="border-bottom:1px solid var(--border-soft); transition:all 0.2s; cursor:default;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding:15px; display:flex; align-items:center; gap:12px;">
+                                <span style="font-weight:bold; color:var(--primary); font-size:0.9rem; width:20px;">#${idx + 1}</span>
+                                <img src="${a.image || 'https://ui-avatars.com/api/?name=' + a.name}" style="width:35px; height:35px; border-radius:50%; border:1px solid var(--border-soft);">
+                                <div>
+                                    <div style="font-weight:600; font-size:0.9rem;">${a.name}</div>
+                                    <div style="font-size:0.7rem; color:var(--text-dim);">ID: ${a.userId.slice(0, 8)}</div>
+                                </div>
+                            </td>
+                            <td style="padding:15px; text-align:center; font-weight:600;">${a.sessionCount}</td>
+                            <td style="padding:15px; text-align:center; color:var(--accent);">${a.totalMinutes}m</td>
+                            <td style="padding:15px; text-align:center;">${a.clientCount}</td>
+                            <td style="padding:15px; text-align:right; font-weight:bold; color:var(--primary);">₹${a.totalEarned}</td>
+                            <td style="padding:15px; text-align:center;">
+                                <button onclick="showPerformance('${a.userId}')" style="background:rgba(255,255,255,0.05); border:1px solid var(--border-soft); color:var(--text-main); padding:4px 10px; border-radius:4px; font-size:0.75rem; cursor:pointer;">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#EF4444;">Error: ${res.error || 'Failed to load'}</td></tr>`;
+                }
+            } catch (e) {
+                body.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:#EF4444;">Error connecting to server</td></tr>`;
+            }
+        };
+
+        window.loadFullNotifications = () => {
+            const container = document.getElementById('adminFullNotifList');
+            if (adminNotifications.length === 0) {
+                container.innerHTML = '<div class="admin-card" style="text-align:center; padding:50px; color:var(--text-dim);">No notification history found.</div>';
+                return;
+            }
+
+            container.innerHTML = adminNotifications.map(n => `
+                <div class="admin-card" style="border-left:4px solid ${n.type === 'missed_call' ? '#EF4444' : 'var(--primary)'}; background:rgba(255,255,255,0.01); display:flex; justify-content:space-between; align-items:center;">
+                    <div style="flex:1;">
+                        <div style="display:flex; gap:10px; align-items:center; margin-bottom:5px;">
+                            <span class="user-pill" style="font-size:0.65rem; background:rgba(255,127,0,0.1); color:var(--primary); font-weight:bold;">${n.type ? n.type.toUpperCase() : 'EVENT'}</span>
+                            <span style="font-size:0.75rem; color:var(--text-dim);"><i class="far fa-clock"></i> ${n.time}</span>
+                        </div>
+                        <div style="font-size:0.95rem; color:var(--text-main); line-height:1.4;">${n.text}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        ${n.data && n.data.withdrawalId ? `<button onclick="approveW('${n.data.withdrawalId}')" class="btn-admin" style="background:var(--primary); color:#000; height:32px; font-size:0.8rem;">Approve</button>` : ''}
+                        ${n.type === 'missed_call' ? `<i class="fas fa-phone-slash" style="color:#EF4444; font-size:1.2rem; opacity:0.5;"></i>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        };
 
         window.uploadAvatar = async (input) => {
             if (!input.files[0]) return;

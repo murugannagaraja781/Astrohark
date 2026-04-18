@@ -99,3 +99,13 @@ exports.getAstrologerPerformance = async (req, res) => {
         res.json({ ok: false, error: e.message });
     }
 };
+
+exports.getAllAstrologersPerformance = async (req, res) => {
+    try {
+        const { days } = req.query;
+        const stats = await performanceService.getAllAstrologersPerformance(parseInt(days) || 30);
+        res.json(stats);
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};

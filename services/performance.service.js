@@ -120,6 +120,56 @@ const getAstrologerPerformance = async (astrologerId, days = 30) => {
     }
 };
 
+const getAllAstrologersPerformance = async (days = 30) => {
+    try {
+        const startTimeLimit = Date.now() - (days * 24 * 60 * 60 * 1000);
+        
+        // Find all astrologers
+        const astros = await User.find({ role: 'astrologer' }, 'userId name image');
+        const astroIds = astros.map(a => a.userId);
+
+        const results = await Session.aggregate([
+            { 
+                $match: { 
+                    astrologerId: { $in: astroIds },
+                    status: 'ended', 
+                    startTime: { $gte: startTimeLimit } 
+                } 
+            },
+            {
+                $group: {
+                    _id: "$astrologerId",
+                    totalMinutes: { $sum: { $divide: ["$duration", 60] } },
+                    totalEarned: { $sum: "$totalEarned" },
+                    sessionCount: { $sum: 1 },
+                    uniqueClients: { $addToSet: "$clientId" }
+                }
+            },
+            { $sort: { totalEarned: -1 } }
+        ]);
+
+        const performanceData = results.map(r => {
+            const user = astros.find(a => a.userId === r._id);
+            return {
+                userId: r._id,
+                name: user ? user.name : 'Unknown',
+                image: user ? user.image : '',
+                totalMinutes: r.totalMinutes.toFixed(1),
+                totalEarned: r.totalEarned.toFixed(2),
+                sessionCount: r.sessionCount,
+                clientCount: r.uniqueClients.length
+            };
+        });
+
+        return { ok: true, list: performanceData };
+
+    } catch (error) {
+        console.error("[PerformanceService] All Astros Error:", error);
+        return { ok: false, error: error.message };
+    }
+};
+
 module.exports = {
-    getAstrologerPerformance
+    getAstrologerPerformance,
+    getAllAstrologersPerformance
 };

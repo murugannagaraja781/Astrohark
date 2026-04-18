@@ -2117,12 +2117,23 @@ io.on('connection', (socket) => {
 
       // Update allowed fields
       if (updates.name) user.name = updates.name;
-      if (updates.price) user.price = parseInt(updates.price);
+      if (updates.realName) user.realName = updates.realName;
+      if (updates.email) user.email = updates.email;
       if (updates.image) user.image = updates.image;
+      if (updates.price !== undefined) user.price = parseInt(updates.price);
+      if (updates.experience !== undefined) user.experience = parseInt(updates.experience);
+      if (updates.astrologyExperience !== undefined) user.astrologyExperience = updates.astrologyExperience;
+      if (updates.profession) user.profession = updates.profession;
+      if (updates.skills) user.skills = updates.skills;
+      if (updates.aadharNumber) user.aadharNumber = updates.aadharNumber;
+      if (updates.panNumber) user.panNumber = updates.panNumber;
+      if (updates.bankDetails) user.bankDetails = updates.bankDetails;
+      if (updates.upiId) user.upiId = updates.upiId;
+      if (updates.upiNumber) user.upiNumber = updates.upiNumber;
+      
       if (typeof updates.isVerified === 'boolean') user.isVerified = updates.isVerified;
       if (updates.documentStatus) {
         user.documentStatus = updates.documentStatus;
-        // Sync legacy boolean for backward compatibility if needed, but UI uses status now
         user.isDocumentVerified = (updates.documentStatus === 'verified');
       }
 

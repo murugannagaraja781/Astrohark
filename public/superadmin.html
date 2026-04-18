@@ -26,8 +26,8 @@
             </div>
             <div style="display: flex; gap: 15px; align-items: center;">
                 <button onclick="logout()" class="btn-admin"
-                    style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #EF4444; min-width: auto; padding: 8px 15px;">
-                    <i class="fas fa-power-off"></i> <span>Logout</span>
+                    style="background: none; border: none; color: #EF4444; min-width: auto; padding: 8px; font-size: 1.2rem;">
+                    <i class="fas fa-power-off"></i>
                 </button>
             </div>
         </div>
@@ -160,8 +160,8 @@
                 </div>
             </div>
 
-            <!-- Tab 6: Slider -->
-            <div id="admin-sect-slider" class="admin-tab-section">
+            <!-- Slider Disabled -->
+            <!-- <div id="admin-sect-slider" class="admin-tab-section">
                 <h2 style="margin-bottom:20px;"><i class="fas fa-images"></i> App Slider Banners</h2>
                 <div class="admin-card">
                     <h4>Add New Banner</h4>
@@ -185,7 +185,7 @@
                 <div id="adminBannerList">
                     <div class="loader"></div>
                 </div>
-            </div>
+            </div> -->
 
             <div id="admin-sect-slab" class="admin-tab-section">
                 <h2 style="margin-bottom:20px; font-family: var(--font-heading); color: var(--primary);"><i
@@ -323,7 +323,119 @@
             </div>
         </div>
 
-        <!-- Modals Removed -->
+        <!-- Edit User Modal -->
+        <div id="modal-edit-user" class="admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10000; overflow-y:auto; padding:20px;">
+            <div class="admin-card" style="max-width:600px; margin:40px auto; background: var(--bg-card); position:relative; box-shadow: 0 0 30px rgba(0,0,0,0.5);">
+                <span onclick="closeModal('modal-edit-user')" style="position:absolute; right:20px; top:20px; font-size:2rem; cursor:pointer; color:var(--text-muted);">&times;</span>
+                <h2 style="font-family: var(--font-heading); color: var(--primary); margin-bottom:20px;"><i class="fas fa-user-edit"></i> Edit Astrologer / User</h2>
+                
+                <input type="hidden" id="editUserId">
+                
+                <div class="grid-2">
+                    <div>
+                        <label class="app-label">Display Name</label>
+                        <input type="text" id="editName" class="app-input" placeholder="Display Name">
+                    </div>
+                    <div>
+                        <label class="app-label">Real Name</label>
+                        <input type="text" id="editRealName" class="app-input" placeholder="Real Name">
+                    </div>
+                </div>
+
+                <div class="grid-2" style="margin-top:15px;">
+                    <div>
+                        <label class="app-label">Phone</label>
+                        <input type="text" id="editPhone" class="app-input" disabled>
+                    </div>
+                    <div>
+                        <label class="app-label">Email</label>
+                        <input type="text" id="editEmail" class="app-input" placeholder="Email">
+                    </div>
+                </div>
+
+                <div style="margin-top:15px;">
+                    <label class="app-label">Profile Image URL</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="editImage" class="app-input" style="flex:1;">
+                        <input type="file" id="editImageFile" onchange="uploadProfileImage(this)" style="display:none;">
+                        <button class="btn-admin" onclick="document.getElementById('editImageFile').click()"><i class="fas fa-upload"></i></button>
+                    </div>
+                </div>
+
+                <div id="astroFields" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border-soft);">
+                    <h4 style="color:var(--primary); margin-bottom:15px;">Astrologer Information</h4>
+                    
+                    <div class="grid-3">
+                        <div>
+                            <label class="app-label">Base Price</label>
+                            <input type="number" id="editPrice" class="app-input">
+                        </div>
+                        <div>
+                            <label class="app-label">Experience (Years)</label>
+                            <input type="number" id="editExp" class="app-input">
+                        </div>
+                        <div>
+                            <label class="app-label">Profession / Bio</label>
+                            <input type="text" id="editProfession" class="app-input">
+                        </div>
+                    </div>
+
+                    <div style="margin-top:15px;">
+                        <label class="app-label">Skills (comma separated)</label>
+                        <input type="text" id="editSkills" class="app-input">
+                    </div>
+
+                    <div class="grid-2" style="margin-top:15px;">
+                        <div>
+                            <label class="app-label">Document Status</label>
+                            <select id="editDocStatus" class="app-input">
+                                <option value="none">None</option>
+                                <option value="pending">Pending</option>
+                                <option value="verified">Verified</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; align-items:flex-end; padding-bottom:12px;">
+                            <label class="app-label" style="margin:0; display:flex; align-items:center; cursor:pointer;">
+                                <input type="checkbox" id="editIsVerified" style="width:20px; height:20px; margin-right:10px; margin-top:0;">
+                                Verified Badge
+                            </label>
+                        </div>
+                    </div>
+
+                    <h4 style="color:var(--primary); margin-top:20px; margin-bottom:15px;">Bank & Identity</h4>
+                    <div class="grid-2">
+                        <div>
+                            <label class="app-label">Aadhar Number</label>
+                            <input type="text" id="editAadhar" class="app-input">
+                        </div>
+                        <div>
+                            <label class="app-label">PAN Number</label>
+                            <input type="text" id="editPan" class="app-input">
+                        </div>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <label class="app-label">Bank Details (Acc/IFSC)</label>
+                        <input type="text" id="editBank" class="app-input">
+                    </div>
+                    <div class="grid-2" style="margin-top:15px;">
+                        <div>
+                            <label class="app-label">UPI ID</label>
+                            <input type="text" id="editUpiId" class="app-input">
+                        </div>
+                        <div>
+                            <label class="app-label">UPI Number</label>
+                            <input type="text" id="editUpiNum" class="app-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:30px; display:flex; gap:15px;">
+                    <button class="cosmic-btn" style="flex:1;" onclick="saveUserEdit()"><i class="fas fa-save"></i> Save Changes</button>
+                    <button class="btn-admin" style="background:var(--border-soft); color:var(--text-muted);" onclick="closeModal('modal-edit-user')">Cancel</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Navigation -->
         <div class="admin-nav">
@@ -346,8 +458,9 @@
                     class="fas fa-undo"></i><span>Refund</span></div>
             <div class="admin-nav-item" onclick="navAdmin('academy', event)"><i
                     class="fas fa-graduation-cap"></i><span>Academy</span></div>
-            <div class="admin-nav-item" onclick="navAdmin('slider', event)"><i
-                    class="fas fa-images"></i><span>Slider</span></div>
+            <!-- Slider Menu Hidden -->
+            <!-- <div class="admin-nav-item" onclick="navAdmin('slider', event)"><i
+                    class="fas fa-images"></i><span>Slider</span></div> -->
             <div class="admin-nav-item" onclick="logout()"
                 style="margin-top: auto; color: #EF4444; border-top: 1px solid #eee;">
                 <i class="fas fa-sign-out-alt"></i><span>Logout</span>
@@ -495,6 +608,7 @@
             </div>
           </div>
           <div class="admin-actions">
+            <button class="btn-admin btn-edit" style="background: var(--primary); color: #000;" onclick="editUser('${u.userId}')"><i class="fas fa-edit"></i> Edit</button>
             <button class="btn-admin btn-wallet" onclick="adminWallet('${u.userId}')"><i class="fas fa-plus"></i> Wallet</button>
             <button class="btn-admin btn-block" onclick="toggleBan('${u.userId}', ${!u.isBanned})" style="background:${u.isBanned ? '#EF4444' : '#eee'}; color:${u.isBanned ? 'white' : '#666'};">
               <i class="fas fa-ban"></i> ${u.isBanned ? 'Unblock' : 'Block'}
@@ -797,6 +911,95 @@
                 }
             });
         };
+
+        window.editUser = (uid) => {
+            const u = adminUsersCache.find(x => x.userId === uid);
+            if (!u) return;
+            
+            document.getElementById('editUserId').value = u.userId;
+            document.getElementById('editName').value = u.name || '';
+            document.getElementById('editRealName').value = u.realName || '';
+            document.getElementById('editPhone').value = u.phone || '';
+            document.getElementById('editEmail').value = u.email || '';
+            document.getElementById('editImage').value = u.image || '';
+            
+            const isAstro = u.role === 'astrologer';
+            document.getElementById('astroFields').style.display = isAstro ? 'block' : 'none';
+            
+            if (isAstro) {
+                document.getElementById('editPrice').value = u.price || 0;
+                document.getElementById('editExp').value = u.experience || u.astrologyExperience || 0;
+                document.getElementById('editProfession').value = u.profession || '';
+                document.getElementById('editSkills').value = Array.isArray(u.skills) ? u.skills.join(', ') : (u.skills || '');
+                document.getElementById('editDocStatus').value = u.documentStatus || 'none';
+                document.getElementById('editIsVerified').checked = !!u.isVerified;
+                
+                document.getElementById('editAadhar').value = u.aadharNumber || '';
+                document.getElementById('editPan').value = u.panNumber || '';
+                document.getElementById('editBank').value = u.bankDetails || '';
+                document.getElementById('editUpiId').value = u.upiId || '';
+                document.getElementById('editUpiNum').value = u.upiNumber || '';
+            }
+            
+            document.getElementById('modal-edit-user').style.display = 'block';
+        };
+
+        window.closeModal = (id) => {
+            document.getElementById(id).style.display = 'none';
+        };
+
+        window.saveUserEdit = () => {
+            const userId = document.getElementById('editUserId').value;
+            const u = adminUsersCache.find(x => x.userId === userId);
+            const isAstro = u && u.role === 'astrologer';
+            
+            const updates = {
+                name: document.getElementById('editName').value,
+                realName: document.getElementById('editRealName').value,
+                email: document.getElementById('editEmail').value,
+                image: document.getElementById('editImage').value
+            };
+            
+            if (isAstro) {
+                updates.price = parseInt(document.getElementById('editPrice').value);
+                updates.experience = parseInt(document.getElementById('editExp').value);
+                updates.astrologyExperience = updates.experience;
+                updates.profession = document.getElementById('editProfession').value;
+                updates.skills = document.getElementById('editSkills').value.split(',').map(s => s.trim()).filter(s => s);
+                updates.documentStatus = document.getElementById('editDocStatus').value;
+                updates.isVerified = document.getElementById('editIsVerified').checked;
+                
+                updates.aadharNumber = document.getElementById('editAadhar').value;
+                updates.panNumber = document.getElementById('editPan').value;
+                updates.bankDetails = document.getElementById('editBank').value;
+                updates.upiId = document.getElementById('editUpiId').value;
+                updates.upiNumber = document.getElementById('editUpiNum').value;
+            }
+            
+            socket.emit('admin-update-user-details', { userId, updates }, (res) => {
+                if (res.ok) {
+                    alert('Details Updated Successfully');
+                    closeModal('modal-edit-user');
+                    fetchAllUsers();
+                } else {
+                    alert('Error: ' + res.error);
+                }
+            });
+        };
+
+        async function uploadProfileImage(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                const res = await fetch('/upload', { method: 'POST', body: formData }).then(r => r.json());
+                if (res.ok) {
+                    document.getElementById('editImage').value = res.url;
+                    alert('Image Uploaded');
+                } else alert('Upload failed');
+            } catch (e) { alert('Upload error'); }
+        }
 
         window.filterWithdrawals = (status, btn) => {
             $(btn).siblings().removeClass('active');

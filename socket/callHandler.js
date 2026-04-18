@@ -133,10 +133,12 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
 
             if (typeof cb === 'function') cb({ ok: true, sessionId });
 
-            // Timeout for no answer
+            // Timeout for no answer (30 seconds)
             setTimeout(async () => {
                 const s = activeSessions.get(sessionId);
                 if (s && s.status === 'ringing') {
+                    console.log(`[CallHandler][Timeout] Missed call from ${fromUserId} to ${toUserId}`);
+                    
                     io.to(fromUserId).emit('session-ended', { sessionId, reason: 'no_answer' });
                     io.to(toUserId).emit('session-ended', { sessionId, reason: 'missed' });
                     
@@ -144,6 +146,34 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     userActiveSession.delete(toUserId);
                     activeSessions.delete(sessionId);
                     Session.updateOne({ sessionId }, { status: 'missed', endTime: Date.now() }).catch(() => { });
+
+                    // AUTO-OFFLINE LOGIC: If 'toUserId' is an astrologer, mark them offline
+                    const astro = await User.findOne({ userId: toUserId });
+                    if (astro && astro.role === 'astrologer') {
+                        astro.isOnline = false;
+                        astro.isChatOnline = false;
+                        astro.isAudioOnline = false;
+                        astro.isVideoOnline = false;
+                        astro.isAvailable = false;
+                        await astro.save();
+                        
+                        if (broadcastAstroUpdate) broadcastAstroUpdate();
+
+                        // Notify Super Admin
+                        io.to('superadmin').emit('admin-notification', {
+                            text: `Missed Call Alert: ${astro.name} marked OFFLINE due to no response.`,
+                            type: 'missed_call'
+                        });
+
+                        // Log to file
+                        const fs = require('fs');
+                        const path = require('path');
+                        const logPath = path.join(__dirname, '../missed_calls_log.txt');
+                        const logEntry = `${new Date().toLocaleString()} | Astro: ${astro.name} (${astro.userId}) | Client: ${fromUserId} | Session: ${sessionId}\n`;
+                        fs.appendFile(logPath, logEntry, (err) => {
+                            if (err) console.error('[CallHandler] Failed to log missed call:', err);
+                        });
+                    }
                 }
             }, 30000);
 

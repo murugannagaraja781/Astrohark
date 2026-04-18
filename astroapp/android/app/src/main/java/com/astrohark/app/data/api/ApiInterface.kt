@@ -97,5 +97,8 @@ interface ApiInterface {
 
     @retrofit2.http.GET("api/app-config")
     suspend fun getAppConfig(): Response<com.google.gson.JsonObject>
+
+    @POST("api/reviews")
+    suspend fun submitReview(@Body request: com.google.gson.JsonObject): Response<com.google.gson.JsonObject>
 }
 

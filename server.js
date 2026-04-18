@@ -2281,8 +2281,18 @@ io.on('connection', (socket) => {
       const totalUsers = await User.countDocuments();
       const activeSessionCount = activeSessions.size;
 
-      // Get full ledger for breakdown
-      const fullLedger = await BillingLedger.find({}).sort({ createdAt: -1 }).limit(100);
+      // Get Live Online Counts
+      let onlineAstros = 0;
+      let onlineClients = 0;
+      
+      // We can iterate socketToUser or userSockets
+      const onlineUserIds = Array.from(userSockets.keys());
+      const onlineUserDetails = await User.find({ userId: { $in: onlineUserIds } }, 'role');
+      
+      onlineUserDetails.forEach(u => {
+        if (u.role === 'astrologer') onlineAstros++;
+        else onlineClients++;
+      });
 
       const billing = billingStats[0] || {};
 
@@ -2293,7 +2303,9 @@ io.on('connection', (socket) => {
         astroPayout: billing.totalAstroPayout || 0,
         totalDuration: (billing.totalMinutes || 0) * 60, // Convert minutes to seconds
         totalUsers: totalUsers,
-        activeSessions: activeSessionCount
+        activeSessions: activeSessionCount,
+        onlineAstros: onlineAstros,
+        onlineClients: onlineClients
       };
 
       cb({ ok: true, stats, fullLedger });

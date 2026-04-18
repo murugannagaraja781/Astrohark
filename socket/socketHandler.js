@@ -176,6 +176,16 @@ module.exports = (io, SERVER_URL) => {
                 }
 
                 const sid = userActiveSession.get(userId);
+                
+                // Set a timeout to mark as offline if no reconnection
+                const offlineGraceTimeoutId = setTimeout(async () => {
+                    const stillConnected = userSockets.has(userId);
+                    if (!stillConnected) {
+                        await User.updateOne({ userId }, { isOnline: false, isAvailable: false });
+                        broadcastAstroUpdate(io, SERVER_URL);
+                    }
+                }, SESSION_GRACE_PERIOD);
+
                 if (sid) {
                     if (sessionDisconnectTimeouts.has(userId)) {
                         clearTimeout(sessionDisconnectTimeouts.get(userId));

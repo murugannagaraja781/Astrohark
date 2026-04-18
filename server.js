@@ -2283,18 +2283,20 @@ io.on('connection', (socket) => {
       const pendingAstros = await User.countDocuments({ role: 'astrologer', approvalStatus: 'pending' });
       const activeSessionCount = activeSessions.size;
 
-      // Get Live Online Counts
+      // Live Activity Totals
+      const onlineUserIds = Array.from(userSockets.keys());
       let onlineAstros = 0;
       let onlineClients = 0;
-      
-      // We can iterate socketToUser or userSockets
-      const onlineUserIds = Array.from(userSockets.keys());
-      const onlineUserDetails = await User.find({ userId: { $in: onlineUserIds } }, 'role');
-      
-      onlineUserDetails.forEach(u => {
-        if (u.role === 'astrologer') onlineAstros++;
-        else onlineClients++;
-      });
+
+      if (onlineUserIds.length > 0) {
+        const onlineProfiles = await User.find({ userId: { $in: onlineUserIds } }, 'role');
+        onlineProfiles.forEach(u => {
+          if (u.role === 'astrologer') onlineAstros++;
+          else if (u.role === 'user' || u.role === 'client') onlineClients++;
+        });
+      }
+
+      const activeCallCount = activeSessions.size;
 
       const billing = billingStats[0] || {};
 
@@ -2307,7 +2309,7 @@ io.on('connection', (socket) => {
         totalUsers: totalUsers,
         totalAstros: totalAstros,
         pendingAstros: pendingAstros,
-        activeSessions: activeSessionCount,
+        activeSessions: activeCallCount,
         onlineAstros: onlineAstros,
         onlineClients: onlineClients
       };

@@ -598,6 +598,24 @@
             </div>
         </div>
 
+        <!-- Modal: View Pending Astro Details -->
+        <div id="modal-view-pending" class="modal-overlay hidden">
+            <div class="modal-card" style="max-width:700px;">
+                <h3 style="margin-top:0; color:var(--primary); display:flex; justify-content:space-between; align-items:center;">
+                    <span><i class="fas fa-user-astronaut"></i> Application Details</span>
+                    <span id="view-pending-status" class="user-pill" style="font-size:0.8rem; background:rgba(255,127,0,0.1); color:var(--primary);">PENDING</span>
+                </h3>
+                <div id="view-pending-body" style="margin-top:20px; display:grid; grid-template-columns: 1fr 1fr; gap:20px; color:var(--text-main);">
+                    <!-- Dynamic details -->
+                </div>
+                <div style="margin-top:30px; display:flex; gap:15px; border-top:1px solid var(--border-soft); padding-top:20px;">
+                    <button id="view-pending-approve-btn" class="cosmic-btn" style="flex:1;"><i class="fas fa-check"></i> Approve Application</button>
+                    <button id="view-pending-reject-btn" class="btn-admin" style="background:rgba(239,68,68,0.1); color:#EF4444; border:1px solid #EF4444; flex:1;"><i class="fas fa-times"></i> Reject</button>
+                    <button class="btn-admin" style="background:var(--border-soft); color:var(--text-muted);" onclick="closeModal('modal-view-pending')">Close</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Navigation -->
         <div class="admin-nav">
             <div class="admin-nav-item active" onclick="navAdmin('home', event)"><i
@@ -1496,6 +1514,7 @@
                                     </div>
                                 </div>
                                 <div style="text-align:right;">
+                                    <button onclick="viewPendingAstro('${u.userId}')" class="btn-admin" style="background:var(--border-soft); color:var(--text-main); margin-bottom:5px; width:90px; height:32px; font-size:0.8rem;">View</button><br>
                                     <button onclick="approveRegistration('${u.userId}', 'approve')" class="btn-admin" style="background:#059669; color:white; margin-bottom:5px; width:90px; height:32px; font-size:0.8rem;">Approve</button><br>
                                     <button onclick="approveRegistration('${u.userId}', 'reject')" class="btn-admin" style="background:#DC2626; color:white; width:90px; height:32px; font-size:0.8rem;">Reject</button>
                                 </div>
@@ -1522,6 +1541,54 @@
                     }
                 });
             }
+        };
+
+        window.viewPendingAstro = (uid) => {
+            socket.emit('admin-get-pending-requests', (res) => {
+                const u = res.requests.find(x => x.userId === uid);
+                if (!u) return alert('Request not found');
+
+                document.getElementById('modal-view-pending').classList.remove('hidden');
+                document.getElementById('view-pending-body').innerHTML = `
+                    <div class="admin-card" style="grid-column: span 2; display:flex; gap:20px; align-items:center; background:rgba(255,255,255,0.02);">
+                        <img src="${u.image || 'https://astrohark.com/images/Astrohark_icon.svg'}" style="width:80px; height:80px; border-radius:15px; border:2px solid var(--primary);">
+                        <div>
+                            <h2 style="margin:0; color:var(--primary);">${u.name}</h2>
+                            <p style="margin:5px 0 0 0; color:var(--text-muted);">${u.phone} | ${u.email || 'No Email'}</p>
+                        </div>
+                    </div>
+                    <div class="admin-card">
+                        <h4 style="margin-top:0; color:var(--primary);">Professional Info</h4>
+                        <p style="margin:5px 0;"><b>Experience:</b> ${u.astrologyExperience} Years</p>
+                        <p style="margin:5px 0;"><b>Profession:</b> ${u.profession}</p>
+                        <p style="margin:5px 0;"><b>Skills:</b> ${u.skills}</p>
+                        <p style="margin:5px 0;"><b>Gender:</b> ${u.intakeDetails?.gender || u.gender || 'N/A'}</p>
+                    </div>
+                    <div class="admin-card">
+                        <h4 style="margin-top:0; color:var(--primary);">KYC & Identity</h4>
+                        <p style="margin:5px 0;"><b>Real Name:</b> ${u.realName}</p>
+                        <p style="margin:5px 0;"><b>Aadhar:</b> ${u.aadharNumber || '---'}</p>
+                        <p style="margin:5px 0;"><b>PAN:</b> ${u.panNumber || '---'}</p>
+                        <p style="margin:5px 0;"><b>Address:</b> <span style="font-size:0.8rem; color:var(--text-dim);">${u.address || 'N/A'}</span></p>
+                    </div>
+                    <div class="admin-card" style="grid-column: span 2;">
+                        <h4 style="margin-top:0; color:var(--primary);">Banking Details</h4>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <p style="margin:0;"><b>A/C No:</b> ${u.bankDetails || '---'}</p>
+                            <p style="margin:0;"><b>UPI ID:</b> ${u.upiId || '---'}</p>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('view-pending-approve-btn').onclick = () => {
+                    closeModal('modal-view-pending');
+                    approveRegistration(uid, 'approve');
+                };
+                document.getElementById('view-pending-reject-btn').onclick = () => {
+                   closeModal('modal-view-pending');
+                   approveRegistration(uid, 'reject');
+                };
+            });
         };
 
         // Utils

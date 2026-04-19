@@ -627,7 +627,7 @@ fun HomeScreen(
                 ) {
                     when (selectedTab) {
                         0 -> HomeTab(
-                            walletBalance, isTamil, filteredAstros, isLoading, onWalletClick, onChatClick, onCallClick, onRasiClick,
+                            walletBalance, isTamil, filteredAstros, isLoading, banners, onBannerClick, onWalletClick, onChatClick, onCallClick, onRasiClick,
                             onAction = { action ->
                                 selectedFilter = when(action) {
                                     "chat" -> "Chat"
@@ -705,6 +705,8 @@ fun LazyListScope.HomeTab(
     isTamil: Boolean,
     filteredAstros: List<Astrologer>,
     isLoading: Boolean,
+    banners: List<com.astrohark.app.data.model.Banner>,
+    onBannerClick: (com.astrohark.app.data.model.Banner) -> Unit,
     onWalletClick: () -> Unit,
     onChatClick: (Astrologer) -> Unit,
     onCallClick: (Astrologer, String) -> Unit,
@@ -713,6 +715,11 @@ fun LazyListScope.HomeTab(
 ) {
     item { WalletDashboard(walletBalance, isTamil) { onWalletClick() } }
     
+    // Banner Section (At the top)
+    item { 
+        BannerSection(banners = banners, onBannerClick = onBannerClick)
+    }
+
     item { TopServicesSection(isTamil) }
     
     item {

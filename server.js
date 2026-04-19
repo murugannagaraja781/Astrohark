@@ -769,13 +769,107 @@ app.get('/api/home/banners', async (req, res) => {
   }
 });
 
-// Admin: Get All Banners
+// Get All Banners (Admin)
+app.get('/api/admin/banners', async (req, res) => {
+  try {
+    const banners = await Banner.find().sort({ order: 1 });
+    res.json({ ok: true, banners });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
-// Admin: Create Banner
+// Create/Update Banner (Admin)
+app.post('/api/admin/banners', upload.single('bannerImage'), async (req, res) => {
+  try {
+    const { id, title, subtitle, ctaText, order, offerPercentage, expiryDate, isActive, imageUrl } = req.body;
+    let finalImageUrl = imageUrl;
 
-// Admin: Update Banner
+    if (req.file) {
+      finalImageUrl = 'uploads/' + req.file.filename;
+    }
 
-// Admin: Delete Banner
+    if (id && id !== 'undefined') {
+      const banner = await Banner.findByIdAndUpdate(id, {
+        title, subtitle, ctaText, order: parseInt(order || 0),
+        offerPercentage: parseFloat(offerPercentage || 0),
+        expiryDate: expiryDate || null,
+        isActive: isActive === 'true' || isActive === true,
+        imageUrl: finalImageUrl
+      }, { new: true });
+      io.emit('banners-updated'); // Broadcast update
+      return res.json({ ok: true, banner });
+    } else {
+      const banner = await Banner.create({
+        title, subtitle, ctaText, order: parseInt(order || 0),
+        offerPercentage: parseFloat(offerPercentage || 0),
+        expiryDate: expiryDate || null,
+        isActive: isActive === 'true' || isActive === true,
+        imageUrl: finalImageUrl
+      });
+      io.emit('banners-updated'); // Broadcast update
+      return res.json({ ok: true, banner });
+    }
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Delete Banner (Admin)
+app.delete('/api/admin/banners/:id', async (req, res) => {
+  try {
+    await Banner.findByIdAndDelete(req.params.id);
+    io.emit('banners-updated'); // Broadcast update
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Home Dashboard Data (App) 
+app.get('/api/home/data', async (req, res) => {
+  try {
+    // 1. Fetch Banners
+    const bannersRaw = await Banner.find({
+      isActive: true,
+      $or: [{ expiryDate: { $gt: new Date() } }, { expiryDate: null }]
+    }).sort({ order: 1 });
+
+    const banners = bannersRaw.map(b => ({
+      ...b.toObject(),
+      imageUrl: formatImageUrl(b.imageUrl, 'Banner')
+    }));
+
+    // 2. Fetch Home Config (Labels/Services)
+    let homeConfig = await GlobalSettings.findOne({ key: 'home_config' });
+    if (!homeConfig) {
+      homeConfig = {
+        value: {
+          grid_services: [
+            { id: 'free_kundeli', title: 'Free Kundeli', title_tamil: 'இலவச ஜாதகம்', icon: 'kundeli', route: 'FreeKundeli' },
+            { id: 'daily_horoscope', title: 'Daily Horoscope', title_tamil: 'தினசரி ராசிபலன்', icon: 'horoscope', route: 'Horoscope' },
+            { id: 'marriage_matching', title: 'Marriage Matching', title_tamil: 'திருமண பொருத்தம்', icon: 'matching', route: 'MatchMaking' },
+            { id: 'daily_almanac', title: 'Daily Almanac', title_tamil: 'தினசரி பஞ்சாங்கம்', icon: 'almanac', route: 'Panchang' }
+          ],
+          quick_services_label: 'விரைவும் சேவைகள்',
+          quick_services_label_en: 'Quick Services'
+        }
+      };
+    }
+
+    res.json({
+      ok: true,
+      data: {
+        banners,
+        services: homeConfig.value.grid_services,
+        quickServicesLabel: homeConfig.value.quick_services_label,
+        quickServicesLabelEn: homeConfig.value.quick_services_label_en
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
 // 12 Rasi Horoscope API
 app.get('/api/horoscope/rasi', (req, res) => {

@@ -435,6 +435,11 @@ class HomeActivity : AppCompatActivity() {
             tokenManager.updateSuperWalletBalance(superBalance)
         }
 
+        socket?.on("banners-updated") {
+            Log.d(TAG, "[Socket] Banners updated, refreshing...")
+            fetchBanners()
+        }
+
         socket?.emit("get-astrologers")
     }
 

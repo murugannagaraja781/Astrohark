@@ -72,10 +72,30 @@
                     </div>
                 </div>
 
-                <div class="dashboard-header">
-                    <h2 class="dashboard-title" style="font-family: var(--font-heading); color: var(--text-main);"><i
+                <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center;">
+                    <h2 class="dashboard-title" style="font-family: var(--font-heading); color: var(--text-main); margin:0;"><i
                             class="fas fa-chart-line" style="color: var(--primary);"></i> OVERVIEW</h2>
+                    <div style="display:flex; gap:15px;">
+                        <span class="status-pill"><i class="fas fa-magic"></i> Free Horoscope: <b style="color:#10B981;">Online</b></span>
+                        <span class="status-pill"><i class="fas fa-heart"></i> Free Match: <b style="color:#10B981;">Online</b></span>
+                        <span class="status-pill"><i class="fas fa-server"></i> Server: <b style="color:#10B981;">Healthy</b></span>
+                    </div>
                 </div>
+                
+                <style>
+                    .status-pill {
+                        background: rgba(255,255,255,0.05);
+                        padding: 6px 12px;
+                        border-radius: 50px;
+                        font-size: 0.75rem;
+                        border: 1px solid var(--border-soft);
+                        color: var(--text-dim);
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+                    .status-pill i { color: var(--primary); }
+                </style>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="card-icon revenue-icon"><i class="fas fa-rupee-sign"></i></div>
@@ -260,32 +280,49 @@
                 </div>
             </div>
 
-            <!-- Slider Disabled -->
-            <!-- <div id="admin-sect-slider" class="admin-tab-section">
+            <!-- Tab: App Banners -->
+            <div id="admin-sect-slider" class="admin-tab-section">
                 <h2 style="margin-bottom:20px;"><i class="fas fa-images"></i> App Slider Banners</h2>
-                <div class="admin-card">
-                    <h4>Add New Banner</h4>
-                    <input type="text" id="bannerTitle" class="app-input" placeholder="Title"
-                        style="margin-bottom:10px;">
-                    <input type="text" id="bannerSubtitle" class="app-input" placeholder="Subtitle"
-                        style="margin-bottom:10px;">
-                    <input type="text" id="bannerImageUrl" class="app-input" placeholder="Image URL"
-                        style="margin-bottom:10px;">
-                    <input type="text" id="bannerCta" class="app-input" placeholder="CTA Text"
-                        style="margin-bottom:10px;">
-                    <input type="number" id="bannerOrder" class="app-input" placeholder="Order"
-                        style="margin-bottom:10px;">
-                    <div style="display:flex; gap:10px; margin-bottom:10px;">
-                        <input type="number" id="bannerOffer" class="app-input" placeholder="Offer % (e.g. 50)"
-                            style="flex:1;">
-                        <input type="date" id="bannerExpiry" class="app-input" style="flex:1;">
+                <div class="admin-card" style="margin-bottom: 30px;">
+                    <h4 style="margin-top:0; color:var(--primary);"><i class="fas fa-plus-circle"></i> Add / Edit Banner</h4>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                        <input type="text" id="bannerTitle" class="app-input" placeholder="Title (e.g. Mega Discount)">
+                        <input type="text" id="bannerSubtitle" class="app-input" placeholder="Subtitle (short description)">
                     </div>
-                    <button class="cosmic-btn" onclick="addBanner()">Add Banner</button>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="bannerImageUrl" class="app-input" placeholder="Image URL (or upload)" style="flex:1;">
+                            <input type="file" id="bannerImageFile" style="display:none;" onchange="document.getElementById('bannerImageUrl').value = this.files[0].name">
+                            <button class="btn-admin" onclick="document.getElementById('bannerImageFile').click()"><i class="fas fa-upload"></i></button>
+                        </div>
+                        <input type="text" id="bannerCta" class="app-input" placeholder="CTA Text (e.g. Visit Now)">
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom:20px;">
+                        <div>
+                            <label class="app-label" style="font-size:0.7rem;">Order</label>
+                            <input type="number" id="bannerOrder" class="app-input" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="app-label" style="font-size:0.7rem;">Offer %</label>
+                            <input type="number" id="bannerOffer" class="app-input" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="app-label" style="font-size:0.7rem;">Expiry</label>
+                            <input type="date" id="bannerExpiry" class="app-input">
+                        </div>
+                        <div style="display:flex; align-items:flex-end; padding-bottom:5px;">
+                             <label style="cursor:pointer; display:flex; align-items:center; gap:8px; font-size:0.8rem;">
+                                <input type="checkbox" id="bannerActive" checked> Active
+                             </label>
+                        </div>
+                    </div>
+                    <button class="cosmic-btn" style="width:100%;" onclick="saveBanner()"><i class="fas fa-save"></i> Save Banner</button>
                 </div>
-                <div id="adminBannerList">
+
+                <div id="adminBannerList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:15px;">
                     <div class="loader"></div>
                 </div>
-            </div> -->
+            </div>
 
             <div id="admin-sect-slab" class="admin-tab-section">
                 <h2 style="margin-bottom:20px; font-family: var(--font-heading); color: var(--primary);"><i
@@ -627,9 +664,8 @@
                     class="fas fa-graduation-cap"></i><span>Academy</span></div>
             <div class="admin-nav-item" onclick="navAdmin('notifications', event)"><i
                     class="fas fa-bell"></i><span>Notifs <small id="nav-count-notifs" style="color:#EF4444; font-weight:bold;"></small></span></div>
-            <!-- Slider Menu Hidden -->
-            <!-- <div class="admin-nav-item" onclick="navAdmin('slider', event)"><i
-                    class="fas fa-images"></i><span>Slider</span></div> -->
+             <div class="admin-nav-item" onclick="navAdmin('slider', event)"><i
+                    class="fas fa-images"></i><span>Slider</span></div>
             <div class="admin-nav-item" onclick="logout()"
                 style="margin-top: auto; color: #EF4444; border-top: 1px solid #eee;">
                 <i class="fas fa-sign-out-alt"></i><span>Logout</span>
@@ -1056,34 +1092,101 @@
             if (res.ok) renderBanners(res.banners);
         }
         function renderBanners(banners) {
-            document.getElementById('adminBannerList').innerHTML = banners.map(b => `
-        <div class="admin-card" style="display:flex; gap:15px; align-items:center;">
-          <img src="${b.imageUrl}" style="width:60px; height:40px; border-radius:4px; object-fit:cover;">
-          <div style="flex:1;">
-            <b>${b.title}</b>
-            ${b.offerPercentage ? `<span style="background:#FCE7F3; color:#DB2777; padding:2px 6px; border-radius:4px; font-size:0.7rem; margin-left:10px;">${b.offerPercentage}% Offer</span>` : ''}
-            ${b.expiryDate ? `<div style="font-size:0.7rem; color:#666;">Expires: ${new Date(b.expiryDate).toLocaleDateString()}</div>` : ''}
-          </div>
-          <button class="btn-admin btn-delete" style="flex:none; width:auto;" onclick="deleteBanner('${b._id}')"><i class="fas fa-trash"></i></button>
-        </div>
-      `).join('');
+            document.getElementById('adminBannerList').innerHTML = banners.map(b => {
+                const img = b.imageUrl.startsWith('http') ? b.imageUrl : '/' + b.imageUrl;
+                return `
+                    <div class="admin-card" style="display:flex; gap:15px; align-items:center;">
+                        <img src="${img}" style="width:80px; height:50px; border-radius:6px; object-fit:cover; border:1px solid var(--border-soft);">
+                        <div style="flex:1;">
+                            <div style="font-weight:bold; color:var(--text-main);">${b.title || 'Untitled Banner'}</div>
+                            <div style="font-size:0.75rem; color:var(--text-dim);">${b.subtitle || ''}</div>
+                            <div style="margin-top:5px; display:flex; gap:10px;">
+                                ${b.offerPercentage ? `<span style="background:rgba(239,68,68,0.1); color:#EF4444; padding:2px 6px; border-radius:4px; font-size:0.65rem;">${b.offerPercentage}% Off</span>` : ''}
+                                ${b.isActive ? '<span style="color:#10B981; font-size:0.65rem;"><i class="fas fa-check-circle"></i> Active</span>' : '<span style="color:#EF4444; font-size:0.65rem;"><i class="fas fa-times-circle"></i> Inactive</span>'}
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-admin" style="min-width:auto; padding:6px 10px; background:rgba(255,255,255,0.05);" onclick="editBannerData('${b._id}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn-admin btn-delete" style="min-width:auto; padding:6px 10px;" onclick="deleteBanner('${b._id}')"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
-        window.addBanner = async () => {
-            const payload = {
-                title: document.getElementById('bannerTitle').value,
-                subtitle: document.getElementById('bannerSubtitle').value,
-                imageUrl: document.getElementById('bannerImageUrl').value,
-                ctaText: document.getElementById('bannerCta').value,
-                order: parseInt(document.getElementById('bannerOrder').value || 0),
-                offerPercentage: parseFloat(document.getElementById('bannerOffer').value || 0),
-                expiryDate: document.getElementById('bannerExpiry').value,
-                isActive: true
-            };
-            await fetch('/api/admin/banners', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            fetchBanners();
+
+        window.editBannerData = async (id) => {
+            const res = await fetch('/api/admin/banners').then(r => r.json());
+            const b = res.banners.find(x => x._id === id);
+            if (!b) return;
+            
+            // Populate form
+            if (!document.getElementById('editBannerId')) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.id = 'editBannerId';
+                document.getElementById('admin-sect-slider').appendChild(hidden);
+            }
+            document.getElementById('editBannerId').value = b._id;
+            document.getElementById('bannerTitle').value = b.title || '';
+            document.getElementById('bannerSubtitle').value = b.subtitle || '';
+            document.getElementById('bannerImageUrl').value = b.imageUrl || '';
+            document.getElementById('bannerCta').value = b.ctaText || '';
+            document.getElementById('bannerOrder').value = b.order || 0;
+            document.getElementById('bannerOffer').value = b.offerPercentage || 0;
+            document.getElementById('bannerExpiry').value = b.expiryDate ? b.expiryDate.split('T')[0] : '';
+            document.getElementById('bannerActive').checked = b.isActive;
+            
+            // Scroll to form
+            document.getElementById('admin-sect-slider').querySelector('.admin-card').scrollIntoView({ behavior: 'smooth' });
+        };
+        window.saveBanner = async () => {
+            const formData = new FormData();
+            const id = document.getElementById('editBannerId')?.value;
+            if (id) formData.append('id', id);
+            
+            formData.append('title', document.getElementById('bannerTitle').value);
+            formData.append('subtitle', document.getElementById('bannerSubtitle').value);
+            formData.append('imageUrl', document.getElementById('bannerImageUrl').value);
+            formData.append('ctaText', document.getElementById('bannerCta').value);
+            formData.append('order', document.getElementById('bannerOrder').value || 0);
+            formData.append('offerPercentage', document.getElementById('bannerOffer').value || 0);
+            formData.append('expiryDate', document.getElementById('bannerExpiry').value);
+            formData.append('isActive', document.getElementById('bannerActive').checked);
+            
+            const fileInput = document.getElementById('bannerImageFile');
+            if (fileInput.files[0]) {
+                formData.append('bannerImage', fileInput.files[0]);
+            }
+
+            const btn = event.target;
+            const oldText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/admin/banners', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json());
+
+                if (res.ok) {
+                    alert('Banner Saved');
+                    fetchBanners();
+                    // Clear form
+                    document.getElementById('bannerTitle').value = '';
+                    document.getElementById('bannerSubtitle').value = '';
+                    document.getElementById('bannerImageUrl').value = '';
+                    document.getElementById('bannerCta').value = '';
+                    document.getElementById('bannerImageFile').value = '';
+                } else {
+                    alert('Error: ' + res.error);
+                }
+            } catch (e) {
+                alert('Connection Error');
+            } finally {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+            }
         };
         window.deleteBanner = async (id) => {
             if (confirm('Delete?')) { await fetch('/api/admin/banners/' + id, { method: 'DELETE' }); fetchBanners(); }

@@ -308,7 +308,8 @@ class CallActivity : ComponentActivity() {
                         isReady = isWebRTCInitialized,
                         clientBirthData = clientBirthData,
                         summary = callSummary,
-                        onDismissSummary = { finish() }
+                        onDismissSummary = { finish() },
+                        onReview = { rating, comment -> submitReview(rating, comment) }
                     )
                 }
             }
@@ -1168,6 +1169,34 @@ class CallActivity : ComponentActivity() {
         finish()
     }
 
+    private fun submitReview(rating: Int, comment: String) {
+        val myUserId = session?.userId ?: return
+        val sId = sessionId ?: return
+        val aId = partnerId ?: return
+
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val json = com.google.gson.JsonObject().apply {
+                    addProperty("sessionId", sId)
+                    addProperty("clientId", myUserId)
+                    addProperty("astrologerId", aId)
+                    addProperty("rating", rating)
+                    addProperty("comment", comment)
+                }
+                val response = com.astrohark.app.data.api.ApiClient.api.submitReview(json)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        android.widget.Toast.makeText(this@CallActivity, "Feedback submitted. Thank you!", android.widget.Toast.LENGTH_SHORT).show()
+                    } else {
+                        android.util.Log.e("CallActivity", "Review submission failed: ${response.code()}")
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("CallActivity", "Error submitting review", e)
+            }
+        }
+    }
+
     override fun finish() {
         // Ensure state is cleared even if finished via system back or other means
         CallState.isCallActive = false
@@ -1365,7 +1394,8 @@ fun CallScreen(
     isReady: Boolean,
     clientBirthData: JSONObject? = null,
     summary: CallActivity.SimpleSummary? = null,
-    onDismissSummary: () -> Unit = {}
+    onDismissSummary: () -> Unit = {},
+    onReview: (Int, String) -> Unit = { _, _ -> }
 ) {
     val colors = com.astrohark.app.ui.theme.CosmicAppTheme.colors
     val context = LocalContext.current
@@ -1377,7 +1407,8 @@ fun CallScreen(
             duration = summary.duration,
             amount = summary.amount,
             isAstrologer = role == "astrologer",
-            onDismiss = onDismissSummary
+            onDismiss = onDismissSummary,
+            onSubmitReview = onReview
         )
     }
 

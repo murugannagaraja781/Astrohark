@@ -13,6 +13,8 @@ router.get('/astrologers/pending', adminController.getPendingAstrologers);
 router.post('/astrologers/approve', adminController.approveAstrologer);
 router.get('/astrologer-performance/:astrologerId', adminController.getAstrologerPerformance);
 router.get('/astrologers-performance', adminController.getAllAstrologersPerformance);
+router.get('/config', adminController.getConfig);
+router.post('/config', adminController.updateConfig);
 
 
 module.exports = router;

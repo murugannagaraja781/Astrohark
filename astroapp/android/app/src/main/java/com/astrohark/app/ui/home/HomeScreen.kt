@@ -177,18 +177,20 @@ fun BannerSection(banners: List<com.astrohark.app.data.model.Banner>, onBannerCl
                             Spacer(modifier = Modifier.height(AstroDimens.Medium))
                         }
 
-                        // CTA Pill (Fixed Contrast)
+                        // CTA Pill (Fixed Contrast & Overflow)
                         if (!banner.ctaText.isNullOrEmpty()) {
                              Surface(
                                  shape = RoundedCornerShape(50),
-                                 color = CosmicAppTheme.colors.accent,
+                                 color = (if (banner.offerPercentage > 0) Color(0xFFFFD700) else CosmicAppTheme.colors.accent),
                                  modifier = Modifier.padding(vertical = AstroDimens.XSmall)
                              ) {
                                  Text(
                                      text = banner.ctaText,
                                      modifier = Modifier.padding(horizontal = AstroDimens.Medium, vertical = AstroDimens.Small),
-                                     style = MaterialTheme.typography.labelLarge,
-                                     color = Color.White // Fix: Now clearly visible
+                                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                     color = Color.Black,
+                                     maxLines = 1,
+                                     overflow = TextOverflow.Ellipsis
                                  )
                              }
                         }
@@ -713,20 +715,20 @@ fun LazyListScope.HomeTab(
     onRasiClick: (ComposeRasiItem) -> Unit,
     onAction: (String) -> Unit
 ) {
-    item { WalletDashboard(walletBalance, isTamil) { onWalletClick() } }
-    
-    // Banner Section (At the top)
-    item { 
-        BannerSection(banners = banners, onBannerClick = onBannerClick)
-    }
-
-    item { TopServicesSection(isTamil) }
-    
+    // 1. Quick Action Section (Top)
     item {
         QuickActionsSection(isTamil) { action ->
             onAction(action)
         }
     }
+    
+    // 2. Banner Section
+    item { 
+        BannerSection(banners = banners, onBannerClick = onBannerClick)
+    }
+
+    // 3. Services Section (Horizontal Scroll with Labels)
+    item { TopServicesSection(isTamil) }
 
     item {
         Spacer(modifier = Modifier.height(8.dp))
@@ -1005,8 +1007,13 @@ fun HomeTopBar(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "₹${balance.toInt()}",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
-                    color = Color.Black
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = (if (balance > 999999) 11.sp else 14.sp)
+                    ),
+                    color = Color.Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -1859,23 +1866,41 @@ fun TopServicesSection(isTamil: Boolean) {
 
 @Composable
 fun ServiceItem(name: String, iconRes: Int, onClick: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = androidx.compose.foundation.BorderStroke(1.dp, colorResource(id = com.astrohark.app.R.color.marketplace_red)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .size(width = 80.dp, height = 80.dp) // Square
+            .width(85.dp)
             .clickable { onClick() }
     ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Image(
-                painter = painterResource(id = iconRes),
-                contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.FillBounds
-            )
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEEEEEE)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+            modifier = Modifier.size(70.dp)
+        ) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize().padding(10.dp),
+                    contentScale = ContentScale.Fit
+                )
+            }
         }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = name,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.Medium,
+                lineHeight = 12.sp
+            ),
+            color = CosmicAppTheme.colors.textPrimary,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            minLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

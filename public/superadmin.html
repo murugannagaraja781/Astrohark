@@ -18,11 +18,16 @@
 
 <body>
     <div class="dashboard-container">
+        <div id="nav-overlay" class="nav-overlay" onclick="toggleNav()"></div>
         <div class="app-header">
-            <div
-                style="font-family: var(--font-heading); font-weight: bold; font-size: 1.4rem; display: flex; align-items: center; gap: 12px;">
-                <img src="images/Astrohark_icon.svg" style="height: 32px;" alt="Logo">
-                <span>Super Admin</span>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="menu-trigger" onclick="toggleNav()">
+                    <i class="fas fa-bars"></i>
+                </div>
+                <div style="font-family: var(--font-heading); font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                    <img src="images/Astrohark_icon.svg" style="height: 28px;" alt="Logo">
+                    <span>Admin</span>
+                </div>
             </div>
             <div style="display: flex; gap: 18px; align-items: center;">
                 <!-- Notification Bell System -->
@@ -445,6 +450,20 @@
                 </div>
             </div>
 
+            <!-- Tab 11: Settings (.env) -->
+            <div id="admin-sect-settings" class="admin-tab-section">
+                <h2 style="margin-bottom:20px; font-family: var(--font-heading); color: var(--primary);"><i class="fas fa-cog"></i> System Configuration (.env)</h2>
+                <p style="color:var(--text-dim); margin-bottom:20px;">Manage environment variables directly from the dashboard. <br><b>Note:</b> Changes are saved directly to the .env file.</p>
+                <div class="admin-card">
+                    <div id="config-inputs-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="loader"></div>
+                    </div>
+                    <div style="margin-top:30px; display:flex; gap:15px; border-top: 1px solid var(--border-soft); padding-top:20px;">
+                        <button class="cosmic-btn" style="width:200px;" onclick="saveConfig()"><i class="fas fa-save"></i> Save All Changes</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="admin-footer"
                 style="background: var(--bg-glass-heavy); backdrop-filter: var(--glass-blur); border-top: 1px solid var(--border-soft);">
                 <div class="admin-footer-content">
@@ -666,6 +685,8 @@
                     class="fas fa-bell"></i><span>Notifs <small id="nav-count-notifs" style="color:#EF4444; font-weight:bold;"></small></span></div>
              <div class="admin-nav-item" onclick="navAdmin('slider', event)"><i
                     class="fas fa-images"></i><span>Slider</span></div>
+            <div class="admin-nav-item" onclick="navAdmin('settings', event)"><i
+                    class="fas fa-cog"></i><span>Settings</span></div>
             <div class="admin-nav-item" onclick="logout()"
                 style="margin-top: auto; color: #EF4444; border-top: 1px solid #eee;">
                 <i class="fas fa-sign-out-alt"></i><span>Logout</span>
@@ -848,9 +869,27 @@
             if (id === 'pending') loadPendingAstrologers();
             if (id === 'notifications') loadFullNotifications();
             if (id === 'refunds') renderRefunds();
+            if (id === 'settings') fetchConfig();
 
             document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
             if (ev) ev.currentTarget.classList.add('active');
+            
+            // Close nav on mobile after selection
+            if (window.innerWidth < 1024) {
+                const nav = document.querySelector('.admin-nav');
+                const overlay = document.getElementById('nav-overlay');
+                if (nav.classList.contains('open')) {
+                    nav.classList.remove('open');
+                    overlay.classList.remove('active');
+                }
+            }
+        };
+        
+        window.toggleNav = () => {
+            const nav = document.querySelector('.admin-nav');
+            const overlay = document.getElementById('nav-overlay');
+            nav.classList.toggle('open');
+            overlay.classList.toggle('active');
         };
 
         // --- Slab Rates Logic ---
@@ -1750,6 +1789,54 @@
                 document.getElementById('notif-dropdown').style.display = 'none';
             }
         });
+
+        // Settings (.env) Logic
+        window.fetchConfig = async () => {
+            const container = document.getElementById('config-inputs-container');
+            container.innerHTML = '<div class="loader"></div>';
+            try {
+                const res = await fetch('/api/admin/config').then(r => r.json());
+                if (res.ok) {
+                    const keys = Object.keys(res.config);
+                    container.innerHTML = keys.map(key => `
+                        <div>
+                            <label class="app-label" style="font-size:0.75rem; color:var(--primary);">${key.replace(/_/g, ' ')}</label>
+                            <input type="text" class="app-input env-input" data-key="${key}" value="${res.config[key]}" placeholder="${key}">
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `<div style="color:#EF4444; padding:20px;">Error: ${res.error}</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = `<div style="color:#EF4444; padding:20px;">Failed to connect to server</div>`;
+            }
+        };
+
+        window.saveConfig = async () => {
+            const inputs = document.querySelectorAll('.env-input');
+            const config = {};
+            inputs.forEach(input => {
+                config[input.getAttribute('data-key')] = input.value;
+            });
+
+            if (!confirm('Are you sure you want to update the system configuration? This will modify the .env file.')) return;
+
+            try {
+                const res = await fetch('/api/admin/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                }).then(r => r.json());
+
+                if (res.ok) {
+                    alert('Configuration updated successfully!');
+                } else {
+                    alert('Error: ' + res.error);
+                }
+            } catch (e) {
+                alert('Connection error');
+            }
+        };
 
         init();
     </script>

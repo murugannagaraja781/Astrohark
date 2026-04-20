@@ -222,9 +222,9 @@ fun SuperWalletScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             com.astrohark.app.ui.theme.components.AstroButton(
-                text = "PAY ₹$selectedAmount & GET ₹${selectedAmount + (selectedAmount * offerPercent / 100).toInt()}",
+                text = "RECHARGE ₹$selectedAmount",
                 onClick = { onPay(selectedAmount) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().height(56.dp)
             )
 
             Spacer(modifier = Modifier.height(16.dp))

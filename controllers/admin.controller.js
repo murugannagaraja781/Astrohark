@@ -3,6 +3,8 @@ const Banner = require('../models/Banner');
 const AccountDeletionRequest = require('../models/AccountDeletionRequest');
 const User = require('../models/User');
 const performanceService = require('../services/performance.service');
+const fs = require('fs');
+const path = require('path');
 
 exports.getVideos = async (req, res) => {
     const videos = await AcademyVideo.find().sort({ createdAt: -1 });
@@ -105,6 +107,71 @@ exports.getAllAstrologersPerformance = async (req, res) => {
         const { days } = req.query;
         const stats = await performanceService.getAllAstrologersPerformance(parseInt(days) || 30);
         res.json(stats);
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};
+
+exports.getConfig = async (req, res) => {
+    try {
+        const envPath = path.join(__dirname, '../.env');
+        const content = fs.readFileSync(envPath, 'utf8');
+        const lines = content.split('\n');
+        const config = {};
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('#')) {
+                const [key, ...valueParts] = trimmed.split('=');
+                if (key) {
+                    config[key] = valueParts.join('=');
+                }
+            }
+        });
+        res.json({ ok: true, config });
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};
+
+exports.updateConfig = async (req, res) => {
+    try {
+        const { config } = req.body;
+        if (!config) return res.json({ ok: false, error: 'Config object required' });
+
+        const envPath = path.join(__dirname, '../.env');
+        let content = fs.readFileSync(envPath, 'utf8');
+        const lines = content.split('\n');
+
+        const updatedLines = lines.map(line => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('#')) {
+                const [key] = trimmed.split('=');
+                if (key && config[key] !== undefined) {
+                    process.env[key] = config[key];
+                    return `${key}=${config[key]}`;
+                }
+            }
+            return line;
+        });
+
+        // Add new keys if not present
+        const existingKeys = lines.map(line => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('#')) {
+                return trimmed.split('=')[0];
+            }
+            return null;
+        }).filter(Boolean);
+
+        Object.keys(config).forEach(key => {
+            process.env[key] = config[key]; // Update current process env as well
+            if (!existingKeys.includes(key)) {
+                updatedLines.push(`${key}=${config[key]}`);
+            }
+        });
+
+        fs.writeFileSync(envPath, updatedLines.join('\n'), 'utf8');
+        res.json({ ok: true });
     } catch (e) {
         res.json({ ok: false, error: e.message });
     }

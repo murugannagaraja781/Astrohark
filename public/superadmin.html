@@ -297,11 +297,15 @@
                         <input type="text" id="bannerSubtitle" class="app-input" placeholder="Subtitle (short description)">
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="bannerImageUrl" class="app-input" placeholder="Image URL (or upload)" style="flex:1;">
-                            <input type="file" id="bannerImageFile" style="display:none;" onchange="document.getElementById('bannerImageUrl').value = this.files[0].name">
-                            <button class="btn-admin" onclick="document.getElementById('bannerImageFile').click()"><i class="fas fa-upload"></i></button>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <div style="display:flex; gap:10px;">
+                                <input type="text" id="bannerImageUrl" class="app-input" placeholder="Image URL (or upload)" style="flex:1;">
+                                <input type="file" id="bannerImageFile" style="display:none;" onchange="document.getElementById('bannerImageUrl').value = this.files[0].name">
+                                <button class="btn-admin" onclick="document.getElementById('bannerImageFile').click()"><i class="fas fa-upload"></i></button>
+                            </div>
+                            <small style="color:var(--text-dim); font-size:0.65rem;">Recommended: 1200 x 400 px (3:1 aspect ratio)</small>
                         </div>
+
                         <input type="text" id="bannerCta" class="app-input" placeholder="CTA Text (e.g. Visit Now)">
                     </div>
                     <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom:20px;">

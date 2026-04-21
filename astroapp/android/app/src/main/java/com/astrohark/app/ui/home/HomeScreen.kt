@@ -84,21 +84,27 @@ import com.astrohark.app.data.local.TokenManager
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BannerSection(banners: List<com.astrohark.app.data.model.Banner>, onBannerClick: (com.astrohark.app.data.model.Banner) -> Unit) {
-    if (banners.isEmpty()) return
-
-    val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { banners.size })
+fun BannerSection(
+    banners: List<com.astrohark.app.data.model.Banner>,
+    onBannerClick: (com.astrohark.app.data.model.Banner) -> Unit,
+    onReferClick: () -> Unit,
+    onShareClick: () -> Unit
+) {
+    // Total slides = 1 (Referral) + Dynamic Banners
+    val totalSlides = banners.size + 1
+    val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { totalSlides })
 
     // Auto-scroll logic
     LaunchedEffect(Unit) {
         while (true) {
             kotlinx.coroutines.delay(5000) // 5 seconds
-            if (banners.isNotEmpty()) {
-                val nextPage = (pagerState.currentPage + 1) % banners.size
+            if (totalSlides > 1) {
+                val nextPage = (pagerState.currentPage + 1) % totalSlides
                 pagerState.animateScrollToPage(nextPage)
             }
         }
     }
+
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -116,88 +122,163 @@ fun BannerSection(banners: List<com.astrohark.app.data.model.Banner>, onBannerCl
              val scale by animateFloatAsState(targetValue = if (pageOffset == 0f) 1f else 0.9f, label = "scale")
              val alpha by animateFloatAsState(targetValue = if (pageOffset == 0f) 1f else 0.6f, label = "alpha")
 
-             val banner = banners[page]
-
-            Card(
-                shape = RoundedCornerShape(AstroDimens.RadiusLarge),
-                elevation = CardDefaults.cardElevation(defaultElevation = AstroDimens.ElevationLarge),
-                border = androidx.compose.foundation.BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f)),
-                modifier = Modifier
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        this.alpha = alpha
-                    }
-                    .fillMaxSize()
-                    .clickable { onBannerClick(banner) }
-            ) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // 1. Dynamic Background Image
-                    val imageUrl = getImageUrl(banner.imageUrl)
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = banner.title,
-                        contentScale = ContentScale.FillBounds,
-                        modifier = Modifier.fillMaxSize()
-                    )
-
-                    // 2. Gradient Overlay for Readability
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
-                                )
-                            )
-                    )
-
-                    // 3. Content Text
-                    Column(
-                        modifier = Modifier
-                            .align(Alignment.CenterStart)
-                            .padding(AstroDimens.Large)
-                            .fillMaxWidth(0.65f)
-                    ) {
-                        if (!banner.title.isNullOrEmpty()) {
-                            Text(
-                                text = banner.title,
-                                style = MaterialTheme.typography.titleMedium,
-                                color = Color.White
-                            )
-                            Spacer(modifier = Modifier.height(AstroDimens.XSmall))
-                        }
-
-                        if (!banner.subtitle.isNullOrEmpty()) {
-                            Text(
-                                text = banner.subtitle,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha=0.85f)
-                            )
-                            Spacer(modifier = Modifier.height(AstroDimens.Medium))
-                        }
-
-                        // CTA Pill (Fixed Contrast & Overflow)
-                        if (!banner.ctaText.isNullOrEmpty()) {
+             if (page == 0) {
+                 // --- SLIDE 1: REFERRAL POSTER ---
+                 Card(
+                     shape = RoundedCornerShape(AstroDimens.RadiusLarge),
+                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1F1)),
+                     border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFFCCCC)),
+                     elevation = CardDefaults.cardElevation(defaultElevation = AstroDimens.ElevationLarge),
+                     modifier = Modifier
+                         .graphicsLayer {
+                             scaleX = scale
+                             scaleY = scale
+                             this.alpha = alpha
+                         }
+                         .fillMaxSize()
+                         .clickable { onReferClick() }
+                 ) {
+                     Box(modifier = Modifier.fillMaxSize()) {
+                         // Content Side
+                         Column(
+                             modifier = Modifier
+                                 .fillMaxHeight()
+                                 .fillMaxWidth(0.65f)
+                                 .padding(AstroDimens.Large),
+                             verticalArrangement = Arrangement.Center
+                         ) {
+                             Text(
+                                 text = "Refer Your Friend & Earn Upto ₹5000",
+                                 style = MaterialTheme.typography.titleMedium,
+                                 fontWeight = FontWeight.Bold,
+                                 color = Color.Black
+                             )
+                             Spacer(modifier = Modifier.height(12.dp))
                              Surface(
                                  shape = RoundedCornerShape(50),
-                                 color = (if (banner.offerPercentage > 0) Color(0xFFFFD700) else CosmicAppTheme.colors.accent),
-                                 modifier = Modifier.padding(vertical = AstroDimens.XSmall)
+                                 color = Color(0xFFFF5252),
+                                 modifier = Modifier.height(32.dp)
                              ) {
-                                 Text(
-                                     text = banner.ctaText,
-                                     modifier = Modifier.padding(horizontal = AstroDimens.Medium, vertical = AstroDimens.Small),
-                                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                     color = Color.Black,
-                                     maxLines = 1,
-                                     overflow = TextOverflow.Ellipsis
-                                 )
+                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
+                                     Text("REFER & EARN", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                                 }
                              }
-                        }
-                    }
-                }
-            }
-        }
+                         }
+
+                         // Share Icon (Top-right)
+                         Box(
+                             modifier = Modifier
+                                 .align(Alignment.TopEnd)
+                                 .padding(8.dp)
+                                 .size(36.dp)
+                                 .clip(CircleShape)
+                                 .background(Color.White.copy(alpha = 0.5f))
+                                 .clickable { onShareClick() },
+                             contentAlignment = Alignment.Center
+                         ) {
+                             Icon(
+                                 imageVector = androidx.compose.material.icons.Icons.Rounded.Share,
+                                 contentDescription = "Share",
+                                 tint = Color(0xFFFF5252),
+                                 modifier = Modifier.size(20.dp)
+                             )
+                         }
+
+                         // Decoration
+                         Image(
+                             painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
+                             contentDescription = null,
+                             modifier = Modifier.align(Alignment.CenterEnd).size(110.dp).padding(end = 10.dp),
+                             alpha = 0.8f
+                         )
+                     }
+                 }
+             } else {
+                 // --- REST OF SLIDES: DYNAMIC BANNERS ---
+                 val banner = banners[page - 1]
+
+                 Card(
+                     shape = RoundedCornerShape(AstroDimens.RadiusLarge),
+                     elevation = CardDefaults.cardElevation(defaultElevation = AstroDimens.ElevationLarge),
+                     border = androidx.compose.foundation.BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f)),
+                     modifier = Modifier
+                         .graphicsLayer {
+                             scaleX = scale
+                             scaleY = scale
+                             this.alpha = alpha
+                         }
+                         .fillMaxSize()
+                         .clickable { onBannerClick(banner) }
+                 ) {
+                     Box(modifier = Modifier.fillMaxSize()) {
+                         // 1. Dynamic Background Image
+                         val imageUrl = getImageUrl(banner.imageUrl)
+                         AsyncImage(
+                             model = imageUrl,
+                             contentDescription = banner.title,
+                             contentScale = ContentScale.FillBounds,
+                             modifier = Modifier.fillMaxSize()
+                         )
+
+                         // 2. Gradient Overlay for Readability
+                         Box(
+                             modifier = Modifier
+                                 .fillMaxSize()
+                                 .background(
+                                     Brush.horizontalGradient(
+                                         listOf(Color.Black.copy(alpha = 0.7f), Color.Transparent)
+                                     )
+                                 )
+                         )
+
+                         // 3. Content Text
+                         Column(
+                             modifier = Modifier
+                                 .align(Alignment.CenterStart)
+                                 .padding(AstroDimens.Large)
+                                 .fillMaxWidth(0.65f)
+                         ) {
+                             if (!banner.title.isNullOrEmpty()) {
+                                 Text(
+                                     text = banner.title,
+                                     style = MaterialTheme.typography.titleMedium,
+                                     color = Color.White
+                                 )
+                                 Spacer(modifier = Modifier.height(AstroDimens.XSmall))
+                             }
+
+                             if (!banner.subtitle.isNullOrEmpty()) {
+                                 Text(
+                                     text = banner.subtitle,
+                                     style = MaterialTheme.typography.bodySmall,
+                                     color = Color.White.copy(alpha=0.85f)
+                                 )
+                                 Spacer(modifier = Modifier.height(AstroDimens.Medium))
+                             }
+
+                             // CTA Pill (Fixed Contrast & Overflow)
+                             if (!banner.ctaText.isNullOrEmpty()) {
+                                  Surface(
+                                      shape = RoundedCornerShape(50),
+                                      color = (if (banner.offerPercentage > 0) Color(0xFFFFD700) else CosmicAppTheme.colors.accent),
+                                      modifier = Modifier.padding(vertical = AstroDimens.XSmall)
+                                  ) {
+                                      Text(
+                                          text = banner.ctaText,
+                                          modifier = Modifier.padding(horizontal = AstroDimens.Medium, vertical = AstroDimens.Small),
+                                          style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                          color = Color.Black,
+                                          maxLines = 1,
+                                          overflow = TextOverflow.Ellipsis
+                                      )
+                                  }
+                             }
+                         }
+                     }
+                 }
+             }
+         }
+
 
         Spacer(modifier = Modifier.height(AstroDimens.Medium))
 
@@ -206,9 +287,10 @@ fun BannerSection(banners: List<com.astrohark.app.data.model.Banner>, onBannerCl
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth()
         ) {
-            repeat(banners.size) { iteration ->
+            repeat(totalSlides) { iteration ->
                 val color = if (pagerState.currentPage == iteration) CosmicAppTheme.colors.accent else CosmicAppTheme.colors.accent.copy(alpha = 0.2f)
                 val width by animateDpAsState(targetValue = if (pagerState.currentPage == iteration) 18.dp else 6.dp, label = "dotWidth")
+
 
                 Box(
                     modifier = Modifier
@@ -746,21 +828,16 @@ fun LazyListScope.HomeTab(
         TopServicesSection(isTamil)
     }
 
-    // 2. Persistent Referral Banner (For Everyone)
+    // 2. Unified Banner Slider (Referral Poster + Dynamic Banners)
     item {
-        DefaultBanner(
-            onClick = { onAction("referral") },
+        BannerSection(
+            banners = banners,
+            onBannerClick = onBannerClick,
+            onReferClick = { onAction("referral") },
             onShareClick = { onAction("referral_share") }
         )
     }
 
-
-    // 3. Dynamic Slider (If Enabled and Available)
-    if (showBanner && banners.isNotEmpty()) {
-        item {
-            BannerSection(banners = banners, onBannerClick = onBannerClick)
-        }
-    }
 
 
 
@@ -798,76 +875,7 @@ fun LazyListScope.HomeTab(
     }
 }
 
-@Composable
-fun DefaultBanner(onClick: () -> Unit, onShareClick: () -> Unit) {
 
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(140.dp)
-            .padding(horizontal = 20.dp, vertical = 10.dp)
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1F1)),
-        border = BorderStroke(1.dp, Color(0xFFFFCCCC))
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Background with soft gradient or image
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth(0.6f)
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "Refer Your Friend & Earn Upto ₹5000",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = Color(0xFFFF5252),
-                    modifier = Modifier.height(32.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
-                        Text("REFER & EARN", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
-                    }
-                }
-            }
-            
-            // Share Icon (Top-right)
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.5f))
-                    .clickable { onShareClick() }, // Direct share logic
-                contentAlignment = Alignment.Center
-
-            ) {
-                Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Rounded.Share,
-                    contentDescription = "Share",
-                    tint = Color(0xFFFF5252),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            
-            // Decorative Illustration Placeholder (Top right aspect similar to image)
-            Image(
-                painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground), // Replace with actual referral illustration asset if available
-                contentDescription = null,
-                modifier = Modifier.align(Alignment.CenterEnd).size(110.dp).padding(end = 10.dp),
-                alpha = 0.8f
-            )
-        }
-
-    }
-}
 
 
 fun LazyListScope.ConsultTab(

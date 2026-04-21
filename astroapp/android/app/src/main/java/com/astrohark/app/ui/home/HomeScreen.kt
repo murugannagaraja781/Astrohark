@@ -157,12 +157,14 @@ fun BannerSection(
                              Surface(
                                  shape = RoundedCornerShape(50),
                                  color = Color(0xFFFF5252),
-                                 modifier = Modifier.height(32.dp)
+                                 modifier = Modifier.height(24.dp)
                              ) {
-                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
-                                     Text("REFER & EARN", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
+                                     Text("REFER & EARN", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
                                  }
                              }
+                             Spacer(modifier = Modifier.height(8.dp))
+
                          }
 
                          // Share Icon (Top-right)
@@ -258,21 +260,39 @@ fun BannerSection(
 
                              // CTA Pill (Fixed Contrast & Overflow)
                              if (!banner.ctaText.isNullOrEmpty()) {
+                                  val hPadding = when(banner.ctaButtonSize) {
+                                      "medium" -> 16.dp
+                                      "large" -> 20.dp
+                                      else -> 10.dp
+                                  }
+                                  val vPadding = when(banner.ctaButtonSize) {
+                                      "medium" -> 6.dp
+                                      "large" -> 8.dp
+                                      else -> 2.dp
+                                  }
+                                  val fontSize = when(banner.ctaButtonSize) {
+                                      "medium" -> 11.sp
+                                      "large" -> 13.sp
+                                      else -> 9.sp
+                                  }
+
                                   Surface(
                                       shape = RoundedCornerShape(50),
                                       color = (if (banner.offerPercentage > 0) Color(0xFFFFD700) else CosmicAppTheme.colors.accent),
-                                      modifier = Modifier.padding(vertical = AstroDimens.XSmall)
+                                      modifier = Modifier.padding(vertical = 2.dp)
                                   ) {
                                       Text(
                                           text = banner.ctaText,
-                                          modifier = Modifier.padding(horizontal = AstroDimens.Medium, vertical = AstroDimens.Small),
-                                          style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                          modifier = Modifier.padding(horizontal = hPadding, vertical = vPadding),
+                                          style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = fontSize),
                                           color = Color.Black,
                                           maxLines = 1,
                                           overflow = TextOverflow.Ellipsis
                                       )
                                   }
                              }
+                             Spacer(modifier = Modifier.height(AstroDimens.Small))
+
                          }
                      }
                  }

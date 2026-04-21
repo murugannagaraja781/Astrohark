@@ -308,7 +308,7 @@
 
                         <input type="text" id="bannerCta" class="app-input" placeholder="CTA Text (e.g. Visit Now)">
                     </div>
-                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom:20px;">
+                    <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:10px; margin-bottom:20px;">
                         <div>
                             <label class="app-label" style="font-size:0.7rem;">Order</label>
                             <input type="number" id="bannerOrder" class="app-input" placeholder="0">
@@ -316,6 +316,14 @@
                         <div>
                             <label class="app-label" style="font-size:0.7rem;">Offer %</label>
                             <input type="number" id="bannerOffer" class="app-input" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="app-label" style="font-size:0.7rem;">Btn Size</label>
+                            <select id="bannerBtnSize" class="app-input" style="padding: 0 5px;">
+                                <option value="small">Small</option>
+                                <option value="medium">Medium</option>
+                                <option value="large">Large</option>
+                            </select>
                         </div>
                         <div>
                             <label class="app-label" style="font-size:0.7rem;">Expiry</label>
@@ -327,6 +335,7 @@
                              </label>
                         </div>
                     </div>
+
                     <button class="cosmic-btn" style="width:100%;" onclick="saveBanner()"><i class="fas fa-save"></i> Save Banner</button>
                 </div>
 
@@ -1180,6 +1189,8 @@
             document.getElementById('bannerOffer').value = b.offerPercentage || 0;
             document.getElementById('bannerExpiry').value = b.expiryDate ? b.expiryDate.split('T')[0] : '';
             document.getElementById('bannerActive').checked = b.isActive;
+            document.getElementById('bannerBtnSize').value = b.ctaButtonSize || 'small';
+
             
             // Scroll to form
             document.getElementById('admin-sect-slider').querySelector('.admin-card').scrollIntoView({ behavior: 'smooth' });
@@ -1197,6 +1208,8 @@
             formData.append('offerPercentage', document.getElementById('bannerOffer').value || 0);
             formData.append('expiryDate', document.getElementById('bannerExpiry').value);
             formData.append('isActive', document.getElementById('bannerActive').checked);
+            formData.append('ctaButtonSize', document.getElementById('bannerBtnSize').value);
+
             
             const fileInput = document.getElementById('bannerImageFile');
             if (fileInput.files[0]) {

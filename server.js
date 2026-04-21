@@ -782,7 +782,7 @@ app.get('/api/admin/banners', async (req, res) => {
 // Create/Update Banner (Admin)
 app.post('/api/admin/banners', upload.single('bannerImage'), async (req, res) => {
   try {
-    const { id, title, subtitle, ctaText, order, offerPercentage, expiryDate, isActive, imageUrl } = req.body;
+    const { id, title, subtitle, ctaText, ctaButtonSize, order, offerPercentage, expiryDate, isActive, imageUrl } = req.body;
     let finalImageUrl = imageUrl;
 
     if (req.file) {
@@ -791,7 +791,7 @@ app.post('/api/admin/banners', upload.single('bannerImage'), async (req, res) =>
 
     if (id && id !== 'undefined') {
       const banner = await Banner.findByIdAndUpdate(id, {
-        title, subtitle, ctaText, order: parseInt(order || 0),
+        title, subtitle, ctaText, ctaButtonSize, order: parseInt(order || 0),
         offerPercentage: parseFloat(offerPercentage || 0),
         expiryDate: expiryDate || null,
         isActive: isActive === 'true' || isActive === true,
@@ -801,7 +801,7 @@ app.post('/api/admin/banners', upload.single('bannerImage'), async (req, res) =>
       return res.json({ ok: true, banner });
     } else {
       const banner = await Banner.create({
-        title, subtitle, ctaText, order: parseInt(order || 0),
+        title, subtitle, ctaText, ctaButtonSize, order: parseInt(order || 0),
         offerPercentage: parseFloat(offerPercentage || 0),
         expiryDate: expiryDate || null,
         isActive: isActive === 'true' || isActive === true,

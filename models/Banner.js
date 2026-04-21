@@ -9,6 +9,7 @@ const BannerSchema = new mongoose.Schema({
     isActive: { type: Boolean, default: true },
     offerPercentage: { type: Number, default: 0 },
     expiryDate: { type: Date },
+    ctaButtonSize: { type: String, default: 'small' }, 
     createdAt: { type: Date, default: Date.now }
 });
 

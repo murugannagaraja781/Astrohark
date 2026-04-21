@@ -110,7 +110,7 @@ fun BannerSection(banners: List<com.astrohark.app.data.model.Banner>, onBannerCl
             pageSpacing = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp)
+                .height(135.dp)
         ) { page ->
              val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
              val scale by animateFloatAsState(targetValue = if (pageOffset == 0f) 1f else 0.9f, label = "scale")
@@ -162,7 +162,7 @@ fun BannerSection(banners: List<com.astrohark.app.data.model.Banner>, onBannerCl
                         if (!banner.title.isNullOrEmpty()) {
                             Text(
                                 text = banner.title,
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 color = Color.White
                             )
                             Spacer(modifier = Modifier.height(AstroDimens.XSmall))
@@ -171,7 +171,7 @@ fun BannerSection(banners: List<com.astrohark.app.data.model.Banner>, onBannerCl
                         if (!banner.subtitle.isNullOrEmpty()) {
                             Text(
                                 text = banner.subtitle,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha=0.85f)
                             )
                             Spacer(modifier = Modifier.height(AstroDimens.Medium))
@@ -208,7 +208,7 @@ fun BannerSection(banners: List<com.astrohark.app.data.model.Banner>, onBannerCl
         ) {
             repeat(banners.size) { iteration ->
                 val color = if (pagerState.currentPage == iteration) CosmicAppTheme.colors.accent else CosmicAppTheme.colors.accent.copy(alpha = 0.2f)
-                val width by animateDpAsState(targetValue = if (pagerState.currentPage == iteration) 24.dp else 8.dp, label = "dotWidth")
+                val width by animateDpAsState(targetValue = if (pagerState.currentPage == iteration) 18.dp else 6.dp, label = "dotWidth")
 
                 Box(
                     modifier = Modifier
@@ -650,7 +650,10 @@ fun HomeScreen(
                             onAction = { action ->
                                 if (action == "referral") {
                                     selectedTab = 4
+                                } else if (action == "referral_share") {
+                                    showReferralDialog = true
                                 } else {
+
                                     selectedFilter = when(action) {
                                         "chat" -> "Chat"
                                         "call" -> "Call"
@@ -743,14 +746,23 @@ fun LazyListScope.HomeTab(
         TopServicesSection(isTamil)
     }
 
-    // 2. Banner Section (Main Slider or Referral Poster)
+    // 2. Persistent Referral Banner (For Everyone)
     item {
-        if (showBanner && banners.isNotEmpty()) {
+        DefaultBanner(
+            onClick = { onAction("referral") },
+            onShareClick = { onAction("referral_share") }
+        )
+    }
+
+
+    // 3. Dynamic Slider (If Enabled and Available)
+    if (showBanner && banners.isNotEmpty()) {
+        item {
             BannerSection(banners = banners, onBannerClick = onBannerClick)
-        } else {
-            DefaultBanner { onAction("referral") }
         }
     }
+
+
 
     // 3. Quick Action Section (Chat, Call, Video)
     item {
@@ -787,12 +799,13 @@ fun LazyListScope.HomeTab(
 }
 
 @Composable
-fun DefaultBanner(onClick: () -> Unit) {
+fun DefaultBanner(onClick: () -> Unit, onShareClick: () -> Unit) {
+
     Card(
         shape = RoundedCornerShape(20.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .height(180.dp)
+            .height(140.dp)
             .padding(horizontal = 20.dp, vertical = 10.dp)
             .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1F1)),
@@ -824,14 +837,35 @@ fun DefaultBanner(onClick: () -> Unit) {
                 }
             }
             
+            // Share Icon (Top-right)
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.5f))
+                    .clickable { onShareClick() }, // Direct share logic
+                contentAlignment = Alignment.Center
+
+            ) {
+                Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Rounded.Share,
+                    contentDescription = "Share",
+                    tint = Color(0xFFFF5252),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
             // Decorative Illustration Placeholder (Top right aspect similar to image)
             Image(
                 painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground), // Replace with actual referral illustration asset if available
                 contentDescription = null,
-                modifier = Modifier.align(Alignment.CenterEnd).size(150.dp).padding(end = 10.dp),
+                modifier = Modifier.align(Alignment.CenterEnd).size(110.dp).padding(end = 10.dp),
                 alpha = 0.8f
             )
         }
+
     }
 }
 

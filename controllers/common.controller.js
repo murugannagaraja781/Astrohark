@@ -59,10 +59,13 @@ exports.getAppConfig = async (req, res) => {
             ok: true,
             config: {
                 shareLink: shareLinkRecord ? shareLinkRecord.value : process.env.PLAYSTORE_URL || "https://astrohark.com",
-                deepLinkPrefix: process.env.DEEP_LINK_PREFIX || "astrohark://referral/"
+                deepLinkPrefix: process.env.DEEP_LINK_PREFIX || "astrohark://referral/",
+                showBanner: process.env.SHOW_BANNER === 'true',
+                appBackgroundColor: process.env.APP_BG_COLOR || "#FEF9F3"
             }
         });
     } catch (error) {
         res.json({ ok: false, error: 'Failed to fetch config' });
     }
 };
+

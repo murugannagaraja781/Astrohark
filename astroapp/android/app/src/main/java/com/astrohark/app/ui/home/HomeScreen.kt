@@ -308,7 +308,10 @@ fun HomeScreen(
     val tokenManager = remember { TokenManager(context) }
     val userSession by remember { mutableStateOf(tokenManager.getUserSession()) }
 
-    // Fetch App Config (Share Link)
+    // Fetch App Config (Share Link, Banner Toggle, BG Color)
+    var showBanner by remember { mutableStateOf(true) }
+    var appBackgroundColor by remember { mutableStateOf(Color(0xFFFEF9F3)) }
+
     LaunchedEffect(Unit) {
         try {
             val response = ApiClient.api.getAppConfig()
@@ -318,6 +321,17 @@ fun HomeScreen(
                     val config = json.getAsJsonObject("config")
                     if (config.has("shareLink")) {
                         shareLink = config.get("shareLink").getAsString()
+                    }
+                    if (config.has("showBanner")) {
+                        showBanner = config.get("showBanner").getAsBoolean()
+                    }
+                    if (config.has("appBackgroundColor")) {
+                        val colorStr = config.get("appBackgroundColor").getAsString()
+                        try {
+                            appBackgroundColor = Color(android.graphics.Color.parseColor(colorStr))
+                        } catch (e: Exception) {
+                            appBackgroundColor = Color(0xFFFEF9F3)
+                        }
                     }
                 }
             }
@@ -578,7 +592,7 @@ fun HomeScreen(
         }
     ) {
         Scaffold(
-            containerColor = CosmicAppTheme.colors.bgStart,
+            containerColor = appBackgroundColor,
             topBar = {
                 HomeTopBar(
                     balance = walletBalance,
@@ -588,7 +602,9 @@ fun HomeScreen(
                     isGuest = isGuest,
                     isTamil = isTamil,
                     onToggleLanguage = { isTamil = !isTamil },
-                    onReferClick = { showReferralDialog = true }
+                    onReferClick = { showReferralDialog = true },
+                    shareLink = shareLink,
+                    referralCode = referralCode
                 )
 
             },
@@ -620,7 +636,7 @@ fun HomeScreen(
             }
         }
     ) { padding ->
-            Box(modifier = Modifier.padding(padding).fillMaxSize().background(CosmicAppTheme.colors.bgStart)) {
+            Box(modifier = Modifier.padding(padding).fillMaxSize().background(appBackgroundColor)) {
                 // Content Layer
                 LazyColumn(
                     state = listState,
@@ -630,15 +646,21 @@ fun HomeScreen(
                     when (selectedTab) {
                         0 -> HomeTab(
                             walletBalance, isTamil, filteredAstros, isLoading, banners, onBannerClick, onWalletClick, onChatClick, onCallClick, onRasiClick,
+                            showBanner = showBanner,
                             onAction = { action ->
-                                selectedFilter = when(action) {
-                                    "chat" -> "Chat"
-                                    "call" -> "Call"
-                                    "video" -> "Video"
-                                    else -> "All"
+                                if (action == "referral") {
+                                    selectedTab = 4
+                                } else {
+                                    selectedFilter = when(action) {
+                                        "chat" -> "Chat"
+                                        "call" -> "Call"
+                                        "video" -> "Video"
+                                        else -> "All"
+                                    }
+                                    selectedTab = 1
                                 }
-                                selectedTab = 1
                             }
+
                         )
                         1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } })
                         2 -> RitualsTab()
@@ -713,22 +735,29 @@ fun LazyListScope.HomeTab(
     onChatClick: (Astrologer) -> Unit,
     onCallClick: (Astrologer, String) -> Unit,
     onRasiClick: (ComposeRasiItem) -> Unit,
+    showBanner: Boolean = true,
     onAction: (String) -> Unit
 ) {
-    // 1. Quick Action Section (Top)
+    // 1. Services Section (Top Icons - Horoscope, Match, etc.)
+    item {
+        TopServicesSection(isTamil)
+    }
+
+    // 2. Banner Section (Main Slider or Referral Poster)
+    item {
+        if (showBanner && banners.isNotEmpty()) {
+            BannerSection(banners = banners, onBannerClick = onBannerClick)
+        } else {
+            DefaultBanner { onAction("referral") }
+        }
+    }
+
+    // 3. Quick Action Section (Chat, Call, Video)
     item {
         QuickActionsSection(isTamil) { action ->
             onAction(action)
         }
     }
-    
-    // 2. Banner Section
-    item { 
-        BannerSection(banners = banners, onBannerClick = onBannerClick)
-    }
-
-    // 3. Services Section (Horizontal Scroll with Labels)
-    item { TopServicesSection(isTamil) }
 
     item {
         Spacer(modifier = Modifier.height(8.dp))
@@ -756,6 +785,56 @@ fun LazyListScope.HomeTab(
         SupportAndPoliciesSection()
     }
 }
+
+@Composable
+fun DefaultBanner(onClick: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .padding(horizontal = 20.dp, vertical = 10.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF1F1)),
+        border = BorderStroke(1.dp, Color(0xFFFFCCCC))
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Background with soft gradient or image
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(0.6f)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Refer Your Friend & Earn Upto ₹5000",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Color(0xFFFF5252),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Text("REFER & EARN", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Black)
+                    }
+                }
+            }
+            
+            // Decorative Illustration Placeholder (Top right aspect similar to image)
+            Image(
+                painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground), // Replace with actual referral illustration asset if available
+                contentDescription = null,
+                modifier = Modifier.align(Alignment.CenterEnd).size(150.dp).padding(end = 10.dp),
+                alpha = 0.8f
+            )
+        }
+    }
+}
+
 
 fun LazyListScope.ConsultTab(
     astrologers: List<Astrologer>,
@@ -944,8 +1023,12 @@ fun HomeTopBar(
     isTamil: Boolean = true,
     onToggleLanguage: () -> Unit = {},
     onReferClick: () -> Unit = {},
-    userName: String = "Seeker"
+    userName: String = "Seeker",
+    shareLink: String = "",
+    referralCode: String? = null
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -986,35 +1069,65 @@ fun HomeTopBar(
             }
         }
 
-        // Wallet Pill (Premium Style)
-        Surface(
-            onClick = onWalletClick,
-            shape = RoundedCornerShape(50),
-            color = Color.White,
-            shadowElevation = 4.dp,
-            modifier = Modifier.height(36.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        // Action Buttons (Share & Wallet)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Share Button
+            Surface(
+                onClick = {
+                    val msg = if (isTamil)
+                        "Astrohark செயலியில் இணையுங்கள்! நீங்கள் இணைய என் Referral Code: ${referralCode ?: ""} -ஐ பயன்படுத்தினால் ₹188 போனஸ் கிடைக்கும். $shareLink"
+                    else "Join Astrohark! Use my Referral Code: ${referralCode ?: ""} and get ₹188 bonus on signup. $shareLink"
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, msg)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share via"))
+                },
+                shape = CircleShape,
+                color = Color.White,
+                shadowElevation = 4.dp,
+                modifier = Modifier.size(36.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.AccountBalanceWallet,
-                    contentDescription = null,
-                    tint = Color(0xFFC62828), // Premium Red
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "₹${balance.toInt()}",
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = (if (balance > 999999) 11.sp else 14.sp)
-                    ),
-                    color = Color.Black,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Rounded.Share,
+                        contentDescription = "Share",
+                        tint = Color(0xFF1E1E2C),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            // Wallet Pill (Premium Style)
+            Surface(
+                onClick = onWalletClick,
+                shape = RoundedCornerShape(50),
+                color = Color.White,
+                shadowElevation = 4.dp,
+                modifier = Modifier.height(36.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.AccountBalanceWallet,
+                        contentDescription = null,
+                        tint = Color(0xFFC62828), // Premium Red
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "₹${balance.toInt()}",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = (if (balance > 999999) 11.sp else 14.sp)
+                        ),
+                        color = Color.Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }
@@ -1802,20 +1915,19 @@ fun TopServicesSection(isTamil: Boolean) {
     val services: List<Pair<String, Int>> = if(isTamil) {
         listOf(
             "இலவச ஜாதகம்" to com.astrohark.app.R.drawable.ic_free_kundali_v2,
-            "ஜாதகப் பொருத்தம்" to com.astrohark.app.R.drawable.ic_match_v2,
-            "தினசரி ராசிபலன்" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
-            "Astro\nஅகாடமி" to com.astrohark.app.R.drawable.ic_academy_v2,
-            "இலவச சேவைகள்" to com.astrohark.app.R.drawable.ic_free_services_v2
+            "தினசரி ஜோதிடம்" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
+            "திருமண பொருத்தம்" to com.astrohark.app.R.drawable.ic_match_v2,
+            "தினசரி பஞ்சாங்கம்" to com.astrohark.app.R.drawable.ic_academy_v2
         )
     } else {
         listOf(
-            "Free\nHoroscope" to com.astrohark.app.R.drawable.ic_free_kundali_v2,
-            "Horoscope\nMatch" to com.astrohark.app.R.drawable.ic_match_v2,
-            "Daily\nHoroscope" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
-            "Astro\nAcademy" to com.astrohark.app.R.drawable.ic_academy_v2,
-            "Free\nServices" to com.astrohark.app.R.drawable.ic_free_services_v2
+            "Free\nKundeli" to com.astrohark.app.R.drawable.ic_free_kundali_v2,
+            "Daily\nAstrology" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
+            "Marriage\nMatching" to com.astrohark.app.R.drawable.ic_match_v2,
+            "Daily\nalmanac" to com.astrohark.app.R.drawable.ic_academy_v2
         )
     }
+
 
     Row(
         modifier = Modifier
@@ -1827,13 +1939,13 @@ fun TopServicesSection(isTamil: Boolean) {
         services.forEach { (name, icon) ->
             ServiceItem(name, icon) {
                 val actionType = when {
-                    name.contains("Horoscope", true) || name.contains("ஜாதகம்", true) -> "kundali"
-                    name.contains("Match", true) || name.contains("பொருத்தம்", true) -> "match"
-                    name.contains("Daily", true) || name.contains("ராசிபலன்", true) -> "rasi"
-                    name.contains("Academy", true) || name.contains("அகாடமி", true) -> "academy"
-                    name.contains("Services", true) || name.contains("சேவைகள்", true) -> "free"
+                    name.contains("Kundeli", true) || name.contains("Horoscope", true) || name.contains("ஜாதகம்", true) -> "kundali"
+                    name.contains("Marriage", true) || name.contains("Matching", true) || name.contains("பொருத்தம்", true) -> "match"
+                    name.contains("Astrology", true) || name.contains("ராசிபலன்", true) || name.contains("ஜோதிடம்", true) -> "rasi"
+                    name.contains("Almanac", true) || name.contains("பஞ்சாங்கம்", true) || name.contains("Academy", true) -> "academy"
                     else -> ""
                 }
+
                 when(actionType) {
                     "kundali" -> {
                         val intent = Intent(context, com.astrohark.app.ui.horoscope.FreeHoroscopeActivity::class.java)
@@ -1875,7 +1987,8 @@ fun ServiceItem(name: String, iconRes: Int, onClick: () -> Unit) {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEEEEEE)),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = 0.8f)),
+
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             modifier = Modifier.size(70.dp)
         ) {

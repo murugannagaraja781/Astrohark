@@ -16,8 +16,12 @@ android {
         applicationId = "com.astrohark.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "2.0.0"
+
+        ndk {
+            abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
+        }
     }
 
     signingConfigs {
@@ -30,6 +34,11 @@ android {
                 storePassword = props["storePassword"] as String
                 keyAlias = props["keyAlias"] as String
                 keyPassword = props["keyPassword"] as String
+
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
             }
         }
     }
@@ -65,7 +74,7 @@ android {
 
     packaging {
         jniLibs {
-            useLegacyPackaging = false // Crucial for 16KB Page Alignment on Android 15
+            useLegacyPackaging = true // Required for 16KB Page Alignment on AGP 8.3+ (Android 15)
         }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

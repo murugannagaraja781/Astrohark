@@ -224,6 +224,12 @@
             android:screenOrientation="portrait"
             android:exported="false"
             android:theme="@style/Theme.FCMCallApp"/>
+            
+        <activity
+            android:name=".ui.rituals.RitualDetailActivity"
+            android:screenOrientation="portrait"
+            android:exported="false"
+            android:theme="@style/Theme.FCMCallApp"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"

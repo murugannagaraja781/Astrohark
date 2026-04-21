@@ -25,6 +25,7 @@ const AcademyVideo = require('./models/AcademyVideo');
 const Banner = require('./models/Banner');
 const AccountDeletionRequest = require('./models/AccountDeletionRequest');
 const GlobalSettings = require('./models/GlobalSettings');
+const Ritual = require('./models/Ritual');
 
 const {
   userSockets,
@@ -824,6 +825,66 @@ app.delete('/api/admin/banners/:id', async (req, res) => {
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
+});
+
+// --- Ritual APIs ---
+app.get('/api/rituals', async (req, res) => {
+    try {
+        const rituals = await Ritual.find({ isActive: true }).sort({ order: 1 });
+        const formatted = rituals.map(r => ({
+            ...r.toObject(),
+            imageUrl: formatImageUrl(r.imageUrl, r.title)
+        }));
+        res.json({ ok: true, data: formatted });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+app.get('/api/admin/rituals', async (req, res) => {
+    try {
+        const rituals = await Ritual.find().sort({ order: 1 });
+        res.json({ ok: true, rituals });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+app.post('/api/admin/rituals', upload.single('ritualImage'), async (req, res) => {
+    try {
+        const { id, title, title_ta, subtitle, subtitle_ta, description, description_ta, price, order, isActive, imageUrl } = req.body;
+        let finalImageUrl = imageUrl;
+        if (req.file) {
+            finalImageUrl = 'uploads/' + req.file.filename;
+        }
+
+        const data = {
+            title, title_ta, subtitle, subtitle_ta, description, description_ta,
+            price: parseFloat(price || 0),
+            order: parseInt(order || 0),
+            isActive: isActive === 'true' || isActive === true,
+            imageUrl: finalImageUrl
+        };
+
+        if (id && id !== 'undefined' && id !== 'null') {
+            const ritual = await Ritual.findByIdAndUpdate(id, data, { new: true });
+            res.json({ ok: true, ritual });
+        } else {
+            const ritual = await Ritual.create(data);
+            res.json({ ok: true, ritual });
+        }
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
+});
+
+app.delete('/api/admin/rituals/:id', async (req, res) => {
+    try {
+        await Ritual.findByIdAndDelete(req.params.id);
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
+    }
 });
 
 // Home Dashboard Data (App) 

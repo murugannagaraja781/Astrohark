@@ -80,6 +80,7 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.json.JSONArray
 import com.astrohark.app.data.local.TokenManager
+import com.astrohark.app.data.model.Ritual
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -108,15 +109,15 @@ fun BannerSection(
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(bottom = AstroDimens.Large)
+        modifier = Modifier.padding(vertical = 8.dp) // Consistent with AstrologerCard vertical spacing (8dp top + 8dp bottom)
     ) {
         HorizontalPager(
             state = pagerState,
-            contentPadding = PaddingValues(horizontal = 0.dp),
+            contentPadding = PaddingValues(horizontal = 14.dp), // Matched with AstrologerCard horizontal padding
             pageSpacing = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(135.dp)
+                .height(150.dp) // Adjusted to match AstrologerCard size
         ) { page ->
              val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
              val scale by animateFloatAsState(targetValue = if (pageOffset == 0f) 1f else 0.9f, label = "scale")
@@ -218,7 +219,7 @@ fun BannerSection(
                          AsyncImage(
                              model = imageUrl,
                              contentDescription = banner.title,
-                             contentScale = ContentScale.FillBounds,
+                             contentScale = ContentScale.Crop,
                              modifier = Modifier.fillMaxSize()
                          )
 
@@ -237,7 +238,7 @@ fun BannerSection(
                          Column(
                              modifier = Modifier
                                  .align(Alignment.CenterStart)
-                                 .padding(AstroDimens.Large)
+                                 .padding(AstroDimens.Medium)
                                  .fillMaxWidth(0.65f)
                          ) {
                              if (!banner.title.isNullOrEmpty()) {
@@ -300,7 +301,7 @@ fun BannerSection(
          }
 
 
-        Spacer(modifier = Modifier.height(AstroDimens.Medium))
+        Spacer(modifier = Modifier.height(AstroDimens.XSmall)) // Reduced from Medium to XSmall (4dp)
 
         // Indicators
         Row(
@@ -376,6 +377,7 @@ fun HomeScreen(
     astrologers: List<Astrologer>,
     isLoading: Boolean,
     banners: List<com.astrohark.app.data.model.Banner>,
+    rituals: List<Ritual> = emptyList(),
     onBannerClick: (com.astrohark.app.data.model.Banner) -> Unit,
     onChatClick: (Astrologer) -> Unit,
     onCallClick: (Astrologer, String) -> Unit,
@@ -747,7 +749,7 @@ fun HomeScreen(
                 ) {
                     when (selectedTab) {
                         0 -> HomeTab(
-                            walletBalance, isTamil, filteredAstros, isLoading, banners, onBannerClick, onWalletClick, onChatClick, onCallClick, onRasiClick,
+                            walletBalance, isTamil, filteredAstros, isLoading, banners, rituals, onBannerClick, onWalletClick, onChatClick, onCallClick, onRasiClick,
                             showBanner = showBanner,
                             onAction = { action ->
                                 if (action == "referral") {
@@ -768,7 +770,7 @@ fun HomeScreen(
 
                         )
                         1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } })
-                        2 -> RitualsTab()
+                        2 -> RitualsTab(rituals, isTamil)
                         3 -> ProfileTab(walletBalance, isTamil, onWalletClick, onDrawerItemClick, onLogoutClick)
                         4 -> ReferralTab(referralCode, shareLink, isTamil, isNewUser, onApplyReferral)
                     }
@@ -787,9 +789,9 @@ fun SupportAndPoliciesSection() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .padding(horizontal = 16.dp, vertical = 6.dp) // Reduced from 16dp
             .background(CosmicAppTheme.colors.cardBg.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-            .padding(16.dp),
+            .padding(12.dp), // Internal padding reduced
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -835,6 +837,7 @@ fun LazyListScope.HomeTab(
     filteredAstros: List<Astrologer>,
     isLoading: Boolean,
     banners: List<com.astrohark.app.data.model.Banner>,
+    rituals: List<Ritual> = emptyList(),
     onBannerClick: (com.astrohark.app.data.model.Banner) -> Unit,
     onWalletClick: () -> Unit,
     onChatClick: (Astrologer) -> Unit,
@@ -883,7 +886,7 @@ fun LazyListScope.HomeTab(
     }
 
     item {
-        DailyRitualsSection(isTamil)
+        DailyRitualsSection(rituals, isTamil)
     }
 
     item {
@@ -913,16 +916,24 @@ fun LazyListScope.ConsultTab(
     }
 }
 
-fun LazyListScope.RitualsTab() {
+fun LazyListScope.RitualsTab(rituals: List<Ritual>, isTamil: Boolean) {
+    if (rituals.isEmpty()) {
+        item {
+            Box(modifier = Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
+                Text(if(isTamil) "சடங்குகள் எதுவும் இல்லை" else "No Rituals Available", color = Color.Gray)
+            }
+        }
+        return
+    }
+
     item {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Spiritual Rituals", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = Color.White)
+            Text(if(isTamil) "ஆன்மீக சடங்குகள்" else "Spiritual Rituals", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold), color = CosmicAppTheme.colors.textPrimary)
             Spacer(modifier = Modifier.height(20.dp))
-            RitualCard("Morning Pooja", "Start your day with divine grace", R.mipmap.ic_launcher_round)
-            Spacer(modifier = Modifier.height(12.dp))
-            RitualCard("Full Moon Manifestation", "Align your energy with the lunar cycle", R.mipmap.ic_launcher_round)
-            Spacer(modifier = Modifier.height(12.dp))
-            RitualCard("Weekly Horoscope", "Your detailed planetary transitions", R.mipmap.ic_launcher_round)
+            rituals.forEach { ritual ->
+                RitualCard(ritual, isTamil)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
         }
     }
 }
@@ -1096,7 +1107,7 @@ fun HomeTopBar(
             .fillMaxWidth()
             .background(Color(0xFF0F0F15)) // Deep Space Black/Navy
             .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = 20.dp, vertical = 8.dp), // Reduced from 14dp
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -1207,9 +1218,10 @@ fun WalletDashboard(balance: Double, isTamil: Boolean, onAddMoneyClick: () -> Un
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .padding(horizontal = 20.dp, vertical = 10.dp)
             .shadow(12.dp, RoundedCornerShape(24.dp), spotColor = CosmicAppTheme.colors.accent.copy(alpha = 0.2f)),
         shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0)), // Added border
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box(modifier = Modifier.background(cardGradient).padding(24.dp)) {
@@ -1263,7 +1275,7 @@ fun WalletDashboard(balance: Double, isTamil: Boolean, onAddMoneyClick: () -> Un
 
 @Composable
 fun QuickActionsSection(isTamil: Boolean, onAction: (String) -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)) {
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 2.dp)) { 
         Text(
             text = Localization.get("quick_actions", isTamil),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
@@ -1285,16 +1297,16 @@ fun QuickActionsSection(isTamil: Boolean, onAction: (String) -> Unit) {
 fun QuickActionItem(title: String, icon: ImageVector, iconColor: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Card(
         modifier = modifier
-            .height(86.dp) // Reduced height
+            .height(86.dp)
             .shadow(
-                elevation = 8.dp,
+                elevation = 4.dp, // Reduced elevation for cleaner look
                 shape = RoundedCornerShape(20.dp),
-                spotColor = iconColor.copy(alpha = 0.3f)
+                spotColor = iconColor.copy(alpha = 0.1f)
             )
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, iconColor.copy(alpha = 0.15f))
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0)) // Consistent border
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -1550,7 +1562,7 @@ fun ZodiacInsightsSection(isTamil: Boolean, onRasiClick: (ComposeRasiItem) -> Un
     
     Column(
         modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp) 
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(
@@ -1628,8 +1640,10 @@ fun ZodiacInsightsSection(isTamil: Boolean, onRasiClick: (ComposeRasiItem) -> Un
 }
 
 @Composable
-fun DailyRitualsSection(isTamil: Boolean) {
-    Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 24.dp)) {
+fun DailyRitualsSection(rituals: List<Ritual>, isTamil: Boolean) {
+    if (rituals.isEmpty()) return
+
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 4.dp)) { 
         Text(
             text = Localization.get("daily_rituals", isTamil),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
@@ -1637,17 +1651,12 @@ fun DailyRitualsSection(isTamil: Boolean) {
         )
         Spacer(modifier = Modifier.height(16.dp))
         
-        RitualCard(
-            title = if(isTamil) "பௌர்ணமி மேனிஃபெஸ்டேஷன்" else "Full Moon Manifestation",
-            subtitle = if(isTamil) "சந்திர சுழற்சியுடன் உங்கள் ஆற்றலை சீரமைக்கவும்" else "Align your energy with the lunar cycle",
-            icon = R.mipmap.ic_launcher_round
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        RitualCard(
-            title = if(isTamil) "வாராந்திர ராசிபலன்" else "Weekly Horoscope",
-            subtitle = if(isTamil) "உங்கள் விரிவான கிரக மாற்றங்கள்" else "Your detailed planetary transitions",
-            icon = R.mipmap.ic_launcher_round
-        )
+        rituals.forEachIndexed { index, ritual ->
+            RitualCard(ritual, isTamil)
+            if (index < rituals.size - 1) {
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
     }
 }
 
@@ -1704,9 +1713,26 @@ fun BottomNavItem(label: String, icon: ImageVector, isSelected: Boolean, onClick
 }
 
 @Composable
-fun RitualCard(title: String, subtitle: String, icon: Int) {
+fun RitualCard(ritual: Ritual, isTamil: Boolean) {
+    val context = LocalContext.current
+    val title = if(isTamil && !ritual.titleTamil.isNullOrEmpty()) ritual.titleTamil else ritual.title
+    val subtitle = if(isTamil && !ritual.subtitleTamil.isNullOrEmpty()) ritual.subtitleTamil else ritual.subtitle
+    val description = if(isTamil && !ritual.descriptionTamil.isNullOrEmpty()) ritual.descriptionTamil else ritual.description
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                val intent = Intent(context, com.astrohark.app.ui.rituals.RitualDetailActivity::class.java).apply {
+                    putExtra("title", title)
+                    putExtra("subtitle", subtitle)
+                    putExtra("description", description)
+                    putExtra("imageUrl", ritual.imageUrl)
+                    putExtra("price", ritual.price)
+                    putExtra("isTamil", isTamil)
+                }
+                context.startActivity(intent)
+            },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -1722,11 +1748,11 @@ fun RitualCard(title: String, subtitle: String, icon: Int) {
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.Black)
             ) {
-                Image(
-                    painter = painterResource(id = icon),
+                AsyncImage(
+                    model = getImageUrl(imageUrl),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize().padding(12.dp),
-                    contentScale = ContentScale.Fit
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
             }
             
@@ -1747,17 +1773,6 @@ fun RitualCard(title: String, subtitle: String, icon: Int) {
                 )
             }
             
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = Color(0xFFF5F5F5)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = null,
-                        tint = Color(0xFF8B4513),
-                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -1994,9 +2009,9 @@ fun TopServicesSection(isTamil: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp, horizontal = 8.dp)
+            .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp) // Reduced from 10dp for compactness
     ) {
         services.forEach { (name, icon) ->
             ServiceItem(name, icon) {
@@ -2043,32 +2058,32 @@ fun ServiceItem(name: String, iconRes: Int, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .width(85.dp)
+            .width(78.dp) 
             .clickable { onClick() }
     ) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(20.dp), // Match QuickActionItem
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Color.Black.copy(alpha = 0.8f)),
-
+            border = BorderStroke(1.dp, Color(0xFFF0F0F0)), 
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-            modifier = Modifier.size(70.dp)
+            modifier = Modifier.size(64.dp)
         ) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Image(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize().padding(10.dp),
+                    modifier = Modifier.fillMaxSize(), // Full fill
                     contentScale = ContentScale.Fit
                 )
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(6.dp)) 
         Text(
             text = name,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Medium,
-                lineHeight = 12.sp
+                fontWeight = FontWeight.Bold,
+                fontSize = 10.sp,
+                lineHeight = 11.sp
             ),
             color = CosmicAppTheme.colors.textPrimary,
             textAlign = TextAlign.Center,
@@ -2087,7 +2102,7 @@ fun CustomerStoriesSection(isTamil: Boolean) {
         Triple(if(isTamil) "ராகுல் வர்மா" else "Rahul Verma", if(isTamil) "டெல்லி, இந்தியா" else "Delhi, India", if(isTamil) "எனது திருமணத்தை தீர்க்க உதவியது..." else "Helped me resolve my marriage...")
     )
 
-    Column(modifier = Modifier.padding(vertical = 16.dp)) {
+    Column(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) { // Reduced from 16dp
         Text(
             text = Localization.get("customer_stories", isTamil),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -2112,13 +2127,13 @@ fun CustomerStoriesSection(isTamil: Boolean) {
 @Composable
 fun CustomerStoryCard(name: String, loc: String, review: String) {
     Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray.copy(alpha=0.5f)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.width(260.dp)
     ) {
-        Row(modifier = Modifier.padding(12.dp)) {
+        Row(modifier = Modifier.padding(14.dp)) { // Slightly more padding
             Image(
                 painter = painterResource(id = com.astrohark.app.R.drawable.ic_person_placeholder),
                 contentDescription = null,
@@ -2132,12 +2147,12 @@ fun CustomerStoryCard(name: String, loc: String, review: String) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                     Spacer(modifier = Modifier.weight(1f))
-                    Icon(imageVector = Icons.Filled.Menu, contentDescription=null, modifier=Modifier.size(16.dp), tint=Color.Gray) // 3-dot placeholder
+                    Icon(imageVector = Icons.Filled.Menu, contentDescription=null, modifier=Modifier.size(16.dp), tint=Color.Gray) 
                 }
                 Text(text = loc, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = review, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(text = "more", style = MaterialTheme.typography.labelSmall, color = Color.Red)
+                Text(text = Localization.get("more", false), style = MaterialTheme.typography.labelSmall, color = Color.Red)
             }
         }
     }

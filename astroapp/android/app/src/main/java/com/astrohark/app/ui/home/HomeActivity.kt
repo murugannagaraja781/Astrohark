@@ -57,6 +57,7 @@ class HomeActivity : AppCompatActivity() {
     private val _referralCode = MutableStateFlow<String?>(null)
     private val _isNewUser = MutableStateFlow(false)
     private val _banners = MutableStateFlow<List<Banner>>(emptyList())
+    private val _rituals = MutableStateFlow<List<com.astrohark.app.data.model.Ritual>>(emptyList())
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,6 +88,7 @@ class HomeActivity : AppCompatActivity() {
                 val referralCode by _referralCode.collectAsState()
                 val isNewUser by _isNewUser.collectAsState()
                 val banners by _banners.collectAsState()
+                val rituals by _rituals.collectAsState()
 
                 var selectedRasiItem by remember { mutableStateOf<ComposeRasiItem?>(null) }
 
@@ -101,6 +103,7 @@ class HomeActivity : AppCompatActivity() {
                     astrologers = astrologers,
                     isLoading = isLoading,
                     banners = banners,
+                    rituals = rituals,
                     onBannerClick = { banner ->
                         if (banner.offerPercentage > 0.0) {
                             val intent = Intent(this, com.astrohark.app.ui.wallet.SuperWalletActivity::class.java).apply {
@@ -436,8 +439,8 @@ class HomeActivity : AppCompatActivity() {
         }
 
         socket?.on("banners-updated") {
-            Log.d(TAG, "[Socket] Banners updated, refreshing...")
-            fetchBanners()
+            Log.d(TAG, "[Socket] Banners/Rituals updated, refreshing...")
+            fetchHomeData()
         }
 
         socket?.emit("get-astrologers")
@@ -471,20 +474,22 @@ class HomeActivity : AppCompatActivity() {
         super.onResume()
         loadWalletBalance()
         refreshWalletBalance()
-        fetchBanners()
+        fetchHomeData()
         // Ensure astrologer list is fresh when returning to the screen
         SocketManager.getSocket()?.emit("get-astrologers")
     }
 
-    private fun fetchBanners() {
+    private fun fetchHomeData() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val response = ApiClient.api.getBanners()
+                val response = ApiClient.api.getHomeData()
                 if (response.isSuccessful && response.body()?.ok == true) {
-                    _banners.value = response.body()?.banners ?: emptyList()
+                    val homeData = response.body()?.data
+                    _banners.value = homeData?.banners ?: emptyList()
+                    _rituals.value = homeData?.rituals ?: emptyList()
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error fetching banners: ${e.message}")
+                Log.e(TAG, "Error fetching home data: ${e.message}")
             }
         }
     }

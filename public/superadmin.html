@@ -285,6 +285,79 @@
                 </div>
             </div>
 
+            <!-- Tab: Ritual Management -->
+            <div id="admin-sect-rituals" class="admin-tab-section">
+                <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 class="dashboard-title" style="margin:0;"><i class="fas fa-magic"></i> Rituals Management</h2>
+                    <button class="btn-admin" onclick="resetRitualForm()"><i class="fas fa-plus"></i> New Ritual</button>
+                </div>
+                
+                <div class="admin-card" style="margin-bottom: 30px;">
+                    <h4 style="margin-top:0; color:var(--primary);"><i class="fas fa-plus-circle"></i> Add / Edit Ritual</h4>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                        <div>
+                            <label class="app-label">Title (English)</label> 
+                            <input type="text" id="ritualTitle" class="app-input" placeholder="e.g. Morning Pooja">
+                        </div>
+                        <div>
+                            <label class="app-label">Title (Tamil)</label>
+                            <input type="text" id="ritualTitle_ta" class="app-input" placeholder="உதாரணம்: காலை பூஜை">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                        <div>
+                            <label class="app-label">Subtitle (English)</label>
+                            <input type="text" id="ritualSubtitle" class="app-input" placeholder="Start your day with grace">
+                        </div>
+                        <div>
+                            <label class="app-label">Subtitle (Tamil)</label>
+                            <input type="text" id="ritualSubtitle_ta" class="app-input" placeholder="தெய்வீக அருளுடன் தொடங்குங்கள்">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                        <div>
+                            <label class="app-label">Description (English)</label>
+                            <textarea id="ritualDesc" class="app-input" style="height:80px;"></textarea>
+                        </div>
+                        <div>
+                            <label class="app-label">Description (Tamil)</label>
+                            <textarea id="ritualDesc_ta" class="app-input" style="height:80px;"></textarea>
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                        <div>
+                            <label class="app-label">Ritual Image</label>
+                            <div style="display:flex; gap:10px;">
+                                <input type="text" id="ritualImageUrl" class="app-input" placeholder="URL or upload" style="flex:1;">
+                                <input type="file" id="ritualImageFile" style="display:none;" onchange="document.getElementById('ritualImageUrl').value = this.files[0].name">
+                                <button class="btn-admin" onclick="document.getElementById('ritualImageFile').click()"><i class="fas fa-upload"></i></button>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div>
+                                <label class="app-label">Price (₹)</label>
+                                <input type="number" id="ritualPrice" class="app-input" value="0">
+                            </div>
+                            <div>
+                                <label class="app-label">Display Order</label>
+                                <input type="number" id="ritualOrder" class="app-input" value="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:20px;">
+                        <label style="cursor:pointer; display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" id="ritualActive" checked> Is Active / Visible in App
+                        </label>
+                    </div>
+                    <input type="hidden" id="ritualId">
+                    <button class="cosmic-btn" style="width:100%;" onclick="saveRitual()"><i class="fas fa-save"></i> Save Ritual</button>
+                </div>
+
+                <div id="adminRitualList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:15px;">
+                    <div class="loader"></div>
+                </div>
+            </div>
+
 
 
             <!-- Tab: App Banners -->
@@ -700,6 +773,8 @@
                     class="fas fa-bell"></i><span>Notifs <small id="nav-count-notifs" style="color:#EF4444; font-weight:bold;"></small></span></div>
             <div class="admin-nav-item" onclick="navAdmin('slider', event)"><i
                     class="fas fa-images"></i><span>Slider</span></div>
+            <div class="admin-nav-item" onclick="navAdmin('rituals', event)"><i
+                    class="fas fa-magic"></i><span>Rituals</span></div>
             <div class="admin-nav-item" onclick="navAdmin('settings', event)"><i
                     class="fas fa-cog"></i><span>Settings</span></div>
             <div class="admin-nav-item" onclick="logout()"
@@ -885,6 +960,7 @@
             if (id === 'notifications') loadFullNotifications();
             if (id === 'refunds') renderRefunds();
             if (id === 'settings') fetchConfig();
+            if (id === 'rituals') fetchRituals();
 
             document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
             if (ev) ev.currentTarget.classList.add('active');
@@ -1851,6 +1927,127 @@
                     alert('Configuration updated successfully!');
                 } else {
                     alert('Error: ' + res.error);
+                }
+            } catch (e) {
+                alert('Connection error');
+            }
+        };
+
+        // --- Ritual Management JS ---
+        window.fetchRituals = async () => {
+            const container = document.getElementById('adminRitualList');
+            container.innerHTML = '<div class="loader"></div>';
+            try {
+                const res = await fetch('/api/admin/rituals').then(r => r.json());
+                if (res.ok) {
+                    if (res.rituals.length === 0) {
+                        container.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-dim);">No rituals found. add one above.</div>';
+                        return;
+                    }
+                    container.innerHTML = res.rituals.map(r => `
+                        <div class="admin-card" style="display:flex; flex-direction:column; gap:12px; transition:all 0.3s; border-left: 4px solid ${r.isActive ? '#10B981' : '#EF4444'};">
+                            <div style="display:flex; gap:15px;">
+                                <img src="${r.imageUrl}" style="width:70px; height:70px; border-radius:10px; object-fit:cover; background:#f0f0f0;">
+                                <div style="flex:1;">
+                                    <h4 style="margin:0; color:var(--text-main);">${r.title} <span style="font-size:0.7rem; color:var(--text-dim);">#${r.order || 0}</span></h4>
+                                    <p style="margin:5px 0; font-size:0.75rem; color:var(--text-dim); line-height:1.3;">${r.subtitle}</p>
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <span style="font-weight:bold; color:var(--primary); font-size:0.9rem;">₹${r.price || 0}</span>
+                                        <span class="status-pill" style="padding:2px 8px; font-size:0.6rem;">${r.isActive ? 'Active' : 'Inactive'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px; border-top:1px solid var(--border-soft); padding-top:10px;">
+                                <button class="btn-admin" style="flex:1; background:rgba(255,255,255,0.05);" onclick="editRitual('${encodeURIComponent(JSON.stringify(r))}')"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="btn-admin" style="flex:1; background:rgba(239,68,68,0.1); color:#EF4444;" onclick="deleteRitual('${r._id}')"><i class="fas fa-trash"></i> Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `<div style="color:#EF4444;">Error: ${res.error}</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = `<div style="color:#EF4444;">Failed to load rituals</div>`;
+            }
+        };
+
+        window.resetRitualForm = () => {
+            document.getElementById('ritualId').value = '';
+            document.getElementById('ritualTitle').value = '';
+            document.getElementById('ritualTitle_ta').value = '';
+            document.getElementById('ritualSubtitle').value = '';
+            document.getElementById('ritualSubtitle_ta').value = '';
+            document.getElementById('ritualDesc').value = '';
+            document.getElementById('ritualDesc_ta').value = '';
+            document.getElementById('ritualPrice').value = '0';
+            document.getElementById('ritualOrder').value = '0';
+            document.getElementById('ritualImageUrl').value = '';
+            document.getElementById('ritualImageFile').value = '';
+            document.getElementById('ritualActive').checked = true;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.editRitual = (encoded) => {
+            const r = JSON.parse(decodeURIComponent(encoded));
+            document.getElementById('ritualId').value = r._id;
+            document.getElementById('ritualTitle').value = r.title || '';
+            document.getElementById('ritualTitle_ta').value = r.title_ta || '';
+            document.getElementById('ritualSubtitle').value = r.subtitle || '';
+            document.getElementById('ritualSubtitle_ta').value = r.subtitle_ta || '';
+            document.getElementById('ritualDesc').value = r.description || '';
+            document.getElementById('ritualDesc_ta').value = r.description_ta || '';
+            document.getElementById('ritualPrice').value = r.price || 0;
+            document.getElementById('ritualOrder').value = r.order || 0;
+            document.getElementById('ritualImageUrl').value = r.imageUrl || '';
+            document.getElementById('ritualActive').checked = r.isActive;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.saveRitual = async () => {
+            const formData = new FormData();
+            formData.append('id', document.getElementById('ritualId').value);
+            formData.append('title', document.getElementById('ritualTitle').value);
+            formData.append('title_ta', document.getElementById('ritualTitle_ta').value);
+            formData.append('subtitle', document.getElementById('ritualSubtitle').value);
+            formData.append('subtitle_ta', document.getElementById('ritualSubtitle_ta').value);
+            formData.append('description', document.getElementById('ritualDesc').value);
+            formData.append('description_ta', document.getElementById('ritualDesc_ta').value);
+            formData.append('price', document.getElementById('ritualPrice').value);
+            formData.append('order', document.getElementById('ritualOrder').value);
+            formData.append('isActive', document.getElementById('ritualActive').checked);
+            formData.append('imageUrl', document.getElementById('ritualImageUrl').value);
+
+            const file = document.getElementById('ritualImageFile').files[0];
+            if (file) formData.append('ritualImage', file);
+
+            if (!document.getElementById('ritualTitle').value) return alert('Title is required');
+
+            try {
+                const res = await fetch('/api/admin/rituals', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json());
+
+                if (res.ok) {
+                    alert('Ritual saved successfully');
+                    resetRitualForm();
+                    fetchRituals();
+                } else {
+                    alert('Error: ' + res.error);
+                }
+            } catch (e) {
+                alert('Connection error');
+            }
+        };
+
+        window.deleteRitual = async (id) => {
+            if (!confirm('Are you sure? This cannot be undone.')) return;
+            try {
+                const res = await fetch(`/api/admin/rituals/${id}`, { method: 'DELETE' }).then(r => r.json());
+                if (res.ok) {
+                    fetchRituals();
+                } else {
+                    alert('Error deleting');
                 }
             } catch (e) {
                 alert('Connection error');

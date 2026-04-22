@@ -35,11 +35,13 @@ router.get('/', async (req, res) => {
                 
                 const predictionTa = (isValidStr(item.prediction_ta) ? item.prediction_ta : null) || 
                                      (isValidStr(item.forecast_ta) ? item.forecast_ta : null) || 
+                                     (isValidStr(item.horoscope_ta) ? item.horoscope_ta : null) || 
                                      (isValidStr(item.horoscope) ? item.horoscope : null) || 
                                      "இன்றைய நாள் சிறப்பாக இருக்கும்.";
                                      
                 const predictionEn = (isValidStr(item.prediction_en) ? item.prediction_en : null) || 
                                      (isValidStr(item.forecast_en) ? item.forecast_en : null) || 
+                                     (isValidStr(item.horoscope_en) ? item.horoscope_en : null) || 
                                      (isValidStr(item.horoscope) ? item.horoscope : null) || 
                                      "Today will be a great day.";
 

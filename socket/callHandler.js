@@ -151,9 +151,10 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     activeSessions.delete(sessionId);
                     Session.updateOne({ sessionId }, { status: 'missed', endTime: Date.now() }).catch(() => { });
 
-                    // AUTO-OFFLINE LOGIC: If 'toUserId' is an astrologer, mark them offline
+                    // AUTO-OFFLINE LOGIC: Modified as per USER REQUEST (Astrologer stays online)
                     const astro = await User.findOne({ userId: toUserId });
                     if (astro && astro.role === 'astrologer') {
+                        /*
                         astro.isOnline = false;
                         astro.isChatOnline = false;
                         astro.isAudioOnline = false;
@@ -168,6 +169,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                             text: `Missed Call Alert: ${astro.name} marked OFFLINE due to no response.`,
                             type: 'missed_call'
                         });
+                        */
 
                         // Log to file
                         const fs = require('fs');

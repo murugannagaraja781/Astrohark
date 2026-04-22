@@ -917,10 +917,25 @@ app.delete('/api/admin/rituals/:id', async (req, res) => {
 // Home Dashboard Data (App) 
 app.get('/api/admin/system/status', async (req, res) => {
   try {
+    const { fcmAuth } = require('./config/firebase');
     const dbConnected = mongoose.connection.readyState === 1;
+    
+    // Check Socket.io Health
+    const socketOk = !!io;
+    const activeSockets = io ? io.engine.clientsCount : 0;
+    
+    // Check FCM Health
+    const fcmOk = !!fcmAuth;
+
     res.json({
       ok: true,
+      server: true, // Always true if reachable
       db: dbConnected,
+      socket: socketOk,
+      fcm: fcmOk,
+      webrtc: socketOk, // Signaling is the primary WebRTC path here
+      ice: true, // Placeholder for TURN connectivity
+      activeConnections: activeSockets,
       timestamp: Date.now(),
       version: '1.0.6-stable'
     });

@@ -20,7 +20,14 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -300,7 +307,7 @@ fun WorkflowTab() {
     }
 
     Column(
-        modifier = androidx.compose.foundation.verticalScroll(androidx.compose.foundation.rememberScrollState())
+        modifier = Modifier.verticalScroll(rememberScrollState())
             .fillMaxSize()
             .padding(16.dp)
     ) {
@@ -333,7 +340,7 @@ fun WorkflowTab() {
         ) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Info,
+                    imageVector = Icons.Default.Info,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -366,8 +373,7 @@ fun WorkflowItem(title: String, subtitle: String, isDone: Boolean) {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = if (isDone) androidx.compose.material.icons.Icons.Default.CheckCircle 
-                             else androidx.compose.material.icons.Icons.Default.Refresh,
+                imageVector = if (isDone) Icons.Default.CheckCircle else Icons.Default.Refresh,
                 contentDescription = null,
                 tint = if (isDone) Color(0xFF4CAF50) else Color(0xFFFF9800),
                 modifier = Modifier.size(24.dp)

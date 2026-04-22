@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -34,7 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.draw.shadow
-import androidx.compose.material3.Divider as HorizontalDivider
+import androidx.compose.material3.HorizontalDivider
 
 // Status Colors (Linked to Theme if possible, or standardized)
 private val GoodGlow = Color(0xFF22C55E)
@@ -100,7 +101,7 @@ fun RasipalanScreen(targetSignId: Int, displayTitle: String, onBack: () -> Unit)
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(

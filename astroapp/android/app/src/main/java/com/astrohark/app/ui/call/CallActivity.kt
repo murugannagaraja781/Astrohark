@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.*
@@ -1600,7 +1601,7 @@ fun CallScreen(
                     if (callType == "video") {
                         ControlBtnItem(onClick = onToggleCamera, icon = if (isVideoEnabled) Icons.Default.Videocam else Icons.Default.VideocamOff, label = "Camera", active = isVideoEnabled)
                     }
-                    ControlBtnItem(onClick = onToggleSpeaker, icon = if (isSpeakerOn) Icons.Default.VolumeUp else Icons.Default.VolumeOff, label = "Speaker", active = isSpeakerOn)
+                    ControlBtnItem(onClick = onToggleSpeaker, icon = if (isSpeakerOn) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff, label = "Speaker", active = isSpeakerOn)
                 }
 
                 // Actions & End Call Row

@@ -63,8 +63,6 @@ class CallActivity : ComponentActivity() {
         private const val TAG = "CallActivity"
         private const val PERMISSION_REQ_CODE = 101
 
-        private val pendingIceCandidates = LinkedList<IceCandidate>()
-
         private var iceServers = mutableListOf(
             PeerConnection.IceServer.builder("stun:free.expressturn.com:3478").createIceServer(),
             PeerConnection.IceServer.builder("turn:free.expressturn.com:3478?transport=udp")
@@ -112,6 +110,8 @@ class CallActivity : ComponentActivity() {
     private var callSummary by mutableStateOf<SimpleSummary?>(null)
 
     private var isWebRTCInitialized = false
+    private val pendingIceCandidates = LinkedList<IceCandidate>()
+    private val signalBuffer = LinkedList<JSONObject>()
 
     // Proximity Sensor for Audio Calls
     private var proximityWakeLock: android.os.PowerManager.WakeLock? = null
@@ -966,6 +966,7 @@ class CallActivity : ComponentActivity() {
         }
 
         peerConnection = pc
+        drainSignalBuffer()
 
         localAudioTrack?.let { peerConnection.addTrack(it, listOf("mediaStream")) }
         localVideoTrack?.let { peerConnection.addTrack(it, listOf("mediaStream")) }
@@ -980,7 +981,7 @@ class CallActivity : ComponentActivity() {
 
         SocketManager.onSignal { data ->
             runOnUiThread {
-                handleSignal(data)
+                onSignalReceived(data)
             }
         }
 
@@ -990,6 +991,7 @@ class CallActivity : ComponentActivity() {
                 val bData = data.optJSONObject("birthData")
                 if (bData != null) {
                     clientBirthData = bData
+                    Log.d(TAG, "✓ Received updated birth details for session $sessionId")
                     runOnUiThread {
                         val myRole = TokenManager(this@CallActivity).getUserSession()?.role
                         if (myRole == "client") {
@@ -1054,10 +1056,18 @@ class CallActivity : ComponentActivity() {
         }
     }
 
-    private fun handleSignal(data: JSONObject) {
+    private fun onSignalReceived(data: JSONObject) {
+        if (!::peerConnection.isInitialized) {
+            Log.d(TAG, "✘ PeerConnection not ready. Buffering incoming signal.")
+            signalBuffer.add(data)
+            return
+        }
+
         val signal = data.optJSONObject("signal") ?: data
         var type = signal.optString("type")
         if (type.isEmpty() && signal.has("candidate")) type = "candidate"
+
+        Log.d(TAG, "➔ Handling incoming signal: $type for session $sessionId")
 
         when (type) {
             "offer" -> {
@@ -1098,6 +1108,14 @@ class CallActivity : ComponentActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun drainSignalBuffer() {
+        Log.d(TAG, "➔ Draining signal buffer: ${signalBuffer.size} items")
+        while (signalBuffer.isNotEmpty()) {
+            val sig = signalBuffer.removeFirst()
+            onSignalReceived(sig)
         }
     }
 

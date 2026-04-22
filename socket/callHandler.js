@@ -210,7 +210,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 sessionId, fromUserId, type, accept: !!accept
             });
 
-            console.log(`[CallHandler][answer-session] session=${sessionId}, type=${type}, accept=${accept}`);
+            console.log(`[CallHandler][answer-session] session=${sessionId}, type=${type}, accept=${accept} | from=${fromUserId} to=${toUserId}`);
             if (typeof cb === 'function') cb({ ok: true });
         } catch (err) {
             logError('answer-session', err);
@@ -282,6 +282,10 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
         try {
             const { sessionId, toUserId, signal } = data || {};
             const fromUserId = socketToUser.get(socket.id) || data.fromUserId;
+            
+            const signalType = signal?.type || (signal?.candidate ? 'candidate' : 'unknown');
+            console.log(`[CallHandler][signal] type=${signalType} | from=${fromUserId} to=${toUserId} | session=${sessionId}`);
+
             if (toUserId) {
                 io.to(toUserId).emit('signal', { sessionId, fromUserId, signal });
             }

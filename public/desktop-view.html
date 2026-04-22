@@ -3739,7 +3739,7 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="https://unpkg.com/simple-peer/simplepeer.min.js"></script>
   <script>
-    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta' };
+    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta', signalBuffer: [] };
     window.state = state; // Expose for Android onResume wallet refresh
 
     // --- Translation Logic ---
@@ -5771,6 +5771,23 @@
 
         state.peer = p;
         state.localStream = stream;
+
+        // Drain signal buffer
+        console.log('[WebRTC] Draining signal buffer:', state.signalBuffer.length);
+        state.signalBuffer.forEach(sig => {
+          let sData = sig.signal;
+          if (sData && sData.type === 'candidate' && typeof sData.candidate === 'string') {
+            sData = {
+              candidate: {
+                candidate: sData.candidate,
+                sdpMid: sData.sdpMid,
+                sdpMLineIndex: sData.sdpMLineIndex
+              }
+            };
+          }
+          p.signal(sData);
+        });
+        state.signalBuffer = [];
       } catch (e) {
         console.error(e);
         alert('Device/Connection Error: ' + e.message);
@@ -5781,13 +5798,27 @@
 
     // Signal Handler
     socket.on('signal', d => {
-      if (state.session && d.sessionId === state.session.id && state.peer) {
+      if (state.session && d.sessionId === state.session.id) {
         let signalData = d.signal;
-        // Normalize candidate format from Android (strip 'type: candidate' wrapper if present)
-        if (signalData && signalData.type === 'candidate' && signalData.candidate) {
-          signalData = signalData.candidate;
+        
+        // Normalize candidate format from Android/Native
+        if (signalData && signalData.type === 'candidate' && typeof signalData.candidate === 'string') {
+          console.log('[WebRTC] Transforming native candidate for SimplePeer');
+          signalData = {
+            candidate: {
+              candidate: signalData.candidate,
+              sdpMid: signalData.sdpMid,
+              sdpMLineIndex: signalData.sdpMLineIndex
+            }
+          };
         }
-        state.peer.signal(signalData);
+
+        if (state.peer) {
+          state.peer.signal(signalData);
+        } else {
+          console.log('[WebRTC] Signal received but peer not ready. Buffering.');
+          state.signalBuffer.push({ ...d, signal: signalData });
+        }
       }
     });
 

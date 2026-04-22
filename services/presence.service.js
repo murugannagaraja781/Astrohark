@@ -21,7 +21,7 @@ class PresenceService {
      * Mark a user as connected via Socket.
      */
     async handleConnect(socket, userId, io) {
-        if (!userId) return;
+        if (!userId) return { ok: false, error: 'UserId missing' };
 
         // 1. Cancel any pending disconnect timeouts
         if (sessionDisconnectTimeouts.has(userId)) {
@@ -37,24 +37,27 @@ class PresenceService {
 
         try {
             const user = await User.findOne({ userId });
-            if (user) {
-                // If user is an astrologer and they are marked as "Available" (Manual Toggle),
-                // ensure they are marked "Online" in the DB.
-                if (user.role === 'astrologer' && user.isAvailable) {
-                    user.isOnline = true;
-                    user.lastSeen = new Date();
-                    await user.save();
-                    broadcastAstroUpdate(io, process.env.SERVER_URL);
-                    console.log(`[Presence] Astrologer ${user.name} (${userId}) connected and verified ONLINE.`);
-                } else if (user.role === 'client') {
-                    user.isOnline = true;
-                    user.lastSeen = new Date();
-                    await user.save();
-                    console.log(`[Presence] Client ${user.name || userId} connected.`);
-                }
+            if (!user) return { ok: false, error: 'User not found' };
+
+            // If user is an astrologer and they are marked as "Available" (Manual Toggle),
+            // ensure they are marked "Online" in the DB.
+            if (user.role === 'astrologer' && user.isAvailable) {
+                user.isOnline = true;
+                user.lastSeen = new Date();
+                await user.save();
+                broadcastAstroUpdate(io, process.env.SERVER_URL);
+                console.log(`[Presence] Astrologer ${user.name} (${userId}) connected and verified ONLINE.`);
+            } else if (user.role === 'client') {
+                user.isOnline = true;
+                user.lastSeen = new Date();
+                await user.save();
+                console.log(`[Presence] Client ${user.name || userId} connected.`);
             }
+
+            return { ok: true, user };
         } catch (err) {
             console.error('[Presence][handleConnect] Error:', err);
+            return { ok: false, error: 'Internal error' };
         }
     }
 

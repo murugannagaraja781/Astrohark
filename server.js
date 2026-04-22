@@ -1366,9 +1366,16 @@ io.on('connection', (socket) => {
   // --- Register user ---
   socket.on('register', async (data, cb) => {
     const { userId, fcmToken } = data || {};
-    if (!userId) return cb && cb({ ok: false, error: 'UserId missing' });
+    if (!userId) {
+      if (typeof cb === 'function') cb({ ok: false, error: 'UserId missing' });
+      return;
+    }
 
-    await presenceService.handleConnect(socket, userId, io);
+    const { ok, user, error } = await presenceService.handleConnect(socket, userId, io);
+    if (!ok) {
+      if (typeof cb === 'function') cb({ ok: false, error });
+      return;
+    }
 
     // Save FCM Token if provided
     if (fcmToken) {
@@ -1376,7 +1383,18 @@ io.on('connection', (socket) => {
       console.log(`[FCM] Device registered for ${userId}`);
     }
 
-    if (typeof cb === 'function') cb({ ok: true });
+    // IMPORTANT: Return full user data for Android app compatibility
+    if (typeof cb === 'function') {
+      cb({
+        ok: true,
+        userId: user.userId,
+        role: user.role,
+        name: user.name,
+        walletBalance: user.walletBalance,
+        superWalletBalance: user.superWalletBalance || 0,
+        totalEarnings: user.totalEarnings || 0
+      });
+    }
   });
 
   // --- Logout (Explicit) ---

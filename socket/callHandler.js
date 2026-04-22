@@ -4,14 +4,10 @@ const Session = require('../models/Session');
 const ChatMessage = require('../models/ChatMessage');
 const PairMonth = require('../models/PairMonth'); // Added for billing logic
 const { sendFcmV1Push } = require('../services/push.service');
-const {
-    userSockets,
-    socketToUser,
-    userActiveSession,
-    activeSessions,
-    sessionDisconnectTimeouts
-} = require('../services/socketStore');
-const { endSessionRecord } = require('../services/billing.service');
+const { userSockets, socketToUser, activeSessions, userActiveSession, sessionDisconnectTimeouts, SESSION_GRACE_PERIOD } = require('../services/socketStore');
+const billingService = require('../services/billing.service');
+const presenceService = require('../services/presence.service');
+const { broadcastAstroUpdate } = require('../services/astrologer.service');
 
 // Helper to get partner ID
 function getOtherUserIdFromSession(sessionId, userId) {
@@ -74,7 +70,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                         return typeof cb === 'function' && cb({ ok: true, sessionId: existingId });
                     }
                     console.log(`[CallHandler][request-session] Ending stale session ${existingId} to start new one.`);
-                    await endSessionRecord(existingId, broadcastAstroUpdate);
+                    await billingService.endSessionRecord(existingId, broadcastAstroUpdate);
                 } else {
                     return typeof cb === 'function' && cb({ ok: false, error: 'User busy' });
                 }
@@ -148,9 +144,6 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     
                     userActiveSession.delete(fromUserId);
                     userActiveSession.delete(toUserId);
-                    activeSessions.delete(sessionId);
-                    Session.updateOne({ sessionId }, { status: 'missed', endTime: Date.now() }).catch(() => { });
-
                     // AUTO-OFFLINE LOGIC: Modified as per USER REQUEST (Astrologer stays online)
                     const astro = await User.findOne({ userId: toUserId });
                     if (astro && astro.role === 'astrologer') {
@@ -205,7 +198,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             if (s) {
                 s.status = accept ? 'answered' : 'rejected';
                 if (!accept) {
-                    endSessionRecord(sessionId, broadcastAstroUpdate);
+                    billingService.endSessionRecord(sessionId, broadcastAstroUpdate);
                 }
             }
             
@@ -262,7 +255,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     io.to(fromUserId).emit('session-answered', {
                         sessionId, fromUserId: astrologerId, type: callType || dbSession.type, accept: false
                     });
-                    endSessionRecord(sessionId, broadcastAstroUpdate);
+                    billingService.endSessionRecord(sessionId, broadcastAstroUpdate);
                     if (typeof cb === 'function') cb({ ok: true });
                 }
                 return;
@@ -280,7 +273,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     sessionId, fromUserId: astrologerId, type: callType || session.type, accept: false
                 });
                 console.log(`[CallHandler][answer-session-native] ❌ REJECTED | session=${sessionId} | by=${astrologerId} for=${fromUserId}`);
-                endSessionRecord(sessionId, broadcastAstroUpdate);
+                billingService.endSessionRecord(sessionId, broadcastAstroUpdate);
                 if (typeof cb === 'function') cb({ ok: true });
             }
         } catch (err) {
@@ -376,6 +369,9 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 io.to(session.astrologerId).emit('billing-started', { startTime: billingStart, clientBalance, ratePerMinute, availableMinutes });
                 
                 console.log(`[CallHandler][session-connect] 🚀 BOTH CONNECTED. Call Active. Billing started for ${sessionId}`);
+                    
+                    // MARK BUSY
+                    presenceService.setBusy(session.astrologerId, true, io);
             }
         } catch (err) {
             logError('session-connect', err);

@@ -4,6 +4,8 @@ const PairMonth = require('../models/PairMonth');
 const BillingLedger = require('../models/BillingLedger');
 const crypto = require('crypto');
 const { activeSessions, userActiveSession, sessionDisconnectTimeouts } = require('./socketStore');
+const { broadcastAstroUpdate } = require('./astrologer.service');
+const presenceService = require('./presence.service');
 
 let SLAB_RATES = {
     1: 0.30,
@@ -193,11 +195,13 @@ async function endSessionRecord(sessionId, broadcastAstroUpdate) {
         if (s.astrologerId) io.to(s.astrologerId).emit('session-ended', payload);
     }
 
-    User.updateMany({ userId: { $in: s.users }, role: 'astrologer' }, { isBusy: false })
-        .then(() => {
-            if (broadcastAstroUpdate) broadcastAstroUpdate();
-        })
-        .catch(e => console.error('Error clearing busy:', e));
+    if (s.astrologerId) {
+        presenceService.setBusy(s.astrologerId, false, io);
+    } else {
+        User.updateMany({ userId: { $in: s.users }, role: 'astrologer' }, { isBusy: false })
+            .then(() => { if (broadcastAstroUpdate) broadcastAstroUpdate(); })
+            .catch(e => console.error('Error clearing busy:', e));
+    }
 }
 
 module.exports = {

@@ -25,14 +25,25 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
     socket.on('request-session', async (data, cb) => {
         try {
             const { toUserId, type, birthData } = data || {};
-            let fromUserId = socketToUser.get(socket.id) || data.fromUserId;
+            let fromUserId = socketToUser.get(socket.id) || (data && data.fromUserId);
+
+            // Self-registration for signaling robustness
+            if (!socketToUser.has(socket.id) && fromUserId) {
+                console.log(`[CallHandler][request-session] Auto-registering socket ${socket.id} for user ${fromUserId}`);
+                socketToUser.set(socket.id, fromUserId);
+                userSockets.set(fromUserId, socket.id);
+                socket.join(fromUserId);
+            }
 
             if (!fromUserId) {
-                console.warn(`[CallHandler][request-session] unauthorized from socket ${socket.id}`);
+                console.warn(`[CallHandler][request-session] unauthorized from socket ${socket.id}. Data:`, JSON.stringify(data));
                 return typeof cb === 'function' && cb({ ok: false, error: 'Not registered' });
             }
 
-            if (!toUserId || !type) return typeof cb === 'function' && cb({ ok: false, error: 'Missing fields' });
+            if (!toUserId || !type) {
+                console.warn(`[CallHandler][request-session] missing fields from ${fromUserId}. Data:`, JSON.stringify(data));
+                return typeof cb === 'function' && cb({ ok: false, error: 'Missing fields' });
+            }
 
             console.log(`[CallHandler][request-session] from=${fromUserId}, to=${toUserId}, type=${type}`);
 
@@ -42,13 +53,6 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             if (!toUser) {
                 console.warn(`[CallHandler][request-session] target user ${toUserId} not found`);
                 return typeof cb === 'function' && cb({ ok: false, error: 'User not found' });
-            }
-
-            // Self-registration fix
-            if (!socketToUser.has(socket.id) && fromUserId) {
-                socketToUser.set(socket.id, fromUserId);
-                userSockets.set(fromUserId, socket.id);
-                socket.join(fromUserId);
             }
 
             if (fromUser && fromUser.role === 'client' && (fromUser.walletBalance || 0) <= 0) {
@@ -186,10 +190,18 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
     socket.on('answer-session', async (data, cb) => {
         try {
             const { sessionId, toUserId, type, accept } = data || {};
-            let fromUserId = socketToUser.get(socket.id) || data.fromUserId;
+            let fromUserId = socketToUser.get(socket.id) || (data && data.fromUserId);
             
+            // Self-registration for signaling robustness
+            if (!socketToUser.has(socket.id) && fromUserId) {
+                console.log(`[CallHandler][answer-session] Auto-registering socket ${socket.id} for user ${fromUserId}`);
+                socketToUser.set(socket.id, fromUserId);
+                userSockets.set(fromUserId, socket.id);
+                socket.join(fromUserId);
+            }
+
             if (!fromUserId || !sessionId || !toUserId) {
-                console.warn(`[CallHandler][answer-session] missing data for session ${sessionId}`);
+                console.warn(`[CallHandler][answer-session] missing data for session ${sessionId}. fromUserId=${fromUserId}`);
                 return typeof cb === 'function' && cb({ ok: false, error: 'Missing data' });
             }
 

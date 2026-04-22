@@ -82,6 +82,9 @@ object SocketManager {
     }
 
     fun requestSession(toUserId: String, type: String, birthData: JSONObject? = null, callback: ((JSONObject?) -> Unit)? = null) {
+        if (currentUserId == null) {
+            Log.e(TAG, "Cannot request session: currentUserId is NULL")
+        }
         val payload = JSONObject().apply {
             put("toUserId", toUserId)
             put("fromUserId", currentUserId) // Always send for robustness
@@ -158,6 +161,9 @@ object SocketManager {
      * Ensures the socket is connected and user is registered before emitting a critical signal.
      */
     fun emitReliable(event: String, payload: JSONObject, ack: Ack? = null) {
+        if (currentUserId == null) {
+            Log.e(TAG, "emitReliable($event): currentUserId is NULL")
+        }
         // Automatically inject fromUserId if missing
         if (!payload.has("fromUserId") && currentUserId != null) {
             payload.put("fromUserId", currentUserId)

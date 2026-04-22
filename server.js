@@ -52,6 +52,7 @@ if (!global.fetch) {
 const { sendFcmV1Push } = require('./services/push.service');
 const callHandler = require('./socket/callHandler');
 const billingService = require('./services/billing.service');
+const presenceService = require('./services/presence.service');
 const { admin, callApp, fcmAuth } = require('./config/firebase'); 
 
 // Mobile Token Store (Legacy if not used)
@@ -1363,109 +1364,25 @@ io.on('connection', (socket) => {
   });
 
   // --- Register user ---
-  socket.on('register', (data, cb) => {
-    try {
-      const { name, phone, existingUserId } = data || {};
-      const userId = data.userId || socketToUser.get(socket.id);
+  socket.on('register', async (data, cb) => {
+    const { userId, fcmToken } = data || {};
+    if (!userId) return cb && cb({ ok: false, error: 'UserId missing' });
 
-      const query = phone ? { phone } : (userId ? { userId } : null);
+    await presenceService.handleConnect(socket, userId, io);
 
-      if (!query) {
-        if (typeof cb === 'function') cb({ ok: false, error: 'No identifier provided' });
-        return;
-      }
-
-      User.findOne(query).then(user => {
-        if (!user) {
-          if (typeof cb === 'function') cb({ ok: false, error: 'User not found' });
-          return;
-        }
-
-        const userId = user.userId;
-        userSockets.set(userId, socket.id);
-        socketToUser.set(socket.id, userId);
-        socket.join(userId);
-        console.log(`[Presence] ${user.name} online (${user.role})`);
-
-        if (typeof cb === 'function') cb({
-          ok: true,
-          userId: user.userId,
-          role: user.role,
-          name: user.name,
-          walletBalance: user.walletBalance,
-          superWalletBalance: user.superWalletBalance || 0,
-          totalEarnings: user.totalEarnings || 0
-        });
-        console.log(`User registered: ${user.name} (${user.role})`);
-
-        // Cancel pending SESSION timeout (For ALL users - Client or Astrologer)
-        if (sessionDisconnectTimeouts.has(userId)) {
-          clearTimeout(sessionDisconnectTimeouts.get(userId));
-          sessionDisconnectTimeouts.delete(userId);
-          console.log(`[Session] Cancelled disconnect timeout for ${user.name} (reconnected in time!)`);
-
-          // Re-join the user to the socket room?
-          // If we depend on socket.id for targeting, we update userSockets above so it should be fine.
-          // However, if we used rooms for sessions, we'd need to re-join.
-          // Current logic uses userSockets.get(userId) to target, so updating the map is sufficient.
-        }
-
-        // If astro, broadcast status
-        if (user.role === 'astrologer') {
-          // Cancel pending offline timeout (if any - though we will remove the timeout logic)
-          if (offlineTimeouts.has(userId)) {
-            clearTimeout(offlineTimeouts.get(userId));
-            offlineTimeouts.delete(userId);
-          }
-
-          // Re-sync online status if isAvailable is true
-          if (user.isAvailable) {
-            user.isOnline = true;
-            user.save().then(() => broadcastAstroUpdate());
-          } else {
-            broadcastAstroUpdate();
-          }
-        }
-        // If superadmin, join room
-        if (user.role === 'superadmin') {
-          socket.join('superadmin');
-        }
-
-      });
-    } catch (err) {
-      console.error('register error', err);
-      if (typeof cb === 'function') cb({ ok: false, error: 'Internal error' });
+    // Save FCM Token if provided
+    if (fcmToken) {
+      User.updateOne({ userId }, { fcmToken }).catch(e => console.error('[FCM] Update error:', e));
+      console.log(`[FCM] Device registered for ${userId}`);
     }
+
+    if (typeof cb === 'function') cb({ ok: true });
   });
 
   // --- Logout (Explicit) ---
   socket.on('logout', async (cb) => {
-    try {
-      const userId = socketToUser.get(socket.id);
-      if (!userId) return cb && cb({ ok: false, error: 'Not logged in' });
-
-      console.log(`[Presence] User ${userId} requested explicit logout.`);
-      
-      const user = await User.findOne({ userId });
-      if (user && user.role === 'astrologer') {
-        user.isOnline = false;
-        user.isAvailable = false;
-        user.isChatOnline = false;
-        user.isAudioOnline = false;
-        user.isVideoOnline = false;
-        await user.save();
-        broadcastAstroUpdate();
-      }
-
-      // Clear from maps
-      userSockets.delete(userId);
-      socketToUser.delete(socket.id);
-      
-      if (typeof cb === 'function') cb({ ok: true });
-    } catch (err) {
-      console.error('logout error', err);
-      if (typeof cb === 'function') cb({ ok: false, error: 'Internal error' });
-    }
+    const res = await presenceService.handleLogout(socket, io);
+    if (typeof cb === 'function') cb(res);
   });
 
   // --- Rejoin Session (for reconnecting after background/edit) ---
@@ -1550,23 +1467,7 @@ io.on('connection', (socket) => {
   socket.on('update-status', async (data) => {
     const userId = data.userId || socketToUser.get(socket.id);
     if (!userId) return;
-
-    try {
-      const isOnline = !!data.isOnline;
-      // Mobile toggle sets ALL statuses
-      let user = await User.findOne({ userId });
-      if (user) {
-        user.isChatOnline = isOnline;
-        user.isAudioOnline = isOnline;
-        user.isVideoOnline = isOnline;
-        user.isOnline = isOnline;
-        user.isAvailable = isOnline;
-        user.lastSeen = new Date();
-        await user.save();
-        broadcastAstroUpdate();
-        console.log(`[Presence Mobile] ${user.name} updated status: ${isOnline}`);
-      }
-    } catch (e) { console.error(e); }
+    await presenceService.updateStatus(userId, !!data.isOnline, io);
   });
 
   // --- App Lifecycle: Background ---
@@ -2550,66 +2451,7 @@ io.on('connection', (socket) => {
 
   // --- Disconnect ---
   socket.on('disconnect', async () => {
-    const userId = socketToUser.get(socket.id);
-    if (userId) {
-      console.log(`Socket disconnected: ${socket.id}, userId=${userId}`);
-      socketToUser.delete(socket.id);
-
-      if (userSockets.get(userId) === socket.id) {
-        userSockets.delete(userId);
-      }
-
-      try {
-        // Find user to check role
-        const user = await User.findOne({ userId });
-        if (user && user.role === 'astrologer') {
-          // Astrologer specific logic can go here (e.g. status tracking)
-          console.log(`Astrologer ${userId} disconnected. Socket: ${socket.id}`);
-        }
-      } catch (e) { console.error('Disconnect DB error', e); }
-
-      const sid = userActiveSession.get(userId);
-      if (sid) {
-        // --- FIX: Don't end session immediately. Give grace period. ---
-        console.log(`[Session] User ${userId} disconnected. Starting grace period for Session ${sid}`);
-
-        // Clear existing if any (debounce)
-        if (sessionDisconnectTimeouts.has(userId)) {
-          clearTimeout(sessionDisconnectTimeouts.get(userId));
-        }
-
-        const timeoutId = setTimeout(() => {
-          // If this runs, it means user didn't reconnect in time
-          console.log(`[Session] Grace period expired for ${userId}. Ending Session ${sid}`);
-
-          sessionDisconnectTimeouts.delete(userId);
-
-          // Double check if session still active (maybe other user ended it?)
-          const s = activeSessions.get(sid);
-          if (s) {
-            // We can optionally update Session end time in DB here
-            Session.updateOne({ sessionId: sid }, { endTime: Date.now(), duration: Date.now() - s.startedAt }).catch(() => { });
-
-            const otherUserId = getOtherUserIdFromSession(sid, userId);
-
-            // NOW we end it
-            billingService.endSessionRecord(sid);
-
-            if (otherUserId) {
-              // Notify other user that partner dropped
-              io.to(otherUserId).emit('session-ended', {
-                sessionId: sid,
-                reason: 'partner_disconnected'
-              });
-            }
-          }
-        }, SESSION_GRACE_PERIOD);
-
-        sessionDisconnectTimeouts.set(userId, timeoutId);
-      }
-    } else {
-      console.log('Socket disconnected (no user):', socket.id);
-    }
+    await presenceService.handleDisconnect(socket, io);
   });
 });
 

@@ -384,7 +384,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             const { sessionId } = data || {};
             if (sessionId) {
                 console.log(`[CallHandler][end-session] terminating session ${sessionId}`);
-                endSessionRecord(sessionId, () => {
+                billingService.endSessionRecord(sessionId, () => {
                     if (broadcastAstroUpdate) broadcastAstroUpdate();
                 });
             }

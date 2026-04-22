@@ -1287,18 +1287,6 @@ io.on('connection', (socket) => {
   // Mount specialized handlers
   callHandler(io, socket, SERVER_URL, broadcastAstroUpdate);
 
-  // --- Explicit End Session (Stability Guard for Chat/Calls) ---
-  socket.on('end-session', async (data) => {
-    try {
-      const { sessionId } = data || {};
-      if (sessionId) {
-        console.log(`[Socket] end-session received for ${sessionId}`);
-        billingService.endSessionRecord(sessionId, broadcastAstroUpdate);
-      }
-    } catch (err) {
-      console.error('end-session error', err);
-    }
-  });
 
   // --- Register user ---
   // --- Register New Astrologer ---
@@ -1397,7 +1385,7 @@ io.on('connection', (socket) => {
         userSockets.set(userId, socket.id);
         socketToUser.set(socket.id, userId);
         socket.join(userId);
-        console.log(`[Socket] ${userId} joined room ${userId}`);
+        console.log(`[Presence] ${user.name} online (${user.role})`);
 
         if (typeof cb === 'function') cb({
           ok: true,
@@ -1443,9 +1431,6 @@ io.on('connection', (socket) => {
           socket.join('superadmin');
         }
 
-        // NEW: All users join a room with their userId for reliable messaging
-        socket.join(userId);
-        console.log(`[Socket] ${user.name} joined room: ${userId}`);
       });
     } catch (err) {
       console.error('register error', err);

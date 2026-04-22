@@ -74,7 +74,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                         return typeof cb === 'function' && cb({ ok: true, sessionId: existingId });
                     }
                     console.log(`[CallHandler][request-session] Ending stale session ${existingId} to start new one.`);
-                    await endSessionRecord(existingId);
+                    await endSessionRecord(existingId, broadcastAstroUpdate);
                 } else {
                     return typeof cb === 'function' && cb({ ok: false, error: 'User busy' });
                 }
@@ -110,10 +110,14 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             userActiveSession.set(fromUserId, sessionId);
             userActiveSession.set(toUserId, sessionId);
 
+            console.log(`[CallHandler][request-session] Emitting incoming-session to room ${toUserId} | callerName: ${fromUser?.name}`);
             io.to(toUserId).emit('incoming-session', {
-                sessionId, fromUserId,
+                sessionId, 
+                fromUserId, // Legacy
+                callerId: fromUserId, // Map to FCM style
                 callerName: fromUser?.name || 'User',
-                type, birthData: birthData || null
+                type, 
+                birthData: birthData || null
             });
 
             if (toUser.fcmToken) {
@@ -199,7 +203,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             if (s) {
                 s.status = accept ? 'answered' : 'rejected';
                 if (!accept) {
-                    endSessionRecord(sessionId);
+                    endSessionRecord(sessionId, broadcastAstroUpdate);
                 }
             }
             
@@ -245,14 +249,18 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 const fromUserId = dbSession.fromUserId;
                 if (accept) {
                     io.to(fromUserId).emit('session-answered', {
-                        sessionId, fromUserId: astrologerId, type: callType || dbSession.type, accept: true
+                        sessionId, 
+                        fromUserId: astrologerId, // Legacy
+                        astrologerId: astrologerId, // Specific
+                        type: callType || dbSession.type, 
+                        accept: true
                     });
                     if (typeof cb === 'function') cb({ ok: true, fromUserId });
                 } else {
                     io.to(fromUserId).emit('session-answered', {
                         sessionId, fromUserId: astrologerId, type: callType || dbSession.type, accept: false
                     });
-                    endSessionRecord(sessionId);
+                    endSessionRecord(sessionId, broadcastAstroUpdate);
                     if (typeof cb === 'function') cb({ ok: true });
                 }
                 return;
@@ -268,7 +276,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 io.to(fromUserId).emit('session-answered', {
                     sessionId, fromUserId: astrologerId, type: callType || session.type, accept: false
                 });
-                endSessionRecord(sessionId);
+                endSessionRecord(sessionId, broadcastAstroUpdate);
                 if (typeof cb === 'function') cb({ ok: true });
             }
         } catch (err) {

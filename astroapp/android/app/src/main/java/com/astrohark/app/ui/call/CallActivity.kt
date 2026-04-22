@@ -1365,9 +1365,10 @@ class CallActivity : ComponentActivity() {
                 }
                 newLines[videoMLineIndex] = elements.joinToString(" ")
                 
-                // Add Bitrate suggestion (b=AS:2000 for ~2Mbps)
+                // Add Bitrate suggestion (b=AS:1200 for ~1.2Mbps)
+                // Lower bitrate is MUCH more stable on mobile networks (4G/LTE)
                 if (!lines.any { it.startsWith("b=AS:") }) {
-                    newLines.add(videoMLineIndex + 1, "b=AS:2000")
+                    newLines.add(videoMLineIndex + 1, "b=AS:1200")
                 }
             }
             

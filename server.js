@@ -90,11 +90,50 @@ const DEFAULT_ICE_SERVERS = [
 
 app.get('/api/webrtc-config', (req, res) => {
   try {
-    const iceServers = process.env.ICE_SERVERS ? JSON.parse(process.env.ICE_SERVERS) : DEFAULT_ICE_SERVERS;
+    let iceServers = [];
+    
+    // 1. Build from individual .env variables if present
+    if (process.env.STUN_SERVER || process.env.TURN_SERVER) {
+      if (process.env.STUN_SERVER) {
+        iceServers.push({ urls: process.env.STUN_SERVER });
+      }
+      // Add Google STUNs as hardcoded fallback
+      iceServers.push({ urls: 'stun:stun.l.google.com:19302' });
+      iceServers.push({ urls: 'stun:stun1.l.google.com:19302' });
+
+      if (process.env.TURN_SERVER) {
+        const turnUrl = `turn:${process.env.TURN_SERVER}:${process.env.TURN_PORT || 3478}`;
+        const turnUser = process.env.TURN_USERNAME;
+        const turnPass = process.env.TURN_PASSWORD;
+        
+        // Add both UDP and TCP transport
+        iceServers.push({
+          urls: `${turnUrl}?transport=udp`,
+          username: turnUser,
+          credential: turnPass
+        });
+        iceServers.push({
+          urls: `${turnUrl}?transport=tcp`,
+          username: turnUser,
+          credential: turnPass
+        });
+      }
+    } else {
+      // 2. Fallback to DEFAULT_ICE_SERVERS
+      iceServers = DEFAULT_ICE_SERVERS;
+    }
+
+    // 3. Last fallback: Allow environment to override everything as a JSON string
+    if (process.env.ICE_SERVERS) {
+      try {
+        iceServers = JSON.parse(process.env.ICE_SERVERS);
+      } catch (e) { console.error("Invalid ICE_SERVERS JSON in .env"); }
+    }
+
     res.json({ ok: true, iceServers });
-  } catch (e) {
-    console.error('Error parsing ICE_SERVERS:', e);
-    res.json({ ok: true, iceServers: DEFAULT_ICE_SERVERS });
+  } catch (err) {
+    console.error('[WebRTCConfig] Error:', err);
+    res.json({ ok: false, error: err.message });
   }
 });
 const cors = require("cors");

@@ -304,7 +304,8 @@ class FCMService : FirebaseMessagingService() {
             .setContentText("$callerName is calling...")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setFullScreenIntent(pendingIntent, true)  // THE KEY!
+            .setFullScreenIntent(pendingIntent, true) 
+            .setContentIntent(pendingIntent) // Ensure click opens the activity
             .setAutoCancel(true)
             .setOngoing(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)

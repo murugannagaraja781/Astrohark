@@ -21,9 +21,14 @@ async function sendFcmV1Push(fcmToken, data, notification, userId = null) {
     try {
         const accessToken = await fcmAuth.getAccessToken();
 
+        // Determine if this should be a data-only message (Required for background calls)
+        const isCall = data && data.type === 'INCOMING_CALL';
+        
         const messagePayload = {
             token: fcmToken,
-            notification: notification ? {
+            // If it's a call, we MUST NOT include the notification object
+            // so that FCMService.onMessageReceived is triggered in the background.
+            notification: (!isCall && notification) ? {
                 title: notification.title,
                 body: notification.body,
                 image: notification.image || undefined

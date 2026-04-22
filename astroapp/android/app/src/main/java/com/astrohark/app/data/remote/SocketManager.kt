@@ -138,8 +138,19 @@ object SocketManager {
         }
     }
 
+    /**
+     * Emits a raw signal (SDP/Candidate).
+     * Now automatically injects fromUserId for server-side authorization.
+     */
     fun emitSignal(data: JSONObject) {
         ensureConnection()
+        
+        // Robustness: Server requires fromUserId for authorization
+        if (!data.has("fromUserId") && currentUserId != null) {
+            data.put("fromUserId", currentUserId)
+        }
+        
+        Log.d(TAG, "Emitting signal: ${data.optString("type") ?: "candidate"}")
         socket?.emit("signal", data)
     }
 

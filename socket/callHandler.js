@@ -286,9 +286,18 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
     socket.on('signal', (data) => {
         try {
             const { sessionId, toUserId, signal } = data || {};
-            const fromUserId = socketToUser.get(socket.id) || data.fromUserId;
-            
+            let fromUserId = socketToUser.get(socket.id) || data.fromUserId;
+
             const signalType = signal?.type || (signal?.candidate ? 'candidate' : 'unknown');
+            
+            // Self-registration for signaling robustness
+            if (!fromUserId && data.fromUserId) {
+                fromUserId = data.fromUserId;
+                socketToUser.set(socket.id, fromUserId);
+                userSockets.set(fromUserId, socket.id);
+                socket.join(fromUserId);
+            }
+
             console.log(`[CallHandler][signal] type=${signalType} | from=${fromUserId} to=${toUserId} | session=${sessionId}`);
 
             if (toUserId) {

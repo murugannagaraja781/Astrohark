@@ -1179,7 +1179,7 @@ class CallActivity : ComponentActivity() {
 
     private fun sendSignal(payload: JSONObject) {
         payload.put("sessionId", sessionId)
-        SocketManager.getSocket()?.emit("signal", payload)
+        SocketManager.emitSignal(payload)
     }
 
     private fun endCall() {

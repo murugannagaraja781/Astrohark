@@ -64,6 +64,9 @@ class CallActivity : ComponentActivity() {
         private const val PERMISSION_REQ_CODE = 101
 
         private var iceServers = mutableListOf(
+            PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
+            PeerConnection.IceServer.builder("stun:stun1.l.google.com:19302").createIceServer(),
+            PeerConnection.IceServer.builder("stun:stun2.l.google.com:19302").createIceServer(),
             PeerConnection.IceServer.builder("stun:free.expressturn.com:3478").createIceServer(),
             PeerConnection.IceServer.builder("turn:free.expressturn.com:3478?transport=udp")
                 .setUsername("000000002089544731").setPassword("HIzMMgt7G9eioH07AnygPJHRWGM=").createIceServer(),

@@ -101,6 +101,9 @@ interface ApiInterface {
     @POST("api/reviews")
     suspend fun submitReview(@Body request: com.google.gson.JsonObject): Response<com.google.gson.JsonObject>
 
+    @retrofit2.http.GET("api/admin/system/status")
+    suspend fun getSystemStatus(): Response<com.google.gson.JsonObject>
+
     @retrofit2.http.GET("api/home/data")
     suspend fun getHomeData(): Response<com.astrohark.app.data.model.HomeDataResponse>
 }

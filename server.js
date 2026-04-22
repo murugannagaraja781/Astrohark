@@ -915,6 +915,20 @@ app.delete('/api/admin/rituals/:id', async (req, res) => {
 });
 
 // Home Dashboard Data (App) 
+app.get('/api/admin/system/status', async (req, res) => {
+  try {
+    const dbConnected = mongoose.connection.readyState === 1;
+    res.json({
+      ok: true,
+      db: dbConnected,
+      timestamp: Date.now(),
+      version: '1.0.6-stable'
+    });
+  } catch (err) {
+    res.json({ ok: false, error: err.message });
+  }
+});
+
 app.get('/api/home/data', async (req, res) => {
   try {
     // 1. Fetch Banners

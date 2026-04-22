@@ -485,8 +485,15 @@ class HomeActivity : AppCompatActivity() {
                 val response = ApiClient.api.getHomeData()
                 if (response.isSuccessful && response.body()?.ok == true) {
                     val homeData = response.body()?.data
-                    _banners.value = homeData?.banners ?: emptyList()
-                    _rituals.value = homeData?.rituals ?: emptyList()
+                    val banners = homeData?.banners ?: emptyList()
+                    val rituals = homeData?.rituals ?: emptyList()
+                    
+                    Log.d(TAG, "Home data fetched: banners=${banners.size}, rituals=${rituals.size}")
+                    
+                    _banners.value = banners
+                    _rituals.value = rituals
+                } else {
+                    Log.e(TAG, "Home data fetch failed: ${response.errorBody()?.string()}")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error fetching home data: ${e.message}")

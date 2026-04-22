@@ -4,6 +4,7 @@ const adminController = require('../controllers/admin.controller');
 
 router.get('/academy/videos', adminController.getVideos);
 router.post('/academy/videos', adminController.addVideo);
+router.delete('/academy/videos/:id', adminController.deleteVideo);
 // router.get('/banners', adminController.getBanners);
 // router.post('/banners', adminController.addBanner);
 router.get('/deletion-requests', adminController.getDeletionRequests);

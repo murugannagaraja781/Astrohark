@@ -12,8 +12,22 @@ exports.getVideos = async (req, res) => {
 };
 
 exports.addVideo = async (req, res) => {
-    const video = await AcademyVideo.create(req.body);
-    res.json({ ok: true, video });
+    try {
+        const { title, youtubeUrl, thumbnail, category } = req.body;
+        const video = await AcademyVideo.create({ title, youtubeUrl, thumbnail, category });
+        res.json({ ok: true, video });
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};
+
+exports.deleteVideo = async (req, res) => {
+    try {
+        await AcademyVideo.findByIdAndDelete(req.params.id);
+        res.json({ ok: true });
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
 };
 
 exports.getBanners = async (req, res) => {

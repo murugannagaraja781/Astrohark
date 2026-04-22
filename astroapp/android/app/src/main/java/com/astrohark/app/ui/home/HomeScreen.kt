@@ -769,7 +769,7 @@ fun HomeScreen(
                             }
 
                         )
-                        1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } })
+                        1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } }, isTamil)
                         2 -> RitualsTab(rituals, isTamil)
                         3 -> ProfileTab(walletBalance, isTamil, onWalletClick, onDrawerItemClick, onLogoutClick)
                         4 -> ReferralTab(referralCode, shareLink, isTamil, isNewUser, onApplyReferral)
@@ -876,7 +876,7 @@ fun LazyListScope.HomeTab(
         if (isLoading) AstrologerShimmerItem()
         else {
             filteredAstros.firstOrNull()?.let { astro ->
-                AstrologerCard(astro, { onChatClick(it) }, { a, t -> onCallClick(a, t) }, 0)
+                AstrologerCard(astro, { onChatClick(it) }, { a, t -> onCallClick(a, t) }, 0, isTamil)
             }
         }
     }
@@ -904,14 +904,16 @@ fun LazyListScope.HomeTab(
 fun LazyListScope.ConsultTab(
     astrologers: List<Astrologer>,
     onChatClick: (Astrologer) -> Unit,
-    onCallClick: (Astrologer, String) -> Unit
+    onCallClick: (Astrologer, String) -> Unit,
+    isTamil: Boolean
 ) {
     items(astrologers) { astro ->
         AstrologerCard(
             astro = astro,
             onChatClick = onChatClick,
             onCallClick = onCallClick,
-            selectedTab = 1
+            selectedTab = 1,
+            isTamil = isTamil
         )
     }
 }
@@ -1345,10 +1347,10 @@ fun AstrologerCard(
     astro: Astrologer,
     onChatClick: (Astrologer) -> Unit,
     onCallClick: (Astrologer, String) -> Unit,
-    selectedTab: Int
+    selectedTab: Int,
+    isTamil: Boolean = true
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val isTamil = true 
     var isFavorite by remember { mutableStateOf(false) }
 
     val statusColor = when {
@@ -1476,9 +1478,9 @@ fun AstrologerCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AstrologerActionButton(Localization.get("chat", isTamil), Icons.Rounded.Chat, astro.isChatOnline, Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
-                AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, astro.isAudioOnline, Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
-                AstrologerActionButton(Localization.get("video", isTamil), Icons.Rounded.VideoCall, astro.isVideoOnline, Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
+                AstrologerActionButton(Localization.get("chat", isTamil), Icons.Rounded.Chat, (astro.isChatOnline && !astro.isBusy), Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
+                AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, (astro.isAudioOnline && !astro.isBusy), Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
+                AstrologerActionButton(Localization.get("video", isTamil), Icons.Rounded.VideoCall, (astro.isVideoOnline && !astro.isBusy), Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
             }
         }
     }
@@ -1883,6 +1885,7 @@ fun AstrologerActionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val alpha = if (active) 1.0f else 0.4f
     val finalColor = if (active) borderColor else Color.Gray
     val containerColor = Color.White
     val contentColor = finalColor
@@ -1895,12 +1898,12 @@ fun AstrologerActionButton(
             containerColor = containerColor,
             contentColor = contentColor,
             disabledContainerColor = containerColor,
-            disabledContentColor = Color.Gray
+            disabledContentColor = Color.Gray.copy(alpha = 0.6f)
         ),
         border = borderStroke,
         shape = RoundedCornerShape(50),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-        modifier = modifier.height(32.dp)
+        modifier = modifier.height(32.dp).graphicsLayer(alpha = alpha)
     ) {
         Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
         Spacer(modifier = Modifier.width(4.dp))
@@ -1996,17 +1999,17 @@ fun TopServicesSection(isTamil: Boolean) {
     val context = LocalContext.current
     val services: List<Pair<String, Int>> = if(isTamil) {
         listOf(
-            "இலவச ஜாதகம்" to com.astrohark.app.R.drawable.ic_free_kundali_v2,
-            "தினசரி ஜோதிடம்" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
-            "திருமண பொருத்தம்" to com.astrohark.app.R.drawable.ic_match_v2,
-            "தினசரி பஞ்சாங்கம்" to com.astrohark.app.R.drawable.ic_academy_v2
+            "இலவச ஜாதகம்" to com.astrohark.app.R.drawable.ic_kundali_matching,
+            "தினசரி ராசிபலன்" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
+            "திருமணப் பொருத்தம்" to com.astrohark.app.R.drawable.ic_match_v2,
+            "ஜோதிட அகாடமி" to com.astrohark.app.R.drawable.ic_academy_v2
         )
     } else {
         listOf(
-            "Free\nKundeli" to com.astrohark.app.R.drawable.ic_free_kundali_v2,
-            "Daily\nAstrology" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
-            "Marriage\nMatching" to com.astrohark.app.R.drawable.ic_match_v2,
-            "Daily\nalmanac" to com.astrohark.app.R.drawable.ic_academy_v2
+            "Free\nHoroscope" to com.astrohark.app.R.drawable.ic_kundali_matching,
+            "Daily\nHoroscope" to com.astrohark.app.R.drawable.ic_daily_horoscope_v2,
+            "Horoscope\nMatch" to com.astrohark.app.R.drawable.ic_match_v2,
+            "Astro\nAcademy" to com.astrohark.app.R.drawable.ic_academy_v2
         )
     }
 
@@ -2021,7 +2024,9 @@ fun TopServicesSection(isTamil: Boolean) {
         services.forEach { (name, icon) ->
             ServiceItem(name, icon) {
                 val actionType = when {
-                    name.contains("Kundeli", true) || name.contains("Horoscope", true) || name.contains("ஜாதகம்", true) -> "kundali"
+                    name.contains("Kundeli", true) || name.contains("Horoscope", true) || name.contains("ஜாதகம்", true) -> {
+                         if (name.contains("Daily", true) || name.contains("தினசரி", true)) "rasi" else "kundali"
+                    }
                     name.contains("Marriage", true) || name.contains("Matching", true) || name.contains("பொருத்தம்", true) -> "match"
                     name.contains("Astrology", true) || name.contains("ராசிபலன்", true) || name.contains("ஜோதிடம்", true) -> "rasi"
                     name.contains("Almanac", true) || name.contains("பஞ்சாங்கம்", true) || name.contains("Academy", true) -> "academy"

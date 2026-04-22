@@ -719,24 +719,6 @@ app.get('/api/daily-horoscope', async (req, res) => {
   }
 });
 
-// Academy Videos API
-app.get('/api/academy/videos', async (req, res) => {
-  try {
-    let videos = await AcademyVideo.find().sort({ createdAt: -1 });
-    if (videos.length === 0) {
-      // Return some dummy videos if none exist
-      videos = [
-        { title: "Introduction to Astrology", youtubeUrl: "https://www.youtube.com/watch?v=kYI9W5yisCc", category: "Basics" },
-        { title: "Planetary Positions", youtubeUrl: "https://www.youtube.com/watch?v=FjI1XwHhK_4", category: "Intermediate" },
-        { title: "Daily Prediction Guide", youtubeUrl: "https://www.youtube.com/watch?v=BvRE0mD6uA0", category: "General" }
-      ];
-    }
-    res.json({ ok: true, videos });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
 // --- Banner APIs (Admin & App) ---
 
 // Get Active Banners (Public)
@@ -910,7 +892,7 @@ app.get('/api/home/data', async (req, res) => {
             { id: 'free_kundeli', title: 'Free Kundeli', title_tamil: 'இலவச ஜாதகம்', icon: 'kundeli', route: 'FreeKundeli' },
             { id: 'daily_horoscope', title: 'Daily Horoscope', title_tamil: 'தினசரி ராசிபலன்', icon: 'horoscope', route: 'Horoscope' },
             { id: 'marriage_matching', title: 'Marriage Matching', title_tamil: 'திருமண பொருத்தம்', icon: 'matching', route: 'MatchMaking' },
-            { id: 'daily_almanac', title: 'Daily Almanac', title_tamil: 'தினசரி பஞ்சாங்கம்', icon: 'almanac', route: 'Panchang' }
+            { id: 'academy', title: 'Astro Academy', title_tamil: 'ஜோதிட அகாடமி', icon: 'academy', route: 'Academy' }
           ],
           quick_services_label: 'விரைவும் சேவைகள்',
           quick_services_label_en: 'Quick Services'
@@ -930,7 +912,10 @@ app.get('/api/home/data', async (req, res) => {
       data: {
         banners,
         rituals,
-        services: homeConfig.value.grid_services,
+        homeConfig: {
+          grid_services: homeConfig.value.grid_services
+        },
+        services: homeConfig.value.grid_services, // Fallback for any old usage
         quickServicesLabel: homeConfig.value.quick_services_label,
         quickServicesLabelEn: homeConfig.value.quick_services_label_en
       }
@@ -2420,6 +2405,57 @@ io.on('connection', (socket) => {
     } catch (e) {
       console.error(e);
       cb({ ok: false });
+    }
+  });
+
+  // --- Admin: Create New Astrologer ---
+  socket.on('admin-create-astrologer', async (data, cb) => {
+    if (!await checkAdmin(socket.id)) return cb({ ok: false, error: 'Unauthorized' });
+    try {
+      const { name, phone, email, image, price, experience, skills, profession, aadharNumber, panNumber, bankDetails, upiId } = data;
+      
+      if (!name || !phone) return cb({ ok: false, error: 'Missing name or phone' });
+
+      // Check if phone already exists
+      const existing = await User.findOne({ phone });
+      if (existing) return cb({ ok: false, error: 'User with this phone already exists' });
+
+      const userId = `astro_${Date.now()}`;
+      const newUser = new User({
+        userId,
+        name,
+        realName: name,
+        phone,
+        email,
+        image,
+        price: parseInt(price) || 10,
+        experience: parseInt(experience) || 0,
+        astrologyExperience: String(experience || 0),
+        skills: Array.isArray(skills) ? skills : [],
+        profession,
+        aadharNumber,
+        panNumber,
+        bankDetails,
+        upiId,
+        role: 'astrologer',
+        approvalStatus: 'approved',
+        isVerified: true,
+        documentStatus: 'verified',
+        isDocumentVerified: true,
+        walletBalance: 0,
+        isNewUser: false
+      });
+
+      await newUser.save();
+      console.log(`[Admin] Created new astrologer: ${name} (${userId})`);
+
+      // Broadcast update to all clients
+      await broadcastAstroUpdate();
+      
+      cb({ ok: true, userId });
+    } catch (e) {
+      console.error('[Admin] Create Astrologer Error:', e);
+      cb({ ok: false, error: e.message || 'Failed to create astrologer' });
     }
   });
 

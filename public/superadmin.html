@@ -241,15 +241,77 @@
                 </div>
             </div>
 
-            <!-- Tab 4: Users -->
-            <div id="admin-sect-users" class="admin-tab-section">
-                <h2 style="margin-bottom:20px;"><i class="fas fa-users"></i> User Directory</h2>
-                <div style="margin-bottom:20px;">
-                    <input type="text" id="adminUserSearch" oninput="searchAdminUsers()"
-                        placeholder="Search users by name, phone or ID..." class="app-input">
-                </div>
-                <div id="adminClientList">
-                    <div class="loader"></div>
+            <!-- Tab: Add Astrologer -->
+            <div id="admin-sect-add-astro" class="admin-tab-section">
+                <h2 style="margin-bottom:20px;"><i class="fas fa-user-plus"></i> Create New Astrologer</h2>
+                <div class="admin-card">
+                    <h4 style="margin-top:0; color:var(--primary);"><i class="fas fa-id-card"></i> Profile Information</h4>
+                    <div class="grid-2">
+                        <div>
+                            <label class="app-label">Display Name</label>
+                            <input type="text" id="addAstroName" class="app-input" placeholder="e.g. Astro Rahul">
+                        </div>
+                        <div>
+                            <label class="app-label">Phone Number (with Country Code)</label>
+                            <input type="text" id="addAstroPhone" class="app-input" placeholder="+91 9999999999">
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-top:15px;">
+                        <div>
+                            <label class="app-label">Email Address</label>
+                            <input type="email" id="addAstroEmail" class="app-input" placeholder="rahul@example.com">
+                        </div>
+                        <div>
+                            <label class="app-label">Profile Image URL (Optional)</label>
+                            <input type="text" id="addAstroImage" class="app-input" placeholder="https://...">
+                        </div>
+                    </div>
+                    
+                    <h4 style="margin-top:25px; color:var(--primary); border-top:1px solid var(--border-soft); padding-top:20px;"><i class="fas fa-star"></i> Astrology Details</h4>
+                    <div class="grid-3">
+                        <div>
+                            <label class="app-label">Consultation Price (₹/min)</label>
+                            <input type="number" id="addAstroPrice" class="app-input" value="10">
+                        </div>
+                        <div>
+                            <label class="app-label">Experience (Years)</label>
+                            <input type="number" id="addAstroExp" class="app-input" value="5">
+                        </div>
+                        <div>
+                            <label class="app-label">Skills (comma separated)</label>
+                            <input type="text" id="addAstroSkills" class="app-input" placeholder="Vedic, Tarot, Numerology">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="app-label">Short Bio / Profession</label>
+                        <input type="text" id="addAstroProfession" class="app-input" placeholder="Expert Vedic Astrologer & Vastu Consultant">
+                    </div>
+
+                    <h4 style="margin-top:25px; color:var(--primary); border-top:1px solid var(--border-soft); padding-top:20px;"><i class="fas fa-university"></i> Bank & Identity (Optional)</h4>
+                    <div class="grid-2">
+                        <div>
+                            <label class="app-label">Aadhar Number</label>
+                            <input type="text" id="addAstroAadhar" class="app-input">
+                        </div>
+                        <div>
+                            <label class="app-label">PAN Number</label>
+                            <input type="text" id="addAstroPan" class="app-input">
+                        </div>
+                    </div>
+                    <div class="grid-2" style="margin-top:15px;">
+                        <div>
+                            <label class="app-label">Bank Details (Acc/IFSC)</label>
+                            <input type="text" id="addAstroBank" class="app-input">
+                        </div>
+                        <div>
+                            <label class="app-label">UPI ID / Number</label>
+                            <input type="text" id="addAstroUpi" class="app-input">
+                        </div>
+                    </div>
+
+                    <div style="margin-top:30px;">
+                        <button class="cosmic-btn" style="width:100%;" onclick="createNewAstrologer()"><i class="fas fa-user-check"></i> Create Astrologer Account</button>
+                    </div>
                 </div>
             </div>
 
@@ -276,9 +338,11 @@
                         style="margin-bottom:10px;">
                     <input type="text" id="academyUrl" class="app-input" placeholder="YouTube URL"
                         style="margin-bottom:10px;">
+                    <input type="text" id="academyThumbnail" class="app-input" placeholder="Thumbnail URL (Optional)"
+                        style="margin-bottom:10px;">
                     <input type="text" id="academyCategory" class="app-input" placeholder="Category"
                         style="margin-bottom:10px;">
-                    <button class="cosmic-btn" onclick="addAcademyVideo()">Add Video</button>
+                    <button class="cosmic-btn" onclick="addAcademyVideo()" style="width:100%;">Add Video</button>
                 </div>
                 <div id="adminAcademyList">
                     <div class="loader"></div>
@@ -759,8 +823,8 @@
                     class="fas fa-user-clock"></i><span>Pending <small id="nav-count-pending" style="color:#EF4444; font-weight:bold;"></small></span></div>
             <div class="admin-nav-item" onclick="navAdmin('users', event)"><i
                     class="fas fa-users"></i><span>Users <small id="nav-count-users" style="color:#EF4444; font-weight:bold;"></small></span></div>
-            <!-- <div class="admin-nav-item" onclick="navAdmin('withdrawals', event)"><i
-                    class="fas fa-money-bill-transfer"></i><span>Withdraws</span></div> -->
+            <div class="admin-nav-item" onclick="navAdmin('add-astro', event)"><i
+                    class="fas fa-user-plus"></i><span>Add Astro</span></div>
             <div class="admin-nav-item" onclick="navAdmin('slab', event)"><i
                     class="fas fa-layer-group"></i><span>Slabs</span></div>
             <div class="admin-nav-item" onclick="navAdmin('offers', event)"><i
@@ -1196,20 +1260,32 @@
         }
         function renderAcademy(videos) {
             document.getElementById('adminAcademyList').innerHTML = videos.map(v => `
-        <div class="admin-card" style="display:flex; justify-content:space-between; align-items:center;">
-          <div><b>${v.title}</b><br><small>${v.category}</small></div>
-          <button class="btn-admin btn-delete" style="flex:none; width:auto;" onclick="deleteVideo('${v._id}')"><i class="fas fa-trash"></i></button>
+        <div class="admin-card" style="display:flex; gap:15px; align-items:center; margin-bottom:12px;">
+          <div style="width:50px; height:50px; border-radius:8px; background:rgba(255,127,0,0.1); display:flex; align-items:center; justify-content:center; color:var(--primary); overflow:hidden;">
+            ${v.thumbnail ? `<img src="${v.thumbnail}" style="width:100%; height:100%; object-fit:cover;">` : '<i class="fas fa-play"></i>'}
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:bold; color:var(--text-main);">${v.title}</div>
+            <div style="font-size:0.75rem; color:var(--text-dim);">${v.category}</div>
+          </div>
+          <button class="btn-admin btn-delete" style="flex:none; width:auto; padding:8px 12px;" onclick="deleteVideo('${v._id}')"><i class="fas fa-trash"></i></button>
         </div>
       `).join('');
         }
         window.addAcademyVideo = async () => {
             const title = document.getElementById('academyTitle').value;
             const youtubeUrl = document.getElementById('academyUrl').value;
+            const thumbnail = document.getElementById('academyThumbnail').value;
             const category = document.getElementById('academyCategory').value;
+            if (!title || !youtubeUrl) return alert('Title and URL required');
             await fetch('/api/admin/academy/videos', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, youtubeUrl, category })
+                body: JSON.stringify({ title, youtubeUrl, thumbnail, category })
             });
+            document.getElementById('academyTitle').value = '';
+            document.getElementById('academyUrl').value = '';
+            document.getElementById('academyThumbnail').value = '';
+            document.getElementById('academyCategory').value = '';
             fetchAcademyVideos();
         };
         window.deleteVideo = async (id) => {
@@ -1577,6 +1653,52 @@
                     fetchAdminStats();
                 });
             }
+        };
+
+        window.createNewAstrologer = () => {
+            const name = document.getElementById('addAstroName').value.trim();
+            const phone = document.getElementById('addAstroPhone').value.trim();
+            const email = document.getElementById('addAstroEmail').value.trim();
+            const image = document.getElementById('addAstroImage').value.trim();
+            const price = parseInt(document.getElementById('addAstroPrice').value) || 0;
+            const experience = parseInt(document.getElementById('addAstroExp').value) || 0;
+            const skills = document.getElementById('addAstroSkills').value.split(',').map(s => s.trim()).filter(s => s);
+            const profession = document.getElementById('addAstroProfession').value.trim();
+            const aadhar = document.getElementById('addAstroAadhar').value.trim();
+            const pan = document.getElementById('addAstroPan').value.trim();
+            const bank = document.getElementById('addAstroBank').value.trim();
+            const upi = document.getElementById('addAstroUpi').value.trim();
+
+            if (!name || !phone) return alert('Name and Phone are required');
+
+            if (!confirm(`Create new astrologer account for ${name} (${phone})?`)) return;
+
+            const btn = event.target.closest('button');
+            const oldText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+            btn.disabled = true;
+
+            const payload = {
+                name, phone, email, image, price, experience, skills, profession,
+                aadharNumber: aadhar, panNumber: pan, bankDetails: bank, upiId: upi
+            };
+
+            socket.emit('admin-create-astrologer', payload, (res) => {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+
+                if (res.ok) {
+                    alert('Astrologer Created Successfully! They can now log in using their phone number.');
+                    // Clear form
+                    ['addAstroName', 'addAstroPhone', 'addAstroEmail', 'addAstroImage', 'addAstroProfession', 'addAstroAadhar', 'addAstroPan', 'addAstroBank', 'addAstroUpi'].forEach(id => {
+                        document.getElementById(id).value = '';
+                    });
+                    navAdmin('payouts'); // Go to astro list
+                    fetchAllUsers();
+                } else {
+                    alert('Error: ' + res.error);
+                }
+            });
         };
 
         let activePerfChart = null;

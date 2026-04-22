@@ -29,28 +29,43 @@ router.get('/', async (req, res) => {
 
         if (externalData && Array.isArray(externalData)) {
             // Map external data to our app's expected format (RasipalanModel.kt)
-            const mappedData = externalData.map((item, index) => ({
-                signId: index + 1,
-                signNameEn: item.sign_en,
-                signNameTa: item.sign_ta,
-                date: today,
-                prediction: {
-                    ta: item.forecast_ta,
-                    en: item.forecast_en
-                },
-                details: {
-                    career: item.career_ta,
-                    finance: item.finance_ta,
-                    health: item.health_ta
-                },
-                lucky: {
-                    number: String(item.lucky_number),
-                    color: {
-                        ta: item.lucky_color_ta,
-                        en: item.lucky_color_en
+            const mappedData = externalData.map((item, index) => {
+                // Better guard against "undefined" strings or missing values
+                const isValidStr = (v) => v && v !== 'undefined' && v !== 'null';
+                
+                const predictionTa = (isValidStr(item.prediction_ta) ? item.prediction_ta : null) || 
+                                     (isValidStr(item.forecast_ta) ? item.forecast_ta : null) || 
+                                     (isValidStr(item.horoscope) ? item.horoscope : null) || 
+                                     "இன்றைய நாள் சிறப்பாக இருக்கும்.";
+                                     
+                const predictionEn = (isValidStr(item.prediction_en) ? item.prediction_en : null) || 
+                                     (isValidStr(item.forecast_en) ? item.forecast_en : null) || 
+                                     (isValidStr(item.horoscope) ? item.horoscope : null) || 
+                                     "Today will be a great day.";
+
+                return {
+                    signId: index + 1,
+                    signNameEn: item.sign_en || SIGN_NAME_MAP[Object.keys(SIGN_NAME_MAP)[index]] || "Sign",
+                    signNameTa: item.sign_ta || "ராசி",
+                    date: today,
+                    prediction: {
+                        ta: predictionTa,
+                        en: predictionEn
+                    },
+                    details: {
+                        career: (isValidStr(item.career_ta) ? item.career_ta : null) || predictionTa,
+                        finance: (isValidStr(item.finance_ta) ? item.finance_ta : null) || predictionTa,
+                        health: (isValidStr(item.health_ta) ? item.health_ta : null) || predictionTa
+                    },
+                    lucky: {
+                        number: item.lucky_number ? String(item.lucky_number) : "-",
+                        color: {
+                            ta: (isValidStr(item.lucky_color_ta) ? item.lucky_color_ta : "-"),
+                            en: (isValidStr(item.lucky_color_en) ? item.lucky_color_en : "-")
+                        }
                     }
-                }
-            }));
+                };
+            });
 
             console.log("Fetched and mapped Rasi Engine horoscope data for Android successfully.");
             // Android app expects the array directly

@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const Session = require('../models/Session');
 const PairMonth = require('../models/PairMonth');
+const BillingLedger = require('../models/BillingLedger');
+const crypto = require('crypto');
 const { activeSessions, userActiveSession, sessionDisconnectTimeouts } = require('./socketStore');
 
 let SLAB_RATES = {
@@ -94,11 +96,31 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
                 await astro.save();
             }
 
+            // --- Record in BillingLedger ---
+            await BillingLedger.create({
+                billingId: crypto.randomUUID(),
+                sessionId,
+                minuteIndex,
+                chargedToClient: amountToCharge,
+                creditedToAstrologer: astroShare,
+                adminAmount: adminShare,
+                reason
+            }).catch(e => console.error('[Billing] Ledger Creation Error:', e));
+
             // Update running totals in activeSession map
             const s = activeSessions.get(sessionId);
             if (s) {
                 s.totalDeducted = (s.totalDeducted || 0) + totalToDeduct;
                 s.totalEarned = (s.totalEarned || 0) + astroShare;
+            }
+
+            // Notify Wallets
+            if (io) {
+                const s1 = Array.from(activeSessions.values()).find(x => x.sessionId === sessionId)?.clientSocketId;
+                // Fallback to room-based or map-based if needed.
+                // For simplicity, we just broadcast or use a common room.
+                io.to(client.userId).emit('wallet-update', { balance: client.walletBalance });
+                io.to(astro.userId).emit('wallet-update', { balance: astro.walletBalance });
             }
         }
     } catch (e) {

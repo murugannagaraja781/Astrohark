@@ -779,7 +779,7 @@ app.post('/api/admin/banners', upload.single('bannerImage'), async (req, res) =>
         expiryDate: expiryDate || null,
         isActive: isActive === 'true' || isActive === true,
         imageUrl: finalImageUrl
-      }, { new: true });
+      }, { returnDocument: 'after' });
       io.emit('banners-updated'); // Broadcast update
       return res.json({ ok: true, banner });
     } else {
@@ -849,7 +849,7 @@ app.post('/api/admin/rituals', upload.single('ritualImage'), async (req, res) =>
         };
 
         if (id && id !== 'undefined' && id !== 'null') {
-            const ritual = await Ritual.findByIdAndUpdate(id, data, { new: true });
+            const ritual = await Ritual.findByIdAndUpdate(id, data, { returnDocument: 'after' });
             res.json({ ok: true, ritual });
         } else {
             const ritual = await Ritual.create(data);
@@ -980,7 +980,7 @@ app.post('/api/user/intake', async (req, res) => {
     const user = await User.findOneAndUpdate(
       { userId },
       { $set: { intakeDetails: intakeData } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!user) {
@@ -1210,7 +1210,7 @@ app.post('/api/native/accept-call', async (req, res) => {
       }
 
       // End the session
-      endSessionRecord(sessionId);
+      billingService.endSessionRecord(sessionId);
 
       return res.json({ ok: true, message: 'Call rejected' });
     }
@@ -1245,235 +1245,8 @@ function getOtherUserIdFromSession(sessionId, userId) {
 }
 
 // Helper: End Session & Calculate Wallet
-async function endSessionRecord(sessionId) {
-  const s = activeSessions.get(sessionId);
-  if (!s) return;
+// Redundant billing functions removed. Centralized in services/billing.service.js
 
-  const endTime = Date.now();
-  // Phase 1/2: Use tracked billable seconds if available
-  const billableSeconds = s.elapsedBillableSeconds || 0;
-
-  // Update Session in DB
-  await Session.updateOne({ sessionId }, {
-    endTime,
-    duration: billableSeconds * 1000,
-    totalEarned: s.totalEarned || 0,
-    totalCharged: s.totalDeducted || 0,
-    status: 'ended'
-  });
-
-
-  // Update PairMonth Cumulative Seconds (Phase 4)
-  if (s.pairMonthId) {
-    await PairMonth.updateOne(
-      { _id: s.pairMonthId },
-      { $inc: { slabLockedAt: billableSeconds } }
-    );
-  }
-
-  // Phase 3: Early Exit Handling (< 60s)
-  if (billableSeconds > 0 && billableSeconds < 60) {
-    console.log(`Session ${sessionId}: Early exit at ${billableSeconds}s. Charging full first minute.`);
-    await processBillingCharge(sessionId, billableSeconds, 1, 'early_exit');
-  }
-
-  // Phase 5: Round-Up Billing (Partial Minute at End)
-  else if (billableSeconds > 60) {
-    const lastBilled = s.lastBilledMinute || 1;
-    const totalMinutes = Math.ceil(billableSeconds / 60);
-
-    if (totalMinutes > lastBilled) {
-      console.log(`Session ${sessionId}: Finalizing billing for partial minutes ${lastBilled + 1} to ${totalMinutes}`);
-
-      for (let i = lastBilled + 1; i <= totalMinutes; i++) {
-        // User Rule: If it's the last minute of the session AND it has extra seconds, it's a fraction (100% Admin)
-        const isFraction = (i === totalMinutes && (billableSeconds % 60) !== 0);
-        const billingType = isFraction ? 'fraction' : 'slab';
-
-        await processBillingCharge(sessionId, 60, i, billingType);
-      }
-
-    }
-  }
-
-  // Cleanup active session finally
-  activeSessions.delete(sessionId);
-  if (s.users) {
-    s.users.forEach((u) => {
-      if (userActiveSession.get(u) === sessionId) {
-        userActiveSession.delete(u);
-      }
-      // NEW: Clear any pending session disconnect timeouts for these users
-      if (sessionDisconnectTimeouts.has(u)) {
-        clearTimeout(sessionDisconnectTimeouts.get(u));
-        sessionDisconnectTimeouts.delete(u);
-      }
-    });
-  }
-
-  // Notify with Summary
-  const payload = {
-    reason: 'ended',
-    summary: {
-      deducted: s.totalDeducted || 0,
-      earned: s.totalEarned || 0,
-      duration: billableSeconds
-    }
-  };
-
-  if (s.clientId) io.to(s.clientId).emit('session-ended', payload);
-  if (s.astrologerId) io.to(s.astrologerId).emit('session-ended', payload);
-
-  // Mark astrologer as NOT busy (Wait for DB update before broadcast)
-  User.updateMany({ userId: { $in: s.users }, role: 'astrologer' }, { isBusy: false })
-    .then(() => broadcastAstroUpdate())
-    .catch(e => console.error('Error clearing busy:', e));
-}
-
-// --- Phase 3: Billing Helper ---
-// SLAB_RATES is now a let defined above with GlobalSettings loading logic
-
-async function processBillingCharge(sessionId, durationSeconds, minuteIndex, type) {
-  try {
-    const session = await Session.findOne({ sessionId });
-    if (!session) return;
-
-    // Fetch Astrologer Price
-    const astro = await User.findOne({ userId: session.astrologerId });
-    if (!astro) return;
-
-    const client = await User.findOne({ userId: session.clientId });
-    if (!client) return;
-
-    // Phase: Pricing Logic
-    // Priority: Astro DB Price > Hardcoded fallback
-    let pricePerMin = 10;
-    if (astro.price && astro.price > 0) {
-      pricePerMin = parseInt(astro.price);
-    } else {
-      // Fallback defaults
-      if (session.type === 'audio') pricePerMin = 15;
-      if (session.type === 'video') pricePerMin = 20;
-    }
-
-    console.log(`[Billing] Session ${sessionId} | Type: ${session.type} | Price: ${pricePerMin}/min | Minute: ${minuteIndex}`);
-
-    let amountToCharge = 0;
-    let adminShare = 0;
-    let astroShare = 0;
-    let reason = '';
-
-    // Logic: First 60 Seconds (Admin Only)
-    if (type === 'first_60_full') {
-      amountToCharge = pricePerMin;
-      adminShare = amountToCharge;
-      astroShare = 0;
-      reason = 'first_60';
-    } else if (type === 'early_exit') {
-      // User requested: Even if early exit (e.g. 30s), charge full minute (pricePerMin)
-      amountToCharge = pricePerMin;
-      adminShare = amountToCharge; // 100% to Admin
-      astroShare = 0;
-      reason = 'first_60_min_charge';
-
-    } else if (type === 'slab') {
-      // Standard Minute Billing
-      const activeSess = activeSessions.get(sessionId);
-      const currentSlab = activeSess?.currentSlab || 3;
-      const rate = SLAB_RATES[currentSlab] || 0.30;
-
-      amountToCharge = pricePerMin;
-      astroShare = amountToCharge * rate;
-      adminShare = amountToCharge - astroShare;
-      reason = `slab_${currentSlab}`;
-
-      console.log(`[Billing] Slab: ${currentSlab} | Rate: ${rate} | AstroShare: ${astroShare}`);
-    } else if (type === 'fraction') {
-      // User rule: Extra seconds (fractional minute) at the end
-      // 100% of this charge goes to Admin, 0 to Astrologer.
-      amountToCharge = pricePerMin;
-      adminShare = amountToCharge;
-      astroShare = 0;
-      reason = 'fraction_roundup';
-    } else {
-
-      return;
-    }
-
-    // Deduct from Client (70/30 Rule)
-    const totalToDeduct = amountToCharge;
-    if (client.walletBalance >= totalToDeduct) {
-      let mainDeduct = totalToDeduct * 0.7;
-      let superDeduct = totalToDeduct * 0.3;
-
-      // Rule: If super wallet has balance, use it for the 30%
-      if (client.superWalletBalance > 0) {
-        if (client.superWalletBalance >= superDeduct) {
-          client.superWalletBalance -= superDeduct;
-        } else {
-          // Take what's available and shift rest to main
-          const availableSuper = client.superWalletBalance;
-          client.superWalletBalance = 0;
-          mainDeduct += (superDeduct - availableSuper);
-        }
-      } else {
-        // No super wallet balance, take 100% from main
-        mainDeduct = totalToDeduct;
-      }
-
-      client.walletBalance -= mainDeduct;
-      await client.save();
-
-      // Credit Astrologer (if > 0)
-      if (astroShare > 0) {
-        astro.walletBalance += astroShare;
-        astro.totalEarnings = (astro.totalEarnings || 0) + astroShare; // Phase 16
-        await astro.save();
-      }
-
-      // Admin Share is just recorded in Ledger, or we could credit a SuperAdmin wallet.
-      // Task says: "Deduct from client, credit 0 to astro, rest to Admin"
-
-      // Create Ledger Entry
-      await BillingLedger.create({
-        billingId: crypto.randomUUID(),
-        sessionId,
-        minuteIndex,
-        chargedToClient: amountToCharge,
-        creditedToAstrologer: astroShare,
-        adminAmount: adminShare,
-        reason
-      });
-
-      // Track Session Totals
-      const activeSess = activeSessions.get(sessionId);
-      if (activeSess) {
-        activeSess.totalDeducted = (activeSess.totalDeducted || 0) + amountToCharge;
-        activeSess.totalEarned = (activeSess.totalEarned || 0) + astroShare;
-      }
-
-      console.log(`Billing: ${reason} | Charge: ${amountToCharge} | Admin: ${adminShare} | Astro: ${astroShare}`);
-
-      // Notify Wallets
-      const s1 = userSockets.get(client.userId);
-      if (s1) io.to(s1).emit('wallet-update', { balance: client.walletBalance });
-
-      const s2 = userSockets.get(astro.userId);
-      if (s2) io.to(s2).emit('wallet-update', {
-        balance: astro.walletBalance,
-        totalEarnings: astro.totalEarnings || 0
-      });
-
-    } else {
-      console.log(`Billing Failed: Insufficient funds for ${client.name}`);
-      // Handle forced termination
-      forceEndSession(sessionId, 'insufficient_funds');
-    }
-
-  } catch (e) {
-    console.error('Billing Error:', e);
-  }
-}
 
 function forceEndSession(sessionId, reason) {
   const session = activeSessions.get(sessionId);
@@ -1498,7 +1271,7 @@ function forceEndSession(sessionId, reason) {
   if (astroSocketId) io.to(astroSocketId).emit('session-ended', payload);
 
   // Cleanup Server State
-  endSessionRecord(sessionId);
+  billingService.endSessionRecord(sessionId);
 }
 
 // ===== City Autocomplete API =====
@@ -1623,6 +1396,8 @@ io.on('connection', (socket) => {
         const userId = user.userId;
         userSockets.set(userId, socket.id);
         socketToUser.set(socket.id, userId);
+        socket.join(userId);
+        console.log(`[Socket] ${userId} joined room ${userId}`);
 
         if (typeof cb === 'function') cb({
           ok: true,
@@ -2104,7 +1879,7 @@ io.on('connection', (socket) => {
         // Phase 3: First Minute Check (at 60s exactly)
         if (session.elapsedBillableSeconds === 60) {
           console.log(`Session ${sessionId}: First 60s completed.`);
-          processBillingCharge(sessionId, 60, 1, 'first_60_full');
+          billingService.processBillingCharge(sessionId, 60, 1, 'first_60_full');
         }
 
         // Phase 4: Check Slab Upgrade
@@ -2128,7 +1903,7 @@ io.on('connection', (socket) => {
 
           if (totalShouldBeBilled > session.lastBilledMinute) {
             console.log(`Session ${sessionId}: Minute ${totalShouldBeBilled} reached.`);
-            processBillingCharge(sessionId, 60, totalShouldBeBilled, 'slab');
+            billingService.processBillingCharge(sessionId, 60, totalShouldBeBilled, 'slab');
             session.lastBilledMinute = totalShouldBeBilled;
           }
         }
@@ -2194,7 +1969,7 @@ io.on('connection', (socket) => {
       const fromUserId = socketToUser.get(socket.id);
       if (!fromUserId || !sessionId || !toUserId) return;
 
-      endSessionRecord(sessionId);
+      billingService.endSessionRecord(sessionId);
 
       const targetSocketId = userSockets.get(toUserId);
       if (targetSocketId) {
@@ -2561,7 +2336,7 @@ io.on('connection', (socket) => {
       const u = await User.findOneAndUpdate(
         { userId, walletBalance: { $gte: amount } },
         { $inc: { walletBalance: -amount } },
-        { new: true }
+        { returnDocument: 'after' }
       );
 
       if (!u) {
@@ -2833,7 +2608,7 @@ io.on('connection', (socket) => {
             const otherUserId = getOtherUserIdFromSession(sid, userId);
 
             // NOW we end it
-            endSessionRecord(sid);
+            billingService.endSessionRecord(sid);
 
             if (otherUserId) {
               // Notify other user that partner dropped

@@ -212,7 +212,7 @@ fun PremiumRasipalanCard(item: RasipalanItem) {
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     LuckyStat("அதிர்ஷ்ட நேரம்", item.lucky?.luckyTime ?: "-")
-                    LuckyStat("ஆகாத நேரம்", item.lucky?.unluckyTime ?: "-")
+                    LuckyStat("அமிர்த நேரம்", item.lucky?.unluckyTime ?: "-")
                 }
             }
         }

@@ -5401,6 +5401,7 @@
     socket.on('signal', d => {
       if (state.session && d.sessionId === state.session.id) {
         let signalData = d.signal;
+        console.log('[WebRTC] Incoming signal:', signalData.type || (signalData.candidate ? 'candidate' : 'unknown'), signalData);
         
         // Normalize candidate format from Android/Native
         if (signalData && signalData.type === 'candidate' && typeof signalData.candidate === 'string') {

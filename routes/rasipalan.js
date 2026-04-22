@@ -65,8 +65,8 @@ router.get('/', async (req, res) => {
                             ta: item.lucky_color_ta || item.lucky_color || "-",
                             en: item.lucky_color_en || item.lucky_color || "-"
                         },
-                        luckyTime: item.lucky_time || "-",
-                        unluckyTime: item.unlucky_time || "-"
+                        luckyTime: item.lucky_time || item.amrita_time || item.amirtha_time || "-",
+                        unluckyTime: item.unlucky_time || item.rahukalam || item.rahu_kal_ta || "-"
                     }
                 };
             });

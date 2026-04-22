@@ -214,7 +214,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 sessionId, fromUserId, type, accept: !!accept
             });
 
-            console.log(`[CallHandler][answer-session] session=${sessionId}, type=${type}, accept=${accept} | from=${fromUserId} to=${toUserId}`);
+            console.log(`[CallHandler][answer-session] ${accept ? '✅ ACCEPTED' : '❌ REJECTED'} | session=${sessionId}, type=${type} | by=${fromUserId} for=${toUserId}`);
             if (typeof cb === 'function') cb({ ok: true });
         } catch (err) {
             logError('answer-session', err);
@@ -271,11 +271,13 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 io.to(fromUserId).emit('session-answered', {
                     sessionId, fromUserId: astrologerId, type: callType || session.type, accept: true
                 });
+                console.log(`[CallHandler][answer-session-native] ✅ ACCEPTED | session=${sessionId} | by=${astrologerId} for=${fromUserId}`);
                 if (typeof cb === 'function') cb({ ok: true, fromUserId });
             } else {
                 io.to(fromUserId).emit('session-answered', {
                     sessionId, fromUserId: astrologerId, type: callType || session.type, accept: false
                 });
+                console.log(`[CallHandler][answer-session-native] ❌ REJECTED | session=${sessionId} | by=${astrologerId} for=${fromUserId}`);
                 endSessionRecord(sessionId, broadcastAstroUpdate);
                 if (typeof cb === 'function') cb({ ok: true });
             }
@@ -295,6 +297,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             console.log(`[CallHandler][signal] type=${signalType} | from=${fromUserId} to=${toUserId} | session=${sessionId}`);
 
             if (toUserId) {
+                console.log(`[CallHandler][signal] Forwarding ${signalType} to room ${toUserId}`);
                 io.to(toUserId).emit('signal', { sessionId, fromUserId, signal });
             }
         } catch (err) {
@@ -369,6 +372,8 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
 
                 io.to(session.clientId).emit('billing-started', { startTime: billingStart, clientBalance, availableMinutes });
                 io.to(session.astrologerId).emit('billing-started', { startTime: billingStart, clientBalance, ratePerMinute, availableMinutes });
+                
+                console.log(`[CallHandler][session-connect] 🚀 BOTH CONNECTED. Call Active. Billing started for ${sessionId}`);
             }
         } catch (err) {
             logError('session-connect', err);
@@ -421,6 +426,15 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             }
         } catch (err) {
             logError('save-intake-details', err);
+        }
+    });
+
+    // --- Monitor Disconnects during calls ---
+    socket.on('disconnect', () => {
+        const userId = socketToUser.get(socket.id);
+        if (userId && userActiveSession.has(userId)) {
+            const sessionId = userActiveSession.get(userId);
+            console.log(`[CallHandler][disconnect] User ${userId} disconnected during active session ${sessionId}`);
         }
     });
 };

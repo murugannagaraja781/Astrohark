@@ -929,12 +929,22 @@ app.get('/api/admin/system/status', async (req, res) => {
 
     res.json({
       ok: true,
-      server: true, // Always true if reachable
+      success: true,
+      status: { // Compatibility with legacy/string-based UI
+        server: 'Online',
+        database: dbConnected ? 'Connected' : 'Disconnected',
+        socket: socketOk ? 'Healthy' : 'Error',
+        fcm: fcmOk ? 'Ready' : 'Error',
+        webrtc: 'Ready',
+        ice: 'Active'
+      },
+      // Modern boolean flags
+      server: true,
       db: dbConnected,
       socket: socketOk,
       fcm: fcmOk,
-      webrtc: socketOk, // Signaling is the primary WebRTC path here
-      ice: true, // Placeholder for TURN connectivity
+      webrtc: socketOk,
+      ice: true,
       activeConnections: activeSockets,
       timestamp: Date.now(),
       version: '1.0.6-stable'

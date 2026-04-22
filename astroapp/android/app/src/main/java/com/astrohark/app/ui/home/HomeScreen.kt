@@ -1476,15 +1476,9 @@ fun AstrologerCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (astro.isChatOnline) {
-                    AstrologerActionButton(Localization.get("chat", isTamil), Icons.Rounded.Chat, true, Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
-                }
-                if (astro.isAudioOnline) {
-                    AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, true, Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
-                }
-                if (astro.isVideoOnline) {
-                    AstrologerActionButton(Localization.get("video", isTamil), Icons.Rounded.VideoCall, true, Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
-                }
+                AstrologerActionButton(Localization.get("chat", isTamil), Icons.Rounded.Chat, astro.isChatOnline, Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
+                AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, astro.isAudioOnline, Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
+                AstrologerActionButton(Localization.get("video", isTamil), Icons.Rounded.VideoCall, astro.isVideoOnline, Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
             }
         }
     }
@@ -1749,7 +1743,7 @@ fun RitualCard(ritual: Ritual, isTamil: Boolean) {
                     .background(Color.Black)
             ) {
                 AsyncImage(
-                    model = getImageUrl(imageUrl),
+                    model = getImageUrl(ritual.imageUrl),
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
@@ -1773,6 +1767,17 @@ fun RitualCard(ritual: Ritual, isTamil: Boolean) {
                 )
             }
             
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = Color(0xFFF5F5F5)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = null,
+                        tint = Color(0xFF8B4513),
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }

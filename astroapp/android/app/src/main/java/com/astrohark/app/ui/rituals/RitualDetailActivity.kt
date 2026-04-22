@@ -26,6 +26,7 @@ import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.ui.home.getImageUrl
 
 class RitualDetailActivity : AppCompatActivity() {
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -35,7 +36,7 @@ class RitualDetailActivity : AppCompatActivity() {
         val description = intent.getStringExtra("description") ?: ""
         val imageUrl = intent.getStringExtra("imageUrl") ?: ""
         val price = intent.getDoubleExtra("price", 0.0)
-        val isTamil = intent.getBooleanAsState("isTamil", true).value // Simple way to pass lang
+        val isTamil = intent.getBooleanExtra("isTamil", true)
 
         setContent {
             CosmicAppTheme {

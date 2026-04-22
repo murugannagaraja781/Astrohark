@@ -918,10 +918,18 @@ app.get('/api/home/data', async (req, res) => {
       };
     }
 
+    // 3. Fetch Spiritual Rituals
+    const ritualsRaw = await Ritual.find({ isActive: true }).sort({ order: 1 });
+    const rituals = ritualsRaw.map(r => ({
+      ...r.toObject(),
+      imageUrl: formatImageUrl(r.imageUrl, r.title)
+    }));
+
     res.json({
       ok: true,
       data: {
         banners,
+        rituals,
         services: homeConfig.value.grid_services,
         quickServicesLabel: homeConfig.value.quick_services_label,
         quickServicesLabelEn: homeConfig.value.quick_services_label_en

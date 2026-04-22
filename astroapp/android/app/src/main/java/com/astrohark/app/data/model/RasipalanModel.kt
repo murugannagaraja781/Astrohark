@@ -28,5 +28,7 @@ data class RasipalanDetails(
 
 data class RasipalanLucky(
     @SerializedName("number") val number: String?,
-    @SerializedName("color") val color: RasipalanPrediction? // Reusing Prediction for ta/en pair
+    @SerializedName("color") val color: RasipalanPrediction?, // Reusing Prediction for ta/en pair
+    @SerializedName("luckyTime") val luckyTime: String? = null,
+    @SerializedName("unluckyTime") val unluckyTime: String? = null
 )

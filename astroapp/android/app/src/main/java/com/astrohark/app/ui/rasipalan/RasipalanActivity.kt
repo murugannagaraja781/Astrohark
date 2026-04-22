@@ -206,6 +206,14 @@ fun PremiumRasipalanCard(item: RasipalanItem) {
                     LuckyStat("அதிர்ஷ்ட எண்", item.lucky?.number ?: "-")
                     LuckyStat("அதிர்ஷ்ட நிறம்", item.lucky?.color?.ta ?: "-")
                 }
+                HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(horizontal = 16.dp))
+                Row(
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ) {
+                    LuckyStat("அதிர்ஷ்ட நேரம்", item.lucky?.luckyTime ?: "-")
+                    LuckyStat("ஆகாத நேரம்", item.lucky?.unluckyTime ?: "-")
+                }
             }
         }
     }

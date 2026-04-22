@@ -60,11 +60,13 @@ router.get('/', async (req, res) => {
                         health: (isValidStr(item.health_ta) ? item.health_ta : null) || predictionTa
                     },
                     lucky: {
-                        number: item.lucky_number ? String(item.lucky_number) : "-",
+                        number: item.lucky_number || item.lucky_num || "-",
                         color: {
-                            ta: (isValidStr(item.lucky_color_ta) ? item.lucky_color_ta : "-"),
-                            en: (isValidStr(item.lucky_color_en) ? item.lucky_color_en : "-")
-                        }
+                            ta: item.lucky_color_ta || item.lucky_color || "-",
+                            en: item.lucky_color_en || item.lucky_color || "-"
+                        },
+                        luckyTime: item.lucky_time || "-",
+                        unluckyTime: item.unlucky_time || "-"
                     }
                 };
             });

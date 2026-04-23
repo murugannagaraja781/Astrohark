@@ -131,12 +131,16 @@ exports.getConfig = async (req, res) => {
         const envPath = path.join(__dirname, '../.env');
         const content = fs.readFileSync(envPath, 'utf8');
         const lines = content.split('\n');
-        const config = {};
+        const SENSITIVE_KEYS = [
+            'TURN_USERNAME', 'TURN_SERVER', 'TURN_PASSWORD', 'TURN_REALM', 
+            'MONGO_URI', 'JWT_SECRET', 'FCM_SERVER_KEY'
+        ];
+
         lines.forEach(line => {
             const trimmed = line.trim();
             if (trimmed && !trimmed.startsWith('#')) {
                 const [key, ...valueParts] = trimmed.split('=');
-                if (key) {
+                if (key && !SENSITIVE_KEYS.includes(key)) {
                     config[key] = valueParts.join('=');
                 }
             }

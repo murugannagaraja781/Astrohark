@@ -2158,8 +2158,9 @@ io.on('connection', (socket) => {
         // Notify user via WhatsApp (Manual step or automated script if API exists)
         // For now, if they try to login, they will see dashboard
       } else if (action === 'reject') {
-        user.approvalStatus = 'rejected';
-        await user.save();
+        // Hard delete to allow re-registration with same phone if desired
+        await User.deleteOne({ userId });
+        console.log(`[Admin] Rejected and hard-deleted astrologer request: ${userId}`);
       }
 
       console.log(`Admin ${action}ed astrologer: ${user.name}`);
@@ -2226,12 +2227,12 @@ io.on('connection', (socket) => {
     if (!await checkAdmin(socket.id)) return cb({ ok: false });
     let fullLedger = []; 
     try {
-      // Get billing stats
+      // Get billing stats (Usage based)
       const billingStats = await BillingLedger.aggregate([
         {
           $group: {
             _id: null,
-            totalRevenue: { $sum: '$chargedToClient' },
+            usageRevenue: { $sum: '$chargedToClient' },
             totalAstroPayout: { $sum: '$creditedToAstrologer' },
             totalAdminRevenue: { $sum: '$adminAmount' },
             totalMinutes: { $sum: 1 }
@@ -2239,19 +2240,23 @@ io.on('connection', (socket) => {
         }
       ]);
 
+      // Get Real Payment Revenue (Original Data - Money Collected)
+      const paymentStats = await Payment.aggregate([
+        { $match: { status: 'success' } },
+        { $group: { _id: null, totalCollected: { $sum: '$amount' } } }
+      ]);
+      const totalCollected = paymentStats[0]?.totalCollected || 0;
+
       // Get user counts
       const totalUsers = await User.countDocuments({ role: 'client' });
       const totalAstros = await User.countDocuments({ role: 'astrologer' });
       const pendingAstros = await User.countDocuments({ role: 'astrologer', approvalStatus: 'pending' });
 
-      // Live Activity Totals (Derived from active socket maps)
+      // Live Activity Totals
       const onlineUserIds = Array.from(userSockets.keys());
-      console.log(`[AdminStats] Total Sockets: ${userSockets.size}, Online UserIds: ${onlineUserIds.length}`);
-      
       const onlineAstros = await User.countDocuments({ role: 'astrologer', userId: { $in: onlineUserIds } });
       const onlineClients = await User.countDocuments({ role: 'client', userId: { $in: onlineUserIds } });
       const activeCallCount = activeSessions ? activeSessions.size : 0;
-      console.log(`[AdminStats] onlineAstros: ${onlineAstros}, onlineClients: ${onlineClients}, activeCalls: ${activeCallCount}`);
 
       // Fetch ledger data
       fullLedger = await BillingLedger.find({}).sort({ createdAt: -1 }).limit(100);
@@ -2260,7 +2265,7 @@ io.on('connection', (socket) => {
 
       // Map to expected format
       const stats = {
-        totalRevenue: billing.totalRevenue || 0,
+        totalRevenue: totalCollected, // Using actual payment money collected
         adminProfit: billing.totalAdminRevenue || 0,
         astroPayout: billing.totalAstroPayout || 0,
         totalDuration: (billing.totalMinutes || 0) * 60,

@@ -74,10 +74,15 @@ android {
 
     packaging {
         jniLibs {
-            useLegacyPackaging = true // Required for 16KB Page Alignment on AGP 8.3+ (Android 15)
+            // Essential for 16KB page support on Android 15+ devices.
+            // Setting to true ensures native libraries are extracted and aligned by the OS.
+            useLegacyPackaging = true
         }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
+            excludes += "META-INF/LICENSE*"
+            excludes += "META-INF/NOTICE*"
         }
     }
 }

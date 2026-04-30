@@ -57,9 +57,10 @@ exports.processDeletion = async (req, res) => {
     await request.save();
 
     if (action === 'approved') {
-        // Logic to actually delete or anonymize user
+        // Hard delete the user to release phone number/userId for re-registration
         if (request.userId) {
-            await User.updateOne({ userId: request.userId }, { isBanned: true, name: 'Deleted User' });
+            await User.deleteOne({ userId: request.userId });
+            console.log(`[Admin] Hard deleted user ${request.userId} as per approved deletion request.`);
         }
     }
     res.json({ ok: true });

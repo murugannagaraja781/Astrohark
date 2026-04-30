@@ -241,6 +241,18 @@
                 </div>
             </div>
 
+            <!-- Tab Users: Client Management -->
+            <div id="admin-sect-users" class="admin-tab-section">
+                <h2 style="margin-bottom:20px;"><i class="fas fa-users"></i> Client Management</h2>
+                <div style="margin-bottom:20px;">
+                    <input type="text" id="adminUserSearch" oninput="searchAdminUsers()"
+                        placeholder="Search clients by name or phone..." class="app-input">
+                </div>
+                <div id="adminClientList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:15px;">
+                    <div class="loader"></div>
+                </div>
+            </div>
+
             <!-- Tab: Add Astrologer -->
             <div id="admin-sect-add-astro" class="admin-tab-section">
                 <h2 style="margin-bottom:20px;"><i class="fas fa-user-plus"></i> Create New Astrologer</h2>
@@ -1954,7 +1966,8 @@
                                 <div style="text-align:right;">
 
                                     <button onclick="approveRegistration('${u.userId}', 'approve')" class="btn-admin" style="background:#059669; color:white; margin-bottom:5px; width:90px; height:32px; font-size:0.8rem;">Approve</button><br>
-                                    <button onclick="approveRegistration('${u.userId}', 'reject')" class="btn-admin" style="background:#DC2626; color:white; width:90px; height:32px; font-size:0.8rem;">Reject</button>
+                                    <button onclick="approveRegistration('${u.userId}', 'reject')" class="btn-admin" style="background:#DC2626; color:white; margin-bottom:5px; width:90px; height:32px; font-size:0.8rem;">Reject</button><br>
+                                    <button onclick="deleteUser('${u.userId}')" class="btn-admin" style="background:#6B7280; color:white; width:90px; height:32px; font-size:0.8rem;">Delete</button>
                                 </div>
                             </div>
                         </div>

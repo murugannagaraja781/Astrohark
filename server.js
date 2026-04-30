@@ -26,6 +26,7 @@ const Banner = require('./models/Banner');
 const AccountDeletionRequest = require('./models/AccountDeletionRequest');
 const GlobalSettings = require('./models/GlobalSettings');
 const Ritual = require('./models/Ritual');
+const Feedback = require('./models/Feedback');
 
 const {
   userSockets,
@@ -1511,6 +1512,24 @@ io.on('connection', (socket) => {
     if (typeof cb === 'function') cb({ astrologers: formatted });
   });
 
+  socket.on('send-feedback', async (data, cb) => {
+    const userId = socketToUser.get(socket.id);
+    if (!userId || !data.message) return cb({ ok: false, error: 'Invalid data' });
+
+    try {
+      const user = await User.findOne({ userId });
+      await Feedback.create({
+        userId,
+        userName: user ? user.name : 'Unknown User',
+        message: data.message
+      });
+      if (typeof cb === 'function') cb({ ok: true });
+    } catch (e) {
+      console.error('Feedback Error:', e);
+      if (typeof cb === 'function') cb({ ok: false, error: 'Database error' });
+    }
+  });
+
   // --- Toggle Status (Astrologer Only) ---
   socket.on('toggle-status', async (data) => {
     const userId = data.userId || socketToUser.get(socket.id);
@@ -2277,8 +2296,21 @@ io.on('connection', (socket) => {
         onlineClients: onlineClients
       };
 
+      // Live Video Astrologers Data
+      let liveAstrologersData = [];
+      if (activeSessions && activeSessions.size > 0) {
+        let liveAstroIds = [];
+        for (let session of activeSessions.values()) {
+          liveAstroIds = liveAstroIds.concat(session.users);
+        }
+        liveAstrologersData = await User.find(
+          { userId: { $in: liveAstroIds }, role: 'astrologer' },
+          { name: 1, image: 1, userId: 1, isBusy: 1 }
+        ).lean();
+      }
+
       if (typeof cb === 'function') {
-        cb({ ok: true, stats, fullLedger });
+        cb({ ok: true, stats, fullLedger, liveAstrologersData });
       }
     } catch (e) {
       console.error('[AdminStats] Error:', e);

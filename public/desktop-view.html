@@ -2161,7 +2161,7 @@
               <!-- Match -->
               <div class="service-item-card" onclick="openPoruthamModal()">
                 <div class="service-icon-wrapper">
-                  <img src="images/match_icon.png" alt="Match">
+                  <img src="images/match_icon_new.png" alt="Match">
                 </div>
                 <span>Horoscope Match</span>
               </div>
@@ -2170,7 +2170,7 @@
               <div class="service-item-card"
                 onclick="document.getElementById('dailyHoroscopeSection').scrollIntoView({behavior:'smooth'})">
                 <div class="service-icon-wrapper">
-                  <img src="images/daily_horoscope_icon.png" alt="Daily">
+                  <img src="images/daily_horoscope_new.png" alt="Daily">
                 </div>
                 <span>Daily Prediction</span>
               </div>
@@ -2178,7 +2178,7 @@
               <!-- Academy -->
               <div class="service-item-card" onclick="openAcademyModal()">
                 <div class="service-icon-wrapper">
-                  <img src="images/academy_icon.png" alt="Academy">
+                  <img src="images/academy_icon_new.png" alt="Academy">
                 </div>
                 <span>Astro Academy</span>
               </div>
@@ -2320,6 +2320,30 @@
             </div>
           </div>
 
+          <!-- Live Astrologers Visibility -->
+          <div id="liveAstrosSection" style="display: none; margin-bottom: 35px; background: rgba(255,255,255,0.02); border-radius: 20px; padding: 25px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+              <h3 style="margin:0; font-family:var(--font-heading); font-size:1.5rem; color:white; display: flex; align-items: center; gap: 15px;">
+                <span class="live-pulse" style="width: 12px; height: 12px; background: #EF4444; border-radius: 50%; box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);"></span>
+                லைவ் ஜோதிடர்கள் <small style="font-size: 0.9rem; color: var(--text-dim); margin-left: 10px;">(Astrologers Live Now)</small>
+              </h3>
+            </div>
+            <div id="liveAstrosList" style="display: flex; overflow-x: auto; gap: 25px; padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: var(--primary) transparent;">
+              <!-- Dynamic items will be injected here -->
+            </div>
+          </div>
+
+          <div class="search-container" style="margin-bottom: 25px; max-width: 500px;">
+            <div style="position: relative;">
+              <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 1rem;"></i>
+              <input type="text" id="astroSearchInput" placeholder="Search Astrologer Name or ID..." 
+                     style="width: 100%; padding: 14px 14px 14px 45px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; font-size: 1rem; outline: none; transition: 0.3s;"
+                     onfocus="this.style.borderColor='var(--primary)'; this.style.background='rgba(255,255,255,0.08)'"
+                     onblur="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.background='rgba(255,255,255,0.05)'"
+                     oninput="handleAstroSearch(this.value)">
+            </div>
+          </div>
+
           <div class="filter-section" id="section-consult">
             <div class="filter-tabs" id="topFilterTabs">
               <div class="tab active" onclick="filterAstros('all')">All</div>
@@ -2333,6 +2357,47 @@
             <div class="loading-spinner" style="padding: 40px; text-align: center;">
               <i class="fas fa-circle-notch fa-spin" style="font-size: 2rem; color: #FF7F00;"></i>
               <p style="margin-top: 10px; color: #9CA3AF;">Loading Astrologers...</p>
+            </div>
+          </div>
+
+          <!-- Feedback Section -->
+          <div id="feedbackSection" style="margin-bottom: 35px; background: rgba(255,127,0,0.03); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,127,0,0.1); display: flex; gap: 30px; align-items: center;">
+            <div style="flex: 1;">
+              <h3 style="margin:0 0 10px 0; font-family:var(--font-heading); font-size:1.4rem; color:white;"><i class="fas fa-comment-dots" style="color:var(--primary);"></i> கருத்துக்களை பகிரவும்</h3>
+              <p style="color:var(--text-muted); font-size: 0.95rem; margin: 0;">உங்கள் அனுபவத்தை எங்களுடன் பகிர்ந்து கொள்ளுங்கள். (Share your experience with us.)</p>
+            </div>
+            <div style="flex: 2; display: flex; gap: 15px;">
+              <textarea id="userFeedbackText" placeholder="Write your feedback here..." style="flex: 1; height: 60px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; padding: 15px; font-size: 1rem; resize: none;"></textarea>
+              <button onclick="submitUserFeedback()" style="background: var(--primary); color: white; border: none; padding: 0 30px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; height: 60px;">Send</button>
+            </div>
+          </div>
+
+          <!-- Trust & Policy Section -->
+          <div class="trust-policy-section" style="margin: 40px 0; background: var(--bg-card); border-radius: var(--radius-lg); padding: 30px; border: 1px solid var(--border-soft); box-shadow: var(--shadow-elevation);">
+            <div style="display: flex; justify-content: space-around; align-items: center; gap: 30px;">
+              <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <div style="width: 60px; height: 60px; background: rgba(255,127,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🔐</div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <span style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Privacy Policy</span>
+                  <span style="font-size: 0.9rem; color: var(--text-muted);">பயனர் தகவல் பாதுகாப்பு</span>
+                </div>
+              </div>
+              <div style="width: 1px; height: 80px; background: var(--border-soft);"></div>
+              <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <div style="width: 60px; height: 60px; background: rgba(255,127,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">💰</div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <span style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Refund Policy</span>
+                  <span style="font-size: 0.9rem; color: var(--text-muted);">பணம் திரும்ப பெறும் வசதி</span>
+                </div>
+              </div>
+              <div style="width: 1px; height: 80px; background: var(--border-soft);"></div>
+              <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+                <div style="width: 60px; height: 60px; background: rgba(255,127,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🛡️</div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                  <span style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Secure Payments</span>
+                  <span style="font-size: 0.9rem; color: var(--text-muted);">பாதுகாப்பான payment system</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -3739,7 +3804,7 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="https://unpkg.com/simple-peer/simplepeer.min.js"></script>
   <script>
-    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta', signalBuffer: [] };
+    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta', signalBuffer: [], astroList: [] };
     window.state = state; // Expose for Android onResume wallet refresh
 
     // --- Translation Logic ---
@@ -4846,9 +4911,40 @@
 
     };
 
+    window.handleAstroSearch = function (query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        renderAstroList(state.astroList);
+        return;
+      }
+      const filtered = state.astroList.filter(a => 
+        (a.name && a.name.toLowerCase().includes(q)) || 
+        (a.userId && a.userId.toLowerCase().includes(q)) ||
+        (a.skills && a.skills.some(s => s.toLowerCase().includes(q)))
+      );
+      renderAstroList(filtered);
+    };
+
     window.filterAstros = function (type) {
-      // Simple mock filter
-      renderAstroList(state.astroList);
+      // Update UI tabs
+      document.querySelectorAll('#topFilterTabs .tab').forEach(t => t.classList.remove('active'));
+      const tabs = document.querySelectorAll('#topFilterTabs .tab');
+      tabs.forEach(t => {
+        if (t.textContent.toLowerCase() === type.toLowerCase()) {
+          t.classList.add('active');
+        }
+      });
+
+      if (type === 'all') {
+        renderAstroList(state.astroList);
+      } else {
+        const filtered = state.astroList.filter(a => 
+          (a.skills && a.skills.some(s => s.toLowerCase().includes(type.toLowerCase()))) ||
+          (a.expertise && a.expertise && a.expertise.toLowerCase().includes(type.toLowerCase())) ||
+          (a.profession && a.profession.toLowerCase().includes(type.toLowerCase()))
+        );
+        renderAstroList(filtered);
+      }
     };
 
     window.showProfile = function () {
@@ -4926,9 +5022,32 @@
 
     function renderAstroList(list) {
       const container = document.getElementById('astroList');
+      const liveContainer = document.getElementById('liveAstrosList');
+      const liveSection = document.getElementById('liveAstrosSection');
+      
       container.innerHTML = '';
-
       const astrologers = list || [];
+
+      // Update Live Astros Carousel
+      const liveAstros = astrologers.filter(a => a.isBusy);
+      if (liveAstros.length > 0) {
+        if (liveSection) liveSection.style.display = 'block';
+        if (liveContainer) {
+          liveContainer.innerHTML = liveAstros.map(a => `
+            <div style="flex:0 0 auto; width:120px; text-align:center; position:relative; cursor:pointer;" onclick="openAstroProfile(${JSON.stringify(a).replace(/"/g, '&quot;')})">
+              <div style="position:relative; width:90px; height:90px; margin:0 auto 10px auto; transition:0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <img src="${a.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(a.name) + '&background=random'}" 
+                     style="width:100%; height:100%; border-radius:50%; object-fit:cover; border:3px solid #EF4444; box-shadow: 0 0 15px rgba(239, 68, 68, 0.3);">
+                <div style="position:absolute; bottom:0; left:50%; transform:translateX(-50%); background:#EF4444; color:white; font-size:0.7rem; font-weight:900; padding:2px 8px; border-radius:6px; white-space:nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">LIVE</div>
+              </div>
+              <div style="font-size:0.9rem; font-weight:700; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a.name}</div>
+              <div style="font-size:0.75rem; color:var(--text-dim);">${a.skills ? a.skills[0] : ''}</div>
+            </div>
+          `).join('');
+        }
+      } else {
+        if (liveSection) liveSection.style.display = 'none';
+      }
 
       // Sort: Online First, then by Order Count (desc)
       astrologers.sort((a, b) => {
@@ -8660,6 +8779,34 @@
     $(document).ready(function () {
       setTimeout(showAppDownloadModal, 2000);
     });
+
+    window.showSuccessModal = function(title, message) {
+      const modal = document.getElementById('cosmicSuccessModal');
+      if (!modal) return alert(message);
+      document.getElementById('modalTitle').innerText = title || 'Success!';
+      document.getElementById('modalMessage').innerText = message || 'Done successfully.';
+      modal.style.display = 'flex';
+    };
+
+    window.closeCosmicModal = function() {
+      const modal = document.getElementById('cosmicSuccessModal');
+      if (modal) modal.style.display = 'none';
+    };
+
+    window.submitUserFeedback = function() {
+      const msg = document.getElementById('userFeedbackText').value.trim();
+      if (!msg) return alert('Please enter your feedback');
+      if (state.me.role === 'guest') return showLogin();
+
+      socket.emit('send-feedback', { message: msg }, (res) => {
+        if (res.ok) {
+          showSuccessModal('நன்றி! (Thank You)', 'உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. (Your feedback has been submitted successfully.)');
+          document.getElementById('userFeedbackText').value = '';
+        } else {
+          alert('Error: ' + res.error);
+        }
+      });
+    };
   </script>
   <style>
     /* Hero Section Styles */

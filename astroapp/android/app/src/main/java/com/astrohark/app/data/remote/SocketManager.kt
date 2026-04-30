@@ -425,6 +425,21 @@ object SocketManager {
         })
     }
 
+    fun sendFeedback(message: String, callback: ((Boolean) -> Unit)? = null) {
+        val payload = JSONObject().apply {
+            put("message", message)
+        }
+        socket?.emit("send-feedback", payload, Ack { args ->
+            val success = if (args != null && args.isNotEmpty()) {
+                val response = args[0] as? JSONObject
+                response?.optBoolean("ok") == true
+            } else {
+                false
+            }
+            callback?.invoke(success)
+        })
+    }
+
     fun disconnect() {
         socket?.disconnect()
         socket = null

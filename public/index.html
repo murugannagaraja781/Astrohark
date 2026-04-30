@@ -2039,7 +2039,98 @@
             justify-content: center;
             color: #9ca3af;
           }
+
+          /* Success Modal Styling */
+          .cosmic-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+          }
+
+          .cosmic-modal-content {
+            background: linear-gradient(145deg, #1A140F, #0A0806);
+            border: 1px solid var(--primary);
+            border-radius: 24px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+            animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          }
+
+          @keyframes modalPop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+
+          .success-checkmark {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px auto;
+            border-radius: 50%;
+            background: rgba(0, 255, 136, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1.8rem;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow);
+          }
+
+          .modal-title {
+            font-family: var(--font-heading);
+            font-size: 1.2rem;
+            color: white;
+            margin-bottom: 8px;
+          }
+
+          .modal-message {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+          }
+
+          .modal-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+          }
         </style>
+
+        <div id="cosmicSuccessModal" class="cosmic-modal-overlay">
+          <div class="cosmic-modal-content">
+            <div class="success-checkmark"><i class="fas fa-check"></i></div>
+            <h4 class="modal-title" id="modalTitle">Success!</h4>
+            <p class="modal-message" id="modalMessage">Your feedback has been submitted successfully.</p>
+            <button class="modal-btn" onclick="closeCosmicModal()">Close</button>
+          </div>
+        </div>
+
+        <!-- Live Astrologers Visibility -->
+        <div id="liveAstrosSection" style="display: none; margin-bottom: 25px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 5px;">
+            <h3 style="margin:0; font-family:var(--font-heading); font-size:1.1rem; color:var(--text-main); display: flex; align-items: center; gap: 10px;">
+              <span class="live-pulse" style="width: 10px; height: 10px; background: #EF4444; border-radius: 50%; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);"></span>
+              லைவ் ஜோதிடர்கள் <small style="font-size: 0.7rem; color: var(--text-dim); margin-left: 5px;">(Live Now)</small>
+            </h3>
+          </div>
+          <div id="liveAstrosList" style="display: flex; overflow-x: auto; gap: 15px; padding: 5px 5px 15px 5px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+            <!-- Dynamic items will be injected here -->
+          </div>
+        </div>
 
         <!-- Premium Services Grid -->
         <div class="services-grid-container"
@@ -2051,16 +2142,16 @@
               <span>Free Horoscope</span>
             </div>
             <div class="service-item-card" onclick="openPoruthamModal()">
-              <img src="images/match_icon.png" alt="Match">
+              <img src="images/match_icon_new.png" alt="Match">
               <span>Horoscope Match</span>
             </div>
             <div class="service-item-card"
               onclick="document.getElementById('dailyHoroscopeSection').scrollIntoView({behavior:'smooth'})">
-              <img src="images/daily_horoscope_icon.png" alt="Daily">
+              <img src="images/daily_horoscope_new.png" alt="Daily">
               <span>Daily Horoscope</span>
             </div>
             <div class="service-item-card" onclick="openAcademyModal()">
-              <img src="images/academy_icon.png" alt="Academy">
+              <img src="images/academy_icon_new.png" alt="Academy">
               <span>Astro Academy</span>
             </div>
             <div class="service-item-card" onclick="alert('For free services, please contact: info@Astrohark.com')">
@@ -2151,13 +2242,58 @@
           </div>
         </div>
 
+        <div class="search-container" style="margin-bottom: 15px;">
+          <div style="position: relative;">
+            <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
+            <input type="text" id="astroSearchInput" placeholder="Search Astrologer Name or ID..." 
+                   style="width: 100%; padding: 12px 12px 12px 40px; background: var(--bg-card); border: 1px solid var(--border-soft); border-radius: var(--radius-md); color: var(--text-main); font-size: 0.95rem;"
+                   oninput="handleAstroSearch(this.value)">
+          </div>
+        </div>
+
         <div class="filter-tabs" id="topFilterTabs">
-          <div class="tab" onclick="filterAstros('all')">All</div>
+          <div class="tab active" onclick="filterAstros('all')">All</div>
           <div class="tab" onclick="filterAstros('love')">Love</div>
           <div class="tab" onclick="filterAstros('career')">Career</div>
         </div>
         <div id="astroList">
           <!-- Dynamic Content -->
+        </div>
+
+        <!-- Feedback Section -->
+        <div id="feedbackSection" style="margin-bottom: 25px; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; border: 1px solid var(--border-soft);">
+          <h3 style="margin:0 0 12px 0; font-family:var(--font-heading); font-size:1rem; color:var(--text-main);"><i class="fas fa-comment-dots" style="color:var(--primary);"></i> கருத்துக்களை பகிரவும் <small style="font-size:0.75rem; color:var(--text-dim);">(Share Feedback)</small></h3>
+          <textarea id="userFeedbackText" placeholder="உங்கள் கருத்துக்களை இங்கே பதிவிடவும்... (Your feedback here)" style="width:100%; height:80px; background:rgba(0,0,0,0.2); border:1px solid var(--border-soft); border-radius:8px; color:white; padding:10px; font-size:0.9rem; resize:none; margin-bottom:10px;"></textarea>
+          <button onclick="submitUserFeedback()" style="width:100%; background:var(--primary); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">கருத்தை அனுப்பவும் (Send Feedback)</button>
+        </div>
+
+        <!-- Trust & Policy Section -->
+        <div class="trust-policy-section" style="margin-top: 25px; margin-bottom: 25px; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; border: 1px solid var(--border-soft);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+            <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <div style="width: 40px; height: 40px; background: rgba(255,127,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🔐</div>
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-main); line-height: 1.2;">Privacy Policy</span>
+                <span style="font-size: 0.6rem; color: var(--text-muted); line-height: 1.2;">பயனர் பாதுகாப்பு</span>
+              </div>
+            </div>
+            <div style="width: 1px; height: 40px; background: var(--border-soft); align-self: center;"></div>
+            <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <div style="width: 40px; height: 40px; background: rgba(255,127,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">💰</div>
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-main); line-height: 1.2;">Refund Policy</span>
+                <span style="font-size: 0.6rem; color: var(--text-muted); line-height: 1.2;">பணம் திரும்ப</span>
+              </div>
+            </div>
+            <div style="width: 1px; height: 40px; background: var(--border-soft); align-self: center;"></div>
+            <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <div style="width: 40px; height: 40px; background: rgba(255,127,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🛡️</div>
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-main); line-height: 1.2;">Secure Pay</span>
+                <span style="font-size: 0.6rem; color: var(--text-muted); line-height: 1.2;">பாதுகாப்பான முறை</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3338,7 +3474,7 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="https://unpkg.com/simple-peer/simplepeer.min.js"></script>
   <script>
-    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta', signalBuffer: [] };
+    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta', signalBuffer: [], astroList: [] };
     let allBanners = []; // Global store for banner data
     window.state = state; // Expose for Android onResume wallet refresh
 
@@ -4450,9 +4586,40 @@
 
     };
 
+    window.handleAstroSearch = function (query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        renderAstroList(state.astroList);
+        return;
+      }
+      const filtered = state.astroList.filter(a => 
+        (a.name && a.name.toLowerCase().includes(q)) || 
+        (a.userId && a.userId.toLowerCase().includes(q)) ||
+        (a.skills && a.skills.some(s => s.toLowerCase().includes(q)))
+      );
+      renderAstroList(filtered);
+    };
+
     window.filterAstros = function (type) {
-      // Simple mock filter
-      renderAstroList(state.astroList);
+      // Update UI tabs
+      document.querySelectorAll('#topFilterTabs .tab').forEach(t => t.classList.remove('active'));
+      const tabs = document.querySelectorAll('#topFilterTabs .tab');
+      tabs.forEach(t => {
+        if (t.textContent.toLowerCase() === type.toLowerCase()) {
+          t.classList.add('active');
+        }
+      });
+
+      if (type === 'all') {
+        renderAstroList(state.astroList);
+      } else {
+        const filtered = state.astroList.filter(a => 
+          (a.skills && a.skills.some(s => s.toLowerCase().includes(type.toLowerCase()))) ||
+          (a.expertise && a.expertise && a.expertise.toLowerCase().includes(type.toLowerCase())) ||
+          (a.profession && a.profession.toLowerCase().includes(type.toLowerCase()))
+        );
+        renderAstroList(filtered);
+      }
     };
 
     window.showProfile = function () {
@@ -4530,9 +4697,29 @@
 
     function renderAstroList(list) {
       const container = document.getElementById('astroList');
+      const liveContainer = document.getElementById('liveAstrosList');
+      const liveSection = document.getElementById('liveAstrosSection');
+      
       container.innerHTML = '';
-
       const astrologers = list || [];
+
+      // Update Live Astros Carousel
+      const liveAstros = astrologers.filter(a => a.isBusy);
+      if (liveAstros.length > 0) {
+        liveSection.style.display = 'block';
+        liveContainer.innerHTML = liveAstros.map(a => `
+          <div style="flex:0 0 auto; width:70px; text-align:center; position:relative;" onclick="openAstroProfile(${JSON.stringify(a).replace(/"/g, '&quot;')})">
+            <div style="position:relative; width:60px; height:60px; margin:0 auto 5px auto;">
+              <img src="${a.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(a.name) + '&background=random'}" 
+                   style="width:100%; height:100%; border-radius:50%; object-fit:cover; border:2px solid #EF4444;">
+              <div style="position:absolute; bottom:-2px; left:50%; transform:translateX(-50%); background:#EF4444; color:white; font-size:0.5rem; font-weight:800; padding:1px 4px; border-radius:4px; white-space:nowrap;">LIVE</div>
+            </div>
+            <div style="font-size:0.65rem; font-weight:600; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a.name}</div>
+          </div>
+        `).join('');
+      } else {
+        liveSection.style.display = 'none';
+      }
 
       // Sort: Online First, then by Order Count (desc)
       astrologers.sort((a, b) => {
@@ -4554,19 +4741,14 @@
 
         // REAL Trust Markers from DB
         const orderCount = a.orderCount || Math.floor(Math.random() * 500) + 100; // Fallback if not in DB yet
-        const languages = a.languages || ['Tamil', 'English'];
         const isVerified = a.isVerified; // Real DB Value
-        const isDocsVerified = a.isDocumentVerified; // Real DB Value
-        const isTopChoice = a.isTopChoice; // Optional extra field if added later
 
         div.innerHTML = `
-          ${isTopChoice ? '<div class="ribbon"><span>Recommended</span></div>' : ''}
-
           <div class="card-top-row">
               <div class="astro-img-wrapper">
                   <img src="${a.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(a.name) + '&background=random'}"
                        class="astro-img" style="border: 2px solid var(--primary);">
-                  <div class="status-badge ${a.isOnline ? 'online' : ''}" style="background: ${a.isOnline ? '#10B981' : '#666'}; border-color: #241A12;"></div>
+                  <div class="status-badge ${a.isOnline ? 'online' : ''}" style="background: ${a.isOnline ? '#10B981' : '#666'}; border-color: #241A12;">${a.isBusy ? '<i class="fas fa-video" style="font-size:0.5rem; color:white;"></i>' : ''}</div>
               </div>
 
               <div class="astro-details">
@@ -4604,6 +4786,31 @@
         container.appendChild(div);
       });
     }
+
+    window.showSuccessModal = function(title, message) {
+      document.getElementById('modalTitle').innerText = title || 'Success!';
+      document.getElementById('modalMessage').innerText = message || 'Done successfully.';
+      document.getElementById('cosmicSuccessModal').style.display = 'flex';
+    };
+
+    window.closeCosmicModal = function() {
+      document.getElementById('cosmicSuccessModal').style.display = 'none';
+    };
+
+    window.submitUserFeedback = function() {
+      const msg = document.getElementById('userFeedbackText').value.trim();
+      if (!msg) return alert('Please enter your feedback');
+      if (state.me.role === 'guest') return showLogin();
+
+      socket.emit('send-feedback', { message: msg }, (res) => {
+        if (res.ok) {
+          showSuccessModal('நன்றி! (Thank You)', 'உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. (Your feedback has been submitted successfully.)');
+          document.getElementById('userFeedbackText').value = '';
+        } else {
+          alert('Error: ' + res.error);
+        }
+      });
+    };
 
     // Astrologer Dashboard Logic
     function loadAstroDash(user) {

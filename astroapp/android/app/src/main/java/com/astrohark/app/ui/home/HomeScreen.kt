@@ -398,6 +398,7 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     var selectedTab by remember { mutableIntStateOf(0) }
     var selectedFilter by remember { mutableStateOf("All") }
+    var searchQuery by remember { mutableStateOf("") }
     var showReferralDialog by remember { mutableStateOf(false) }
     var referralInput by remember { mutableStateOf("") }
     var isApplyingReferral by remember { mutableStateOf(false) }
@@ -503,7 +504,7 @@ fun HomeScreen(
     var isTamil by rememberSaveable { mutableStateOf(true) }
 
     // Logic to filter astrologers based on selection
-    val filteredAstros = remember(astrologers, selectedFilter) {
+    val filteredAstros = remember(astrologers, selectedFilter, searchQuery) {
         val baseList = if (selectedFilter == "All") {
             astrologers
         } else {
@@ -517,9 +518,20 @@ fun HomeScreen(
                 }
             }
         }
+
+        val searchedList = if (searchQuery.isEmpty()) {
+            baseList
+        } else {
+            baseList.filter { astro ->
+                astro.name.contains(searchQuery, ignoreCase = true) ||
+                (astro.userId != null && astro.userId.contains(searchQuery, ignoreCase = true)) ||
+                astro.skills.any { it.contains(searchQuery, ignoreCase = true) }
+            }
+        }
+
         // User Request: Show offline astros too. 
         // We sort by online status so online ones are always at top.
-        baseList.sortedWith(compareByDescending<com.astrohark.app.data.model.Astrologer> { it.isOnline }
+        searchedList.sortedWith(compareByDescending<com.astrohark.app.data.model.Astrologer> { it.isOnline }
             .thenBy { it.isBusy })
     }
 
@@ -769,7 +781,7 @@ fun HomeScreen(
                             }
 
                         )
-                        1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } }, isTamil)
+                        1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } }, isTamil, searchQuery, { searchQuery = it })
                         2 -> RitualsTab(rituals, isTamil)
                         3 -> ProfileTab(walletBalance, isTamil, onWalletClick, onDrawerItemClick, onLogoutClick)
                         4 -> ReferralTab(referralCode, shareLink, isTamil, isNewUser, onApplyReferral)
@@ -831,6 +843,85 @@ fun SupportAndPoliciesSection() {
     }
 }
 
+@Composable
+fun TrustAndPolicySection(isTamil: Boolean) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .background(CosmicAppTheme.colors.cardBg.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .border(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.Top
+        ) {
+            TrustItem(
+                icon = "🔐",
+                title = "Privacy Policy",
+                subtitle = if(isTamil) "பயனர் பாதுகாப்பு" else "User Privacy",
+                modifier = Modifier.weight(1f)
+            )
+            
+            Box(modifier = Modifier.width(1.dp).height(50.dp).background(Color.LightGray.copy(alpha = 0.3f)).align(Alignment.CenterVertically))
+            
+            TrustItem(
+                icon = "💰",
+                title = "Refund Policy",
+                subtitle = if(isTamil) "பணம் திரும்ப" else "Refund Policy",
+                modifier = Modifier.weight(1f)
+            )
+            
+            Box(modifier = Modifier.width(1.dp).height(50.dp).background(Color.LightGray.copy(alpha = 0.3f)).align(Alignment.CenterVertically))
+            
+            TrustItem(
+                icon = "🛡️",
+                title = "Secure Pay",
+                subtitle = if(isTamil) "பாதுகாப்பான முறை" else "Secure Payment",
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+fun TrustItem(icon: String, title: String, subtitle: String, modifier: Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = CosmicAppTheme.colors.accent.copy(alpha = 0.1f),
+            modifier = Modifier.size(44.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(icon, fontSize = 20.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+            color = CosmicAppTheme.colors.textPrimary,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+            color = CosmicAppTheme.colors.textSecondary,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
 fun LazyListScope.HomeTab(
     walletBalance: Double,
     isTamil: Boolean,
@@ -872,6 +963,10 @@ fun LazyListScope.HomeTab(
     }
 
     item {
+        LiveVideoSection(filteredAstros, { onChatClick(it) }, isTamil)
+    }
+
+    item {
         Spacer(modifier = Modifier.height(8.dp))
         if (isLoading) AstrologerShimmerItem()
         else {
@@ -894,7 +989,248 @@ fun LazyListScope.HomeTab(
     }
 
     item {
+        FeedbackSection(isTamil)
+    }
+
+    item {
+        TrustAndPolicySection(isTamil)
+    }
+
+    item {
         SupportAndPoliciesSection()
+    }
+}
+
+@Composable
+fun LiveVideoSection(
+    astrologers: List<Astrologer>,
+    onAstroClick: (Astrologer) -> Unit,
+    isTamil: Boolean
+) {
+    val liveAstros = astrologers.filter { it.isBusy }
+    if (liveAstros.isEmpty()) return
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val infiniteTransition = rememberInfiniteTransition()
+            val alpha by infiniteTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 0.3f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(800, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse
+                ), label = "pulse"
+            )
+
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .graphicsLayer { this.alpha = alpha }
+                    .clip(CircleShape)
+                    .background(Color.Red)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = if (isTamil) "லைவ் வீடியோ ஜோதிடர்கள்" else "Live Video Astrologers",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                color = CosmicAppTheme.colors.textPrimary
+            )
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            liveAstros.forEach { astro ->
+                LiveAstroItem(astro, onAstroClick)
+            }
+        }
+    }
+}
+
+@Composable
+fun LiveAstroItem(astro: Astrologer, onClick: (Astrologer) -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable { onClick(astro) }.width(70.dp)
+    ) {
+        Box(contentAlignment = Alignment.BottomCenter) {
+            AsyncImage(
+                model = getImageUrl(astro.image),
+                contentDescription = astro.name,
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(CircleShape)
+                    .border(2.dp, Color.Red, CircleShape),
+                contentScale = ContentScale.Crop
+            )
+            Surface(
+                color = Color.Red,
+                shape = RoundedCornerShape(4.dp),
+                modifier = Modifier.offset(y = 4.dp)
+            ) {
+                Text(
+                    "LIVE",
+                    color = Color.White,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Black,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = astro.name ?: "",
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+            color = CosmicAppTheme.colors.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun FeedbackSection(isTamil: Boolean) {
+    var feedbackText by remember { mutableStateOf("") }
+    var isSending by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    if (showSuccessDialog) {
+        SuccessDialog(
+            isTamil = isTamil,
+            onDismiss = { showSuccessDialog = false }
+        )
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg.copy(alpha = 0.5f)),
+        border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = if (isTamil) "கருத்துக்களை பகிரவும் (Share Feedback)" else "Share Feedback",
+                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                color = CosmicAppTheme.colors.textPrimary
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = feedbackText,
+                onValueChange = { feedbackText = it },
+                modifier = Modifier.fillMaxWidth().height(100.dp),
+                placeholder = { Text(if (isTamil) "உங்கள் கருத்துக்களை இங்கே பதிவிடவும்..." else "Write your feedback here...", fontSize = 12.sp, color = Color.Gray) },
+                textStyle = MaterialTheme.typography.bodySmall.copy(color = CosmicAppTheme.colors.textPrimary),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = CosmicAppTheme.colors.accent,
+                    unfocusedBorderColor = CosmicAppTheme.colors.cardStroke,
+                    cursorColor = CosmicAppTheme.colors.accent
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+                onClick = {
+                    if (feedbackText.trim().isEmpty()) {
+                        Toast.makeText(context, "Please enter feedback", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
+                    isSending = true
+                    com.astrohark.app.data.remote.SocketManager.sendFeedback(feedbackText) { success ->
+                        scope.launch(Dispatchers.Main) {
+                            isSending = false
+                            if (success) {
+                                feedbackText = ""
+                                showSuccessDialog = true
+                            } else {
+                                Toast.makeText(context, "Failed to send feedback", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = CosmicAppTheme.colors.accent),
+                shape = RoundedCornerShape(12.dp),
+                enabled = !isSending
+            ) {
+                if (isSending) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                } else {
+                    Text(if (isTamil) "கருத்தை அனுப்பவும்" else "Send Feedback", fontWeight = FontWeight.Bold, color = Color.Black)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SuccessDialog(isTamil: Boolean, onDismiss: () -> Unit) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
+            border = BorderStroke(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.5f))
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .clip(CircleShape)
+                        .background(CosmicAppTheme.colors.accent.copy(alpha = 0.1f))
+                        .border(2.dp, CosmicAppTheme.colors.accent, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = "Success",
+                        tint = CosmicAppTheme.colors.accent,
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = if (isTamil) "நன்றி!" else "Thank You!",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = if (isTamil) "உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது." else "Your feedback has been submitted successfully.",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = CosmicAppTheme.colors.textSecondary
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = CosmicAppTheme.colors.accent),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(if (isTamil) "சரி" else "Close", color = Color.Black, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
     }
 }
 
@@ -905,8 +1241,37 @@ fun LazyListScope.ConsultTab(
     astrologers: List<Astrologer>,
     onChatClick: (Astrologer) -> Unit,
     onCallClick: (Astrologer, String) -> Unit,
-    isTamil: Boolean
+    isTamil: Boolean,
+    searchQuery: String,
+    onSearchChange: (String) -> Unit
 ) {
+    item {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            placeholder = { Text(if (isTamil) "பெயர் அல்லது ஐடியைத் தேடுங்கள்" else "Search Name or ID...") },
+            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = CosmicAppTheme.colors.accent) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { onSearchChange("") }) {
+                        Icon(Icons.Rounded.Close, contentDescription = null, tint = Color.Gray)
+                    }
+                }
+            },
+            shape = RoundedCornerShape(12.dp),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = CosmicAppTheme.colors.accent,
+                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
+            )
+        )
+    }
+
     items(astrologers) { astro ->
         AstrologerCard(
             astro = astro,

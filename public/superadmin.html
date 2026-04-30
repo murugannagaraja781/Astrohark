@@ -129,6 +129,49 @@
                     LIVE REAL-TIME ACTIVITY
                 </div>
 
+                <!-- Live Video Astrologers Visibility -->
+                <div id="liveVideoAstrosSection" style="margin-bottom: 25px; display: none;">
+                    <div id="liveVideoAstrosList" style="display: flex; overflow-x: auto; gap: 15px; padding: 5px 5px 15px 5px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth;">
+                        <!-- Dynamic items will be injected here -->
+                    </div>
+                </div>
+                <style>
+                    #liveVideoAstrosList::-webkit-scrollbar { display: none; }
+                    .live-astro-chip {
+                        flex: 0 0 auto;
+                        background: var(--bg-card);
+                        border: 1px solid var(--border-soft);
+                        border-radius: 15px;
+                        padding: 10px 15px;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        min-width: 180px;
+                        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+                        position: relative;
+                        overflow: hidden;
+                        border-bottom: 2px solid #10B981;
+                    }
+                    .live-badge {
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        background: #EF4444;
+                        color: white;
+                        font-size: 0.6rem;
+                        font-weight: 800;
+                        padding: 2px 6px;
+                        border-radius: 4px;
+                        letter-spacing: 0.5px;
+                        animation: pulse-red 2s infinite;
+                    }
+                    @keyframes pulse-red {
+                        0% { transform: scale(1); opacity: 1; }
+                        50% { transform: scale(1.05); opacity: 0.8; }
+                        100% { transform: scale(1); opacity: 1; }
+                    }
+                </style>
+
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-bottom: 25px;">
                     <div class="admin-card" style="display:flex; align-items:center; gap:15px; padding:15px; border-bottom:3px solid #10B981; background:rgba(16,185,129,0.02);">
                         <div style="width:40px; height:40px; border-radius:10px; background:rgba(16,185,129,0.1); display:flex; align-items:center; justify-content:center; color:#10B981; font-size:1.2rem;">
@@ -1037,8 +1080,40 @@
 
                     renderLedger(res.fullLedger);
                     renderChart(res.stats);
+                    renderLiveAstros(res.liveAstrologersData);
                 }
             });
+        }
+
+        function getImageUrl(path) {
+            if (!path) return 'images/default-astro.png';
+            if (path.startsWith('http')) return path;
+            return path.startsWith('/') ? path : '/' + path;
+        }
+
+        function renderLiveAstros(liveAstros) {
+            const container = document.getElementById('liveVideoAstrosList');
+            const section = document.getElementById('liveVideoAstrosSection');
+            
+            if (!liveAstros || liveAstros.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            container.innerHTML = liveAstros.map(astro => `
+                <div class="live-astro-chip">
+                    <div class="live-badge">LIVE</div>
+                    <img src="${getImageUrl(astro.image)}" onerror="this.src='images/default-astro.png'" style="width:45px; height:45px; border-radius:12px; object-fit:cover; border:2px solid var(--border-soft);">
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:700; font-size:0.85rem; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${astro.name}</div>
+                        <div style="font-size:0.65rem; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+                            <span style="width:6px; height:6px; background:#10B981; border-radius:50%;"></span>
+                            Active Session
+                        </div>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function fetchAllUsers() {

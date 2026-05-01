@@ -1402,8 +1402,16 @@ io.on('connection', (socket) => {
         return cb({ ok: false, error: 'Mandatory fields missing' });
       }
 
+      const normalizePhone = (p) => {
+        if (!p) return p;
+        const clean = p.replace(/\D/g, '');
+        return clean.length === 10 ? '91' + clean : clean;
+      };
+
+      const finalPhone = normalizePhone(cellNumber1);
+
       // Check if phone already exists
-      const existing = await User.findOne({ phone: cellNumber1 });
+      const existing = await User.findOne({ phone: finalPhone });
       if (existing) {
         return cb({ ok: false, error: 'Phone number already registered' });
       }
@@ -1411,7 +1419,7 @@ io.on('connection', (socket) => {
       const userId = 'ASTRO_' + Date.now() + Math.floor(Math.random() * 1000);
       const newUser = new User({
         userId,
-        phone: cellNumber1,
+        phone: finalPhone,
         name: displayName || realName,
         realName,
         gender,
@@ -2227,9 +2235,16 @@ io.on('connection', (socket) => {
       const { name, phone, email, image, price, experience, skills, profession, aadharNumber, panNumber, bankDetails, upiId } = data;
       
       if (!name || !phone) return cb({ ok: false, error: 'Missing name or phone' });
+      
+      const normalizePhone = (p) => {
+        if (!p) return p;
+        const clean = p.replace(/\D/g, '');
+        return clean.length === 10 ? '91' + clean : clean;
+      };
+      const finalPhone = normalizePhone(phone);
 
       // Check if phone already exists
-      const existing = await User.findOne({ phone });
+      const existing = await User.findOne({ phone: finalPhone });
       if (existing) return cb({ ok: false, error: 'User with this phone already exists' });
 
       const userId = `astro_${Date.now()}`;
@@ -2237,7 +2252,7 @@ io.on('connection', (socket) => {
         userId,
         name,
         realName: name,
-        phone,
+        phone: finalPhone,
         email,
         image,
         price: parseInt(price) || 10,

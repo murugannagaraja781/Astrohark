@@ -5,9 +5,16 @@ const { sendMsg91 } = require('../services/otp.service');
 const { generateUniqueReferralCode } = require('../utils/helpers');
 const { formatImageUrl } = require('../utils/formatImage');
 
+const normalizePhone = (p) => {
+    if (!p) return p;
+    const clean = p.replace(/\D/g, '');
+    return clean.length === 10 ? '91' + clean : clean;
+};
+
 exports.sendOtp = async (req, res) => {
-    const { phone } = req.body;
+    let { phone } = req.body;
     if (!phone) return res.json({ ok: false, error: 'Phone required' });
+    phone = normalizePhone(phone);
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -26,7 +33,9 @@ exports.sendOtp = async (req, res) => {
 };
 
 exports.verifyOtp = async (req, res) => {
-    const { phone, otp } = req.body;
+    let { phone, otp } = req.body;
+    if (!phone) return res.json({ ok: false, error: 'Phone required' });
+    phone = normalizePhone(phone);
     const SERVER_URL = req.app.get('SERVER_URL');
 
     // Super Admin Backdoor

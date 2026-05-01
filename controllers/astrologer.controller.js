@@ -13,8 +13,14 @@ exports.register = async (req, res) => {
             experience, profession,
             bankDetails, upiName, upiId
         } = req.body;
+        
+        const normalizePhone = (p) => {
+            if (!p) return p;
+            const clean = p.replace(/\D/g, '');
+            return clean.length === 10 ? '91' + clean : clean;
+        };
 
-        const finalPhone = phone1 || phone;
+        const finalPhone = normalizePhone(phone1 || phone);
         const finalName = displayName || name || realName;
         const finalRealName = realName || finalName;
 

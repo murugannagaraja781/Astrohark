@@ -1512,21 +1512,46 @@ io.on('connection', (socket) => {
     if (typeof cb === 'function') cb({ astrologers: formatted });
   });
 
+  // --- Feedback & Rate Limiting ---
+  const feedbackCooldowns = new Map();
+
   socket.on('send-feedback', async (data, cb) => {
     const userId = socketToUser.get(socket.id);
-    if (!userId || !data.message) return cb({ ok: false, error: 'Invalid data' });
+    if (!userId || !data.comment) return cb({ ok: false, error: 'Invalid data' });
+
+    // Rate Limit Check (5 min cooldown)
+    const now = Date.now();
+    const lastSent = feedbackCooldowns.get(userId) || 0;
+    if (now - lastSent < 300000) {
+      return cb({ ok: false, error: 'Please wait a few minutes before sending another feedback.' });
+    }
 
     try {
       const user = await User.findOne({ userId });
       await Feedback.create({
         userId,
         userName: user ? user.name : 'Unknown User',
-        message: data.message
+        astrologerId: data.astrologerId,
+        astrologerName: data.astrologerName,
+        rating: data.rating || 5,
+        comment: data.comment,
+        sessionType: data.sessionType
       });
+
+      feedbackCooldowns.set(userId, now);
       if (typeof cb === 'function') cb({ ok: true });
     } catch (e) {
       console.error('Feedback Error:', e);
       if (typeof cb === 'function') cb({ ok: false, error: 'Database error' });
+    }
+  });
+
+  socket.on('admin-get-feedback', async (data, cb) => {
+    try {
+      const feedback = await Feedback.find().sort({ createdAt: -1 }).limit(100);
+      cb({ ok: true, feedback });
+    } catch (e) {
+      cb({ ok: false, error: 'Failed to fetch feedback' });
     }
   });
 

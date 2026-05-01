@@ -763,6 +763,18 @@
                 </style>
             </div>
 
+            <!-- Tab: User Feedback -->
+            <div id="admin-sect-feedback" class="admin-tab-section">
+                <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 class="dashboard-title" style="margin:0;"><i class="fas fa-comments"></i> User Feedback & Ratings</h2>
+                    <button class="btn-admin" onclick="fetchFeedback()"><i class="fas fa-sync"></i> Refresh List</button>
+                </div>
+                
+                <div id="adminFeedbackList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap:15px;">
+                    <div class="loader"></div>
+                </div>
+            </div>
+
             <div class="admin-footer"
                 style="background: var(--bg-glass-heavy); backdrop-filter: var(--glass-blur); border-top: 1px solid var(--border-soft);">
                 <div class="admin-footer-content">
@@ -986,6 +998,8 @@
                     class="fas fa-images"></i><span>Slider</span></div>
             <div class="admin-nav-item" onclick="navAdmin('rituals', event)"><i
                     class="fas fa-magic"></i><span>Rituals</span></div>
+            <div class="admin-nav-item" onclick="navAdmin('feedback', event)"><i
+                    class="fas fa-comment-alt"></i><span>Feedback</span></div>
             <div class="admin-nav-item" onclick="navAdmin('settings', event)"><i
                     class="fas fa-cog"></i><span>Settings</span></div>
             <div class="admin-nav-item" onclick="navAdmin('workflow', event)"><i
@@ -1207,6 +1221,7 @@
             if (id === 'settings') fetchConfig();
             if (id === 'rituals') fetchRituals();
             if (id === 'workflow') fetchWorkflowStatus();
+            if (id === 'feedback') fetchFeedback();
 
             document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
             if (ev) ev.currentTarget.classList.add('active');
@@ -2401,6 +2416,50 @@
                 ['wf-server', 'wf-db', 'wf-socket', 'wf-fcm', 'wf-webrtc'].forEach(id => setStatus(id, 'error'));
             }
         }
+
+        // --- Feedback Logic ---
+        window.fetchFeedback = () => {
+            const container = document.getElementById('adminFeedbackList');
+            container.innerHTML = '<div class="loader"></div>';
+            socket.emit('admin-get-feedback', {}, (res) => {
+                if (res.ok) {
+                    if (!res.feedback || res.feedback.length === 0) {
+                        container.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-dim);">No user feedback found yet.</div>';
+                        return;
+                    }
+                    container.innerHTML = res.feedback.map(f => `
+                        <div class="admin-card" style="position:relative; padding:20px; border-left: 4px solid ${f.rating >= 4 ? '#10B981' : (f.rating >= 2 ? '#F59E0B' : '#EF4444')};">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <div style="width:40px; height:40px; border-radius:50%; background:rgba(255,127,0,0.1); display:flex; align-items:center; justify-content:center; color:var(--primary); font-weight:bold;">
+                                        ${f.userName ? f.userName.charAt(0).toUpperCase() : 'U'}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:bold; color:var(--text-main);">${f.userName || 'Unknown User'}</div>
+                                        <div style="font-size:0.75rem; color:var(--text-dim);">${new Date(f.createdAt).toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="color:#F59E0B; font-size:0.9rem;">
+                                        ${Array(5).fill(0).map((_, i) => `<i class="${i < f.rating ? 'fas' : 'far'} fa-star"></i>`).join('')}
+                                    </div>
+                                    <div style="font-size:0.7rem; color:var(--text-dim); margin-top:4px;">Rating: ${f.rating}/5</div>
+                                </div>
+                            </div>
+                            <div style="font-size:0.9rem; color:var(--text-secondary); line-height:1.6; font-style:italic; background:rgba(255,255,255,0.02); padding:10px; border-radius:8px;">
+                                "${f.comment || 'No comment provided.'}"
+                            </div>
+                            <div style="margin-top:15px; font-size:0.75rem; color:var(--text-muted); display:flex; justify-content:space-between;">
+                                <span>Astro: <b>${f.astrologerName || 'N/A'}</b></span>
+                                <span>${f.sessionType || 'Session'}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `<div style="color:#EF4444; padding:20px;">Error: ${res.error}</div>`;
+                }
+            });
+        };
 
         init();
     </script>

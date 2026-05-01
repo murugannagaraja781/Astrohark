@@ -443,6 +443,26 @@ class HomeActivity : AppCompatActivity() {
             fetchHomeData()
         }
 
+        socket?.on("role-updated") { args ->
+            val data = args[0] as? JSONObject ?: return@on
+            val newRole = data.optString("role")
+            val userJson = data.optJSONObject("user")
+            
+            if (newRole == "astrologer" && userJson != null) {
+                // Parse and save new session
+                val user = parseAstrologer(userJson)
+                // We need a proper AuthResponse/User data model save
+                // For now, refresh session and redirect
+                lifecycleScope.launch(Dispatchers.Main) {
+                    Toast.makeText(this@HomeActivity, "Role updated to Astrologer. Redirecting...", Toast.LENGTH_LONG).show()
+                    delay(2000)
+                    refreshWalletBalance() // This will also update tokenManager
+                    startActivity(Intent(this@HomeActivity, com.astrohark.app.ui.astro.AstrologerDashboardActivity::class.java))
+                    finish()
+                }
+            }
+        }
+
         socket?.emit("get-astrologers")
     }
 

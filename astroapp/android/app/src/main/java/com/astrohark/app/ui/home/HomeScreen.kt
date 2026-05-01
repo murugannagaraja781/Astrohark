@@ -529,7 +529,7 @@ fun HomeScreen(
             }
         }
 
-        // User Request: Show offline astros too. 
+        // User Request: Show offline astros too.
         // We sort by online status so online ones are always at top.
         searchedList.sortedWith(compareByDescending<com.astrohark.app.data.model.Astrologer> { it.isOnline }
             .thenBy { it.isBusy })
@@ -630,7 +630,7 @@ fun HomeScreen(
                     Button(
                         onClick = {
                             // Share via WhatsApp
-                            val msg = if (isTamil) 
+                            val msg = if (isTamil)
                                 "Astrohark செயலியில் இணையுங்கள்! நீங்கள் இணைய என் Referral Code: ${referralCode ?: ""} -ஐ பயன்படுத்தினால் ₹188 போனஸ் கிடைக்கும். முதல் ரீசார்ஜ் செய்ய மறந்துவிடாதீர்கள்! $shareLink"
                                 else "Join Astrohark! Use my Referral Code: ${referralCode ?: ""} and get ₹188 bonus on signup. Don't forget to make your first recharge! $shareLink"
                             val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -864,18 +864,18 @@ fun TrustAndPolicySection(isTamil: Boolean) {
                 subtitle = if(isTamil) "பயனர் பாதுகாப்பு" else "User Privacy",
                 modifier = Modifier.weight(1f)
             )
-            
+
             Box(modifier = Modifier.width(1.dp).height(50.dp).background(Color.LightGray.copy(alpha = 0.3f)).align(Alignment.CenterVertically))
-            
+
             TrustItem(
                 icon = "💰",
                 title = "Refund Policy",
                 subtitle = if(isTamil) "பணம் திரும்ப" else "Refund Policy",
                 modifier = Modifier.weight(1f)
             )
-            
+
             Box(modifier = Modifier.width(1.dp).height(50.dp).background(Color.LightGray.copy(alpha = 0.3f)).align(Alignment.CenterVertically))
-            
+
             TrustItem(
                 icon = "🛡️",
                 title = "Secure Pay",
@@ -1252,7 +1252,7 @@ fun LazyListScope.ConsultTab(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = { Text(if (isTamil) "பெயர் அல்லது ஐடியைத் தேடுங்கள்" else "Search Name or ID...") },
+            placeholder = { Text(if (isTamil) "ஜோதிடர் பெயர்" else "Search Name ") },
             leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = CosmicAppTheme.colors.accent) },
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
@@ -1409,7 +1409,7 @@ fun AppDrawer(onItemClick: (String) -> Unit, onClose: () -> Unit, session: AuthR
             Spacer(modifier = Modifier.height(12.dp))
             Text(session?.name ?: "User Profile", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = CosmicAppTheme.colors.textPrimary)
             Text(if(isTamil) "சுயவிவரத்தை மாற்ற" else "Edit Profile", style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textSecondary)
-            
+
             Spacer(modifier = Modifier.height(8.dp))
 
         // Drawer Items
@@ -1581,7 +1581,7 @@ fun WalletDashboard(balance: Double, isTamil: Boolean, onAddMoneyClick: () -> Un
             Color(0xFF2D2D44)
         )
     )
-    
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -1642,7 +1642,7 @@ fun WalletDashboard(balance: Double, isTamil: Boolean, onAddMoneyClick: () -> Un
 
 @Composable
 fun QuickActionsSection(isTamil: Boolean, onAction: (String) -> Unit) {
-    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 2.dp)) { 
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 2.dp, bottom = 2.dp)) {
         Text(
             text = Localization.get("quick_actions", isTamil),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp),
@@ -1724,7 +1724,7 @@ fun AstrologerCard(
         else -> Color.Gray
     }
 
-    val isPandit = astro.name.contains("Pandit", ignoreCase = true) || 
+    val isPandit = astro.name.contains("Pandit", ignoreCase = true) ||
                   astro.skills.any { it.contains("Pandit", ignoreCase = true) }
 
     Card(
@@ -1757,7 +1757,7 @@ fun AstrologerCard(
                         contentScale = ContentScale.Crop,
                         error = painterResource(id = com.astrohark.app.R.drawable.ic_person_placeholder)
                     )
-                    
+
                     // Compact Status Dot
                     Box(
                         modifier = Modifier
@@ -1813,7 +1813,7 @@ fun AstrologerCard(
                             )
                         }
                     }
-                    
+
                     Text(
                         text = "${if (astro.skills.isNotEmpty()) astro.skills.first() else "Vedic"} • ${astro.experience} ${Localization.get("years", isTamil)}",
                         style = MaterialTheme.typography.labelSmall,
@@ -1821,7 +1821,7 @@ fun AstrologerCard(
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
-                    
+
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Star, null, tint = Color(0xFFFFB300), modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(2.dp))
@@ -1858,7 +1858,7 @@ fun AstrologerCard(
 @Composable
 fun RasiItemView(item: ComposeRasiItem, isTamil: Boolean, onClick: (ComposeRasiItem) -> Unit) {
     val goldColor = Color(0xFFD4AF37)
-    
+
     // Animation: Gentle Pulse
     val infiniteTransition = rememberInfiniteTransition(label = "RasiPulse")
     val scale by infiniteTransition.animateFloat(
@@ -1920,10 +1920,10 @@ fun ZodiacInsightsSection(isTamil: Boolean, onRasiClick: (ComposeRasiItem) -> Un
     var isExpanded by remember { mutableStateOf(false) }
     val darkNavy = Color(0xFF0A0E21)
     val goldColor = Color(0xFFD4AF37)
-    
+
     Column(
         modifier = Modifier
-            .padding(horizontal = 16.dp, vertical = 4.dp) 
+            .padding(horizontal = 16.dp, vertical = 4.dp)
             .fillMaxWidth()
             .clip(RoundedCornerShape(24.dp))
             .background(
@@ -1951,13 +1951,13 @@ fun ZodiacInsightsSection(isTamil: Boolean, onRasiClick: (ComposeRasiItem) -> Un
                 tint = goldColor.copy(alpha = 0.6f)
             )
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // Grid with glass cards
         val allRasis = listOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)
         val visibleRasis = if (isExpanded) allRasis else allRasis.take(9)
-        
+
         Column {
             visibleRasis.chunked(3).forEach { row ->
                 Row(
@@ -1975,7 +1975,7 @@ fun ZodiacInsightsSection(isTamil: Boolean, onRasiClick: (ComposeRasiItem) -> Un
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Expand Button with Glow
         TextButton(
             onClick = { isExpanded = !isExpanded },
@@ -2004,14 +2004,14 @@ fun ZodiacInsightsSection(isTamil: Boolean, onRasiClick: (ComposeRasiItem) -> Un
 fun DailyRitualsSection(rituals: List<Ritual>, isTamil: Boolean) {
     if (rituals.isEmpty()) return
 
-    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 4.dp)) { 
+    Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 4.dp, bottom = 4.dp)) {
         Text(
             text = Localization.get("daily_rituals", isTamil),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
             color = CosmicAppTheme.colors.textPrimary
         )
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         rituals.forEachIndexed { index, ritual ->
             RitualCard(ritual, isTamil)
             if (index < rituals.size - 1) {
@@ -2116,9 +2116,9 @@ fun RitualCard(ritual: Ritual, isTamil: Boolean) {
                     contentScale = ContentScale.Crop
                 )
             }
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
@@ -2133,7 +2133,7 @@ fun RitualCard(ritual: Ritual, isTamil: Boolean) {
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            
+
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
@@ -2433,13 +2433,13 @@ fun ServiceItem(name: String, iconRes: Int, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
-            .width(78.dp) 
+            .width(78.dp)
             .clickable { onClick() }
     ) {
         Card(
             shape = RoundedCornerShape(20.dp), // Match QuickActionItem
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, Color(0xFFF0F0F0)), 
+            border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             modifier = Modifier.size(64.dp)
         ) {
@@ -2452,7 +2452,7 @@ fun ServiceItem(name: String, iconRes: Int, onClick: () -> Unit) {
                 )
             }
         }
-        Spacer(modifier = Modifier.height(6.dp)) 
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = name,
             style = MaterialTheme.typography.labelSmall.copy(
@@ -2522,7 +2522,7 @@ fun CustomerStoryCard(name: String, loc: String, review: String) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                     Spacer(modifier = Modifier.weight(1f))
-                    Icon(imageVector = Icons.Filled.Menu, contentDescription=null, modifier=Modifier.size(16.dp), tint=Color.Gray) 
+                    Icon(imageVector = Icons.Filled.Menu, contentDescription=null, modifier=Modifier.size(16.dp), tint=Color.Gray)
                 }
                 Text(text = loc, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
@@ -2541,7 +2541,7 @@ fun StickyFooterButtons(
     onLoginClick: () -> Unit
 ) {
     val goldColor = Color(0xFFD4AF37)
-    
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -2662,7 +2662,7 @@ fun ConsultationHistoryCard(item: SessionHistoryItem) {
                 val mins = totalSec / 60
                 val secs = totalSec % 60
                 val duraText = if (mins > 0L) "${mins}m ${secs}s" else "${secs}s"
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(androidx.compose.material.icons.Icons.Rounded.Schedule, null, tint = Color.Gray, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
@@ -2865,7 +2865,7 @@ fun ReferralScreen(
 
         Button(
             onClick = {
-                val msg = if (isTamil) 
+                val msg = if (isTamil)
                     "Astrohark செயலியில் இணையுங்கள்! நீங்கள் இணைய என் Referral Code: ${referralCode ?: ""} -ஐ பயன்படுத்தினால் ₹188 போனஸ் கிடைக்கும். $shareLink"
                     else "Join Astrohark! Use my Referral Code: ${referralCode ?: ""} and get ₹188 bonus on signup. $shareLink"
                 val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -2886,7 +2886,7 @@ fun ReferralScreen(
             Spacer(modifier = Modifier.height(32.dp))
             Divider(color = Color.Gray.copy(alpha = 0.1f))
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             Text(
                 text = if(isTamil) "உங்களிடம் Referral Code உள்ளதா?" else "Do you have a Referral Code?",
                 style = MaterialTheme.typography.titleSmall,

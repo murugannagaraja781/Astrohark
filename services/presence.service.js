@@ -8,7 +8,8 @@ const {
     SESSION_GRACE_PERIOD
 } = require('./socketStore');
 const { broadcastAstroUpdate } = require('./astrologer.service');
-const billingService = require('./billing.service');
+// billingService removed to break circular dependency. Required inside handleDisconnect if needed.
+
 const Session = require('../models/Session');
 const { activeSessions } = require('./socketStore');
 
@@ -103,7 +104,8 @@ class PresenceService {
                         Session.updateOne({ sessionId: sid }, { endTime: Date.now() }).catch(() => { });
                         
                         const otherUserId = s.users.find(u => u !== userId);
-                        billingService.endSessionRecord(sid, () => broadcastAstroUpdate(io, process.env.SERVER_URL));
+                        require('./billing.service').endSessionRecord(sid, () => broadcastAstroUpdate(io, process.env.SERVER_URL));
+
 
                         if (otherUserId) {
                             io.to(otherUserId).emit('session-ended', { sessionId: sid, reason: 'partner_disconnected' });

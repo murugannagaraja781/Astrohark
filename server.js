@@ -2102,8 +2102,13 @@ io.on('connection', (socket) => {
       // Notify user of role/wallet change if online
       const sId = userSockets.get(data.userId);
       if (sId) {
-        if (data.role === 'astrologer') io.to(sId).emit('wallet-update', { balance: 0 });
+        const user = await User.findOne({ userId: data.userId });
+        const formattedUser = user.toObject ? user.toObject() : user;
+        formattedUser.image = formatImageUrl(formattedUser.image, formattedUser.name);
+        
+        io.to(sId).emit('role-updated', { role: data.role, user: formattedUser });
         io.to(sId).emit('app-notification', { text: `Your role has been updated to ${data.role}!` });
+        if (data.role === 'astrologer') io.to(sId).emit('wallet-update', { balance: 0 });
       }
 
       cb({ ok: true });

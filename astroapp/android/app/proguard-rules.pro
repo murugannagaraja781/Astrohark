@@ -166,7 +166,23 @@
     @android.webkit.JavascriptInterface <methods>;
 }
 
+# ---- Razorpay SDK ----
+-keep class com.razorpay.** { *; }
+-dontwarn com.razorpay.**
+-keepattributes *Annotation*
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+-dontwarn com.razorpay.RzpAssist
+-keep class com.razorpay.RzpAssist { *; }
+
 # ---- Suppress warnings ----
 -dontwarn java.lang.invoke.**
 -dontwarn javax.annotation.**
 -dontwarn org.codehaus.mojo.**
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn java.awt.**
+-dontwarn java.beans.**
+-dontwarn javax.security.**
+-dontwarn com.sun.**
+-dontwarn org.checkerframework.**

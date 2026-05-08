@@ -119,7 +119,7 @@ fun PermissionScreen(onBack: () -> Unit) {
                 title = { 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("App Permissions", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-                        Text("For Reliable Calls", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.5f))
+                        Text("For Reliable Calls", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
                     }
                 },
                 navigationIcon = {
@@ -149,7 +149,7 @@ fun PermissionScreen(onBack: () -> Unit) {
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
                         "Enabling all permissions ensures your phone is ready to receive consultations even when locked.",
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = Color.Black.copy(alpha = 0.8f),
                         fontSize = 13.sp,
                         lineHeight = 18.sp
                     )
@@ -193,7 +193,7 @@ fun PermissionScreen(onBack: () -> Unit) {
             Text(
                 "Note: Battery optimization must be 'Allowed' or 'Unrestricted' for this app.",
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                color = Color.White.copy(alpha = 0.4f),
+                color = Color.Black.copy(alpha = 0.6f),
                 fontSize = 11.sp,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -218,8 +218,8 @@ fun PermissionItemRow(title: String, desc: String, icon: ImageVector, granted: B
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                Text(desc, color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+                Text(title, color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                Text(desc, color = Color.Black.copy(alpha = 0.6f), fontSize = 12.sp)
             }
             if (granted) {
                 Icon(Icons.Default.CheckCircle, null, tint = Color(0xFF10B981), modifier = Modifier.size(24.dp))

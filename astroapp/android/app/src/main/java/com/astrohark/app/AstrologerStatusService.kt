@@ -113,27 +113,7 @@ class AstrologerStatusService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(TAG, "Service Destroyed")
-        
-        // Notify server to go offline on service destruction
-        currentUserId?.let { uid ->
-            Thread {
-                try {
-                    val client = okhttp3.OkHttpClient()
-                    listOf("chat", "audio", "video").forEach { serviceType ->
-                        val url = "${com.astrohark.app.utils.Constants.SERVER_URL}/api/astrologer/service-toggle"
-                        val body = okhttp3.FormBody.Builder()
-                            .add("astrologerId", uid)
-                            .add("serviceType", serviceType)
-                            .add("status", "false")
-                            .build()
-                        val request = okhttp3.Request.Builder().url(url).post(body).build()
-                        client.newCall(request).execute()
-                    }
-                    Log.d(TAG, "Successfully notified server: OFFLINE for $uid")
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to notify server of offline status on destroy", e)
-                }
-            }.start()
-        }
+        // User Request: Do NOT set offline on destruction.
+        // This allows the astrologer to stay online even if the app is killed.
     }
 }

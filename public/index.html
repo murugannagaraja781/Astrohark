@@ -109,8 +109,9 @@
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
       -webkit-backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-soft);
+      border: 1px solid #FFFFFF;
       border-radius: var(--radius-lg);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 255, 255, 0.15);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -148,8 +149,9 @@
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
       -webkit-backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-medium);
+      border: 1px solid #FFFFFF;
       border-radius: var(--radius-lg);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.15);
       padding: 30px;
       width: 90%;
       max-width: 400px;
@@ -241,7 +243,7 @@
     .astro-card {
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-soft);
+      border: 1px solid #FFFFFF;
       border-radius: var(--radius-lg);
       padding: 16px;
       margin-bottom: 20px;
@@ -250,7 +252,7 @@
       gap: 15px;
       position: relative;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: var(--shadow-elevation);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 10px rgba(255, 255, 255, 0.1);
     }
 
     .astro-card:active {
@@ -518,7 +520,7 @@
     .grid-item {
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-soft);
+      border: 1px solid #FFFFFF;
       border-radius: var(--radius-md);
       padding: 15px;
       text-align: center;
@@ -530,6 +532,7 @@
       gap: 10px;
       transition: all 0.3s ease;
       cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 8px rgba(255, 255, 255, 0.1);
     }
 
     .grid-item:hover {
@@ -772,9 +775,10 @@
 
     .input-card {
       background: var(--bg-card);
+      border: 1px solid #FFFFFF;
       border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 0 10px rgba(255, 255, 255, 0.1);
       margin-bottom: 20px;
     }
 
@@ -2136,6 +2140,22 @@
         <div class="services-grid-container"
           style="margin-bottom: 25px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
           <div style="display: flex; gap: 12px; padding: 5px 0;">
+            <div class="service-item-card" onclick="selectQuickService('chat')">
+              <img src="https://cdn-icons-png.flaticon.com/512/134/134914.png" alt="Chat">
+              <span>Chat with Astro</span>
+            </div>
+            <div class="service-item-card" onclick="selectQuickService('call')">
+              <img src="https://cdn-icons-png.flaticon.com/512/724/724664.png" alt="Call">
+              <span>Call with Astro</span>
+            </div>
+            <div class="service-item-card" onclick="selectQuickService('video')">
+              <img src="https://cdn-icons-png.flaticon.com/512/1716/1716282.png" alt="Video">
+              <span>Video with Astro</span>
+            </div>
+            <div class="service-item-card" onclick="selectQuickService('all')">
+              <img src="https://cdn-icons-png.flaticon.com/512/570/570170.png" alt="All">
+              <span>All Services</span>
+            </div>
             <div class="service-item-card"
               onclick="document.getElementById('screen-chart-helper').classList.remove('hidden')">
               <img src="images/kundali_icon.png" alt="Kundali">
@@ -2261,14 +2281,14 @@
         </div>
 
         <!-- Feedback Section -->
-        <div id="feedbackSection" style="margin-bottom: 25px; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; border: 1px solid var(--border-soft);">
+        <div id="feedbackSection" style="margin-bottom: 25px; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; border: 1px solid #FFFFFF; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 10px rgba(255, 255, 255, 0.1);">
           <h3 style="margin:0 0 12px 0; font-family:var(--font-heading); font-size:1rem; color:var(--text-main);"><i class="fas fa-comment-dots" style="color:var(--primary);"></i> கருத்துக்களை பகிரவும் <small style="font-size:0.75rem; color:var(--text-dim);">(Share Feedback)</small></h3>
           <textarea id="userFeedbackText" placeholder="உங்கள் கருத்துக்களை இங்கே பதிவிடவும்... (Your feedback here)" style="width:100%; height:80px; background:rgba(0,0,0,0.2); border:1px solid var(--border-soft); border-radius:8px; color:white; padding:10px; font-size:0.9rem; resize:none; margin-bottom:10px;"></textarea>
           <button onclick="submitUserFeedback()" style="width:100%; background:var(--primary); color:white; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;">கருத்தை அனுப்பவும் (Send Feedback)</button>
         </div>
 
         <!-- Trust & Policy Section -->
-        <div class="trust-policy-section" style="margin-top: 25px; margin-bottom: 25px; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; border: 1px solid var(--border-soft);">
+        <div class="trust-policy-section" style="margin-top: 25px; margin-bottom: 25px; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; border: 1px solid #FFFFFF; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 10px rgba(255, 255, 255, 0.1);">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
             <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px;">
               <div style="width: 40px; height: 40px; background: rgba(255,127,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🔐</div>
@@ -3474,7 +3494,7 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="https://unpkg.com/simple-peer/simplepeer.min.js"></script>
   <script>
-    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta', signalBuffer: [], astroList: [] };
+    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta', signalBuffer: [], astroList: [], selectedService: 'all' };
     let allBanners = []; // Global store for banner data
     window.state = state; // Expose for Android onResume wallet refresh
 
@@ -4695,6 +4715,14 @@
       });
     }
 
+    function selectQuickService(type) {
+      state.selectedService = type;
+      // Re-render to show only specific buttons
+      renderAstroList(state.astroList);
+      // Optional: scroll to astrologer list
+      document.getElementById('astroList').scrollIntoView({ behavior: 'smooth' });
+    }
+
     function renderAstroList(list) {
       const container = document.getElementById('astroList');
       const liveContainer = document.getElementById('liveAstrosList');
@@ -4769,19 +4797,35 @@
               <div class="price-tag" style="background:transparent; color:var(--primary); border:none; font-weight:700; font-size:1.1rem; padding:0;">₹${a.price}<span style="font-size:0.6rem; color:#A58B74; font-weight:normal;">/min</span></div>
           </div>
 
-          <div class="card-actions" style="border-top: 1px solid #332115; padding-top:10px;">
-              <div class="cta-btn ${a.isChatOnline ? 'active-chat' : 'disabled'}"
-                   style="background: transparent; border: 1px solid ${a.isChatOnline ? 'var(--primary)' : '#444'}; color: ${a.isChatOnline ? 'var(--primary)' : '#666'}; border-radius: 6px; flex:1;"
-                   onclick="event.stopPropagation(); checkGuestAction('chat', '${a.userId}')">
-                   Chat
-              </div>
+           <div class="card-actions" style="border-top: 1px solid #332115; padding-top:10px;">
+              ${(state.selectedService === 'all' || state.selectedService === 'chat') ? `
+               <div class="cta-btn ${a.isChatOnline ? 'active-chat' : 'disabled'}"
+                    style="background: transparent; border: 1px solid ${a.isChatOnline ? 'var(--primary)' : '#444'}; color: ${a.isChatOnline ? 'var(--primary)' : '#666'}; border-radius: 6px; flex:1;"
+                    onclick="event.stopPropagation(); checkGuestAction('chat', '${a.userId}')">
+                    Chat
+               </div>
+              ` : ''}
+              
+              ${((state.selectedService === 'all' || state.selectedService === 'call') && a.isAudioOnline) ? `
+                <div class="cta-btn active-audio"
+                     style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
+                     onclick="event.stopPropagation(); checkGuestAction('call', '${a.userId}')">
+                     Call
+                </div>
+              ` : ''}
 
-              <div class="cta-btn ${a.isAudioOnline ? 'active-audio' : 'disabled'}"
-                   style="background: transparent; border: 1px solid ${a.isAudioOnline ? 'var(--primary)' : '#444'}; color: ${a.isAudioOnline ? 'var(--primary)' : '#666'}; border-radius: 6px; flex:1;"
-                   onclick="event.stopPropagation(); checkGuestAction('call', '${a.userId}')">
-                   Call
-              </div>
-          </div>
+              ${((state.selectedService === 'all' || state.selectedService === 'video') && a.isVideoOnline) ? `
+                <div class="cta-btn active-video"
+                     style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
+                     onclick="event.stopPropagation(); checkGuestAction('video', '${a.userId}')">
+                     Video
+                </div>
+              ` : ''}
+           </div>
+        `;
+        container.appendChild(div);
+      });
+    }
         `;
         container.appendChild(div);
       });

@@ -116,14 +116,37 @@ class AstrologerDashboardActivity : ComponentActivity() {
     }
 
     private fun performLogout() {
-        SocketManager.logout { _ ->
-            // Proceed regardless of success to ensure user can still exit
-            tokenManager.clearSession()
-            SocketManager.disconnect()
-            val intent = Intent(this, GuestDashboardActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
+        val session = tokenManager.getUserSession()
+        val userId = session?.userId
+        
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            if (userId != null) {
+                try {
+                    // Explicitly set offline on logout
+                    val client = okhttp3.OkHttpClient()
+                    listOf("chat", "audio", "video").forEach { type ->
+                        val url = "${com.astrohark.app.utils.Constants.SERVER_URL}/api/astrologer/service-toggle"
+                        val body = okhttp3.FormBody.Builder()
+                            .add("astrologerId", userId)
+                            .add("serviceType", type)
+                            .add("status", "false")
+                            .build()
+                        val request = okhttp3.Request.Builder().url(url).post(body).build()
+                        client.newCall(request).execute()
+                    }
+                } catch (e: Exception) { e.printStackTrace() }
+            }
+            
+            withContext(kotlinx.coroutines.Dispatchers.Main) {
+                SocketManager.logout { _ ->
+                    tokenManager.clearSession()
+                    SocketManager.disconnect()
+                    val intent = Intent(this@AstrologerDashboardActivity, GuestDashboardActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    finish()
+                }
+            }
         }
     }
 
@@ -446,30 +469,6 @@ fun AstrologerDashboardScreen(
         tokenManager.setDailyProgress(todayProgress)
 
         refreshBalanceAndHistory()
-        
-        // --- CRITICAL FIX: Ensure astrologer is OFFLINE by default on every app launch ---
-        // This prevents the "always online" issue.
-        scope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            try {
-                val services = listOf("chat", "audio", "video")
-                val client = okhttp3.OkHttpClient()
-                services.forEach { type ->
-                    val url = "${com.astrohark.app.utils.Constants.SERVER_URL}/api/astrologer/service-toggle"
-                    val body = okhttp3.FormBody.Builder()
-                        .add("astrologerId", sessionId)
-                        .add("serviceType", type)
-                        .add("status", "false")
-                        .build()
-                    val request = okhttp3.Request.Builder().url(url).post(body).build()
-                    client.newCall(request).execute()
-                }
-                // Update local UI states after forcing offline or server
-                isChatOnline = false
-                isAudioOnline = false
-                isVideoOnline = false
-                android.util.Log.d("AstroDashboard", "✓ Forced initial offline state on launch")
-            } catch (e: Exception) { e.printStackTrace() }
-        }
     }
 
     if (showWithdrawDialog) {

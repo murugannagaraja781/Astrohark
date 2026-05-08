@@ -89,42 +89,48 @@ class CallForegroundService : Service() {
         // --- Default: Incoming Call Notification ---
         val callerName = intent?.getStringExtra("callerName") ?: "Unknown caller"
         val callId = intent?.getStringExtra("callId") ?: ""
+        val callerId = intent?.getStringExtra("callerId") ?: ""
+        val callType = intent?.getStringExtra("callType") ?: "audio"
+        val birthData = intent?.getStringExtra("birthData")
 
-        Log.d(TAG, "Starting foreground service for call from: $callerName")
+        Log.d(TAG, "Starting foreground service for incoming $callType call from: $callerName")
 
-        // Create intent to open IncomingCallActivity when notification is tapped
+        // Create intent to open IncomingCallActivity when notification is tapped or triggered as full-screen
         val notificationIntent = Intent(this, IncomingCallActivity::class.java).apply {
-            this.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or 
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or 
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP)
             putExtra("callerName", callerName)
             putExtra("callId", callId)
+            putExtra("callerId", callerId)
+            putExtra("callType", callType)
+            putExtra("birthData", birthData)
         }
 
-        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        } else {
-            PendingIntent.FLAG_UPDATE_CURRENT
-        }
+        val pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
 
         val pendingIntent = PendingIntent.getActivity(
-            this, 0, notificationIntent, pendingIntentFlags
+            this, System.currentTimeMillis().toInt(), notificationIntent, pendingIntentFlags
         )
 
-        // Build notification
+        // Build HIGH PRIORITY notification for incoming call
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Incoming Call")
+            .setContentTitle("Incoming $callType Call")
             .setContentText("$callerName is calling...")
             .setSmallIcon(android.R.drawable.ic_menu_call)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setFullScreenIntent(pendingIntent, true)
+            .setFullScreenIntent(pendingIntent, true) // CRITICAL for lock screen pop-up
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setAutoCancel(false)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
 
         startServiceInternal(notification, isMicRequired = false, isVideoRequired = false)
 
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     private fun acquireWakeLocks() {

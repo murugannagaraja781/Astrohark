@@ -226,7 +226,7 @@ object Localization {
         "featured_guide" to "சிறப்பு வழிகாட்டி",
         "zodiac_insights" to "ராசி பலன்கள்",
         "daily_rituals" to "தினசரி வழிபாடுகள்",
-        "policies_support" to "கொள்கைகள் & உதவி",
+        "policies_support" to "Policies & Support",
         "customer_stories" to "வாடிக்கையாளர் கதைகள்",
         "talk_now" to "ஆலோசனை",
         "chat_now" to "சாட் செய்தி",

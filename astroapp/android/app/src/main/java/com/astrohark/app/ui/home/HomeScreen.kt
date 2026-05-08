@@ -38,6 +38,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -402,6 +407,7 @@ fun HomeScreen(
     var showReferralDialog by remember { mutableStateOf(false) }
     var referralInput by remember { mutableStateOf("") }
     var isApplyingReferral by remember { mutableStateOf(false) }
+    var selectedLiveAstro by remember { mutableStateOf<Astrologer?>(null) }
 
     // Dynamic Share Link State (Placeholder until configured in Admin Dashboard)
     var shareLink by remember { mutableStateOf("https://astrohark.com") }
@@ -752,6 +758,17 @@ fun HomeScreen(
             }
         }
     ) { padding ->
+            // Profile Action Sheet for Live Astrologers
+            if (selectedLiveAstro != null) {
+                LiveAstroActionSheet(
+                    astro = selectedLiveAstro!!,
+                    isTamil = isTamil,
+                    onChatClick = { onChatClick(it) },
+                    onCallClick = { a, t -> onCallClick(a, t) },
+                    onDismiss = { selectedLiveAstro = null }
+                )
+            }
+
             Box(modifier = Modifier.padding(padding).fillMaxSize().background(appBackgroundColor)) {
                 // Content Layer
                 LazyColumn(
@@ -763,6 +780,9 @@ fun HomeScreen(
                         0 -> HomeTab(
                             walletBalance, isTamil, filteredAstros, isLoading, banners, rituals, onBannerClick, onWalletClick, onChatClick, onCallClick, onRasiClick,
                             showBanner = showBanner,
+                            selectedFilter = selectedFilter,
+                            onAstroClick = { selectedLiveAstro = it },
+                            onViewAllClick = { selectedTab = 1; selectedFilter = "All" },
                             onAction = { action ->
                                 if (action == "referral") {
                                     selectedTab = 4
@@ -781,7 +801,7 @@ fun HomeScreen(
                             }
 
                         )
-                        1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } }, isTamil, searchQuery, { searchQuery = it })
+                        1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } }, isTamil, searchQuery, { searchQuery = it }, selectedFilter)
                         2 -> RitualsTab(rituals, isTamil)
                         3 -> ProfileTab(walletBalance, isTamil, onWalletClick, onDrawerItemClick, onLogoutClick)
                         4 -> ReferralTab(referralCode, shareLink, isTamil, isNewUser, onApplyReferral)
@@ -801,35 +821,31 @@ fun SupportAndPoliciesSection() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp) // Reduced from 16dp
-            .background(CosmicAppTheme.colors.cardBg.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
-            .padding(12.dp), // Internal padding reduced
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+            .background(CosmicAppTheme.colors.cardBg.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .border(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = Localization.get("policies_support", true), // Forcing true/handled by key
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            text = "Policies & Support",
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
             color = CosmicAppTheme.colors.textPrimary
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            PolicyLink(if(true) "திருப்பி அனுப்பும் கொள்கை" else "Return Policy", "$baseUrl/return-policy.html", context)
-            PolicyLink(if(true) "கப்பல் கொள்கை" else "Shipping Policy", "$baseUrl/shipping-policy.html", context)
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            PolicyLink(if(true) "பணம் திரும்பப் பெறும் கொள்கை" else "Refund Policy", "$baseUrl/refund-cancellation-policy.html", context)
-            PolicyLink(if(true) "விதிமுறைகள்" else "Terms & Conditions", "$baseUrl/terms-condition.html", context)
+            PolicyLink("Return Policy", "$baseUrl/return-policy.html", context)
+            PolicyLink("Shipping Policy", "$baseUrl/shipping-policy.html", context)
+            PolicyLink("Refund Policy", "$baseUrl/refund-cancellation-policy.html", context)
+            PolicyLink("Terms & Conditions", "$baseUrl/terms-condition.html", context)
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = "Need Help? info@astrohark.com",
             style = MaterialTheme.typography.labelSmall,
@@ -838,7 +854,7 @@ fun SupportAndPoliciesSection() {
         Text(
             text = "© 2024 astrohark. All Rights Reserved.",
             style = MaterialTheme.typography.labelSmall,
-            color = CosmicAppTheme.colors.textSecondary.copy(alpha=0.6f)
+            color = CosmicAppTheme.colors.textSecondary.copy(alpha = 0.6f)
         )
     }
 }
@@ -935,6 +951,9 @@ fun LazyListScope.HomeTab(
     onCallClick: (Astrologer, String) -> Unit,
     onRasiClick: (ComposeRasiItem) -> Unit,
     showBanner: Boolean = true,
+    selectedFilter: String = "All",
+    onAstroClick: (Astrologer) -> Unit,
+    onViewAllClick: () -> Unit,
     onAction: (String) -> Unit
 ) {
     // 1. Services Section (Top Icons - Horoscope, Match, etc.)
@@ -963,7 +982,7 @@ fun LazyListScope.HomeTab(
     }
 
     item {
-        LiveVideoSection(filteredAstros, { onChatClick(it) }, isTamil)
+        LiveAstrologersSection(filteredAstros, onAstroClick, onViewAllClick, isTamil)
     }
 
     item {
@@ -971,7 +990,7 @@ fun LazyListScope.HomeTab(
         if (isLoading) AstrologerShimmerItem()
         else {
             filteredAstros.firstOrNull()?.let { astro ->
-                AstrologerCard(astro, { onChatClick(it) }, { a, t -> onCallClick(a, t) }, 0, isTamil)
+                AstrologerCard(astro, { onChatClick(it) }, { a, t -> onCallClick(a, t) }, 0, isTamil, selectedFilter)
             }
         }
     }
@@ -1002,103 +1021,227 @@ fun LazyListScope.HomeTab(
 }
 
 @Composable
-fun LiveVideoSection(
+fun LiveAstrologersSection(
     astrologers: List<Astrologer>,
     onAstroClick: (Astrologer) -> Unit,
+    onViewAllClick: () -> Unit,
     isTamil: Boolean
 ) {
-    val liveAstros = astrologers.filter { it.isBusy }
+    val liveAstros = astrologers.filter { it.isOnline }
     if (liveAstros.isEmpty()) return
 
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp)
-    ) {
+    Column(modifier = Modifier.padding(vertical = 12.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val infiniteTransition = rememberInfiniteTransition()
-            val alpha by infiniteTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 0.3f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(800, easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse
-                ), label = "pulse"
-            )
-
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .graphicsLayer { this.alpha = alpha }
-                    .clip(CircleShape)
-                    .background(Color.Red)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = if (isTamil) "லைவ் வீடியோ ஜோதிடர்கள்" else "Live Video Astrologers",
+                text = if (isTamil) "நேரடி ஜோதிடர்கள்" else "Live Astrologers",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = CosmicAppTheme.colors.textPrimary
             )
+            Text(
+                text = if (isTamil) "அனைத்தையும் பார்" else "View All",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = CosmicAppTheme.colors.accent,
+                modifier = Modifier.clickable { onViewAllClick() }
+            )
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            liveAstros.forEach { astro ->
-                LiveAstroItem(astro, onAstroClick)
+            items(liveAstros) { astro ->
+                LiveAstroCarouselItem(astro, onClick = { onAstroClick(astro) })
             }
         }
     }
 }
 
 @Composable
-fun LiveAstroItem(astro: Astrologer, onClick: (Astrologer) -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable { onClick(astro) }.width(70.dp)
+fun LiveAstroCarouselItem(astro: Astrologer, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .width(135.dp)
+            .height(185.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Box(contentAlignment = Alignment.BottomCenter) {
+        Box(modifier = Modifier.fillMaxSize()) {
             AsyncImage(
                 model = getImageUrl(astro.image),
                 contentDescription = astro.name,
-                modifier = Modifier
-                    .size(60.dp)
-                    .clip(CircleShape)
-                    .border(2.dp, Color.Red, CircleShape),
-                contentScale = ContentScale.Crop
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                error = painterResource(id = com.astrohark.app.R.drawable.ic_person_placeholder),
+                placeholder = painterResource(id = com.astrohark.app.R.drawable.ic_person_placeholder)
             )
-            Surface(
-                color = Color.Red,
-                shape = RoundedCornerShape(4.dp),
-                modifier = Modifier.offset(y = 4.dp)
+
+            // Dynamic Live Pulse Overlay (Optional but premium)
+            if (astro.isOnline) {
+                Surface(
+                    color = Color.Red,
+                    shape = RoundedCornerShape(4.dp),
+                    modifier = Modifier.padding(8.dp).align(Alignment.TopEnd)
+                ) {
+                    Text(
+                        "LIVE",
+                        color = Color.White,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Black,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            // Name Gradient Overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.8f)),
+                            startY = 300f
+                        )
+                    ),
+                contentAlignment = Alignment.BottomStart
             ) {
                 Text(
-                    "LIVE",
+                    text = astro.name ?: "Astrologer",
                     color = Color.White,
-                    fontSize = 8.sp,
-                    fontWeight = FontWeight.Black,
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    modifier = Modifier.padding(10.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = astro.name ?: "",
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
-            color = CosmicAppTheme.colors.textPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LiveAstroActionSheet(
+    astro: Astrologer,
+    isTamil: Boolean,
+    onChatClick: (Astrologer) -> Unit,
+    onCallClick: (Astrologer, String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        dragHandle = { BottomSheetDefaults.DragHandle() },
+        shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 40.dp, start = 20.dp, end = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Profile Info Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AsyncImage(
+                    model = getImageUrl(astro.image),
+                    contentDescription = astro.name,
+                    modifier = Modifier
+                        .size(65.dp)
+                        .clip(CircleShape)
+                        .border(1.5.dp, CosmicAppTheme.colors.accent, CircleShape),
+                    contentScale = ContentScale.Crop
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Column {
+                    Text(
+                        text = astro.name ?: "Astrologer",
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "${astro.skills.firstOrNull() ?: "Vedic"} • ${astro.experience} ${if(isTamil) "வருடம்" else "Yrs"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Premium Yellow Action Buttons (Screenshot Style)
+            LiveActionButton(
+                text = if(isTamil) "ஜோதிடருடன் அரட்டை (Chat)" else "Chat with Astrologer",
+                icon = Icons.Rounded.Chat,
+                onClick = { onChatClick(astro); onDismiss() }
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            LiveActionButton(
+                text = if(isTamil) "ஜோதிடருடன் அழைக்கவும் (Call)" else "Call with Astrologer",
+                icon = Icons.Rounded.Call,
+                onClick = { onCallClick(astro, "call"); onDismiss() }
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+            LiveActionButton(
+                text = if(isTamil) "ஜோதிடருடன் வீடியோ (Video)" else "Video with Astrologer",
+                icon = Icons.Rounded.VideoCall,
+                onClick = { onCallClick(astro, "video"); onDismiss() }
+            )
+        }
+    }
+}
+
+@Composable
+fun LiveActionButton(text: String, icon: ImageVector, onClick: () -> Unit) {
+    val premiumGradient = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFFFFE57F), // Light Gold
+            Color(0xFFFFD700), // Pure Gold
+            Color(0xFFFFB300)  // Deep Amber
         )
+    )
+
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(58.dp)
+            .shadow(8.dp, RoundedCornerShape(29.dp), spotColor = Color(0xFFFFD700).copy(alpha = 0.5f)),
+        shape = RoundedCornerShape(29.dp),
+        color = Color.Transparent
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(premiumGradient),
+            contentAlignment = Alignment.Center
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(icon, contentDescription = null, tint = Color.Black, modifier = Modifier.size(24.dp))
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = text,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    color = Color.Black,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 15.sp
+                )
+            }
+        }
     }
 }
 
@@ -1243,7 +1386,8 @@ fun LazyListScope.ConsultTab(
     onCallClick: (Astrologer, String) -> Unit,
     isTamil: Boolean,
     searchQuery: String,
-    onSearchChange: (String) -> Unit
+    onSearchChange: (String) -> Unit,
+    selectedFilter: String = "All"
 ) {
     item {
         OutlinedTextField(
@@ -1278,7 +1422,8 @@ fun LazyListScope.ConsultTab(
             onChatClick = onChatClick,
             onCallClick = onCallClick,
             selectedTab = 1,
-            isTamil = isTamil
+            isTamil = isTamil,
+            selectedFilter = selectedFilter
         )
     }
 }
@@ -1346,22 +1491,35 @@ fun LazyListScope.ReferralTab(
 
 @Composable
 fun PolicyLink(label: String, url: String, context: android.content.Context) {
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelMedium.copy(
-            textDecoration = TextDecoration.Underline,
-            fontWeight = FontWeight.Medium
-        ),
-        color = ChocolateBrown,
-        modifier = Modifier.clickable {
+    Surface(
+        onClick = {
             try {
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
                 context.startActivity(intent)
             } catch (e: Exception) {
                 Toast.makeText(context, "Cannot open link", Toast.LENGTH_SHORT).show()
             }
+        },
+        modifier = Modifier.fillMaxWidth().height(48.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White.copy(alpha = 0.05f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFF2196F3) // Premium Blue
+                )
+                Icon(Icons.Rounded.ChevronRight, null, modifier = Modifier.size(18.dp), tint = Color(0xFF2196F3))
+            }
         }
-    )
+    }
 }
 
 // --- 1. DRAWER ---
@@ -1680,10 +1838,13 @@ fun QuickActionItem(title: String, icon: ImageVector, iconColor: Color, modifier
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            val gradient = Brush.verticalGradient(
+                colors = listOf(iconColor.copy(alpha = 0.25f), iconColor.copy(alpha = 0.05f))
+            )
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(iconColor.copy(alpha = 0.15f), CircleShape),
+                    .background(gradient, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -1713,7 +1874,8 @@ fun AstrologerCard(
     onChatClick: (Astrologer) -> Unit,
     onCallClick: (Astrologer, String) -> Unit,
     selectedTab: Int,
-    isTamil: Boolean = true
+    isTamil: Boolean = true,
+    selectedFilter: String = "All"
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     var isFavorite by remember { mutableStateOf(false) }
@@ -1843,9 +2005,15 @@ fun AstrologerCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AstrologerActionButton(Localization.get("chat", isTamil), Icons.Rounded.Chat, (astro.isChatOnline && !astro.isBusy), Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
-                AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, (astro.isAudioOnline && !astro.isBusy), Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
-                AstrologerActionButton(Localization.get("video", isTamil), Icons.Rounded.VideoCall, (astro.isVideoOnline && !astro.isBusy), Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
+                if (selectedFilter == "All" || selectedFilter == "Chat") {
+                    AstrologerActionButton(Localization.get("chat", isTamil), Icons.Rounded.Chat, (astro.isChatOnline && !astro.isBusy), Color(0xFF00BFA5), { onChatClick(astro) }, Modifier.weight(1f))
+                }
+                if (selectedFilter == "All" || selectedFilter == "Call") {
+                    AstrologerActionButton(Localization.get("call", isTamil), Icons.Rounded.Call, (astro.isAudioOnline && !astro.isBusy), Color(0xFFE87A1E), { onCallClick(astro, "call") }, Modifier.weight(1f))
+                }
+                if (selectedFilter == "All" || selectedFilter == "Video") {
+                    AstrologerActionButton(Localization.get("video", isTamil), Icons.Rounded.VideoCall, (astro.isVideoOnline && !astro.isBusy), Color(0xFFD32F2F), { onCallClick(astro, "video") }, Modifier.weight(1f))
+                }
             }
         }
     }
@@ -2378,13 +2546,12 @@ fun TopServicesSection(isTamil: Boolean) {
         )
     }
 
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp) // Reduced from 10dp for compactness
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         services.forEach { (name, icon) ->
             ServiceItem(name, icon) {
@@ -2418,10 +2585,6 @@ fun TopServicesSection(isTamil: Boolean) {
                         val intent = Intent(context, com.astrohark.app.ui.academy.AcademyActivity::class.java)
                         context.startActivity(intent)
                     }
-                    "free" -> {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://astrohark.com/free-services"))
-                        context.startActivity(intent)
-                    }
                 }
             }
         }
@@ -2437,7 +2600,7 @@ fun ServiceItem(name: String, iconRes: Int, onClick: () -> Unit) {
             .clickable { onClick() }
     ) {
         Card(
-            shape = RoundedCornerShape(20.dp), // Match QuickActionItem
+            shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -2447,7 +2610,7 @@ fun ServiceItem(name: String, iconRes: Int, onClick: () -> Unit) {
                 Image(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize(), // Full fill
+                    modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit
                 )
             }
@@ -2463,7 +2626,6 @@ fun ServiceItem(name: String, iconRes: Int, onClick: () -> Unit) {
             color = CosmicAppTheme.colors.textPrimary,
             textAlign = TextAlign.Center,
             maxLines = 2,
-            minLines = 2,
             overflow = TextOverflow.Ellipsis
         )
     }
@@ -2477,7 +2639,7 @@ fun CustomerStoriesSection(isTamil: Boolean) {
         Triple(if(isTamil) "ராகுல் வர்மா" else "Rahul Verma", if(isTamil) "டெல்லி, இந்தியா" else "Delhi, India", if(isTamil) "எனது திருமணத்தை தீர்க்க உதவியது..." else "Helped me resolve my marriage...")
     )
 
-    Column(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) { // Reduced from 16dp
+    Column(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)) {
         Text(
             text = Localization.get("customer_stories", isTamil),
             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -2508,7 +2670,7 @@ fun CustomerStoryCard(name: String, loc: String, review: String) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.width(260.dp)
     ) {
-        Row(modifier = Modifier.padding(14.dp)) { // Slightly more padding
+        Row(modifier = Modifier.padding(14.dp)) {
             Image(
                 painter = painterResource(id = com.astrohark.app.R.drawable.ic_person_placeholder),
                 contentDescription = null,
@@ -2522,12 +2684,10 @@ fun CustomerStoryCard(name: String, loc: String, review: String) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(text = name, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
                     Spacer(modifier = Modifier.weight(1f))
-                    Icon(imageVector = Icons.Filled.Menu, contentDescription=null, modifier=Modifier.size(16.dp), tint=Color.Gray)
                 }
                 Text(text = loc, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = review, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(text = Localization.get("more", false), style = MaterialTheme.typography.labelSmall, color = Color.Red)
             }
         }
     }
@@ -2540,7 +2700,13 @@ fun StickyFooterButtons(
     onTabSelected: (Int) -> Unit,
     onLoginClick: () -> Unit
 ) {
-    val goldColor = Color(0xFFD4AF37)
+    val yellowGradient = Brush.linearGradient(
+        listOf(
+            Color(0xFFFFE57F), // Lighter Gold
+            Color(0xFFFFD700), // Gold
+            Color(0xFFFFA500)  // Orange/Amber
+        )
+    )
 
     Row(
         modifier = Modifier
@@ -2548,7 +2714,7 @@ fun StickyFooterButtons(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Chat Button (Secondary Gold Tint)
+        // Chat Button (Yellow/Gold)
         Button(
             onClick = {
                 if (isGuest) onLoginClick() else onTabSelected(1)
@@ -2560,23 +2726,22 @@ fun StickyFooterButtons(
                 .weight(1f)
                 .height(54.dp)
                 .background(
-                    brush = Brush.linearGradient(listOf(Color(0xFF1A1F3D), Color(0xFF0A0E21))),
+                    brush = yellowGradient,
                     shape = RoundedCornerShape(18.dp)
                 )
-                .border(1.dp, goldColor.copy(alpha = 0.4f), RoundedCornerShape(18.dp))
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Chat, null, modifier = Modifier.size(18.dp), tint = goldColor)
+                Icon(Icons.Rounded.Chat, null, modifier = Modifier.size(18.dp), tint = Color.Black)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Chat Now", // Force English
+                    text = "Chat Now",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                    color = goldColor
+                    color = Color.Black
                 )
             }
         }
 
-        // Talk Button (Primary Glowing Gold/Orange)
+        // Talk Button (Yellow/Gold)
         Button(
             onClick = {
                 if (isGuest) onLoginClick() else onTabSelected(1)
@@ -2587,26 +2752,25 @@ fun StickyFooterButtons(
             modifier = Modifier
                 .weight(1.2f)
                 .height(54.dp)
-                .shadow(elevation = 12.dp, shape = RoundedCornerShape(18.dp), spotColor = goldColor)
+                .shadow(elevation = 8.dp, shape = RoundedCornerShape(18.dp), spotColor = Color(0xFFFFD700).copy(alpha = 0.5f))
                 .background(
-                    brush = Brush.linearGradient(
-                        listOf(Color(0xFFFFB300), Color(0xFFFF6F00))
-                    ),
+                    brush = yellowGradient,
                     shape = RoundedCornerShape(18.dp)
                 )
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Call, null, modifier = Modifier.size(18.dp), tint = Color.White)
+                Icon(Icons.Rounded.Call, null, modifier = Modifier.size(18.dp), tint = Color.Black)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Talk to Astrologer", // Force English
+                    text = "Talk to Astrologer",
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
-                    color = Color.White
+                    color = Color.Black
                 )
             }
         }
     }
 }
+
 
 @Composable
 fun ConsultationHistoryCard(item: SessionHistoryItem) {

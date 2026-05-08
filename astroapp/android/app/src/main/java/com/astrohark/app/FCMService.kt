@@ -255,72 +255,36 @@ class FCMService : FirebaseMessagingService() {
         }
 
         val callerId = data["callerId"] ?: data["fromUserId"] ?: "Unknown"
-        // FIX: Check multiple keys for name to avoid "Unknown"
-        val callerName = data["callerName"]
-            ?: data["userName"]
-            ?: data["name"]
-            ?: data["title"]
-            ?: callerId
-
-        // FIX: Server sends 'sessionId', manual test might send 'callId'
+        val callerName = data["callerName"] ?: data["userName"] ?: data["name"] ?: callerId
         val callId = data["sessionId"] ?: data["callId"] ?: System.currentTimeMillis().toString()
-        val callType = data["callType"] ?: "audio" // Differentiate chat vs audio/video
+        val callType = data["callType"] ?: "audio"
 
-        Log.d(TAG, "=== INCOMING $callType ===")
+        Log.d(TAG, "=== INCOMING $callType (via SERVICE) ===")
         Log.d(TAG, "From: $callerName ($callerId), callId: $callId")
-
-        // Unified handling for Chat, Audio, and Video
-        // We want 'IncomingCallActivity' to handle the Accept/Reject logic for ALL types
 
         // Wake up the screen
         wakeUpDevice()
 
-        // Create intent for IncomingCallActivity
-        val intent = Intent(this, IncomingCallActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
-            putExtra("callerId", callerId)
-            putExtra("callerName", callerName)
-            putExtra("callId", callId)
-            putExtra("callType", callType) // Pass type to activity
-            putExtra("birthData", data["birthData"]) // Pass birthData
-        }
-
-        // Create pending intent for full-screen notification
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            System.currentTimeMillis().toInt(),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Show HIGH-PRIORITY notification with full-screen intent
-        // This is THE OFFICIAL WAY to show call UI on locked screen
-        val notification = NotificationCompat.Builder(this, CALL_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_call)
-            .setContentTitle("Incoming Call")
-            .setContentText("$callerName is calling...")
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setFullScreenIntent(pendingIntent, true) 
-            .setContentIntent(pendingIntent) // Ensure click opens the activity
-            .setAutoCancel(true)
-            .setOngoing(true)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .build()
-
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(CALL_NOTIFICATION_ID, notification)
-        Log.d(TAG, "Full-screen notification shown")
-
-        // Also try direct startActivity as backup
+        // --- THE MASTER FIX FOR KILLED APPS: Start Foreground Service FIRST ---
+        // By starting the service, we move the process into the foreground state.
+        // The service itself will now show the high-priority notification with fullScreenIntent.
         try {
-            startActivity(intent)
-            Log.d(TAG, "IncomingCallActivity started directly")
+            val serviceIntent = Intent(this, CallForegroundService::class.java).apply {
+                putExtra("callerId", callerId)
+                putExtra("callerName", callerName)
+                putExtra("callId", callId)
+                putExtra("callType", callType)
+                putExtra("birthData", data["birthData"])
+            }
+            
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+            Log.d(TAG, "CallForegroundService started from FCM")
         } catch (e: Exception) {
-            Log.e(TAG, "Direct startActivity failed, relying on notification", e)
+            Log.e(TAG, "Failed to start CallForegroundService from FCM", e)
         }
     }
 

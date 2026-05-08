@@ -16,10 +16,10 @@
   <meta property="og:title" content="Astrohark - Professional Online Astrology">
   <meta property="og:description"
     content="Connect with certified astrologers for reliable guidance on career, love, and life.">
-  <meta property="og:image" content="https://Astrohark.com/images/Astrohark-banner.jpg">
+  <meta property="og:image" content="https://astroluna.in/favicon.png?v=2">
 
   <link rel="canonical" href="https://Astrohark.com/">
-  <link rel="icon" type="image/svg+xml" href="images/Astrohark_icon.svg">
+  <link rel="icon" type="image/png" href="favicon.png">
   <link
     href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Outfit:wght@300;400;600;700&family=Playfair+Display:wght@400;700&display=swap"
     rel="stylesheet">
@@ -133,8 +133,9 @@
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
       -webkit-backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-soft);
+      border: 1px solid #FFFFFF;
       border-radius: var(--radius-lg);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 255, 255, 0.15);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -184,8 +185,8 @@
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
       -webkit-backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-medium);
-      box-shadow: var(--shadow-elevation);
+      border: 1px solid #FFFFFF;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.15);
       border-radius: var(--radius-lg);
       padding: 40px;
       width: 90%;
@@ -314,15 +315,15 @@
     /* --- High-Conversion Astro Card --- */
     .astro-card {
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-left: 4px solid var(--accent-gold);
+      border: 1px solid #FFFFFF;
+      border-left: 4px solid #FFFFFF;
       border-radius: 16px;
       padding: 16px;
       margin-bottom: 15px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 0 10px rgba(255, 255, 255, 0.1);
       position: relative;
       transition: transform 0.2s;
     }
@@ -524,10 +525,11 @@
     .toggle-row {
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-soft);
+      border: 1px solid #FFFFFF;
       border-radius: var(--radius-md);
       padding: 15px;
       margin-bottom: 15px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
     }
 
     .toggle-item {
@@ -579,13 +581,14 @@
     .progress-card {
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-soft);
+      border: 1px solid #FFFFFF;
       border-radius: var(--radius-md);
       padding: 15px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 15px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
     }
 
     .grid-menu {
@@ -597,7 +600,7 @@
     .grid-item {
       background: var(--bg-card);
       backdrop-filter: var(--glass-blur);
-      border: 1px solid var(--border-soft);
+      border: 1px solid #FFFFFF;
       border-radius: var(--radius-md);
       padding: 15px;
       text-align: center;
@@ -609,6 +612,7 @@
       gap: 10px;
       transition: all 0.3s ease;
       cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 0 0 8px rgba(255, 255, 255, 0.1);
     }
 
     .grid-icon {
@@ -2183,6 +2187,38 @@
                 <span>Astro Academy</span>
               </div>
 
+              <!-- Chat with Astro -->
+              <div class="service-item-card" onclick="selectQuickService('chat')">
+                <div class="service-icon-wrapper">
+                  <img src="https://cdn-icons-png.flaticon.com/512/134/134914.png" alt="Chat">
+                </div>
+                <span>Chat with Astro</span>
+              </div>
+
+              <!-- Call with Astro -->
+              <div class="service-item-card" onclick="selectQuickService('call')">
+                <div class="service-icon-wrapper">
+                  <img src="https://cdn-icons-png.flaticon.com/512/724/724664.png" alt="Call">
+                </div>
+                <span>Call with Astro</span>
+              </div>
+
+              <!-- Video with Astro -->
+              <div class="service-item-card" onclick="selectQuickService('video')">
+                <div class="service-icon-wrapper">
+                  <img src="https://cdn-icons-png.flaticon.com/512/1716/1716282.png" alt="Video">
+                </div>
+                <span>Video with Astro</span>
+              </div>
+
+              <!-- All Services -->
+              <div class="service-item-card" onclick="selectQuickService('all')">
+                <div class="service-icon-wrapper">
+                  <img src="https://cdn-icons-png.flaticon.com/512/570/570170.png" alt="All">
+                </div>
+                <span>All Services</span>
+              </div>
+
               <!-- Free Services -->
               <div class="service-item-card" onclick="alert('For free services, please contact: info@Astrohark.com')">
                 <div class="service-icon-wrapper">
@@ -2361,7 +2397,7 @@
           </div>
 
           <!-- Feedback Section -->
-          <div id="feedbackSection" style="margin-bottom: 35px; background: rgba(255,127,0,0.03); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,127,0,0.1); display: flex; gap: 30px; align-items: center;">
+          <div id="feedbackSection" style="margin-bottom: 35px; background: rgba(255,127,0,0.03); border-radius: 20px; padding: 30px; border: 1px solid #FFFFFF; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.1); display: flex; gap: 30px; align-items: center;">
             <div style="flex: 1;">
               <h3 style="margin:0 0 10px 0; font-family:var(--font-heading); font-size:1.4rem; color:white;"><i class="fas fa-comment-dots" style="color:var(--primary);"></i> கருத்துக்களை பகிரவும்</h3>
               <p style="color:var(--text-muted); font-size: 0.95rem; margin: 0;">உங்கள் அனுபவத்தை எங்களுடன் பகிர்ந்து கொள்ளுங்கள். (Share your experience with us.)</p>
@@ -2373,7 +2409,7 @@
           </div>
 
           <!-- Trust & Policy Section -->
-          <div class="trust-policy-section" style="margin: 40px 0; background: var(--bg-card); border-radius: var(--radius-lg); padding: 30px; border: 1px solid var(--border-soft); box-shadow: var(--shadow-elevation);">
+          <div class="trust-policy-section" style="margin: 40px 0; background: var(--bg-card); border-radius: var(--radius-lg); padding: 30px; border: 1px solid #FFFFFF; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(255, 255, 255, 0.1);">
             <div style="display: flex; justify-content: space-around; align-items: center; gap: 30px;">
               <div style="flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;">
                 <div style="width: 60px; height: 60px; background: rgba(255,127,0,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🔐</div>
@@ -3804,7 +3840,7 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="https://unpkg.com/simple-peer/simplepeer.min.js"></script>
   <script>
-    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta', signalBuffer: [], astroList: [] };
+    const state = { me: null, socket: null, session: null, peer: null, localStream: null, lang: 'ta', signalBuffer: [], astroList: [], selectedService: 'all' };
     window.state = state; // Expose for Android onResume wallet refresh
 
     // --- Translation Logic ---
@@ -5020,6 +5056,18 @@
       });
     }
 
+    function selectQuickService(type) {
+      state.selectedService = type;
+      renderAstroList(state.astroList);
+      document.getElementById('astroList').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function selectQuickService(type) {
+      state.selectedService = type;
+      renderAstroList(state.astroList);
+      document.getElementById('astroList').scrollIntoView({ behavior: 'smooth' });
+    }
+
     function renderAstroList(list) {
       const container = document.getElementById('astroList');
       const liveContainer = document.getElementById('liveAstrosList');
@@ -5113,18 +5161,30 @@
              </div>
           </div>
 
-          <div class="card-right">
-             <div class="action-buttons-stack">
-                <button class="btn-premium-chat ${a.isChatOnline ? '' : 'disabled'}"
-                     onclick="event.stopPropagation(); checkGuestAction('chat', '${a.userId}')">
-                    Chat
-                </button>
-                <button class="btn-premium-call ${a.isAudioOnline ? '' : 'disabled'}"
-                     onclick="event.stopPropagation(); checkGuestAction('call', '${a.userId}')">
-                    Call
-                </button>
-             </div>
-          </div>
+           <div class="card-right">
+              <div class="action-buttons-stack">
+                 ${(state.selectedService === 'all' || state.selectedService === 'chat') ? `
+                 <button class="btn-premium-chat ${a.isChatOnline ? '' : 'disabled'}"
+                      onclick="event.stopPropagation(); checkGuestAction('chat', '${a.userId}')">
+                     Chat
+                 </button>
+                 ` : ''}
+
+                 ${((state.selectedService === 'all' || state.selectedService === 'call') && a.isAudioOnline) ? `
+                 <button class="btn-premium-call"
+                      onclick="event.stopPropagation(); checkGuestAction('call', '${a.userId}')">
+                     Call
+                 </button>
+                 ` : ''}
+
+                 ${((state.selectedService === 'all' || state.selectedService === 'video') && a.isVideoOnline) ? `
+                 <button class="btn-premium-video"
+                      onclick="event.stopPropagation(); checkGuestAction('video', '${a.userId}')">
+                     Video
+                 </button>
+                 ` : ''}
+              </div>
+           </div>
         `;
         container.appendChild(div);
       });

@@ -174,7 +174,7 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
             TopAppBar(
                 title = {
                     Column {
-                        Text("ராசி & நவாம்ச கட்டங்கள்", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ChocolateBrown)
+                        Text("Rasi & Navamsa Charts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ChocolateBrown)
                         Text(birthData.optString("name", "User"), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     }
                 },
@@ -203,7 +203,7 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
                         )
                     }
                 ) {
-                    val tabs = listOf("கட்டங்கள்", "நவகிரக பாதசாரம்", "தசா புக்தி விபரங்கள்")
+                    val tabs = listOf("Charts", "Planets", "Dasha Details")
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = selectedTab == index,
@@ -236,13 +236,13 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
 fun ChartsTab(data: ChartData, birthData: JSONObject) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
 
-        Text("ராசி கட்டம் (Rasi Chart)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ChocolateBrown)
+        Text("Rasi Chart", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ChocolateBrown)
         Spacer(Modifier.height(8.dp))
         SouthIndianGridEnhanced(data.planets, data.houses.ascendantDetails.signName, "Rasi", birthData, data.panchanga.nakshatra?.name ?: "")
 
         Spacer(Modifier.height(32.dp))
 
-        Text("நவாம்ச கட்டம் (Navamsa - D9)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ChocolateBrown)
+        Text("Navamsa Chart (D9)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ChocolateBrown)
         Spacer(Modifier.height(8.dp))
         SouthIndianGridEnhanced(data.navamsa?.planets ?: emptyList(), "", "Navamsa", birthData, "")
 
@@ -388,14 +388,14 @@ fun getMonthName(m: Int): String = listOf("", "Jan", "Feb", "Mar", "Apr", "May",
 @Composable
 fun PlanetsTab(data: ChartData) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text("நவகிரக பாதசாரம் (Navagraha Pathasaram)", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 18.sp)
+        Text("Planet Positions (Navagraha)", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 18.sp)
         Spacer(Modifier.height(12.dp))
 
         // New Precise Table Grid
         Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray)) {
             // Header
             Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF2E7D32)).padding(8.dp)) {
-                listOf("கிரகம்", "நட்சத்திரம்", "பாதம்", "ராசி", "நிலை").forEach { head ->
+                listOf("Planet", "Nakshatra", "Pada", "Sign", "Status").forEach { head ->
                     Text(
                         text = head,
                         modifier = Modifier.weight(1f),
@@ -452,7 +452,7 @@ fun DashaListTab(mahadashas: List<DashaPeriod>) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         item {
             Box(Modifier.fillMaxWidth().background(ChocolateBrown).padding(16.dp)) {
-                Text("விம்ஷோத்தரி தசா புக்தி விபரங்கள்", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("Vimshottari Dasha Bhukti Details", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
         items(mahadashas) { md ->
@@ -497,11 +497,11 @@ fun DashaNodeInternal(period: DashaPeriod) {
             Column(Modifier.weight(1f)) {
                 Text(
                     text = "${planetTamil[period.lord] ?: period.lord} " + when(period.level) {
-                        1 -> "மகா தசை"
-                        2 -> "புக்தி"
-                        3 -> "ஆந்தரம்"
-                        4 -> "பிரத்யந்தரம்"
-                        else -> "சிக்ஷ்ம"
+                        1 -> "Maha Dasha"
+                        2 -> "Bhukti"
+                        3 -> "Antharam"
+                        4 -> "Pratyantharam"
+                        else -> "Sookshma"
                     },
                     fontWeight = if(period.level == 1) FontWeight.Bold else FontWeight.Medium,
                     fontSize = if(period.level == 1) 16.sp else 14.sp,

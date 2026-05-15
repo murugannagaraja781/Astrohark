@@ -422,9 +422,10 @@ app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {
     }
 
     const imageUrl = 'uploads/' + req.file.filename;
-    // Use returnDocument: 'after' to fix deprecation warning
+    // Use a safe case-insensitive lookup
+    const escapedId = userId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const user = await User.findOneAndUpdate(
-      { userId },
+      { userId: { $regex: new RegExp("^" + escapedId + "$", "i") } },
       { $set: { image: imageUrl } },
       { returnDocument: 'after' }
     );

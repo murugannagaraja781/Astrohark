@@ -98,12 +98,15 @@ class CallActivity : ComponentActivity() {
 
     // Compose State
     private var callDurationSeconds by mutableStateOf(0)
+    private var connectingSeconds by mutableStateOf(0)
     private var statusText by mutableStateOf("Connecting...")
     private var isBillingActive by mutableStateOf(false)
     private var isMutedState by mutableStateOf(false)
-    private var isVideoEnabledState by mutableStateOf(true) // For camera toggle
-    private var isSpeakerOnState by mutableStateOf(false) // For audio toggle
+    private var isVideoEnabledState by mutableStateOf(true)
+    private var isSpeakerOnState by mutableStateOf(false)
+    private var hasEmittedConnect = false
     private var isEditingIntake by mutableStateOf(false) // Track when edit form is open
+    private var isReady by mutableStateOf(false) 
     private var remainingTime by mutableStateOf("") // Available time from wallet
     private var isRecordingState by mutableStateOf(false)
     private var mediaRecorder: MediaRecorder? = null
@@ -140,8 +143,9 @@ class CallActivity : ComponentActivity() {
     // Helper state for formatted time
     private val formattedDuration: String
         get() {
-            val minutes = callDurationSeconds / 60
-            val seconds = callDurationSeconds % 60
+            val secondsToFormat = if (statusText.isEmpty()) callDurationSeconds else connectingSeconds
+            val minutes = secondsToFormat / 60
+            val seconds = secondsToFormat % 60
             return String.format("%02d:%02d", minutes, seconds)
         }
 
@@ -205,7 +209,11 @@ class CallActivity : ComponentActivity() {
 
     private val timerRunnable = object : Runnable {
         override fun run() {
-            callDurationSeconds++
+            if (statusText.isEmpty()) {
+                callDurationSeconds++
+            } else {
+                connectingSeconds++
+            }
             timerHandler.postDelayed(this, 1000)
         }
     }
@@ -602,8 +610,23 @@ class CallActivity : ComponentActivity() {
                 }
                 PeerConnection.IceConnectionState.CONNECTED,
                 PeerConnection.IceConnectionState.COMPLETED -> {
-                    Log.d(TAG, "ICE connection stable")
-                    statusText = ""
+                    Log.d(TAG, "ICE connection stable. hasEmittedConnect=$hasEmittedConnect")
+                    
+                    // Emit session-connect ONLY once on the first stable connection
+                    if (!hasEmittedConnect) {
+                        callDurationSeconds = 0 // Reset duration to 0 only on initial connection
+                        val connectPayload = JSONObject().apply {
+                            put("sessionId", sessionId)
+                        }
+                        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+                        hasEmittedConnect = true
+                        Log.d(TAG, "✓ First connection established - Billing synced")
+                    }
+                    
+                    // Always clear status text when connected (clears Calling, Connecting, or Reconnecting)
+                    if (statusText.isNotEmpty()) {
+                        statusText = "" 
+                    }
                 }
                 else -> {
                     Log.d(TAG, "ICE state: $iceState - monitoring...")
@@ -765,12 +788,7 @@ class CallActivity : ComponentActivity() {
             SocketManager.registerUser(myUserId) { success ->
                 if (success) {
                     runOnUiThread {
-                        Log.d(TAG, "Initiator: Sending session-connect for $sessionId")
-                        val connectPayload = JSONObject().apply {
-                             put("sessionId", sessionId)
-                        }
-                        SocketManager.ensureConnection()
-                        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+                        Log.d(TAG, "Initiator: Registered. Waiting for ICE connection to emit session-connect.")
                     }
                 }
             }
@@ -793,12 +811,7 @@ class CallActivity : ComponentActivity() {
                             SocketManager.getSocket()?.emit("answer-session", payload)
                         }
 
-                        Log.d(TAG, "Recipient: Sending session-connect for $sessionId")
-                        val connectPayload = JSONObject().apply {
-                            put("sessionId", sessionId)
-                        }
-                        SocketManager.ensureConnection()
-                        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+                        Log.d(TAG, "Recipient: Registered. Waiting for ICE connection to emit session-connect.")
                     }
                 }
             }
@@ -887,7 +900,10 @@ class CallActivity : ComponentActivity() {
                 runOnUiThread {
                     when (newState) {
                         PeerConnection.IceConnectionState.CONNECTED -> {
-                            statusText = "" // Hide status
+                            if (statusText.isNotEmpty()) {
+                                callDurationSeconds = 0 // Start at 0
+                                statusText = "" // Hide status
+                            }
                             // Auto-start recording for astrologers
                             val myRole = TokenManager(this@CallActivity).getUserSession()?.role
                             if (myRole == "astrologer" && !isRecordingState) {

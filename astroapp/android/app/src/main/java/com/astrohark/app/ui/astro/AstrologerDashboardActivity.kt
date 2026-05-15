@@ -436,8 +436,13 @@ fun AstrologerDashboardScreen(
                             }
                         }
                     } else {
+                        val errorBody = response.errorBody()?.string()
+                        val errorMessage = try {
+                            JSONObject(errorBody ?: "{}").optString("error", "Upload Failed")
+                        } catch (e: Exception) { "Upload Failed" }
+                        
                         withContext(kotlinx.coroutines.Dispatchers.Main) {
-                            Toast.makeText(context, "Upload Failed", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
                         }
                     }
                 } catch (e: Exception) {

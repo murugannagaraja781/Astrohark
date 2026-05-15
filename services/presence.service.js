@@ -7,7 +7,7 @@ const {
     sessionDisconnectTimeouts,
     SESSION_GRACE_PERIOD
 } = require('./socketStore');
-const { broadcastAstroUpdate } = require('./astrologer.service');
+const { broadcastAstroUpdate, broadcastSingleAstroUpdate } = require('./astrologer.service');
 // billingService removed to break circular dependency. Required inside handleDisconnect if needed.
 
 const Session = require('../models/Session');
@@ -186,7 +186,7 @@ class PresenceService {
             if (user && user.role === 'astrologer') {
                 user.isBusy = isBusy;
                 await user.save();
-                broadcastAstroUpdate(io, process.env.SERVER_URL);
+                broadcastSingleAstroUpdate(io, userId, process.env.SERVER_URL);
                 console.log(`[Presence] ${user.name} busy state: ${isBusy}`);
             }
         } catch (err) {

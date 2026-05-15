@@ -44,4 +44,37 @@ async function broadcastAstroUpdate(io, SERVER_URL) {
     }
 }
 
-module.exports = { getFormattedAstrologers, broadcastAstroUpdate };
+async function broadcastSingleAstroUpdate(io, userId, SERVER_URL) {
+    if (!io) return;
+    try {
+        const a = await User.findOne({ userId })
+            .select('userId name phone skills price isOnline isChatOnline isAudioOnline isVideoOnline experience isVerified image walletBalance totalEarnings isBusy languages orderCount isDocumentVerified')
+            .lean();
+        if (!a) return;
+
+        const formatted = {
+            userId: a.userId,
+            name: a.name,
+            skills: a.skills || [],
+            price: a.price || 15,
+            isOnline: a.isOnline || false,
+            isChatOnline: a.isChatOnline || false,
+            isAudioOnline: a.isAudioOnline || false,
+            isVideoOnline: a.isVideoOnline || false,
+            experience: a.experience || 0,
+            isVerified: a.isVerified || false,
+            isBusy: a.isBusy || false,
+            image: formatImageUrl(a.image, a.name, SERVER_URL),
+            languages: a.languages || ['Tamil', 'English'],
+            orderCount: a.orderCount || 0,
+            isDocumentVerified: a.isDocumentVerified || false
+        };
+
+        io.emit('astrologer-single-update', formatted);
+        console.log(`Broadcasting single update for ${a.name} (${userId}).`);
+    } catch (e) {
+        console.error('Single Broadcast Error:', e);
+    }
+}
+
+module.exports = { getFormattedAstrologers, broadcastAstroUpdate, broadcastSingleAstroUpdate };

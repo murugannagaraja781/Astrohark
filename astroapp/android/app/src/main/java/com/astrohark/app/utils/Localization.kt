@@ -124,7 +124,12 @@ object Localization {
         "refer_desc" to "Invite friends and earn rewards",
         "connecting_title" to "Connecting to Astrologer...",
         "connecting_subtitle" to "Please stay on this screen while we establish a secure connection",
-        "cancel_request" to "Cancel Request"
+        "cancel_request" to "Cancel Request",
+        "mahadasha" to "Maha Dasha",
+        "bhukti" to "Bhukti",
+        "antharam" to "Antharam",
+        "pratyantharam" to "Pratyantharam",
+        "sookshma" to "Sookshma"
     )
 
     // Tamil Strings
@@ -249,7 +254,12 @@ object Localization {
         "refer_desc" to "நண்பர்களை அழைத்து வாலட் பணத்தை அள்ளுங்கள்",
         "connecting_title" to "ஜோதிடருடன் இணைகிறது...",
         "connecting_subtitle" to "இணைப்பு உறுதி செய்யப்படும் வரை தயவுசெய்து காத்திருக்கவும்",
-        "cancel_request" to "ரத்து செய்"
+        "cancel_request" to "ரத்து செய்",
+        "mahadasha" to "மகா தசை",
+        "bhukti" to "புத்தி",
+        "antharam" to "அந்தரம்",
+        "pratyantharam" to "பிரத்யந்தரம்",
+        "sookshma" to "சூட்சமம்"
     )
 
 

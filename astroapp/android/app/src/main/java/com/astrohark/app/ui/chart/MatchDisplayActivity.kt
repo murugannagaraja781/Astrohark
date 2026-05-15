@@ -6,16 +6,17 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.astrohark.app.data.api.ApiClient
@@ -50,7 +51,8 @@ class MatchDisplayActivity : ComponentActivity() {
             CosmicAppTheme {
                 MatchDisplayScreen(
                     birthData = birthData!!,
-                    onFetchMatch = { bData -> fetchMatchHtml(bData) }
+                    onFetchMatch = { bData -> fetchMatchHtml(bData) },
+                    onBack = { finish() }
                 )
             }
         }
@@ -82,9 +84,11 @@ class MatchDisplayActivity : ComponentActivity() {
                     addProperty("hour", h)
                     addProperty("min", minVal)
                     addProperty("minute", minVal)
+                    addProperty("lat", json.optDouble("latitude", 13.0827))
+                    addProperty("lng", json.optDouble("longitude", 80.2707))
                     addProperty("latitude", json.optDouble("latitude", 13.0827))
                     addProperty("longitude", json.optDouble("longitude", 80.2707))
-                    addProperty("timezone", 5.5)
+                    addProperty("timezone", json.optDouble("timezone", 5.5))
                     
                     // Unified format for wider compatibility
                     addProperty("dob", String.format("%04d-%02d-%02d", y, m, d))
@@ -110,7 +114,7 @@ class MatchDisplayActivity : ComponentActivity() {
                 add("girlData", girlData)
             }
 
-            val response = apiInterface.getMatchPorutham(payload) // Use Tamil Porutham endpoint
+            val response = apiInterface.getRasiEngMatching(payload)
             if (response.isSuccessful && response.body() != null) {
                 val jsonResponse = response.body()!!.toString()
                 android.util.Log.d("MatchDisplay", "API Response: ${jsonResponse.take(200)}")
@@ -132,72 +136,95 @@ class MatchDisplayActivity : ComponentActivity() {
             <head>
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
+                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
                     body {
-                        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-                        padding: 20px;
+                        font-family: 'Inter', sans-serif;
+                        padding: 16px;
                         background-color: #0B0805;
                         color: #F5F2F0;
-                        line-height: 1.6;
+                        line-height: 1.5;
+                        margin: 0;
                     }
                     .card {
                         background: #1C140E;
-                        padding: 24px;
-                        border-radius: 18px;
+                        padding: 20px;
+                        border-radius: 20px;
                         border: 1px solid #3E2723;
-                        margin-bottom: 24px;
-                        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                        margin-bottom: 20px;
+                        box-shadow: 0 8px 25px rgba(0,0,0,0.6);
                     }
-                    h2 { color: #FFB300; text-align: center; font-weight: 300; margin-top: 0; letter-spacing: 1px; border-bottom: 1px solid #3E2723; padding-bottom: 12px; }
+                    h2 { 
+                        color: #FF7F00; 
+                        text-align: center; 
+                        font-weight: 600; 
+                        margin-top: 0; 
+                        font-size: 18px;
+                        letter-spacing: 0.5px; 
+                        border-bottom: 1px solid rgba(255,127,0,0.2); 
+                        padding-bottom: 12px; 
+                        text-transform: uppercase;
+                    }
                     .score-box {
                         text-align: center;
-                        font-size: 36px;
+                        font-size: 42px;
                         font-weight: 800;
-                        color: #FFB300;
-                        margin: 24px 0;
-                        padding: 20px;
-                        background: #0B0805;
+                        color: #FF7F00;
+                        margin: 20px 0;
+                        padding: 15px;
+                        background: rgba(255,127,0,0.05);
                         border-radius: 16px;
-                        border: 2px solid #FFB300;
+                        border: 1px solid rgba(255,127,0,0.3);
                     }
                     .info-row {
                         display: flex;
                         justify-content: space-between;
-                        padding: 14px 0;
-                        border-bottom: 1px solid #3E2723;
+                        padding: 12px 0;
+                        border-bottom: 1px solid rgba(165,139,116,0.1);
                     }
                     .info-label { color: #A58B74; font-size: 13px; }
-                    .info-value { font-weight: bold; color: #FFB300; }
+                    .info-value { font-weight: 600; color: #FF7F00; font-size: 14px; }
 
-                    table { width: 100%; border-collapse: separate; border-spacing: 0 12px; margin-top: 10px; }
-                    th { text-align: left; padding: 12px; color: #666; font-size: 11px; text-transform: uppercase; }
+                    table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; }
                     td {
                         background: #0B0805;
-                        padding: 16px;
+                        padding: 14px;
                         border-radius: 12px;
-                        font-weight: 400;
+                        font-size: 13px;
                         border: 1px solid #3E2723;
                     }
-                    .good { color: #4CAF50; font-weight: bold; }
-                    .bad { color: #EF5350; font-weight: bold; }
+                    .good { color: #4CAF50; font-weight: 600; }
+                    .bad { color: #EF5350; font-weight: 600; }
                     .verdict {
                         text-align: center;
-                        font-size: 18px;
-                        font-weight: bold;
-                        padding: 16px;
+                        font-size: 16px;
+                        font-weight: 800;
+                        padding: 14px;
                         border-radius: 12px;
                         margin-top: 16px;
                         border: 1px solid currentColor;
                         text-transform: uppercase;
-                        letter-spacing: 1px;
                     }
                     .verdict-advisable { background: rgba(76, 175, 80, 0.1); color: #4CAF50; }
                     .verdict-not { background: rgba(239, 83, 80, 0.1); color: #EF5350; }
+                    
+                    .dosha-tag {
+                        display: inline-block;
+                        padding: 4px 8px;
+                        border-radius: 6px;
+                        font-size: 11px;
+                        font-weight: bold;
+                        margin-left: 8px;
+                    }
+                    .dosha-bad { background: rgba(239, 83, 80, 0.2); color: #EF5350; }
+                    .dosha-good { background: rgba(76, 175, 80, 0.2); color: #4CAF50; }
                 </style>
             </head>
             <body>
                 <div class="card">
                     <h2>திருமணப் பொருத்தம்</h2>
-                    <div id="content">நட்சத்திரங்களை ஆய்வு செய்கிறது...</div>
+                    <div id="content">
+                        <div style="text-align:center; padding: 40px; color: #A58B74;">நட்சத்திரங்களை ஆய்வு செய்கிறது...</div>
+                    </div>
                 </div>
 
                 <div class="card" id="dosha-card" style="display:none;">
@@ -208,18 +235,18 @@ class MatchDisplayActivity : ComponentActivity() {
                 <script>
                     try {
                         const root = $jsonResponse;
-                        const data = root.data; // Access the nested data object
+                        const data = root.data;
                         let html = '';
 
                         if (data) {
-                            html += '<div class="info-row"><span class="info-label">ஆண் நட்சத்திரம்</span><span class="info-value">' + data.boy.nakshatra + ' (' + data.boy.rasi + ')</span></div>';
-                            html += '<div class="info-row"><span class="info-label">பெண் நட்சத்திரம்</span><span class="info-value">' + data.girl.nakshatra + ' (' + data.girl.rasi + ')</span></div>';
+                            html += '<div class="info-row"><span class="info-label">ஆண் நட்சத்திரம்</span><span class="info-value">' + (data.boy?.nakshatra || '-') + ' (' + (data.boy?.rasi || '-') + ')</span></div>';
+                            html += '<div class="info-row"><span class="info-label">பெண் நட்சத்திரம்</span><span class="info-value">' + (data.girl?.nakshatra || '-') + ' (' + (data.girl?.rasi || '-') + ')</span></div>';
 
-                            html += '<div class="score-box">' + (data.totalScore || 0) + ' / ' + (data.maxScore || 36) + '</div>';
+                            html += '<div class="score-box">' + (data.totalScore || 0) + ' <span style="font-size:14px; color:#A58B74; font-weight:400">/ ' + (data.maxScore || 36) + '</span></div>';
 
                             let verdictTxt = data.verdict;
                             if(verdictTxt === 'Advisable') verdictTxt = 'பொருத்தம் உண்டு';
-                            if(verdictTxt === 'Not Advisable') verdictTxt = 'பொருத்தம் இல்லை';
+                            else if(verdictTxt === 'Not Advisable') verdictTxt = 'பொருத்தம் இல்லை';
                             
                             const verdictClass = data.verdict === 'Advisable' ? 'verdict-advisable' : 'verdict-not';
                             html += '<div class="verdict ' + verdictClass + '">' + verdictTxt + '</div>';
@@ -235,7 +262,7 @@ class MatchDisplayActivity : ComponentActivity() {
                                     const cls = isMatch ? 'good' : 'bad';
                                     const icon = isMatch ? '✓' : '✗';
 
-                                    html += '<tr><td>' + name + '</td><td class="' + cls + '" style="text-align:right">' + icon + ' (' + score + '/' + max + ')</td></tr>';
+                                    html += '<tr><td><span style="color:#A58B74; font-size:12px">' + name + '</span></td><td class="' + cls + '" style="text-align:right">' + icon + ' <span style="font-size:11px">(' + score + '/' + max + ')</span></td></tr>';
                                 });
                                 html += '</table>';
                             }
@@ -244,18 +271,23 @@ class MatchDisplayActivity : ComponentActivity() {
                             // Dosha
                             let dHtml = '';
                             const formatDosha = (label, d) => {
-                                const cls = d.hasDosha ? 'bad' : 'good';
+                                if (!d) return '';
+                                const cls = d.hasDosha ? 'dosha-bad' : 'dosha-good';
                                 const dLabel = label === 'Male' ? 'ஆண்' : 'பெண்';
-                                const dStatus = d.hasDosha ? 'தோஷம் உள்ளது' : 'தோஷம் இல்லை';
-                                return '<div class="info-row"><span class="info-label">' + dLabel + '</span><span class="' + cls + '">' + dStatus + '</span></div>' +
-                                       '<div style="font-size:12px; color:#888; margin-bottom:10px;">' + (d.desc || d.details || '') + '</div>';
+                                const dStatus = d.hasDosha ? 'உள்ளது' : 'இல்லை';
+                                return '<div class="info-row"><span class="info-label">' + dLabel + ' செவ்வாய் தோஷம்</span><span class="dosha-tag ' + cls + '">' + dStatus + '</span></div>' +
+                                       '<div style="font-size:11px; color:#A58B74; margin-top:4px; margin-bottom:12px; padding-left:2px;">' + (d.desc || d.details || '') + '</div>';
                             };
                             dHtml += formatDosha('Male', data.boyDosha);
                             dHtml += formatDosha('Female', data.girlDosha);
 
                             if (data.sandhi) {
-                                const sStatus = data.sandhi.hasSandhi ? 'தசா சந்தி உள்ளது' : 'தசா சந்தி இல்லை';
-                                dHtml += '<div class="info-row"><span class="info-label">தசா சந்தி</span><span class="info-value">' + sStatus + '</span></div>';
+                                const cls = data.sandhi.hasSandhi ? 'dosha-bad' : 'dosha-good';
+                                const sStatus = data.sandhi.hasSandhi ? 'உள்ளது' : 'இல்லை';
+                                dHtml += '<div class="info-row" style="border-top: 1px solid rgba(255,255,255,0.05); margin-top:8px;"><span class="info-label">தசா சந்தி</span><span class="dosha-tag ' + cls + '">' + sStatus + '</span></div>';
+                                if (data.sandhi.verdict) {
+                                     dHtml += '<div style="font-size:11px; color:#A58B74; margin-top:4px;">' + data.sandhi.verdict + '</div>';
+                                }
                             }
 
                             document.getElementById('dosha-content').innerHTML = dHtml;
@@ -275,7 +307,8 @@ class MatchDisplayActivity : ComponentActivity() {
 @Composable
 fun MatchDisplayScreen(
     birthData: JSONObject,
-    onFetchMatch: suspend (JSONObject) -> String?
+    onFetchMatch: suspend (JSONObject) -> String?,
+    onBack: () -> Unit
 ) {
     var htmlContent by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -294,9 +327,9 @@ fun MatchDisplayScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Compatibility Match") },
+                title = { Text("Compatibility Match", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    androidx.compose.material3.IconButton(onClick = { /* navigate back handled by activity launcher */ }) {
+                    androidx.compose.material3.IconButton(onClick = onBack) {
                         androidx.compose.material3.Icon(
                              imageVector = androidx.compose.material.icons.Icons.Default.ArrowBack,
                              contentDescription = "Back",
@@ -319,24 +352,34 @@ fun MatchDisplayScreen(
                     color = CosmicAppTheme.colors.accent
                 )
             } else if (failed || htmlContent?.startsWith("ERROR:") == true) {
-                 Text(
-                     text = htmlContent ?: "Failed to load match data.",
-                     color = Color.Red,
-                     modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                 )
+                 Column(modifier = Modifier.align(Alignment.Center).padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                      androidx.compose.material3.Icon(
+                          imageVector = androidx.compose.material.icons.Icons.Default.ErrorOutline,
+                          contentDescription = null,
+                          tint = Color.Red,
+                          modifier = Modifier.size(48.dp)
+                      )
+                      Spacer(Modifier.height(16.dp))
+                      Text(
+                          text = htmlContent?.replace("ERROR: ", "") ?: "Failed to load match data.",
+                          color = Color.Red,
+                          textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                          fontWeight = FontWeight.Medium
+                      )
+                 }
             } else if (htmlContent != null) {
                  AndroidView(
                     factory = { context ->
                         WebView(context).apply {
                             settings.javaScriptEnabled = true
                             webViewClient = WebViewClient()
+                            setBackgroundColor(0) // Transparent background
                         }
                     },
                     update = { webView ->
                         webView.loadDataWithBaseURL(null, htmlContent!!, "text/html", "utf-8", null)
                     },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().background(Color(0xFF0B0805))
                 )
             }
         }

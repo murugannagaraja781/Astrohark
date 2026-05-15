@@ -65,6 +65,14 @@ val planetAbbrTamil = mapOf(
     "Jupiter" to "குரு", "Venus" to "சுக்", "Saturn" to "சனி", "Rahu" to "ராகு",
     "Ketu" to "கேது", "Ascendant" to "லக்", "As" to "லக்", "Mandi" to "மாந்"
 )
+ 
+val dashaLevelTamil = mapOf(
+    1 to "மகா தசை",
+    2 to "புத்தி",
+    3 to "அந்தரம்",
+    4 to "பிரத்யந்தரம்",
+    5 to "சூட்சமம்"
+)
 
 // --- Updated Data Models ---
 data class ChartResponse(val success: Boolean, val data: ChartData)
@@ -496,13 +504,13 @@ fun DashaNodeInternal(period: DashaPeriod) {
 
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = "${planetTamil[period.lord] ?: period.lord} " + when(period.level) {
+                    text = "${planetTamil[period.lord] ?: period.lord} " + (dashaLevelTamil[period.level] ?: when(period.level) {
                         1 -> "Maha Dasha"
                         2 -> "Bhukti"
                         3 -> "Antharam"
                         4 -> "Pratyantharam"
                         else -> "Sookshma"
-                    },
+                    }),
                     fontWeight = if(period.level == 1) FontWeight.Bold else FontWeight.Medium,
                     fontSize = if(period.level == 1) 16.sp else 14.sp,
                     color = Color.DarkGray

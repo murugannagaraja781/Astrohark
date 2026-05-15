@@ -4269,9 +4269,19 @@
           if (active.id === 'nav-call') navSwitch('call');
           else if (active.id === 'nav-chat') navSwitch('chat');
           else if (active.id === 'nav-home') navSwitch('home');
+          else if (active.id === 'nav-astro') navSwitch('astro');
         } else {
           renderAstroList(list);
         }
+      });
+
+      socket.on('astrologer-single-update', (updatedAstro) => {
+        const idx = state.astroList.findIndex(a => a.userId === updatedAstro.userId);
+        if (idx !== -1) state.astroList[idx] = updatedAstro;
+        else state.astroList.push(updatedAstro);
+        
+        // Refresh the list view while preserving the current filter
+        renderAstroList(state.astroList);
       });
 
       socket.on('my-profile-updated', (newUser) => {
@@ -4584,6 +4594,7 @@
         if (sectHome) sectHome.classList.remove('hidden');
         if (sectDash) sectDash.classList.add('hidden');
         if (document.getElementById('topFilterTabs')) document.getElementById('topFilterTabs').classList.remove('hidden');
+        state.selectedService = 'all'; // Reset service filter on Home click
         renderAstroList(state.astroList);
       }
       else if (tab === 'dash') {
@@ -4594,6 +4605,7 @@
         if (sectHome) sectHome.classList.remove('hidden');
         if (sectDash) sectDash.classList.add('hidden');
         if (document.getElementById('topFilterTabs')) document.getElementById('topFilterTabs').classList.remove('hidden');
+        state.selectedService = 'all'; // Reset service filter on Astro click
         renderAstroList(state.astroList);
 
         // Scroll to astrologers
@@ -4717,10 +4729,11 @@
 
     function selectQuickService(type) {
       state.selectedService = type;
-      // Re-render to show only specific buttons
+      // Re-render to apply filter
       renderAstroList(state.astroList);
-      // Optional: scroll to astrologer list
-      document.getElementById('astroList').scrollIntoView({ behavior: 'smooth' });
+      // Scroll to astrologer list
+      const target = document.getElementById('section-consult') || document.getElementById('astroList');
+      target?.scrollIntoView({ behavior: 'smooth' });
     }
 
     function renderAstroList(list) {
@@ -4729,10 +4742,20 @@
       const liveSection = document.getElementById('liveAstrosSection');
       
       container.innerHTML = '';
-      const astrologers = list || [];
+      let astrologers = [...(list || [])];
 
-      // Update Live Astros Carousel
-      const liveAstros = astrologers.filter(a => a.isBusy);
+      // 1. Apply Global Service Filter (if any)
+      if (state.selectedService && state.selectedService !== 'all') {
+        astrologers = astrologers.filter(a => {
+          if (state.selectedService === 'chat') return a.isChatOnline;
+          if (state.selectedService === 'call') return a.isAudioOnline;
+          if (state.selectedService === 'video') return a.isVideoOnline;
+          return true;
+        });
+      }
+
+      // 2. Update Live Astros Carousel (Astrologers who are Busy)
+      const liveAstros = (list || []).filter(a => a.isBusy);
       if (liveAstros.length > 0) {
         liveSection.style.display = 'block';
         liveContainer.innerHTML = liveAstros.map(a => `
@@ -4749,7 +4772,7 @@
         liveSection.style.display = 'none';
       }
 
-      // Sort: Online First, then by Order Count (desc)
+      // 3. Sort: Online First, then by Order Count (desc)
       astrologers.sort((a, b) => {
         if (a.isOnline === b.isOnline) {
           return (b.orderCount || 0) - (a.orderCount || 0);
@@ -4762,14 +4785,14 @@
         return;
       }
 
+      // 4. Render Cards
       astrologers.forEach(a => {
         const div = document.createElement('div');
         div.className = 'astro-card';
         div.onclick = () => openAstroProfile(a);
 
-        // REAL Trust Markers from DB
-        const orderCount = a.orderCount || Math.floor(Math.random() * 500) + 100; // Fallback if not in DB yet
-        const isVerified = a.isVerified; // Real DB Value
+        const orderCount = a.orderCount || 0;
+        const isVerified = a.isVerified;
 
         div.innerHTML = `
           <div class="card-top-row">
@@ -4784,29 +4807,28 @@
                     ${a.name}
                     ${isVerified ? '<i class="fas fa-check-circle" style="color:var(--primary); font-size:0.85rem; margin-left:4px;"></i>' : ''}
                   </div>
-
                   <div style="font-size:0.75rem; color:#A58B74; margin-bottom:2px;">${a.skills ? a.skills.slice(0, 2).join(', ') : 'Vedic, Prashana'}</div>
-                  <div style="font-size:0.75rem; color:#A58B74;">Exp: ${a.experience || 5} Years</div>
-
+                  <div style="font-size:0.75rem; color:#A58B74;">Exp: ${a.experience || 0} Years</div>
                   <div class="rating-row" style="margin-top:4px;">
                       <span class="star-rating" style="background:transparent; color:#FFD700; border:none; padding:0; font-weight:700;">★ 4.5</span>
                       <span style="color:#A58B74; font-size:0.75rem;">(${orderCount} orders)</span>
                   </div>
               </div>
-
               <div class="price-tag" style="background:transparent; color:var(--primary); border:none; font-weight:700; font-size:1.1rem; padding:0;">₹${a.price}<span style="font-size:0.6rem; color:#A58B74; font-weight:normal;">/min</span></div>
           </div>
 
            <div class="card-actions" style="border-top: 1px solid #332115; padding-top:10px;">
-              ${(state.selectedService === 'all' || state.selectedService === 'chat') ? `
-               <div class="cta-btn ${a.isChatOnline ? 'active-chat' : 'disabled'}"
-                    style="background: transparent; border: 1px solid ${a.isChatOnline ? 'var(--primary)' : '#444'}; color: ${a.isChatOnline ? 'var(--primary)' : '#666'}; border-radius: 6px; flex:1;"
+              ${a.isChatOnline ? `
+               <div class="cta-btn active-chat"
+                    style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
                     onclick="event.stopPropagation(); checkGuestAction('chat', '${a.userId}')">
                     Chat
                </div>
-              ` : ''}
+              ` : `
+               <div class="cta-btn disabled" style="background: transparent; border: 1px solid #444; color: #666; border-radius: 6px; flex:1; pointer-events:none;">Chat</div>
+              `}
               
-              ${((state.selectedService === 'all' || state.selectedService === 'call') && a.isAudioOnline) ? `
+              ${a.isAudioOnline ? `
                 <div class="cta-btn active-audio"
                      style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
                      onclick="event.stopPropagation(); checkGuestAction('call', '${a.userId}')">
@@ -4814,7 +4836,7 @@
                 </div>
               ` : ''}
 
-              ${((state.selectedService === 'all' || state.selectedService === 'video') && a.isVideoOnline) ? `
+              ${a.isVideoOnline ? `
                 <div class="cta-btn active-video"
                      style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
                      onclick="event.stopPropagation(); checkGuestAction('video', '${a.userId}')">
@@ -4822,10 +4844,6 @@
                 </div>
               ` : ''}
            </div>
-        `;
-        container.appendChild(div);
-      });
-    }
         `;
         container.appendChild(div);
       });

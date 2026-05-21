@@ -371,8 +371,9 @@ class CallActivity : ComponentActivity() {
                 }
             }
 
-            // Start Remaining Time Countdown (for astrologers only)
-            if (role == "astrologer") {
+            // Start Remaining Time Countdown
+            if (true) {
+                val clientIdToFetch = if (role == "astrologer") partnerId else session?.userId
                 lifecycleScope.launch {
                     while (isActive) {
                         delay(1000)
@@ -398,7 +399,7 @@ class CallActivity : ComponentActivity() {
                     try {
                         val client = okhttp3.OkHttpClient()
                         val request = okhttp3.Request.Builder()
-                            .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${partnerId}")
+                            .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${clientIdToFetch}")
                             .build()
                         val response = client.newCall(request).execute()
                         if (response.isSuccessful) {
@@ -618,7 +619,7 @@ class CallActivity : ComponentActivity() {
                         val connectPayload = JSONObject().apply {
                             put("sessionId", sessionId)
                         }
-                        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+                        SocketManager.emitReliable("session-connect", connectPayload)
                         hasEmittedConnect = true
                         Log.d(TAG, "✓ First connection established - Billing synced")
                     }
@@ -787,7 +788,7 @@ class CallActivity : ComponentActivity() {
         val connectPayload = JSONObject().apply {
             put("sessionId", sessionId)
         }
-        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+        SocketManager.emitReliable("session-connect", connectPayload)
         Log.d(TAG, "✓ Emitted session-connect immediately for $sessionId")
 
         if (isInitiator) {
@@ -798,7 +799,7 @@ class CallActivity : ComponentActivity() {
                     runOnUiThread {
                         Log.d(TAG, "Initiator: Registered. Creating offer immediately.")
                         // Re-emit session-connect after registration for robustness
-                        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+                        SocketManager.emitReliable("session-connect", connectPayload)
                         // Create WebRTC offer immediately - don't wait for billing-started
                         if (::peerConnection.isInitialized) {
                             timerHandler.postDelayed({
@@ -828,7 +829,7 @@ class CallActivity : ComponentActivity() {
                         }
 
                         // Re-emit session-connect after registration for robustness
-                        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+                        SocketManager.emitReliable("session-connect", connectPayload)
                         Log.d(TAG, "Recipient: Registered. session-connect emitted.")
                     }
                 }
@@ -1557,7 +1558,7 @@ fun CallScreen(
                 }
                 
                 Column(horizontalAlignment = Alignment.End) {
-                    if (role == "astrologer" && remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                    if (role != "astrologer" && remainingTime.isNotEmpty() && remainingTime != "00:00") {
                         Surface(
                             color = Color.Red.copy(alpha = 0.1f),
                             shape = RoundedCornerShape(8.dp),

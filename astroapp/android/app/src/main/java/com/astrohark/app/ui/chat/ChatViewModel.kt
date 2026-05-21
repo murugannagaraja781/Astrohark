@@ -132,7 +132,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun joinSession(sessionId: String) {
         viewModelScope.launch(Dispatchers.IO) {
              val payload = JSONObject().apply { put("sessionId", sessionId) }
-             SocketManager.getSocket()?.emit("session-connect", payload)
+             SocketManager.emitReliable("session-connect", payload)
         }
     }
 

@@ -566,10 +566,14 @@ fun IncomingCallScreen(
         label = "pulseAlpha"
     )
 
+    val orangeBrush = androidx.compose.ui.graphics.Brush.verticalGradient(
+        colors = listOf(Color(0xFFFF9800), Color(0xFFF57C00), Color(0xFFE65100))
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(CosmicAppTheme.backgroundBrush)
+            .background(orangeBrush)
     ) {
         // Decorative background elements (optional, but adds premium feel)
         Column(
@@ -587,7 +591,7 @@ fun IncomingCallScreen(
             Text(
                 text = typeLabel,
                 style = MaterialTheme.typography.labelLarge,
-                color = CosmicAppTheme.colors.accent,
+                color = Color.White,
                 letterSpacing = 2.sp
             )
 
@@ -596,13 +600,13 @@ fun IncomingCallScreen(
             Text(
                 text = callerName,
                 style = MaterialTheme.typography.displaySmall,
-                color = CosmicAppTheme.colors.textPrimary,
+                color = Color.White,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
                 text = if (callerId == "Unknown" && callerName != "Unknown") "Astrohark User" else callerId,
-                color = CosmicAppTheme.colors.textSecondary,
+                color = Color.White.copy(alpha = 0.8f),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 4.dp)
             )
@@ -626,14 +630,14 @@ fun IncomingCallScreen(
 
                 Surface(
                     shape = CircleShape,
-                    color = CosmicAppTheme.colors.cardBg,
+                    color = Color.White,
                     modifier = Modifier.size(140.dp),
-                    border = androidx.compose.foundation.BorderStroke(2.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.5f))
+                    border = androidx.compose.foundation.BorderStroke(2.dp, Color.White.copy(alpha = 0.5f))
                 ) {
                     Icon(
                         Icons.Default.Person,
                         contentDescription = "Caller",
-                        tint = CosmicAppTheme.colors.accent,
+                        tint = Color(0xFFE65100),
                         modifier = Modifier
                             .padding(32.dp)
                             .fillMaxSize()

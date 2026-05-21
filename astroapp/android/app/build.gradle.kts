@@ -75,8 +75,8 @@ android {
     packaging {
         jniLibs {
             // Essential for 16KB page support on Android 15+ devices.
-            // Setting to true ensures native libraries are extracted and aligned by the OS.
-            useLegacyPackaging = true
+            // Setting to false ensures native libraries are stored uncompressed and aligned.
+            useLegacyPackaging = false
         }
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

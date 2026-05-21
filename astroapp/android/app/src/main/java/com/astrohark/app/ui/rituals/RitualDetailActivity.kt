@@ -36,7 +36,7 @@ class RitualDetailActivity : AppCompatActivity() {
         val description = intent.getStringExtra("description") ?: ""
         val imageUrl = intent.getStringExtra("imageUrl") ?: ""
         val price = intent.getDoubleExtra("price", 0.0)
-        val isTamil = intent.getBooleanExtra("isTamil", true)
+        val isTamil = intent.getBooleanExtra("isTamil", false)
 
         setContent {
             CosmicAppTheme {

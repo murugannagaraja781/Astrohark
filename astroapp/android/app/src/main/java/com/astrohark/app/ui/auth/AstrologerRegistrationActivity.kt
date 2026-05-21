@@ -50,7 +50,7 @@ fun AstrologerRegistrationScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
-    var isTamil by remember { mutableStateOf(true) }
+    var isTamil by remember { mutableStateOf(false) }
 
     // Form State
     var realName by remember { mutableStateOf("") }

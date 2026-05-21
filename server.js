@@ -856,6 +856,82 @@ app.delete('/api/admin/banners/:id', async (req, res) => {
   }
 });
 
+// --- Services APIs (Admin) ---
+app.get('/api/admin/services', async (req, res) => {
+  try {
+    let homeConfig = await GlobalSettings.findOne({ key: 'home_config' });
+    if (!homeConfig) {
+      homeConfig = {
+        value: {
+          grid_services: [
+            { id: 'free_kundeli', title: 'Free Kundeli', title_tamil: 'இலவச ஜாதகம்', icon: 'kundeli', route: 'FreeKundeli' },
+            { id: 'daily_horoscope', title: 'Daily Horoscope', title_tamil: 'தினசரி ராசிபலன்', icon: 'horoscope', route: 'Horoscope' },
+            { id: 'marriage_matching', title: 'Marriage Matching', title_tamil: 'திருமண பொருத்தம்', icon: 'matching', route: 'MatchMaking' },
+            { id: 'academy', title: 'Astro Academy', title_tamil: 'ஜோதிட அகாடமி', icon: 'academy', route: 'Academy' }
+          ]
+        }
+      };
+    }
+    res.json({ ok: true, services: homeConfig.value.grid_services });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/admin/services/update', upload.single('serviceIcon'), async (req, res) => {
+  try {
+    const { id, title, title_tamil, iconUrl } = req.body;
+    let finalIcon = iconUrl;
+
+    if (req.file) {
+      finalIcon = 'uploads/' + req.file.filename;
+    }
+
+    let homeConfig = await GlobalSettings.findOne({ key: 'home_config' });
+    if (!homeConfig) {
+      homeConfig = new GlobalSettings({
+        key: 'home_config',
+        value: {
+          grid_services: [
+            { id: 'free_kundeli', title: 'Free Kundeli', title_tamil: 'இலவச ஜாதகம்', icon: 'kundeli', route: 'FreeKundeli' },
+            { id: 'daily_horoscope', title: 'Daily Horoscope', title_tamil: 'தினசரி ராசிபலன்', icon: 'horoscope', route: 'Horoscope' },
+            { id: 'marriage_matching', title: 'Marriage Matching', title_tamil: 'திருமண பொருத்தம்', icon: 'matching', route: 'MatchMaking' },
+            { id: 'academy', title: 'Astro Academy', title_tamil: 'ஜோதிட அகாடமி', icon: 'academy', route: 'Academy' }
+          ],
+          quick_services_label: 'விரைவும் சேவைகள்',
+          quick_services_label_en: 'Quick Services'
+        }
+      });
+    }
+
+    const services = homeConfig.value.grid_services || [];
+    const index = services.findIndex(s => s.id === id);
+    if (index !== -1) {
+      services[index].title = title || services[index].title;
+      services[index].title_tamil = title_tamil || services[index].title_tamil;
+      services[index].icon = finalIcon || services[index].icon;
+    } else {
+      services.push({
+        id,
+        title,
+        title_tamil,
+        icon: finalIcon,
+        route: id === 'free_kundeli' ? 'FreeKundeli' : (id === 'daily_horoscope' ? 'Horoscope' : (id === 'marriage_matching' ? 'MatchMaking' : 'Academy'))
+      });
+    }
+
+    homeConfig.value.grid_services = services;
+    homeConfig.markModified('value');
+    await homeConfig.save();
+
+    io.emit('services-updated');
+
+    res.json({ ok: true, services: homeConfig.value.grid_services });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // --- Ritual APIs ---
 app.get('/api/rituals', async (req, res) => {
     try {
@@ -993,15 +1069,26 @@ app.get('/api/home/data', async (req, res) => {
       imageUrl: formatImageUrl(r.imageUrl, r.title)
     }));
 
+    const formattedServices = (homeConfig.value?.grid_services || []).map(s => {
+      let icon = s.icon;
+      if (icon && (icon.startsWith('uploads/') || icon.startsWith('http'))) {
+        icon = formatImageUrl(icon, s.title);
+      }
+      return {
+        ...s,
+        icon
+      };
+    });
+
     res.json({
       ok: true,
       data: {
         banners,
         rituals,
         homeConfig: {
-          grid_services: homeConfig.value.grid_services
+          grid_services: formattedServices
         },
-        services: homeConfig.value.grid_services, // Fallback for any old usage
+        services: formattedServices, // Fallback for any old usage
         quickServicesLabel: homeConfig.value.quick_services_label,
         quickServicesLabelEn: homeConfig.value.quick_services_label_en
       }
@@ -3231,14 +3318,39 @@ app.post('/call', async (req, res) => {
 
 // 404 Handler
 app.use((req, res) => {
-  res.status(404).sendFile(path.join(__dirname, 'public', 'index.html')); // Fallback to index or create a specialized 404.html
+  res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ============================================================
+// GLOBAL ERROR HANDLER MIDDLEWARE (must be after all routes)
+// ============================================================
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  console.error(`[GlobalError] ${req.method} ${req.url} → ${status}: ${message}`, err.stack || '');
+  res.status(status).json({ ok: false, error: message });
+});
+
+// ============================================================
+// UNCAUGHT EXCEPTION & UNHANDLED REJECTION HANDLERS
+// ============================================================
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught Exception:', err.message, err.stack);
+  // Log and keep server alive (do NOT exit in production for single errors)
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
   server.listen(PORT, () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+    console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔒 Rate limiting: Active`);
+    console.log(`🛡️  Helmet security: Active`);
   });
 }
 

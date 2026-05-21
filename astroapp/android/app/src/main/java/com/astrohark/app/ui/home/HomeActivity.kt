@@ -58,6 +58,7 @@ class HomeActivity : AppCompatActivity() {
     private val _isNewUser = MutableStateFlow(false)
     private val _banners = MutableStateFlow<List<Banner>>(emptyList())
     private val _rituals = MutableStateFlow<List<com.astrohark.app.data.model.Ritual>>(emptyList())
+    private val _services = MutableStateFlow<List<com.astrohark.app.data.model.GridService>>(emptyList())
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,6 +90,7 @@ class HomeActivity : AppCompatActivity() {
                 val isNewUser by _isNewUser.collectAsState()
                 val banners by _banners.collectAsState()
                 val rituals by _rituals.collectAsState()
+                val services by _services.collectAsState()
 
                 var selectedRasiItem by remember { mutableStateOf<ComposeRasiItem?>(null) }
 
@@ -104,6 +106,7 @@ class HomeActivity : AppCompatActivity() {
                     isLoading = isLoading,
                     banners = banners,
                     rituals = rituals,
+                    services = services,
                     onBannerClick = { banner ->
                         if (banner.offerPercentage > 0.0) {
                             val intent = Intent(this, com.astrohark.app.ui.wallet.SuperWalletActivity::class.java).apply {
@@ -507,11 +510,13 @@ class HomeActivity : AppCompatActivity() {
                     val homeData = response.body()?.data
                     val banners = homeData?.banners ?: emptyList()
                     val rituals = homeData?.rituals ?: emptyList()
+                    val services = homeData?.homeConfig?.gridServices ?: emptyList()
                     
-                    Log.d(TAG, "Home data fetched: banners=${banners.size}, rituals=${rituals.size}")
+                    Log.d(TAG, "Home data fetched: banners=${banners.size}, rituals=${rituals.size}, services=${services.size}")
                     
                     _banners.value = banners
                     _rituals.value = rituals
+                    _services.value = services
                 } else {
                     Log.e(TAG, "Home data fetch failed: ${response.errorBody()?.string()}")
                 }

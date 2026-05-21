@@ -174,7 +174,7 @@ fun IntakeScreen(
     val scope = rememberCoroutineScope()
 
     // Form State
-    var isTamil by remember { mutableStateOf(true) }
+    var isTamil by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var gender by remember { mutableStateOf("Male") }
 

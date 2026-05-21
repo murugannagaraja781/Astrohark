@@ -536,6 +536,17 @@
                 </div>
             </div>
 
+            <!-- Tab: Home Services -->
+            <div id="admin-sect-services" class="admin-tab-section">
+                <h2 style="margin-bottom:20px; font-family: var(--font-heading); color: var(--primary);"><i class="fas fa-th-large"></i> Home Grid Services</h2>
+                <p style="color:var(--text-dim); margin-bottom:20px;">Customize the icons and titles for the four main home services.</p>
+                
+                <div id="adminServicesList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap:20px;">
+                    <!-- Dynamically populated service cards -->
+                    <div class="loader"></div>
+                </div>
+            </div>
+
             <div id="admin-sect-slab" class="admin-tab-section">
                 <h2 style="margin-bottom:20px; font-family: var(--font-heading); color: var(--primary);"><i
                         class="fas fa-layer-group"></i> Manage Slab Rates</h2>
@@ -996,6 +1007,8 @@
                     class="fas fa-bell"></i><span>Notifs <small id="nav-count-notifs" style="color:#EF4444; font-weight:bold;"></small></span></div>
             <div class="admin-nav-item" onclick="navAdmin('slider', event)"><i
                     class="fas fa-images"></i><span>Slider</span></div>
+            <div class="admin-nav-item" onclick="navAdmin('services', event)"><i
+                    class="fas fa-th-large"></i><span>Services</span></div>
             <div class="admin-nav-item" onclick="navAdmin('rituals', event)"><i
                     class="fas fa-magic"></i><span>Rituals</span></div>
             <div class="admin-nav-item" onclick="navAdmin('feedback', event)"><i
@@ -1219,6 +1232,7 @@
             if (id === 'notifications') loadFullNotifications();
             if (id === 'refunds') renderRefunds();
             if (id === 'settings') fetchConfig();
+            if (id === 'services') fetchServices();
             if (id === 'rituals') fetchRituals();
             if (id === 'workflow') fetchWorkflowStatus();
             if (id === 'feedback') fetchFeedback();
@@ -1597,6 +1611,114 @@
         };
         window.deleteBanner = async (id) => {
             if (confirm('Delete?')) { await fetch('/api/admin/banners/' + id, { method: 'DELETE' }); fetchBanners(); }
+        };
+
+        // Home Grid Services
+        window.fetchServices = async () => {
+            const container = document.getElementById('adminServicesList');
+            container.innerHTML = '<div class="loader"></div>';
+            try {
+                const res = await fetch('/api/admin/services').then(r => r.json());
+                if (res.ok) {
+                    renderServices(res.services);
+                } else {
+                    container.innerHTML = `<div style="color:#EF4444; padding:20px;">Error: ${res.error}</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = `<div style="color:#EF4444; padding:20px;">Connection Error</div>`;
+            }
+        };
+
+        function renderServices(services) {
+            const container = document.getElementById('adminServicesList');
+            container.innerHTML = '';
+            
+            services.forEach(service => {
+                const card = document.createElement('div');
+                card.className = 'admin-card';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'column';
+                card.style.gap = '12px';
+                
+                // Icon representation
+                let iconHtml = '';
+                if (service.icon && (service.icon.startsWith('http') || service.icon.startsWith('uploads/'))) {
+                    const fullUrl = service.icon.startsWith('http') ? service.icon : '/' + service.icon;
+                    iconHtml = `<img src="${fullUrl}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: contain; background: rgba(255,255,255,0.05); padding: 5px; border: 1px solid var(--border-soft);" alt="Service Icon">`;
+                } else {
+                    iconHtml = `<div style="width: 50px; height: 50px; border-radius: 8px; background: rgba(255,127,0,0.1); display:flex; align-items:center; justify-content:center; color: var(--primary); font-size: 1.2rem; font-weight: bold; border: 1px solid var(--border-soft);"><i class="fas fa-star"></i></div>`;
+                }
+
+                card.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:15px; border-bottom:1px solid var(--border-soft); padding-bottom:10px; margin-bottom:5px;">
+                        ${iconHtml}
+                        <div>
+                            <h4 style="margin:0; color:var(--text-main); font-family:var(--font-heading);">${service.title}</h4>
+                            <small style="color:var(--text-dim); font-size:0.7rem;">ID: ${service.id} | Route: ${service.route}</small>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="app-label" style="font-size:0.75rem;">Title (English)</label>
+                        <input type="text" id="service-title-${service.id}" class="app-input" value="${service.title}">
+                    </div>
+                    <div>
+                        <label class="app-label" style="font-size:0.75rem;">Title (Tamil)</label>
+                        <input type="text" id="service-title-tamil-${service.id}" class="app-input" value="${service.title_tamil || ''}">
+                    </div>
+                    <div>
+                        <label class="app-label" style="font-size:0.75rem;">Upload Custom Icon</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="text" id="service-icon-url-${service.id}" class="app-input" value="${service.icon}" readonly style="flex:1; background: rgba(0,0,0,0.2); cursor: default;">
+                            <input type="file" id="service-icon-file-${service.id}" style="display:none;" onchange="document.getElementById('service-icon-url-${service.id}').value = this.files[0].name">
+                            <button class="btn-admin" onclick="document.getElementById('service-icon-file-${service.id}').click()"><i class="fas fa-upload"></i></button>
+                        </div>
+                        <small style="color:var(--text-dim); font-size:0.65rem;">Recommended: PNG/SVG with transparent background</small>
+                    </div>
+                    <button class="cosmic-btn" style="margin-top:10px; width:100%;" onclick="saveService('${service.id}', this)"><i class="fas fa-save"></i> Save Changes</button>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        window.saveService = async (id, btn) => {
+            const title = document.getElementById(`service-title-${id}`).value;
+            const titleTamil = document.getElementById(`service-title-tamil-${id}`).value;
+            const currentIcon = document.getElementById(`service-icon-url-${id}`).value;
+            const fileInput = document.getElementById(`service-icon-file-${id}`);
+            
+            const formData = new FormData();
+            formData.append('id', id);
+            formData.append('title', title);
+            formData.append('title_tamil', titleTamil);
+            formData.append('iconUrl', currentIcon);
+            
+            if (fileInput.files[0]) {
+                formData.append('serviceIcon', fileInput.files[0]);
+            }
+            
+            const oldText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            btn.disabled = true;
+            
+            try {
+                const res = await fetch('/api/admin/services/update', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json());
+                
+                if (res.ok) {
+                    alert('Service updated successfully!');
+                    fetchServices();
+                } else {
+                    alert('Error: ' + res.error);
+                }
+            } catch (e) {
+                alert('Connection Error');
+            } finally {
+                btn.innerHTML = oldText;
+                btn.disabled = false;
+            }
         };
 
         // Withdrawals

@@ -33,6 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import com.astrohark.app.R
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
@@ -181,9 +184,17 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text("Rasi & Navamsa Charts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ChocolateBrown)
-                        Text(birthData.optString("name", "User"), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_launcher),
+                            contentDescription = "App Logo",
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Column {
+                            Text("Rasi & Navamsa Charts", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = ChocolateBrown)
+                            Text(birthData.optString("name", "User"), style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        }
                     }
                 },
                 navigationIcon = {
@@ -211,7 +222,7 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
                         )
                     }
                 ) {
-                    val tabs = listOf("Charts", "Planets", "Dasha Details")
+                    val tabs = listOf("Charts", "Planets", "Dasha Details", "Indicators", "Panchanga")
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = selectedTab == index,
@@ -233,6 +244,8 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
                         0 -> ChartsTab(chartState!!, birthData)
                         1 -> PlanetsTab(chartState!!)
                         2 -> DashaListTab(chartState!!.dasha)
+                        3 -> IndicatorsTab(chartState!!)
+                        4 -> PanchangaTab(chartState!!)
                     }
                 }
             }
@@ -535,6 +548,180 @@ fun DashaNodeInternal(period: DashaPeriod) {
         }
         if (period.level == 1) {
             Divider(color = Color.LightGray.copy(0.4f))
+        }
+    }
+}
+
+@Composable
+fun IndicatorsTab(data: ChartData) {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+        Text("12 பாவங்களின் நட்சத்திர குறிகாட்டிகள்", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 16.sp)
+        Spacer(Modifier.height(8.dp))
+
+        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray)) {
+            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF2E7D32)).padding(8.dp)) {
+                listOf("பாவம்", "நட்சத்திரம்", "நட். அதிபதி", "நின்ற நட். அதிபதி", "தொடர்பு").forEach { head ->
+                    Text(
+                        text = head,
+                        modifier = Modifier.weight(1f),
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            data.houses.details.forEachIndexed { index, house ->
+                val bhavaNum = index + 1
+                val nakshatra = house.nakshatra ?: ""
+                val starLordEn = house.starLord ?: ""
+                val starLordTa = planetTamil[starLordEn] ?: starLordEn
+                val starLordPlanet = data.planets.find { it.name.equals(starLordEn, ignoreCase = true) }
+                val starLordHouse = starLordPlanet?.house?.toString() ?: ""
+                
+                val starLordStoodStarLordEn = starLordPlanet?.starLord ?: ""
+                val starLordStoodStarLordTa = planetAbbrTamil[starLordStoodStarLordEn] ?: starLordStoodStarLordEn
+                val starLordStoodStarLordPlanet = data.planets.find { it.name.equals(starLordStoodStarLordEn, ignoreCase = true) }
+                val starLordStoodStarLordHouse = starLordStoodStarLordPlanet?.house?.toString() ?: ""
+
+                val col3 = if (starLordTa.isNotEmpty()) "$starLordTa $starLordHouse" else "-"
+                val col4 = if (starLordStoodStarLordTa.isNotEmpty()) "$starLordStoodStarLordTa $starLordStoodStarLordHouse" else "-"
+                
+                // Fallback connection string
+                var connection = "$starLordHouse,$starLordStoodStarLordHouse".trim(',')
+                if (connection == ",") connection = "-"
+                
+                HorizontalDivider(color = Color.Gray.copy(alpha = 0.5f))
+                Row(modifier = Modifier.fillMaxWidth().background(ParchmentBase).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(bhavaNum.toString(), color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(0.8f), textAlign = TextAlign.Center)
+                    Text(nakshatra, color = Color.Blue, fontSize = 10.sp, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Center)
+                    Text(col3, color = Color.Blue, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(col4, color = Color.Blue, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(connection, color = Color.Blue, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+        Text("கிரக குறிகாட்டிகள்", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 16.sp)
+        Spacer(Modifier.height(8.dp))
+
+        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray)) {
+            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF2E7D32)).padding(8.dp)) {
+                listOf("கிரகம்", "நட்சத்திரம் பாதம்", "நட்சத்திர அதிபதி", "பாவ தொடர்பு").forEach { head ->
+                    Text(
+                        text = head,
+                        modifier = Modifier.weight(1f),
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            val displayPlanets = listOf("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu")
+            data.planets.filter { it.name in displayPlanets }.forEach { planet ->
+                val planetTa = planetTamil[planet.name] ?: planet.name
+                val planetHouse = planet.house
+                val nak = "${planet.nakshatra} ${planet.nakshatraPada}"
+                val starLordEn = planet.starLord ?: ""
+                val starLordTa = planetTamil[starLordEn] ?: starLordEn
+                val starLordPlanet = data.planets.find { it.name.equals(starLordEn, ignoreCase = true) }
+                val starLordHouse = starLordPlanet?.house?.toString() ?: ""
+                
+                val col1 = "$planetTa $planetHouse"
+                val col3 = if (starLordTa.isNotEmpty()) "$starLordTa ${starLordHouse}ல்" else "-"
+                
+                val connection = if (starLordHouse.isNotEmpty()) starLordHouse else "-"
+
+                HorizontalDivider(color = Color.Gray.copy(alpha = 0.5f))
+                Row(modifier = Modifier.fillMaxWidth().background(ParchmentBase).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(col1, color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(nak, color = Color.Blue, fontSize = 11.sp, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Center)
+                    Text(col3, color = Color.Blue, fontSize = 11.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(connection, color = Color.Blue, fontSize = 11.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PanchangaTab(data: ChartData) {
+    val p = data.panchanga
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
+    ) {
+        Text("பஞ்சாங்கம் (Panchanga)", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 18.sp)
+        Spacer(Modifier.height(16.dp))
+
+        val items = listOf(
+            "திதி (Tithi)" to (p.tithi?.name ?: "-"),
+            "நட்சத்திரம் (Nakshatra)" to (p.nakshatra?.name ?: "-"),
+            "யோகம் (Yoga)" to (p.yoga?.name ?: "-"),
+            "கரணம் (Karana)" to (p.karana?.name ?: "-"),
+            "வாரம் (Vara/Day)" to (p.vara?.name ?: "-"),
+            "சூரிய உதயம் (Sunrise)" to (p.sunrise ?: "-"),
+            "சூரிய அஸ்தம் (Sunset)" to (p.sunset ?: "-"),
+            "சந்திர ராசி (Moon Sign)" to (signTamil[p.moonSign] ?: p.moonSign ?: "-"),
+            "சூரிய ராசி (Sun Sign)" to (signTamil[p.sunSign] ?: p.sunSign ?: "-")
+        )
+
+        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray)) {
+            items.forEachIndexed { i, (label, value) ->
+                if (i > 0) HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (i % 2 == 0) ParchmentBase else ParchmentLight)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(label, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium, fontSize = 13.sp, color = Color.DarkGray)
+                    Text(value, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ChocolateBrown, textAlign = TextAlign.End)
+                }
+            }
+        }
+
+        // Tamil Date
+        data.tamilDate?.let { td ->
+            Spacer(Modifier.height(20.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = ChocolateBrown.copy(alpha = 0.1f)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("தமிழ் தேதி (Tamil Date)", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 15.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text("${td.day} ${td.month} ${td.year}", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Color.DarkGray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                }
+            }
+        }
+
+        // Transit Table
+        if (data.transits.isNotEmpty()) {
+            Spacer(Modifier.height(24.dp))
+            Text("தற்போதைய கோச்சாரம் (Current Transits)", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 16.sp)
+            Spacer(Modifier.height(8.dp))
+            Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray)) {
+                Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF2E7D32)).padding(8.dp)) {
+                    listOf("கிரகம்", "ராசி", "வக்கிரம்").forEach { h ->
+                        Text(h, modifier = Modifier.weight(1f), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    }
+                }
+                data.transits.forEachIndexed { i, t ->
+                    HorizontalDivider(color = Color.Gray.copy(alpha = 0.4f))
+                    Row(modifier = Modifier.fillMaxWidth().background(if (i % 2 == 0) ParchmentBase else ParchmentLight).padding(vertical = 10.dp, horizontal = 4.dp)) {
+                        Text(planetTamil[t.name] ?: t.name, modifier = Modifier.weight(1f), color = Color.Red, fontSize = 12.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                        Text(signTamil[t.signName] ?: t.signName, modifier = Modifier.weight(1f), color = Color.Blue, fontSize = 12.sp, textAlign = TextAlign.Center)
+                        Text(if (t.isRetrograde) "வக்கிரம்" else "-", modifier = Modifier.weight(1f), color = if (t.isRetrograde) Color.Red else Color.Gray, fontSize = 12.sp, textAlign = TextAlign.Center)
+                    }
+                }
+            }
         }
     }
 }

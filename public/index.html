@@ -2317,6 +2317,17 @@
         </div>
       </div>
 
+      <!-- Section: Service Results -->
+      <div id="section-service-results" class="hidden">
+        <div style="padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 15px; background: var(--bg-card); border-bottom: 1px solid var(--border-soft); position: sticky; top: 0; z-index: 100;">
+          <button onclick="navSwitch('home')" style="background: none; border: none; font-size: 1.2rem; color: var(--text-main); cursor: pointer;"><i class="fas fa-arrow-left"></i></button>
+          <h3 id="serviceResultsTitle" style="margin: 0; font-family: var(--font-heading); font-size: 1.2rem; color: var(--text-main);">Service Results</h3>
+        </div>
+        <div id="serviceAstroList" style="padding: 10px;">
+          <!-- Filtered items injected here -->
+        </div>
+      </div>
+
       <!-- Section: Dash -->
       <div id="section-dash" class="hidden">
         <div
@@ -4577,6 +4588,14 @@
         showLogin();
         return;
       }
+
+      // Hide all main view sections
+      const sections = ['section-home', 'section-dash', 'section-service-results'];
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       const btn = document.getElementById('nav-' + tab);
       if (btn) btn.classList.add('active');
@@ -4592,18 +4611,15 @@
 
       if (tab === 'home') {
         if (sectHome) sectHome.classList.remove('hidden');
-        if (sectDash) sectDash.classList.add('hidden');
         if (document.getElementById('topFilterTabs')) document.getElementById('topFilterTabs').classList.remove('hidden');
         state.selectedService = 'all'; // Reset service filter on Home click
         renderAstroList(state.astroList);
       }
       else if (tab === 'dash') {
-        if (sectHome) sectHome.classList.add('hidden');
         if (sectDash) sectDash.classList.remove('hidden');
       }
       else if (tab === 'astro') {
         if (sectHome) sectHome.classList.remove('hidden');
-        if (sectDash) sectDash.classList.add('hidden');
         if (document.getElementById('topFilterTabs')) document.getElementById('topFilterTabs').classList.remove('hidden');
         state.selectedService = 'all'; // Reset service filter on Astro click
         renderAstroList(state.astroList);
@@ -4728,24 +4744,48 @@
     }
 
     function selectQuickService(type) {
+      if (type === 'all') {
+        navSwitch('astro');
+        return;
+      }
+      
       state.selectedService = type;
-      // Re-render to apply filter
-      renderAstroList(state.astroList);
-      // Scroll to astrologer list
-      const target = document.getElementById('section-consult') || document.getElementById('astroList');
-      target?.scrollIntoView({ behavior: 'smooth' });
+      
+      // UI Navigation logic
+      const homeSect = document.getElementById('section-home');
+      const dashSect = document.getElementById('section-dash');
+      const resultsSect = document.getElementById('section-service-results');
+      const titleEl = document.getElementById('serviceResultsTitle');
+      
+      if (homeSect) homeSect.classList.add('hidden');
+      if (dashSect) dashSect.classList.add('hidden');
+      if (resultsSect) resultsSect.classList.remove('hidden');
+      
+      let titleText = 'Astrologers';
+      if (type === 'chat') titleText = 'Chat with Astro';
+      if (type === 'call') titleText = 'Call with Astro';
+      if (type === 'video') titleText = 'Video with Astro';
+      if (titleEl) titleEl.innerText = titleText;
+
+      // Render into the service results container with specific service button
+      renderAstroList(state.astroList, 'serviceAstroList', type);
+      
+      // Scroll to top of results
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function renderAstroList(list) {
-      const container = document.getElementById('astroList');
+    function renderAstroList(list, targetContainerId = 'astroList', specificService = null) {
+      const container = document.getElementById(targetContainerId);
       const liveContainer = document.getElementById('liveAstrosList');
       const liveSection = document.getElementById('liveAstrosSection');
       
+      if (!container) return;
       container.innerHTML = '';
+      
       let astrologers = [...(list || [])];
 
-      // 1. Apply Global Service Filter (if any)
-      if (state.selectedService && state.selectedService !== 'all') {
+      // 1. Apply Global Service Filter (only for main list view)
+      if (targetContainerId === 'astroList' && state.selectedService && state.selectedService !== 'all') {
         astrologers = astrologers.filter(a => {
           if (state.selectedService === 'chat') return a.isChatOnline;
           if (state.selectedService === 'call') return a.isAudioOnline;
@@ -4753,35 +4793,48 @@
           return true;
         });
       }
-
-      // 2. Update Live Astros Carousel (Astrologers who are Busy)
-      const liveAstros = (list || []).filter(a => a.isBusy);
-      if (liveAstros.length > 0) {
-        liveSection.style.display = 'block';
-        liveContainer.innerHTML = liveAstros.map(a => `
-          <div style="flex:0 0 auto; width:70px; text-align:center; position:relative;" onclick="openAstroProfile(${JSON.stringify(a).replace(/"/g, '&quot;')})">
-            <div style="position:relative; width:60px; height:60px; margin:0 auto 5px auto;">
-              <img src="${a.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(a.name) + '&background=random'}" 
-                   style="width:100%; height:100%; border-radius:50%; object-fit:cover; border:2px solid #EF4444;">
-              <div style="position:absolute; bottom:-2px; left:50%; transform:translateX(-50%); background:#EF4444; color:white; font-size:0.5rem; font-weight:800; padding:1px 4px; border-radius:4px; white-space:nowrap;">LIVE</div>
-            </div>
-            <div style="font-size:0.65rem; font-weight:600; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a.name}</div>
-          </div>
-        `).join('');
-      } else {
-        liveSection.style.display = 'none';
+      
+      // If we are in a specific service view, we might want to filter by availability too
+      if (specificService) {
+        astrologers = astrologers.filter(a => {
+          if (specificService === 'chat') return true; // Show all but disable if offline? Or hide? 
+          // Per user request "chat button madum show panu", usually implies showing people who can do it.
+          // Let's filter to those who have the service enabled.
+          if (specificService === 'chat') return a.isChatOnline;
+          if (specificService === 'call') return a.isAudioOnline;
+          if (specificService === 'video') return a.isVideoOnline;
+          return true;
+        });
       }
 
-      // 3. Sort: Online First, then by Order Count (desc)
-      astrologers.sort((a, b) => {
-        if (a.isOnline === b.isOnline) {
-          return (b.orderCount || 0) - (a.orderCount || 0);
+      // 2. Update Live Astros Carousel (only for main list)
+      if (targetContainerId === 'astroList' && liveSection && liveContainer) {
+        const liveAstros = (list || []).filter(a => a.isBusy);
+        if (liveAstros.length > 0) {
+          liveSection.style.display = 'block';
+          liveContainer.innerHTML = liveAstros.map(a => `
+            <div style="flex:0 0 auto; width:70px; text-align:center; position:relative;" onclick="openAstroProfile(${JSON.stringify(a).replace(/"/g, '&quot;')})">
+              <div style="position:relative; width:60px; height:60px; margin:0 auto 5px auto;">
+                <img src="${a.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(a.name) + '&background=random'}" 
+                     style="width:100%; height:100%; border-radius:50%; object-fit:cover; border:2px solid #EF4444;">
+                <div style="position:absolute; bottom:-2px; left:50%; transform:translateX(-50%); background:#EF4444; color:white; font-size:0.5rem; font-weight:800; padding:1px 4px; border-radius:4px; white-space:nowrap;">LIVE</div>
+              </div>
+              <div style="font-size:0.65rem; font-weight:600; color:var(--text-main); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a.name}</div>
+            </div>
+          `).join('');
+        } else {
+          liveSection.style.display = 'none';
         }
+      }
+
+      // 3. Sort: Online First
+      astrologers.sort((a, b) => {
+        if (a.isOnline === b.isOnline) return (b.orderCount || 0) - (a.orderCount || 0);
         return b.isOnline ? 1 : -1;
       });
 
       if (astrologers.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:20px; color:#D1D5DB;">No astrologers online right now.</div>';
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#D1D5DB;">No astrologers found.</div>';
         return;
       }
 
@@ -4818,17 +4871,17 @@
           </div>
 
            <div class="card-actions" style="border-top: 1px solid #332115; padding-top:10px;">
-              ${a.isChatOnline ? `
-               <div class="cta-btn active-chat"
-                    style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
-                    onclick="event.stopPropagation(); checkGuestAction('chat', '${a.userId}')">
-                    Chat
-               </div>
-              ` : `
-               <div class="cta-btn disabled" style="background: transparent; border: 1px solid #444; color: #666; border-radius: 6px; flex:1; pointer-events:none;">Chat</div>
-              `}
+              ${(specificService === null || specificService === 'chat') ? (
+                a.isChatOnline ? `
+                 <div class="cta-btn active-chat"
+                      style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
+                      onclick="event.stopPropagation(); checkGuestAction('chat', '${a.userId}')">
+                      Chat
+                 </div>
+                ` : (specificService === 'chat' ? `<div class="cta-btn disabled" style="background: transparent; border: 1px solid #444; color: #666; border-radius: 6px; flex:1; pointer-events:none;">Chat</div>` : '')
+              ) : ''}
               
-              ${a.isAudioOnline ? `
+              ${(specificService === null || specificService === 'call') && a.isAudioOnline ? `
                 <div class="cta-btn active-audio"
                      style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
                      onclick="event.stopPropagation(); checkGuestAction('call', '${a.userId}')">
@@ -4836,7 +4889,7 @@
                 </div>
               ` : ''}
 
-              ${a.isVideoOnline ? `
+              ${(specificService === null || specificService === 'video') && a.isVideoOnline ? `
                 <div class="cta-btn active-video"
                      style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
                      onclick="event.stopPropagation(); checkGuestAction('video', '${a.userId}')">

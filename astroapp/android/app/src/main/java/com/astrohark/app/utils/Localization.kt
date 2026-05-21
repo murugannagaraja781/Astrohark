@@ -119,6 +119,7 @@ object Localization {
         "copy" to "COPY",
         "whatsapp_share" to "Share on WhatsApp",
         "referral_code" to "Referral Code",
+        "referral" to "Referral",
         "claim" to "Claim",
         "refer_win" to "🎁 Refer & Win!",
         "refer_desc" to "Invite friends and earn rewards",
@@ -129,7 +130,13 @@ object Localization {
         "bhukti" to "Bhukti",
         "antharam" to "Antharam",
         "pratyantharam" to "Pratyantharam",
-        "sookshma" to "Sookshma"
+        "sookshma" to "Sookshma",
+        "remedies" to "Remedies",
+        "video" to "Video",
+        "top_rated" to "Top Rated",
+        "must_try" to "Must Try",
+        "elite" to "Elite",
+        "min" to "min"
     )
 
     // Tamil Strings
@@ -249,6 +256,7 @@ object Localization {
         "copy" to "நகல் எடு",
         "whatsapp_share" to "வாட்ஸ்அப்பில் பகிரவும்",
         "referral_code" to "Referral Code",
+        "referral" to "பரிந்துரை",
         "claim" to "Claim",
         "refer_win" to "🎁 பரிசு வெல்லுங்கள்!",
         "refer_desc" to "நண்பர்களை அழைத்து வாலட் பணத்தை அள்ளுங்கள்",
@@ -259,7 +267,13 @@ object Localization {
         "bhukti" to "புத்தி",
         "antharam" to "அந்தரம்",
         "pratyantharam" to "பிரத்யந்தரம்",
-        "sookshma" to "சூட்சமம்"
+        "sookshma" to "சூட்சமம்",
+        "remedies" to "பரிகாரங்கள்",
+        "video" to "வீடியோ",
+        "top_rated" to "மிகவும் சிறந்தவர்",
+        "must_try" to "முயற்சிக்க வேண்டியவர்",
+        "elite" to "எலைட்",
+        "min" to "நிமிடம்"
     )
 
 

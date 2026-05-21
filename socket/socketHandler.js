@@ -45,6 +45,11 @@ module.exports = (io, SERVER_URL) => {
                     }
 
                     const userId = user.userId;
+                    
+                    // DEDUP: Skip full re-registration if already registered with same socket
+                    const existingSocketId = userSockets.get(userId);
+                    const alreadyRegistered = existingSocketId === socket.id;
+                    
                     userSockets.set(userId, socket.id);
                     socketToUser.set(socket.id, userId);
 
@@ -64,11 +69,14 @@ module.exports = (io, SERVER_URL) => {
                         sessionDisconnectTimeouts.delete(userId);
                     }
 
-                    user.isOnline = true;
-                    await user.save();
+                    // Only update DB and broadcast if this is a NEW registration (not a duplicate)
+                    if (!alreadyRegistered) {
+                        user.isOnline = true;
+                        await user.save();
 
-                    if (user.role === 'astrologer') {
-                        broadcastAstroUpdate(io, SERVER_URL);
+                        if (user.role === 'astrologer') {
+                            broadcastAstroUpdate(io, SERVER_URL);
+                        }
                     }
                     if (user.role === 'superadmin') {
                         socket.join('superadmin');
@@ -121,10 +129,11 @@ module.exports = (io, SERVER_URL) => {
             }
         });
 
-        // End Session
         socket.on('end-session', async (data) => {
             const { sessionId } = data || {};
             if (sessionId) {
+                // Guard: Only terminate if session still exists
+                if (!activeSessions.has(sessionId)) return;
                 endSessionRecord(sessionId, () => broadcastAstroUpdate(io, SERVER_URL));
             }
         });

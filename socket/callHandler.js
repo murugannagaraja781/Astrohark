@@ -404,6 +404,12 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
         try {
             const { sessionId } = data || {};
             if (sessionId) {
+                // Guard: Only terminate if session still exists (prevents duplicate termination)
+                const s = activeSessions.get(sessionId);
+                if (!s) {
+                    console.log(`[CallHandler][end-session] Session ${sessionId} already terminated, ignoring.`);
+                    return;
+                }
                 console.log(`[CallHandler][end-session] terminating session ${sessionId}`);
                 billingService.endSessionRecord(sessionId, () => {
                     if (broadcastAstroUpdate) broadcastAstroUpdate();

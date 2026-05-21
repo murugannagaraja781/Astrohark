@@ -782,13 +782,29 @@ class CallActivity : ComponentActivity() {
             return
         }
 
+        // Emit session-connect IMMEDIATELY so server can start billing
+        // This breaks the deadlock where billing waited for ICE which waited for offer which waited for billing
+        val connectPayload = JSONObject().apply {
+            put("sessionId", sessionId)
+        }
+        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+        Log.d(TAG, "✓ Emitted session-connect immediately for $sessionId")
+
         if (isInitiator) {
             statusText = "Calling..."
 
             SocketManager.registerUser(myUserId) { success ->
                 if (success) {
                     runOnUiThread {
-                        Log.d(TAG, "Initiator: Registered. Waiting for ICE connection to emit session-connect.")
+                        Log.d(TAG, "Initiator: Registered. Creating offer immediately.")
+                        // Re-emit session-connect after registration for robustness
+                        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+                        // Create WebRTC offer immediately - don't wait for billing-started
+                        if (::peerConnection.isInitialized) {
+                            timerHandler.postDelayed({
+                                createOffer()
+                            }, 1500) // Small delay to let recipient setup
+                        }
                     }
                 }
             }
@@ -811,7 +827,9 @@ class CallActivity : ComponentActivity() {
                             SocketManager.getSocket()?.emit("answer-session", payload)
                         }
 
-                        Log.d(TAG, "Recipient: Registered. Waiting for ICE connection to emit session-connect.")
+                        // Re-emit session-connect after registration for robustness
+                        SocketManager.getSocket()?.emit("session-connect", connectPayload)
+                        Log.d(TAG, "Recipient: Registered. session-connect emitted.")
                     }
                 }
             }
@@ -1027,19 +1045,15 @@ class CallActivity : ComponentActivity() {
         SocketManager.onBillingStarted { info ->
             runOnUiThread {
                 Log.d(TAG, "Billing started event received. Initiator: $isInitiator")
-                statusText = "Connecting to ${partnerName}..."
                 isBillingActive = true
-                if (isInitiator && ::peerConnection.isInitialized) {
-                    // Small delay to ensure other side is also ready for offer
+                // Offer is now created in startCallLimit() immediately, not here.
+                // If offer hasn't been created yet (edge case), create it now as fallback
+                if (isInitiator && ::peerConnection.isInitialized && peerConnection.localDescription == null) {
+                    Log.d(TAG, "Billing started but no local SDP yet - creating offer as fallback")
                     timerHandler.postDelayed({
                         createOffer()
-                    }, 1000)
+                    }, 500)
                 }
-                
-                // Temporary status for billing start
-                androidx.core.os.HandlerCompat.postDelayed(android.os.Handler(android.os.Looper.getMainLooper()), {
-                   if(statusText.contains("Connecting to")) statusText = "" 
-                }, null, 5000)
             }
         }
 

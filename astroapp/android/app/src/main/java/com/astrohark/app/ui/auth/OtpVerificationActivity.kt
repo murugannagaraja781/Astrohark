@@ -38,6 +38,7 @@ import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.data.repository.AuthRepository
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.ui.theme.AstroDimens
+import com.astrohark.app.utils.FcmTokenHelper
 import kotlinx.coroutines.launch
 
 class OtpVerificationActivity : AppCompatActivity() {
@@ -83,6 +84,7 @@ class OtpVerificationActivity : AppCompatActivity() {
                 ok = true, userId = "dummy_client_001", name = "Test Client", role = "user", phone = "9999999999", walletBalance = 500.0, image = "", error = null
             )
             tokenManager.saveUserSession(dummyUser)
+            FcmTokenHelper.registerFcmToken("dummy_client_001")
             startActivity(Intent(this, com.astrohark.app.ui.home.HomeActivity::class.java))
             finishAffinity()
             return
@@ -93,6 +95,10 @@ class OtpVerificationActivity : AppCompatActivity() {
             if (result.isSuccess) {
                 val user = result.getOrThrow()
                 tokenManager.saveUserSession(user)
+                
+                user.userId?.let { userId ->
+                    FcmTokenHelper.registerFcmToken(userId)
+                }
                 
                 Toast.makeText(this@OtpVerificationActivity, "Welcome ${user.name}", Toast.LENGTH_SHORT).show()
                 val intent = when (user.role) {

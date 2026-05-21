@@ -32,6 +32,7 @@ import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.ui.home.HomeActivity
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.utils.Constants
+import com.astrohark.app.utils.FcmTokenHelper
 import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerStateListener
 import com.android.installreferrer.api.ReferrerDetails
@@ -74,23 +75,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Upload FCM Token
-        com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
-                return@addOnCompleteListener
-            }
-            val token = task.result
-            val session = tokenManager.getUserSession()
-            if (session != null && token != null) {
-                CoroutineScope(Dispatchers.IO).launch {
-                    try {
-                        ApiService.register(Constants.SERVER_URL, session.userId!!, token)
-                        Log.d(TAG, "Token uploaded successfully on launch")
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Failed to upload token", e)
-                    }
-                }
-            }
+        tokenManager.getUserSession()?.userId?.let { userId ->
+            FcmTokenHelper.registerFcmToken(userId)
         }
 
         // Add a small delay for splash effect or to ensure permissions logic runs

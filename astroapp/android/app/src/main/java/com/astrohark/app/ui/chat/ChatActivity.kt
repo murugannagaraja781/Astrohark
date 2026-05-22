@@ -325,6 +325,8 @@ class ChatActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        com.astrohark.app.utils.CallState.isCallActive = false
+        com.astrohark.app.utils.CallState.currentSessionId = null
         super.onDestroy()
         timerHandler.removeCallbacks(timerRunnable)
         viewModel.stopListeners()
@@ -375,11 +377,11 @@ fun ChatScreen(
                             color = CosmicAppTheme.colors.accent,
                             maxLines = 1
                         )
-                        if (isAstrologer && remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                        if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
                              Text(
                                  text = "Time: $remainingTime",
                                  style = MaterialTheme.typography.labelSmall,
-                                 color = Color.Red,
+                                 color = Color.Black,
                                  fontWeight = FontWeight.Bold
                              )
                         } else {

@@ -1259,6 +1259,8 @@ class CallActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        CallState.isCallActive = false
+        CallState.currentSessionId = null
         if (isRecordingState) {
             try { stopRecording() } catch (e: Exception) { e.printStackTrace() }
         }
@@ -1558,7 +1560,7 @@ fun CallScreen(
                 }
                 
                 Column(horizontalAlignment = Alignment.End) {
-                    if (role != "astrologer" && remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                    if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
                         Surface(
                             color = Color.Red.copy(alpha = 0.1f),
                             shape = RoundedCornerShape(8.dp),
@@ -1566,7 +1568,7 @@ fun CallScreen(
                         ) {
                             Text(
                                 text = remainingTime,
-                                color = Color.Red,
+                                color = Color.Black,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

@@ -115,6 +115,7 @@ data class HouseDetail(
     val signName: String,
     val signAbbr: String? = null,
     val nakshatra: String? = null,
+    val signLord: String? = null,
     val starLord: String? = null,
     val subLord: String? = null,
     val degreeFormatted: String? = null
@@ -567,6 +568,40 @@ fun DashaNodeInternal(period: DashaPeriod) {
     }
 }
 
+fun getKPSignificatorsForPlanet(planetName: String, data: ChartData): List<Int> {
+    val planet = data.planets.find { it.name.equals(planetName, ignoreCase = true) } ?: return emptyList()
+    val starLordName = planet.starLord ?: ""
+    val starLordPlanet = data.planets.find { it.name.equals(starLordName, ignoreCase = true) }
+    
+    val significators = mutableSetOf<Int>()
+    
+    // Level 1: House occupied by star lord
+    if (starLordPlanet != null) {
+        significators.add(starLordPlanet.house)
+    }
+    
+    // Level 2: Houses owned by star lord
+    if (starLordName.isNotEmpty()) {
+        data.houses.details.forEachIndexed { index, house ->
+            if (house.signLord.equals(starLordName, ignoreCase = true)) {
+                significators.add(index + 1)
+            }
+        }
+    }
+    
+    // Level 3: House occupied by planet
+    significators.add(planet.house)
+    
+    // Level 4: Houses owned by planet
+    data.houses.details.forEachIndexed { index, house ->
+        if (house.signLord.equals(planet.name, ignoreCase = true)) {
+            significators.add(index + 1)
+        }
+    }
+    
+    return significators.sorted()
+}
+
 @Composable
 fun IndicatorsTab(data: ChartData) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
@@ -602,9 +637,9 @@ fun IndicatorsTab(data: ChartData) {
                 val col3 = if (starLordTa.isNotEmpty()) "$starLordTa $starLordHouse" else "-"
                 val col4 = if (starLordStoodStarLordTa.isNotEmpty()) "$starLordStoodStarLordTa $starLordStoodStarLordHouse" else "-"
                 
-                // Fallback connection string
-                var connection = "$starLordHouse,$starLordStoodStarLordHouse".trim(',')
-                if (connection == ",") connection = "-"
+                // Proper KP connection for the house's star lord
+                val significators = getKPSignificatorsForPlanet(starLordEn, data)
+                val connection = if (significators.isNotEmpty()) significators.joinToString(",") else "-"
                 
                 HorizontalDivider(color = Color.Gray.copy(alpha = 0.5f))
                 Row(modifier = Modifier.fillMaxWidth().background(ParchmentBase).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -647,7 +682,8 @@ fun IndicatorsTab(data: ChartData) {
                 val col1 = "$planetTa $planetHouse"
                 val col3 = if (starLordTa.isNotEmpty()) "$starLordTa ${starLordHouse}ல்" else "-"
                 
-                val connection = if (starLordHouse.isNotEmpty()) starLordHouse else "-"
+                val significators = getKPSignificatorsForPlanet(planet.name, data)
+                val connection = if (significators.isNotEmpty()) significators.joinToString(",") else "-"
 
                 HorizontalDivider(color = Color.Gray.copy(alpha = 0.5f))
                 Row(modifier = Modifier.fillMaxWidth().background(ParchmentBase).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {

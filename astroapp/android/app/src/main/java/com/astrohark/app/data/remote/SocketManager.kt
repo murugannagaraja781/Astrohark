@@ -95,7 +95,11 @@ object SocketManager {
         }
         socket?.emit("request-session", payload, Ack { args ->
             if (args != null && args.isNotEmpty()) {
-                callback?.invoke(args[0] as? JSONObject)
+                var obj = args[0] as? JSONObject
+                if (obj == null && args[0] is String) {
+                    try { obj = JSONObject(args[0] as String) } catch (e: Exception) {}
+                }
+                callback?.invoke(obj)
             } else {
                 callback?.invoke(null)
             }

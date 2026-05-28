@@ -400,7 +400,16 @@ app.get('/api/webrtc-config', (req, res) => {
 
 // ===== File upload setup =====
 const uploadDir = path.join(__dirname, 'uploads');
-const upload = multer({ dest: uploadDir });
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir)
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname) || '';
+    cb(null, file.fieldname + '-' + Date.now() + ext)
+  }
+});
+const upload = multer({ storage: storage });
 
 app.use('/uploads', express.static(uploadDir));
 

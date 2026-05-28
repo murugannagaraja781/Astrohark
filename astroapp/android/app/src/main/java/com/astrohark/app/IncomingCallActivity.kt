@@ -12,6 +12,8 @@ import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -107,7 +109,7 @@ class IncomingCallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+        com.astrohark.app.utils.FullScreenHelper.enableFullScreen(this) 
         // --- CRITICAL FIX: Reset global emission flag for this NEW call instance ---
         hasEmittedAnswer = false
         hasStartedTransition = false
@@ -447,6 +449,10 @@ class IncomingCallActivity : ComponentActivity() {
                 startActivity(intent)
                 Log.d("CALL_DEBUG", "startActivity called successfully")
                 shouldStopServiceOnDestroy = false
+                if (callType == "chat") {
+                    stopService(Intent(this, CallForegroundService::class.java))
+                    clearAllCallNotifications()
+                }
                 finish()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start activity", e)

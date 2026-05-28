@@ -673,7 +673,13 @@ fun IntakeScreen(
                 }
             }
 
-            Dialog(onDismissRequest = { isWaiting = false }) {
+            Dialog(onDismissRequest = { 
+                if (waitingSessionId != null) {
+                    val endPayload = org.json.JSONObject().apply { put("sessionId", waitingSessionId) }
+                    com.astrohark.app.data.remote.SocketManager.emitReliable("end-session", endPayload)
+                }
+                isWaiting = false 
+            }) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -722,7 +728,13 @@ fun IntakeScreen(
                         }
 
                         Button(
-                            onClick = { isWaiting = false },
+                            onClick = { 
+                                if (waitingSessionId != null) {
+                                    val endPayload = org.json.JSONObject().apply { put("sessionId", waitingSessionId) }
+                                    com.astrohark.app.data.remote.SocketManager.emitReliable("end-session", endPayload)
+                                }
+                                isWaiting = false 
+                            },
                             modifier = Modifier.fillMaxWidth().height(48.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFBD2C2C))

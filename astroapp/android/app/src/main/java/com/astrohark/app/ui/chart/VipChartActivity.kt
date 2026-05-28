@@ -115,6 +115,7 @@ data class HouseDetail(
     val signName: String,
     val signAbbr: String? = null,
     val nakshatra: String? = null,
+    val nakshatraPada: Int? = null,
     val signLord: String? = null,
     val starLord: String? = null,
     val subLord: String? = null,
@@ -258,34 +259,59 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
 fun ChartsTab(data: ChartData, birthData: JSONObject) {
     Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
 
-        Text("Rasi Chart", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ChocolateBrown)
-        Spacer(Modifier.height(8.dp))
-        SouthIndianGridEnhanced(data.planets, data.houses.ascendantDetails.signName, "Rasi", birthData, data.panchanga.nakshatra?.name ?: "")
+        Text("ராசி கட்டம் (Rasi)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF5D1212), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        Spacer(Modifier.height(16.dp))
+        SouthIndianGridEnhanced(
+            planets = data.planets,
+            houses = null,
+            ascSign = data.houses.ascendantDetails.signName,
+            title = "ராசி",
+            isBhava = false
+        )
 
         Spacer(Modifier.height(32.dp))
 
-        Text("Navamsa Chart (D9)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ChocolateBrown)
-        Spacer(Modifier.height(8.dp))
-        SouthIndianGridEnhanced(data.navamsa?.planets ?: emptyList(), "", "Navamsa", birthData, "")
+        Text("பாவக கட்டம் (Bhava)", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFF5D1212), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        Spacer(Modifier.height(16.dp))
+        SouthIndianGridEnhanced(
+            planets = data.planets, // In Bhava, planet positions might be different, but if we don't have separate bhava planets, we use Rasi planets
+            houses = data.houses.details,
+            ascSign = data.houses.ascendantDetails.signName,
+            title = "பாவகம்",
+            isBhava = true
+        )
 
         Spacer(Modifier.height(40.dp))
     }
 }
 
 @Composable
-fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: String, birthData: JSONObject, starName: String) {
+fun SouthIndianGridEnhanced(
+    planets: List<Planet>,
+    houses: List<HouseDetail>?,
+    ascSign: String,
+    title: String,
+    isBhava: Boolean
+) {
     val signNames = listOf("Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces")
     val gridMap = listOf(11, 0, 1, 2, 10, -1, -1, 3, 9, -1, -1, 4, 8, 7, 6, 5)
-    val ascIdx = if (ascSign.isNotEmpty()) signNames.indexOf(ascSign) else -1
+    
+    val romanNumerals = listOf("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII")
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .background(ParchmentLight, RoundedCornerShape(8.dp))
-            .border(2.dp, ChocolateBrown, RoundedCornerShape(8.dp))
+            .background(Color.White, RoundedCornerShape(4.dp))
     ) {
-        // Decorative Borders for boxes
+        // Outer Border
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .border(2.dp, Color(0xFFFF8C00), RoundedCornerShape(4.dp))
+        )
+
+        // Grid lines
         Canvas(modifier = Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
@@ -295,43 +321,31 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
             // Vertical lines
             for (i in 1..3) {
                 if (i == 2) {
-                    // Skip center 2x2
-                    drawLine(ChocolateBrown, Offset(i * cellW, 0f), Offset(i * cellW, cellH), strokeWidth = 1.dp.toPx())
-                    drawLine(ChocolateBrown, Offset(i * cellW, 3 * cellH), Offset(i * cellW, h), strokeWidth = 1.dp.toPx())
+                    drawLine(Color(0xFFFF8C00), Offset(i * cellW, 0f), Offset(i * cellW, cellH), strokeWidth = 1.dp.toPx())
+                    drawLine(Color(0xFFFF8C00), Offset(i * cellW, 3 * cellH), Offset(i * cellW, h), strokeWidth = 1.dp.toPx())
                 } else {
-                    drawLine(ChocolateBrown, Offset(i * cellW, 0f), Offset(i * cellW, h), strokeWidth = 1.dp.toPx())
+                    drawLine(Color(0xFFFF8C00), Offset(i * cellW, 0f), Offset(i * cellW, h), strokeWidth = 1.dp.toPx())
                 }
             }
-
             // Horizontal lines
             for (i in 1..3) {
                 if (i == 2) {
-                    // Skip center 2x2
-                    drawLine(ChocolateBrown, Offset(0f, i * cellH), Offset(cellW, i * cellH), strokeWidth = 1.dp.toPx())
-                    drawLine(ChocolateBrown, Offset(3 * cellW, i * cellH), Offset(w, i * cellH), strokeWidth = 1.dp.toPx())
+                    drawLine(Color(0xFFFF8C00), Offset(0f, i * cellH), Offset(cellW, i * cellH), strokeWidth = 1.dp.toPx())
+                    drawLine(Color(0xFFFF8C00), Offset(3 * cellW, i * cellH), Offset(w, i * cellH), strokeWidth = 1.dp.toPx())
                 } else {
-                    drawLine(ChocolateBrown, Offset(0f, i * cellH), Offset(w, i * cellH), strokeWidth = 1.dp.toPx())
+                    drawLine(Color(0xFFFF8C00), Offset(0f, i * cellH), Offset(w, i * cellH), strokeWidth = 1.dp.toPx())
                 }
             }
-
-            // Central Area Decor (Pillar-like / Unified Center)
-            val centralPadding = 2.dp.toPx()
+            
+            // Central Border (Thicker orange around center 2x2 hole)
             val rectPath = Path().apply {
-                moveTo(cellW + centralPadding, cellH + centralPadding)
-                lineTo(3 * cellW - centralPadding, cellH + centralPadding)
-                lineTo(3 * cellW - centralPadding, 3 * cellH - centralPadding)
-                lineTo(cellW + centralPadding, 3 * cellH - centralPadding)
+                moveTo(cellW, cellH)
+                lineTo(3 * cellW, cellH)
+                lineTo(3 * cellW, 3 * cellH)
+                lineTo(cellW, 3 * cellH)
                 close()
             }
-
-            // Draw a subtle background for the center "pillar" area
-            drawPath(
-                path = rectPath,
-                brush = Brush.verticalGradient(listOf(Color(0xFFFFF9C4).copy(alpha = 0.5f), Color(0xFFFBC02D).copy(alpha = 0.1f)))
-            )
-
-            // Central Border (Thicker)
-            drawPath(rectPath, ChocolateBrown, style = Stroke(width = 2.4.dp.toPx()))
+            drawPath(rectPath, Color(0xFFFF8C00), style = Stroke(width = 1.dp.toPx()))
         }
 
         // Contents
@@ -345,40 +359,68 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
                         Box(Modifier.weight(1f).fillMaxHeight()) {
                             if (signIdx != -1) {
                                 val signEn = signNames[signIdx]
-                                val occupants = mutableListOf<String>()
-                                if (signEn == ascSign) occupants.add("As")
-                                planets.filter { it.signName == signEn }.forEach { occupants.add(it.name) }
+                                val isAsc = signEn == ascSign
+                                
+                                // Draw Green Border for Ascendant
+                                if (isAsc) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .border(2.dp, Color(0xFF4CAF50))
+                                    )
+                                }
 
-                                 Column(Modifier.fillMaxSize().padding(2.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                                    val fontSize = if (occupants.size > 3) 10.sp else 11.sp
-                                    val lineHeight = if (occupants.size > 3) 11.sp else 13.sp
-
-                                    Column(
-                                        verticalArrangement = Arrangement.Center,
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        occupants.forEach { pName ->
+                                Column(
+                                    Modifier.fillMaxSize().padding(2.dp),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    // Top section (House Num + Degree for Bhava)
+                                    if (isBhava && houses != null) {
+                                        // Find which house falls in this sign. A sign could have 0, 1, or 2 houses. We'll find the first one.
+                                        val houseIndex = houses.indexOfFirst { it.signName == signEn }
+                                        if (houseIndex != -1) {
+                                            val h = houses[houseIndex]
+                                            val hNum = romanNumerals.getOrElse(houseIndex) { (houseIndex + 1).toString() }
+                                            val hDeg = h.degreeFormatted ?: ""
+                                            val topText = if (hDeg.isNotEmpty()) "$hNum $hDeg" else hNum
                                             Text(
-                                                text = planetAbbrTamil[pName] ?: pName.take(3),
-                                                fontSize = fontSize,
-                                                fontWeight = FontWeight.ExtraBold,
-                                                color = when {
-                                                    pName == "As" -> Color(0xFFD32F2F) // Deep Red for Asc
-                                                    pName == "Sun" -> Color(0xFFE65100)
-                                                    pName == "Moon" -> Color(0xFF1976D2)
-                                                    else -> Color(0xFF3E2723) // Dark Brown for visibility
-                                                },
-                                                lineHeight = lineHeight
+                                                text = topText,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color(0xFF0A1172)
                                             )
                                         }
                                     }
-                                }
 
-                            } else if (pos == 5) {
-                                // Central Info Display (Spans 2x2 area 5,6,9,10 but we use box 5 as anchor)
-                                Box(modifier = Modifier.fillMaxSize().offset(x = 0.dp), contentAlignment = Alignment.Center) {
-                                    // Spanning 2 cells
+                                    // Planets in this sign
+                                    val signPlanets = planets.filter { it.signName == signEn }
+                                    signPlanets.forEach { p ->
+                                        val abbr = planetAbbrTamil[p.name] ?: p.name.take(3)
+                                        val deg = p.degreeFormatted ?: ""
+                                        val text = if (deg.isNotEmpty()) "$abbr $deg" else abbr
+                                        Text(
+                                            text = text,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0A1172)
+                                        )
+                                    }
+                                    
+                                    // Ascendant Label
+                                    if (isAsc) {
+                                        Box(
+                                            modifier = Modifier
+                                                .padding(top = 4.dp)
+                                                .background(Color(0xFF4CAF50), RoundedCornerShape(4.dp))
+                                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                                        ) {
+                                            Text("லக்", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                        }
+                                    }
                                 }
+                            } else if (pos == 5) {
+                                // Central Info Display anchor
                             }
                         }
                     }
@@ -387,21 +429,9 @@ fun SouthIndianGridEnhanced(planets: List<Planet>, ascSign: String, title: Strin
         }
 
         // Overlay central text over the 2x2 hole
-        Box(modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                val dob = "${birthData.optInt("day")}-${getMonthName(birthData.optInt("month"))}-${birthData.optInt("year")}"
-                val tob = String.format("%02d:%02d", birthData.optInt("hour"), birthData.optInt("minute"))
-
-                Text(dob, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
-                Text(tob, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
-                Spacer(Modifier.height(4.dp))
-                Text(title, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = ChocolateBrown)
-                if (starName.isNotEmpty()) {
-                    Text(starName, fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Bold)
-                }
-            }
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(title, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF0A1172))
         }
-
     }
 }
 
@@ -568,54 +598,94 @@ fun DashaNodeInternal(period: DashaPeriod) {
     }
 }
 
-fun getKPSignificatorsForPlanet(planetName: String, data: ChartData): List<Int> {
-    val planet = data.planets.find { it.name.equals(planetName, ignoreCase = true) } ?: return emptyList()
+fun getKBAPlanetConnections(planetName: String, data: ChartData): String {
+    val planet = data.planets.find { it.name.equals(planetName, ignoreCase = true) } ?: return ""
     val starLordName = planet.starLord ?: ""
     val starLordPlanet = data.planets.find { it.name.equals(starLordName, ignoreCase = true) }
     
-    val significators = mutableSetOf<Int>()
+    val slHouse = starLordPlanet?.house ?: 0
+    val pHouse = planet.house
     
-    // Level 1: House occupied by star lord
-    if (starLordPlanet != null) {
-        significators.add(starLordPlanet.house)
-    }
+    if (slHouse == 0) return pHouse.toString()
+    if (slHouse == pHouse) return slHouse.toString()
+    return "$slHouse, $pHouse"
+}
+
+fun getKBAHouseConnections(houseIndex: Int, data: ChartData): String {
+    val house = data.houses.details.getOrNull(houseIndex) ?: return ""
+    val starLordName = house.starLord ?: ""
+    val starLordPlanet = data.planets.find { it.name.equals(starLordName, ignoreCase = true) }
     
-    // Level 2: Houses owned by star lord
-    if (starLordName.isNotEmpty()) {
-        data.houses.details.forEachIndexed { index, house ->
-            if (house.signLord.equals(starLordName, ignoreCase = true)) {
-                significators.add(index + 1)
-            }
-        }
-    }
+    val subLordName = house.subLord ?: ""
+    val subLordPlanet = data.planets.find { it.name.equals(subLordName, ignoreCase = true) }
     
-    // Level 3: House occupied by planet
-    significators.add(planet.house)
+    val slHouse = starLordPlanet?.house ?: 0
+    val subHouse = subLordPlanet?.house ?: 0
     
-    // Level 4: Houses owned by planet
-    data.houses.details.forEachIndexed { index, house ->
-        if (house.signLord.equals(planet.name, ignoreCase = true)) {
-            significators.add(index + 1)
-        }
-    }
-    
-    return significators.sorted()
+    if (slHouse == 0 && subHouse == 0) return "-"
+    if (subHouse == 0) return slHouse.toString()
+    if (slHouse == 0) return subHouse.toString()
+    if (subHouse == slHouse) return subHouse.toString()
+    return "$subHouse, $slHouse"
 }
 
 @Composable
 fun IndicatorsTab(data: ChartData) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
-        Text("12 பாவங்களின் நட்சத்திர குறிகாட்டிகள்", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 16.sp)
+        Text("கிரக குறி காட்டிகள்", fontWeight = FontWeight.Bold, color = Color(0xFF5D1212), fontSize = 16.sp)
         Spacer(Modifier.height(8.dp))
 
-        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray)) {
-            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF2E7D32)).padding(8.dp)) {
-                listOf("பாவம்", "நட்சத்திரம்", "நட். அதிபதி", "நின்ற நட். அதிபதி", "தொடர்பு").forEach { head ->
+        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFE0D5C9))) {
+            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFFF9F0E6)).padding(8.dp)) {
+                listOf("கிரகம்", "நட்சத்திரம்\nபாதம்", "நட்சத்திர\nஅதிபதி", "பாவ\nதொடர்பு").forEach { head ->
                     Text(
                         text = head,
                         modifier = Modifier.weight(1f),
-                        color = Color.White,
-                        fontSize = 10.sp,
+                        color = Color(0xFF5D1212),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+            val displayPlanets = listOf("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu", "Mandi")
+            data.planets.filter { it.name in displayPlanets }.forEachIndexed { index, planet ->
+                val planetTa = planetTamil[planet.name] ?: planet.name
+                val planetHouse = planet.house
+                val nak = "${planet.nakshatra} ${planet.nakshatraPada}"
+                
+                val starLordEn = planet.starLord ?: ""
+                val starLordTa = planetTamil[starLordEn] ?: starLordEn
+                val starLordPlanet = data.planets.find { it.name.equals(starLordEn, ignoreCase = true) }
+                val starLordHouse = starLordPlanet?.house?.toString() ?: ""
+                
+                val col1 = "$planetTa $planetHouse"
+                val col3 = if (starLordTa.isNotEmpty()) "$starLordTa $starLordHouse ல்" else "-"
+                
+                val connection = getKBAPlanetConnections(planet.name, data)
+
+                HorizontalDivider(color = Color(0xFFE0D5C9))
+                Row(modifier = Modifier.fillMaxWidth().background(if (index % 2 == 0) Color.White else Color(0xFFFAF6F2)).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(col1, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(nak, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Center)
+                    Text(col3, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(connection, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+        Text("பாவக குறி காட்டிகள்", fontWeight = FontWeight.Bold, color = Color(0xFF5D1212), fontSize = 16.sp)
+        Spacer(Modifier.height(8.dp))
+
+        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFE0D5C9))) {
+            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFFF9F0E6)).padding(8.dp)) {
+                listOf("பாவ\nஆரம்ப\nமுனை", "நட்சத்திர\nபாதம்", "நட்சத்திர\nஅதிபதி", "நின்ற\nநட்சத்திர\nஅதிபதி", "பாவ\nதொடர்பு").forEach { head ->
+                    Text(
+                        text = head,
+                        modifier = Modifier.weight(1f),
+                        color = Color(0xFF5D1212),
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center
                     )
@@ -623,74 +693,30 @@ fun IndicatorsTab(data: ChartData) {
             }
             data.houses.details.forEachIndexed { index, house ->
                 val bhavaNum = index + 1
-                val nakshatra = house.nakshatra ?: ""
+                val nakshatra = "${house.nakshatra ?: ""} ${house.nakshatraPada ?: ""}"
+                
                 val starLordEn = house.starLord ?: ""
                 val starLordTa = planetTamil[starLordEn] ?: starLordEn
                 val starLordPlanet = data.planets.find { it.name.equals(starLordEn, ignoreCase = true) }
                 val starLordHouse = starLordPlanet?.house?.toString() ?: ""
                 
-                val starLordStoodStarLordEn = starLordPlanet?.starLord ?: ""
-                val starLordStoodStarLordTa = planetAbbrTamil[starLordStoodStarLordEn] ?: starLordStoodStarLordEn
-                val starLordStoodStarLordPlanet = data.planets.find { it.name.equals(starLordStoodStarLordEn, ignoreCase = true) }
-                val starLordStoodStarLordHouse = starLordStoodStarLordPlanet?.house?.toString() ?: ""
+                val subLordEn = house.subLord ?: ""
+                val subLordTa = planetAbbrTamil[subLordEn] ?: planetTamil[subLordEn] ?: subLordEn
+                val subLordPlanet = data.planets.find { it.name.equals(subLordEn, ignoreCase = true) }
+                val subLordHouse = subLordPlanet?.house?.toString() ?: ""
 
                 val col3 = if (starLordTa.isNotEmpty()) "$starLordTa $starLordHouse" else "-"
-                val col4 = if (starLordStoodStarLordTa.isNotEmpty()) "$starLordStoodStarLordTa $starLordStoodStarLordHouse" else "-"
+                val col4 = if (subLordTa.isNotEmpty()) "$subLordTa $subLordHouse" else "-"
                 
-                // Proper KP connection for the house's star lord
-                val significators = getKPSignificatorsForPlanet(starLordEn, data)
-                val connection = if (significators.isNotEmpty()) significators.joinToString(",") else "-"
+                val connection = getKBAHouseConnections(index, data)
                 
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.5f))
-                Row(modifier = Modifier.fillMaxWidth().background(ParchmentBase).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(bhavaNum.toString(), color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(0.8f), textAlign = TextAlign.Center)
-                    Text(nakshatra, color = Color.Blue, fontSize = 10.sp, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Center)
-                    Text(col3, color = Color.Blue, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    Text(col4, color = Color.Blue, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    Text(connection, color = Color.Blue, fontSize = 10.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-        Text("கிரக குறிகாட்டிகள்", fontWeight = FontWeight.Bold, color = ChocolateBrown, fontSize = 16.sp)
-        Spacer(Modifier.height(8.dp))
-
-        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color.Gray)) {
-            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF2E7D32)).padding(8.dp)) {
-                listOf("கிரகம்", "நட்சத்திரம் பாதம்", "நட்சத்திர அதிபதி", "பாவ தொடர்பு").forEach { head ->
-                    Text(
-                        text = head,
-                        modifier = Modifier.weight(1f),
-                        color = Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-            val displayPlanets = listOf("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu")
-            data.planets.filter { it.name in displayPlanets }.forEach { planet ->
-                val planetTa = planetTamil[planet.name] ?: planet.name
-                val planetHouse = planet.house
-                val nak = "${planet.nakshatra} ${planet.nakshatraPada}"
-                val starLordEn = planet.starLord ?: ""
-                val starLordTa = planetTamil[starLordEn] ?: starLordEn
-                val starLordPlanet = data.planets.find { it.name.equals(starLordEn, ignoreCase = true) }
-                val starLordHouse = starLordPlanet?.house?.toString() ?: ""
-                
-                val col1 = "$planetTa $planetHouse"
-                val col3 = if (starLordTa.isNotEmpty()) "$starLordTa ${starLordHouse}ல்" else "-"
-                
-                val significators = getKPSignificatorsForPlanet(planet.name, data)
-                val connection = if (significators.isNotEmpty()) significators.joinToString(",") else "-"
-
-                HorizontalDivider(color = Color.Gray.copy(alpha = 0.5f))
-                Row(modifier = Modifier.fillMaxWidth().background(ParchmentBase).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(col1, color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    Text(nak, color = Color.Blue, fontSize = 11.sp, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Center)
-                    Text(col3, color = Color.Blue, fontSize = 11.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    Text(connection, color = Color.Blue, fontSize = 11.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                HorizontalDivider(color = Color(0xFFE0D5C9))
+                Row(modifier = Modifier.fillMaxWidth().background(if (index % 2 == 0) Color.White else Color(0xFFFAF6F2)).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(bhavaNum.toString(), color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(nakshatra, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Center)
+                    Text(col3, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(col4, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                    Text(connection, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
                 }
             }
         }

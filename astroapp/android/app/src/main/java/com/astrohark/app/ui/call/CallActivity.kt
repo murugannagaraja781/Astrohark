@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -229,6 +230,7 @@ class CallActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.astrohark.app.utils.FullScreenHelper.enableFullScreen(this)
         Log.d(TAG, "CallActivity.onCreate started with intent: ${intent.extras}")
         try {
             if (savedInstanceState != null) {
@@ -1548,7 +1550,7 @@ fun CallScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = duration,
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = if (role == "client" || role == "user") Color.Red else Color.Black,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium
                         )

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -25,6 +26,21 @@ import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.platform.LocalContext
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+import com.astrohark.app.utils.VoiceRecorder
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -99,6 +115,7 @@ class ChatActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.astrohark.app.utils.FullScreenHelper.enableFullScreen(this)
         try {
             // Ensure socket is initialized and connected
             com.astrohark.app.data.remote.SocketManager.init()
@@ -358,6 +375,23 @@ fun ChatScreen(
     // Reply State
     var replyingTo by remember { mutableStateOf<ChatMessage?>(null) }
 
+    // Recording State
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val voiceRecorder = remember { VoiceRecorder(context) }
+    var isRecording by remember { mutableStateOf(false) }
+    var recordingDuration by remember { mutableStateOf("00:00") }
+    var recordingTimerJob: kotlinx.coroutines.Job? by remember { mutableStateOf(null) }
+
+    val recordPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (!isGranted) {
+                android.widget.Toast.makeText(context, "Microphone permission is required to send voice notes.", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
+
     // History Visibility State
     // Filter messages: Show all messages by default to ensure no data loss
     val displayedMessages = remember(messages) { messages }
@@ -406,7 +440,7 @@ fun ChatScreen(
                     Text(
                         text = sessionDuration,
                         style = MaterialTheme.typography.titleSmall,
-                        color = CosmicAppTheme.colors.textPrimary,
+                        color = if (isAstrologer) Color.Black else Color.Red,
                         modifier = Modifier.padding(end = AstroDimens.Medium)
                     )
                     IconButton(onClick = onEditIntake) {
@@ -449,22 +483,95 @@ fun ChatScreen(
                              finalText = "> Replying to: $snippet\n$inputText"
                          }
 
-                         val payload = JSONObject().apply {
+                         val payload = org.json.JSONObject().apply {
                             put("toUserId", toUserId)
                             put("sessionId", sessionId)
-                            put("messageId", UUID.randomUUID().toString())
+                            put("messageId", java.util.UUID.randomUUID().toString())
                             put("timestamp", System.currentTimeMillis())
-                            put("content", JSONObject().put("text", finalText))
+                            put("content", org.json.JSONObject().put("text", finalText))
                          }
                          viewModel.sendMessage(payload)
-                         SoundManager.playSentSound()
+                         com.astrohark.app.utils.SoundManager.playSentSound()
                          inputText = ""
                          replyingTo = null
                          viewModel.sendStopTyping(toUserId)
                     }
                 },
                 onViewChart = if (isAstrologer) onViewChart else null,
-                clientBirthData = clientBirthData
+                clientBirthData = clientBirthData,
+                isRecording = isRecording,
+                recordingDuration = recordingDuration,
+                onStartRecording = {
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        voiceRecorder.startRecording()
+                        isRecording = true
+                        recordingDuration = "00:00"
+                        recordingTimerJob = coroutineScope.launch {
+                            var seconds = 0
+                            while (isRecording) {
+                                delay(1000)
+                                seconds++
+                                recordingDuration = String.format("%02d:%02d", seconds / 60, seconds % 60)
+                            }
+                        }
+                    } else {
+                        recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                },
+                onStopRecording = {
+                    if (isRecording) {
+                        isRecording = false
+                        recordingTimerJob?.cancel()
+                        val durationMs = voiceRecorder.stopRecording()
+                        val durationSec = (durationMs / 1000).toInt()
+                        
+                        if (durationMs > 1000) {
+                            val audioPath = voiceRecorder.currentOutputFile
+                            val file = File(audioPath)
+                            if (file.exists() && toUserId != null && sessionId != null) {
+                                coroutineScope.launch {
+                                    try {
+                                        android.widget.Toast.makeText(context, "Sending voice message...", android.widget.Toast.LENGTH_SHORT).show()
+                                        delay(500) // Ensure file is completely written to disk
+                                        val requestFile = file.asRequestBody("audio/mp4".toMediaTypeOrNull())
+                                        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+                                        val apiInterface = com.astrohark.app.data.api.ApiClient.api
+                                        val response = apiInterface.uploadFile(body)
+                                        
+                                        if (response.isSuccessful && response.body() != null) {
+                                            val urlElement = response.body()!!.get("url")
+                                            val url = if (urlElement != null && !urlElement.isJsonNull) urlElement.asString else ""
+                                            
+                                            if (url.isNotEmpty()) {
+                                                val finalText = "[VOICE]:$url|${String.format("%02d:%02d", durationSec / 60, durationSec % 60)}"
+                                                
+                                                val payload = org.json.JSONObject().apply {
+                                                    put("toUserId", toUserId)
+                                                    put("sessionId", sessionId)
+                                                    put("messageId", java.util.UUID.randomUUID().toString())
+                                                    put("timestamp", System.currentTimeMillis())
+                                                    put("content", org.json.JSONObject().put("text", finalText))
+                                                }
+                                                viewModel.sendMessage(payload)
+                                                com.astrohark.app.utils.SoundManager.playSentSound()
+                                            } else {
+                                                android.widget.Toast.makeText(context, "Upload failed: empty URL", android.widget.Toast.LENGTH_SHORT).show()
+                                            }
+                                        } else {
+                                            android.widget.Toast.makeText(context, "Upload failed: ${response.code()}", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        android.widget.Toast.makeText(context, "Upload error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }
+                        } else {
+                            voiceRecorder.cancelRecording()
+                            android.widget.Toast.makeText(context, "Recording too short", android.widget.Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
             )
         }
     ) { padding ->
@@ -625,11 +732,22 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                             }
                         }
 
-                        Text(
-                            text = displayText,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = CosmicAppTheme.colors.textPrimary
-                        )
+                        if (displayText.startsWith("[VOICE]:")) {
+                            val parts = displayText.substringAfter("[VOICE]:").split("|")
+                            val audioUrl = parts.getOrNull(0) ?: ""
+                            val duration = parts.getOrNull(1) ?: "00:00"
+                            AudioPlayerBubble(
+                                audioUrl = if (audioUrl.startsWith("http")) audioUrl else "${com.astrohark.app.utils.Constants.SERVER_URL}$audioUrl",
+                                durationStr = duration,
+                                isMe = isMe
+                            )
+                        } else {
+                            Text(
+                                text = displayText,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = CosmicAppTheme.colors.textPrimary
+                            )
+                        }
 
                         if (isMe) {
                             Row(
@@ -677,7 +795,11 @@ fun ChatInputBar(
     onCancelReply: () -> Unit,
     onSend: () -> Unit,
     onViewChart: (() -> Unit)?,
-    clientBirthData: JSONObject? = null
+    clientBirthData: JSONObject? = null,
+    isRecording: Boolean = false,
+    recordingDuration: String = "00:00",
+    onStartRecording: () -> Unit = {},
+    onStopRecording: () -> Unit = {}
 ) {
     val colors = CosmicAppTheme.colors
 
@@ -686,7 +808,7 @@ fun ChatInputBar(
             .fillMaxWidth()
             .navigationBarsPadding()
             .imePadding()
-            .background(Color.Transparent) // Changed from Surface(white)
+            .background(Color.Transparent)
     ) {
         Column(
             modifier = Modifier
@@ -750,50 +872,86 @@ fun ChatInputBar(
                         }
                     }
                     
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = onTextChange,
-                        modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-                        shape = RoundedCornerShape(AstroDimens.RadiusLarge),
-                        placeholder = { 
-                            Text("Type a message...", style = MaterialTheme.typography.bodyMedium, color = CosmicAppTheme.colors.textSecondary.copy(alpha = 0.5f)) 
-                        },
-                        maxLines = 4,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            cursorColor = CosmicAppTheme.colors.accent
-                        )
-                    )
-
-                    // Send Button with Glow
-                    Surface(
-                        onClick = onSend,
-                        shape = CircleShape,
-                        color = Color.Transparent,
-                        modifier = Modifier.size(44.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(
-                                    androidx.compose.ui.graphics.Brush.linearGradient(
-                                        colors = listOf(colors.accent, Color(0xFFD4700B))
-                                    )
-                                ),
-                            contentAlignment = Alignment.Center
+                    if (isRecording) {
+                        // Recording UI
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f).padding(horizontal = 16.dp)
                         ) {
-                            Icon(
-                                Icons.Default.Send, 
-                                contentDescription = "Send", 
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .background(Color.Red, CircleShape)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = recordingDuration,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Recording...",
+                                color = Color.Gray,
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
                             )
                         }
+                    } else {
+                        OutlinedTextField(
+                            value = text,
+                            onValueChange = onTextChange,
+                            modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
+                            shape = RoundedCornerShape(AstroDimens.RadiusLarge),
+                            placeholder = { 
+                                Text("Type a message...", style = MaterialTheme.typography.bodyMedium, color = CosmicAppTheme.colors.textSecondary.copy(alpha = 0.5f)) 
+                            },
+                            maxLines = 4,
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = Color.White,
+                                unfocusedTextColor = Color.White,
+                                cursorColor = CosmicAppTheme.colors.accent
+                            )
+                        )
+                    }
+
+                    // Send / Mic Button
+                    val isSendButton = text.isNotBlank()
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(
+                                androidx.compose.ui.graphics.Brush.linearGradient(
+                                    colors = listOf(colors.accent, Color(0xFFD4700B))
+                                ),
+                                CircleShape
+                            )
+                            .pointerInput(isSendButton) {
+                                if (isSendButton) {
+                                    detectTapGestures(
+                                        onTap = { onSend() }
+                                    )
+                                } else {
+                                    detectTapGestures(
+                                        onPress = {
+                                            onStartRecording()
+                                            tryAwaitRelease()
+                                            onStopRecording()
+                                        }
+                                    )
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            if (isSendButton) Icons.Default.Send else Icons.Default.Mic, 
+                            contentDescription = if (isSendButton) "Send" else "Record", 
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }

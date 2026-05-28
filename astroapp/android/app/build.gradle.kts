@@ -16,8 +16,8 @@ android {
         applicationId = "com.astrohark.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 16
-        versionName = "16.0"
+        versionCode = 17
+        versionName = "17.0"
 
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -166,4 +166,7 @@ dependencies {
 
     // Install Referrer
     implementation("com.android.installreferrer:installreferrer:2.2")
+
+    // Facebook SDK
+    implementation("com.facebook.android:facebook-android-sdk:17.0.0")
 }

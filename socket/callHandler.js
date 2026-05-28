@@ -148,6 +148,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     
                     userActiveSession.delete(fromUserId);
                     userActiveSession.delete(toUserId);
+                    activeSessions.delete(sessionId);
                     // AUTO-OFFLINE LOGIC: Modified as per USER REQUEST (Astrologer stays online)
                     const astro = await User.findOne({ userId: toUserId });
                     if (astro && astro.role === 'astrologer') {

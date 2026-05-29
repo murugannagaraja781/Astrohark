@@ -141,7 +141,7 @@
         <activity android:name=".ui.home.HomeActivity" />
         <activity android:name=".ui.wallet.WalletActivity" />
         <activity android:name=".ui.wallet.SuperWalletActivity" />
-        <activity android:name=".ui.chat.ChatActivity" android:windowSoftInputMode="adjustResize"/>
+        <activity android:name=".ui.chat.ChatActivity" android:windowSoftInputMode="adjustResize" android:launchMode="singleTop"/>
         <activity android:name=".ui.call.CallActivity"
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
@@ -206,6 +206,15 @@
             android:foregroundServiceType="specialUse|dataSync">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                       android:value="Maintaining socket connection for astrologer availability status" />
+        </service>
+
+        <service
+            android:name=".telecom.CallConnectionService"
+            android:permission="android.permission.BIND_TELECOM_CONNECTION_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.telecom.ConnectionService" />
+            </intent-filter>
         </service>
 
         <meta-data

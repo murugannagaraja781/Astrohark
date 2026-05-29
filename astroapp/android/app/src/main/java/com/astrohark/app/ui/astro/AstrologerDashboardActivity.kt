@@ -221,45 +221,7 @@ class AstrologerDashboardActivity : ComponentActivity() {
             }
         }
 
-        // NEW FIX: Listen for chat-specific requests
-        // When astrologer accepts chat from dashboard, navigate directly to ChatActivity
-        socket?.on("session-request") { args ->
-            runOnUiThread {
-                try {
-                    val data = args[0] as? JSONObject ?: return@runOnUiThread
-                    val sessionId = data.optString("sessionId", "")
-                    val fromUserId = data.optString("fromUserId", "")
-                    val type = data.optString("type", "chat")
-                    val callerName = data.optString("callerName")
-                        .takeIf { !it.isNullOrEmpty() }
-                        ?: data.optString("userName")
-                        .takeIf { !it.isNullOrEmpty() }
-                        ?: fromUserId
-
-                    android.util.Log.d("AstrologerDashboard", "session-request received: sessionId=$sessionId, type=$type")
-
-                    // CRITICAL FIX: Guard with CallState
-                    if (!com.astrohark.app.utils.CallState.canReceiveCall(sessionId)) {
-                         android.util.Log.d("AstrologerDashboard", "Blocking session-request: Already active")
-                         return@runOnUiThread
-                    }
-
-                    // Navigate to ChatActivity for chat requests
-                    if (type == "chat") {
-                        val intent = Intent(this@AstrologerDashboardActivity, com.astrohark.app.ui.chat.ChatActivity::class.java).apply {
-                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                            putExtra("sessionId", sessionId)
-                            putExtra("toUserId", fromUserId)
-                            putExtra("toUserName", callerName)
-                            putExtra("isNewRequest", true) // Auto-accept when opened
-                        }
-                        startActivity(intent)
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.e("AstrologerDashboard", "Error handling session-request", e)
-                }
-            }
-        }
+        // NEW FIX removed: session-request listener is removed so that chats trigger the ringing screen via incoming-session.
     }
 
     override fun onDestroy() {
@@ -681,6 +643,11 @@ fun AstrologerDashboardScreen(
                     ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                 } else true)
             }
+            var hasFullScreenIntent by remember {
+                mutableStateOf(if (Build.VERSION.SDK_INT >= 34) {
+                    (context.getSystemService(android.app.NotificationManager::class.java)).canUseFullScreenIntent()
+                } else true)
+            }
             var hasBatteryOptimization by remember {
                 mutableStateOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     (context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
@@ -696,14 +663,33 @@ fun AstrologerDashboardScreen(
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         hasNotification = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                     }
+                    if (Build.VERSION.SDK_INT >= 34) {
+                        hasFullScreenIntent = (context.getSystemService(android.app.NotificationManager::class.java)).canUseFullScreenIntent()
+                    }
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         hasBatteryOptimization = (context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager).isIgnoringBatteryOptimizations(context.packageName)
                     }
+
+                    // Auto-Offline Logic: If critical permissions missing, force offline.
+                    val hasBasePerms = hasOverlay && hasNotification && hasBatteryOptimization && hasFullScreenIntent
+                    if (!hasBasePerms) {
+                        if (isChatOnline) { isChatOnline = false; updateServiceStatus(context, sessionId, "chat", false) }
+                        if (isAudioOnline) { isAudioOnline = false; updateServiceStatus(context, sessionId, "audio", false) }
+                        if (isVideoOnline) { isVideoOnline = false; updateServiceStatus(context, sessionId, "video", false) }
+                    } else {
+                        if (isAudioOnline && !hasAudio) {
+                            isAudioOnline = false; updateServiceStatus(context, sessionId, "audio", false)
+                        }
+                        if (isVideoOnline && (!hasAudio || !hasCamera)) {
+                            isVideoOnline = false; updateServiceStatus(context, sessionId, "video", false)
+                        }
+                    }
+
                     kotlinx.coroutines.delay(2000)
                 }
             }
 
-            if (!hasOverlay || !hasAudio || !hasCamera || !hasNotification || !hasBatteryOptimization) {
+            if (!hasOverlay || !hasAudio || !hasCamera || !hasNotification || !hasBatteryOptimization || !hasFullScreenIntent) {
                 Card(
                     colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.1f)),
                     shape = RoundedCornerShape(24.dp),
@@ -730,6 +716,7 @@ fun AstrologerDashboardScreen(
                             if (!hasOverlay) Text("• Overlay", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             if (!hasBatteryOptimization) Text("• Battery", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             if (!hasNotification) Text("• Alerts", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            if (!hasFullScreenIntent) Text("• Wake Screen", color = Color.Red, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
@@ -890,7 +877,7 @@ fun AstrologerDashboardScreen(
                 isAudioOnline = isAudioOnline,
                 isVideoOnline = isVideoOnline,
                 onChatToggle = { enabled ->
-                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasNotification)) {
+                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasNotification || !hasFullScreenIntent)) {
                         context.startActivity(Intent(context, PermissionActivity::class.java))
                         Toast.makeText(context, "Please enable required permissions first", Toast.LENGTH_LONG).show()
                     } else {
@@ -910,7 +897,7 @@ fun AstrologerDashboardScreen(
                     }
                 },
                 onAudioToggle = { enabled ->
-                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasAudio || !hasNotification)) {
+                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasAudio || !hasNotification || !hasFullScreenIntent)) {
                         context.startActivity(Intent(context, PermissionActivity::class.java))
                         Toast.makeText(context, "Please enable Speaker/Audio permissions first", Toast.LENGTH_LONG).show()
                     } else {
@@ -929,7 +916,7 @@ fun AstrologerDashboardScreen(
                     }
                 },
                 onVideoToggle = { enabled ->
-                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasAudio || !hasCamera || !hasNotification)) {
+                    if (enabled && (!hasOverlay || !hasBatteryOptimization || !hasAudio || !hasCamera || !hasNotification || !hasFullScreenIntent)) {
                         context.startActivity(Intent(context, PermissionActivity::class.java))
                         Toast.makeText(context, "Please enable Camera/Audio permissions first", Toast.LENGTH_LONG).show()
                     } else {

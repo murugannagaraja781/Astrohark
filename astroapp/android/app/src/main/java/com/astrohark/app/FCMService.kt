@@ -265,26 +265,41 @@ class FCMService : FirebaseMessagingService() {
         // Wake up the screen
         wakeUpDevice()
 
-        // --- THE MASTER FIX FOR KILLED APPS: Start Foreground Service FIRST ---
-        // By starting the service, we move the process into the foreground state.
-        // The service itself will now show the high-priority notification with fullScreenIntent.
         try {
-            val serviceIntent = Intent(this, CallForegroundService::class.java).apply {
-                putExtra("callerId", callerId)
-                putExtra("callerName", callerName)
-                putExtra("callId", callId)
-                putExtra("callType", callType)
-                putExtra("birthData", data["birthData"])
-            }
-            
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent)
-            } else {
-                startService(serviceIntent)
-            }
-            Log.d(TAG, "CallForegroundService started from FCM")
+            // Attempt to use native TelecomManager (ConnectionService) API
+            // This is the guaranteed way to wake devices on Android 8+
+            com.astrohark.app.telecom.TelecomHelper.startIncomingCall(
+                this,
+                callId = callId,
+                callerName = callerName,
+                callType = callType,
+                callerId = callerId,
+                birthData = data["birthData"]
+            )
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to start CallForegroundService from FCM", e)
+            Log.e(TAG, "TelecomManager failed, falling back to Notification", e)
+            
+            // --- THE MASTER FIX FOR KILLED APPS: Start Foreground Service FIRST ---
+            // By starting the service, we move the process into the foreground state.
+            // The service itself will now show the high-priority notification with fullScreenIntent.
+            try {
+                val serviceIntent = Intent(this, CallForegroundService::class.java).apply {
+                    putExtra("callerId", callerId)
+                    putExtra("callerName", callerName)
+                    putExtra("callId", callId)
+                    putExtra("callType", callType)
+                    putExtra("birthData", data["birthData"])
+                }
+                
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent)
+                } else {
+                    startService(serviceIntent)
+                }
+                Log.d(TAG, "CallForegroundService started from FCM")
+            } catch (ex: Exception) {
+                Log.e(TAG, "Failed to start CallForegroundService from FCM", ex)
+            }
         }
     }
 

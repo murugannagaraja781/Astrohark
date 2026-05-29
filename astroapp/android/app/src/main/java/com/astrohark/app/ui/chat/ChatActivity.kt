@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -36,6 +37,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -149,6 +152,18 @@ class ChatActivity : ComponentActivity() {
                         },
                         onViewChart = {
                             if (clientBirthData != null) {
+                                if (role == "astrologer" && toUserId != null && sessionId != null) {
+                                    val payload = org.json.JSONObject().apply {
+                                        put("messageId", java.util.UUID.randomUUID().toString())
+                                        put("sessionId", sessionId)
+                                        put("toUserId", toUserId)
+                                        put("content", org.json.JSONObject().apply {
+                                            put("type", "system-chart-viewing")
+                                            put("text", "chart_opened")
+                                        })
+                                    }
+                                    viewModel.sendMessage(payload)
+                                }
                                 val intent = Intent(this, com.astrohark.app.ui.chart.VipChartActivity::class.java)
                                 intent.putExtra("birthData", clientBirthData.toString())
                                 startActivity(intent)
@@ -531,12 +546,20 @@ fun ChatScreen(
                             if (file.exists() && toUserId != null && sessionId != null) {
                                 coroutineScope.launch {
                                     try {
-                                        android.widget.Toast.makeText(context, "Sending voice message...", android.widget.Toast.LENGTH_SHORT).show()
-                                        delay(500) // Ensure file is completely written to disk
-                                        val requestFile = file.asRequestBody("audio/mp4".toMediaTypeOrNull())
-                                        val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-                                        val apiInterface = com.astrohark.app.data.api.ApiClient.api
-                                        val response = apiInterface.uploadFile(body)
+                                            if (file.length() == 0L) {
+                                                withContext(Dispatchers.Main) {
+                                                    android.widget.Toast.makeText(context, "Error: Audio file is empty. Try recording again.", android.widget.Toast.LENGTH_LONG).show()
+                                                }
+                                                return@launch
+                                            }
+                                            
+                                            android.widget.Toast.makeText(context, "Sending voice message...", android.widget.Toast.LENGTH_SHORT).show()
+                                            delay(1000) // Increase delay to ensure file is completely written and unlocked by OS
+                                            val fileBytes = file.readBytes()
+                                            val requestFile = okhttp3.RequestBody.create("audio/mp4".toMediaTypeOrNull(), fileBytes)
+                                            val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
+                                            val apiInterface = com.astrohark.app.data.api.ApiClient.api
+                                            val response = apiInterface.uploadFile(body)
                                         
                                         if (response.isSuccessful && response.body() != null) {
                                             val urlElement = response.body()!!.get("url")
@@ -600,13 +623,37 @@ fun ChatScreen(
                     onDismiss = { onSessionFinished() }
                 )
             }
+            
+            val isAstrologerViewingChart by viewModel.isAstrologerViewingChart.observeAsState(false)
 
-            LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(AstroDimens.Medium),
-                verticalArrangement = Arrangement.spacedBy(AstroDimens.Small),
-                modifier = Modifier.fillMaxSize()
-            ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                AnimatedVisibility(
+                    visible = !isAstrologer && isAstrologerViewingChart,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFFFF9C4)) // Light yellow
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "நான் உங்கள் ஜாதகத்தை பகுப்பாய்வு செய்கிறேன்...",
+                            color = Color(0xFFE65100), // Dark orange/yellow text
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+
+                LazyColumn(
+                    state = listState,
+                    contentPadding = PaddingValues(AstroDimens.Medium),
+                    verticalArrangement = Arrangement.spacedBy(AstroDimens.Small),
+                    modifier = Modifier.weight(1f).fillMaxWidth()
+                ) {
 
 
                 if (displayedMessages.isEmpty()) {
@@ -626,6 +673,7 @@ fun ChatScreen(
                 }
                 if (isTyping) item { TypingBubble() }
             }
+            } // Close Column
         }
     }
 }
@@ -734,10 +782,20 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
 
                         if (displayText.startsWith("[VOICE]:")) {
                             val parts = displayText.substringAfter("[VOICE]:").split("|")
-                            val audioUrl = parts.getOrNull(0) ?: ""
+                            val audioUrlRaw = parts.getOrNull(0) ?: ""
+                            val audioUrl = audioUrlRaw.replace("\\", "/")
                             val duration = parts.getOrNull(1) ?: "00:00"
+                            
+                            val fullAudioUrl = if (audioUrl.startsWith("http")) {
+                                audioUrl
+                            } else if (audioUrl.startsWith("/")) {
+                                "${com.astrohark.app.utils.Constants.SERVER_URL}$audioUrl"
+                            } else {
+                                "${com.astrohark.app.utils.Constants.SERVER_URL}/$audioUrl"
+                            }
+                            
                             AudioPlayerBubble(
-                                audioUrl = if (audioUrl.startsWith("http")) audioUrl else "${com.astrohark.app.utils.Constants.SERVER_URL}$audioUrl",
+                                audioUrl = fullAudioUrl,
                                 durationStr = duration,
                                 isMe = isMe
                             )

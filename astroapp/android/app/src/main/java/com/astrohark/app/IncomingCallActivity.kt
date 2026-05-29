@@ -97,11 +97,14 @@ class IncomingCallActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
+            val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            keyguardManager.requestDismissKeyguard(this, null)
         } else {
             @Suppress("DEPRECATION")
             window.addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                        WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
             )
         }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -373,6 +376,13 @@ class IncomingCallActivity : ComponentActivity() {
         stopRingtoneAndVibration()
         handler.removeCallbacks(timeoutRunnable)
 
+        // Notify Telecom subsystem that call was accepted
+        try {
+            com.astrohark.app.telecom.TelecomHelper.activeConnection?.setActive()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to notify TelecomConnection of accept", e)
+        }
+
         // --- STABILITY FIX: Emit answer-session with Ack and wait for it before transition ---
         if (!hasEmittedAnswer) {
             hasEmittedAnswer = true
@@ -384,7 +394,7 @@ class IncomingCallActivity : ComponentActivity() {
                     putExtra("sessionId", callId)
                     putExtra("toUserId", callerId)
                     putExtra("toUserName", callerName)
-                    putExtra("isNewRequest", true)
+                    // DO NOT putExtra("isNewRequest", true) here, because IncomingCallActivity already answered the session!
                     putExtra("birthData", birthData)
                 }
             } else {
@@ -467,6 +477,17 @@ class IncomingCallActivity : ComponentActivity() {
     private fun onCallRejected() {
         Log.d(TAG, "Call rejected: $callId")
         
+        // Notify Telecom subsystem that call was rejected
+        try {
+            com.astrohark.app.telecom.TelecomHelper.activeConnection?.setDisconnected(
+                android.telecom.DisconnectCause(android.telecom.DisconnectCause.REJECTED)
+            )
+            com.astrohark.app.telecom.TelecomHelper.activeConnection?.destroy()
+            com.astrohark.app.telecom.TelecomHelper.activeConnection = null
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to notify TelecomConnection of reject", e)
+        }
+
         // --- Emit Rejection to Server ---
         if (!hasEmittedAnswer) {
             hasEmittedAnswer = true
@@ -504,6 +525,20 @@ class IncomingCallActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        
+        // Clean up Telecom connection on destroy if not already
+        try {
+            com.astrohark.app.telecom.TelecomHelper.activeConnection?.let { conn ->
+                if (conn.state != android.telecom.Connection.STATE_DISCONNECTED) {
+                    conn.setDisconnected(android.telecom.DisconnectCause(android.telecom.DisconnectCause.LOCAL))
+                }
+                conn.destroy()
+                com.astrohark.app.telecom.TelecomHelper.activeConnection = null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cleaning up Telecom connection", e)
+        }
+
         try {
             unregisterReceiver(callControlReceiver)
         } catch (e: Exception) {

@@ -82,6 +82,31 @@ class MainActivity : AppCompatActivity() {
         // Add a small delay for splash effect or to ensure permissions logic runs
         CoroutineScope(Dispatchers.Main).launch {
             delay(1000)
+            
+            // Check if app was updated and log out if necessary
+            try {
+                val pInfo = packageManager.getPackageInfo(packageName, 0)
+                val currentVersion = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    pInfo.longVersionCode
+                } else {
+                    pInfo.versionCode.toLong()
+                }
+                val lastVersion = tokenManager.getLastVersionCode()
+
+                if (lastVersion != currentVersion) {
+                    if (lastVersion != 0L) {
+                        Log.i(TAG, "App updated from $lastVersion to $currentVersion. Forcing logout.")
+                    } else {
+                        Log.i(TAG, "No previous version recorded. Forcing logout just in case to avoid corrupted session.")
+                    }
+                    tokenManager.clearSession()
+                    // Always save the current version after clearing
+                    tokenManager.saveLastVersionCode(currentVersion)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to check version for update logout", e)
+            }
+
             checkPermissionsAndProceed()
         }
     }

@@ -90,8 +90,16 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean) {
                                         isPlaying = false
                                         mediaPlayer?.release()
                                         mediaPlayer = null
-                                        android.widget.Toast.makeText(context, "Audio Error: $what, $extra", android.widget.Toast.LENGTH_SHORT).show()
-                                        android.util.Log.e("AudioPlayerBubble", "MediaPlayer error: $what, $extra")
+                                        val fileName = "cached_audio_${audioUrl.hashCode()}.mp4"
+                                        val cachedFile = java.io.File(context.cacheDir, fileName)
+                                        if (cachedFile.exists()) {
+                                            val size = cachedFile.length()
+                                            cachedFile.delete()
+                                            android.widget.Toast.makeText(context, "Corrupt MP4.\nSize: $size bytes\nURL: $audioUrl\nError: $what, $extra", android.widget.Toast.LENGTH_LONG).show()
+                                        } else {
+                                            android.widget.Toast.makeText(context, "Audio Error: $what, $extra", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                        android.util.Log.e("AudioPlayerBubble", "MediaPlayer error: $what, $extra, URL: $audioUrl")
                                         true
                                     }
                                 }
@@ -103,24 +111,90 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean) {
                                             val fileName = "cached_audio_${audioUrl.hashCode()}.mp4"
                                             val cachedFile = java.io.File(context.cacheDir, fileName)
                                             if (!cachedFile.exists()) {
-                                                urlObj.openStream().use { input ->
+                                                val client = okhttp3.OkHttpClient.Builder()
+                                                    .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                                                    .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+                                                    .build()
+                                                    
+                                                val request = okhttp3.Request.Builder()
+                                                    .url(audioUrl)
+                                                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                                                    .build()
+                                                    
+                                                val response = client.newCall(request).execute()
+                                                if (!response.isSuccessful) {
+                                                    throw Exception("Server returned HTTP ${response.code}")
+                                                }
+                                                
+                                                val contentType = response.header("Content-Type") ?: ""
+                                                if (contentType.contains("text/html")) {
+                                                    throw Exception("Server returned HTML instead of audio file")
+                                                }
+                                                
+                                                val bodyStream = response.body?.byteStream() ?: throw Exception("Empty response body")
+                                                bodyStream.use { input ->
                                                     java.io.FileOutputStream(cachedFile).use { output ->
                                                         input.copyTo(output)
                                                     }
                                                 }
+                                                if (cachedFile.length() == 0L) {
+                                                    cachedFile.delete()
+                                                    throw Exception("Downloaded file is 0 bytes")
+                                                }
                                             }
-                                            withContext(Dispatchers.Main) {
-                                                mediaPlayer?.setDataSource(cachedFile.absolutePath)
-                                                mediaPlayer?.prepareAsync()
+                                                var fis: java.io.FileInputStream? = null
+                                                withContext(Dispatchers.Main) {
+                                                    fis = java.io.FileInputStream(cachedFile)
+                                                    mediaPlayer?.setDataSource(fis!!.fd)
+                                                    
+                                                    // Close fis when media player finishes preparing or encounters error
+                                                    mediaPlayer?.setOnPreparedListener { mp ->
+                                                        isPreparing = false
+                                                        duration = mp.duration.toFloat()
+                                                        mp.start()
+                                                        isPlaying = true
+                                                        try { fis?.close() } catch (e: Exception) {}
+                                                        coroutineScope.launch {
+                                                            while (isPlaying) {
+                                                                currentPosition = mp.currentPosition.toFloat()
+                                                                delay(100)
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    mediaPlayer?.prepareAsync()
+                                                }
+                                            } else {
+                                                var fisLocal: java.io.FileInputStream? = null
+                                                withContext(Dispatchers.Main) {
+                                                    val localFile = java.io.File(audioUrl)
+                                                    if (localFile.exists()) {
+                                                        fisLocal = java.io.FileInputStream(localFile)
+                                                        mediaPlayer?.setDataSource(fisLocal!!.fd)
+                                                    } else {
+                                                        mediaPlayer?.setDataSource(audioUrl)
+                                                    }
+                                                    
+                                                    mediaPlayer?.setOnPreparedListener { mp ->
+                                                        isPreparing = false
+                                                        duration = mp.duration.toFloat()
+                                                        mp.start()
+                                                        isPlaying = true
+                                                        try { fisLocal?.close() } catch (e: Exception) {}
+                                                        coroutineScope.launch {
+                                                            while (isPlaying) {
+                                                                currentPosition = mp.currentPosition.toFloat()
+                                                                delay(100)
+                                                            }
+                                                        }
+                                                    }
+                                                    
+                                                    mediaPlayer?.prepareAsync()
+                                                }
                                             }
-                                        } else {
-                                            withContext(Dispatchers.Main) {
-                                                mediaPlayer?.setDataSource(audioUrl)
-                                                mediaPlayer?.prepareAsync()
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+
                                         withContext(Dispatchers.Main) {
                                             isPreparing = false
                                             isPlaying = false

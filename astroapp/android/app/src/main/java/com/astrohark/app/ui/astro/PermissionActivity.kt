@@ -67,6 +67,14 @@ fun PermissionScreen(onBack: () -> Unit) {
             mutableStateOf(true)
         }
     }
+    var hasFullScreenIntentPermission by remember {
+        if (Build.VERSION.SDK_INT >= 34) { // Android 14+
+            val notificationManager = context.getSystemService(android.app.NotificationManager::class.java)
+            mutableStateOf(notificationManager.canUseFullScreenIntent())
+        } else {
+            mutableStateOf(true)
+        }
+    }
     var hasBatteryOptimizationPermission by remember {
         val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
         mutableStateOf(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -82,6 +90,10 @@ fun PermissionScreen(onBack: () -> Unit) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 hasNotificationPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
             }
+            if (Build.VERSION.SDK_INT >= 34) {
+                val notificationManager = context.getSystemService(android.app.NotificationManager::class.java)
+                hasFullScreenIntentPermission = notificationManager.canUseFullScreenIntent()
+            }
             val powerManager = context.getSystemService(android.content.Context.POWER_SERVICE) as android.os.PowerManager
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 hasBatteryOptimizationPermission = powerManager.isIgnoringBatteryOptimizations(context.packageName)
@@ -95,6 +107,12 @@ fun PermissionScreen(onBack: () -> Unit) {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${context.packageName}"))
             context.startActivity(intent)
             Toast.makeText(context, "Please enable 'Display Over Apps'", Toast.LENGTH_LONG).show()
+        } else if (!hasFullScreenIntentPermission && Build.VERSION.SDK_INT >= 34) {
+            val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                data = Uri.parse("package:${context.packageName}")
+            }
+            context.startActivity(intent)
+            Toast.makeText(context, "Please allow Full Screen Intents for incoming calls", Toast.LENGTH_LONG).show()
         } else if (!hasBatteryOptimizationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                 data = Uri.parse("package:${context.packageName}")
@@ -175,6 +193,13 @@ fun PermissionScreen(onBack: () -> Unit) {
             PermissionItemRow("Notifications", "Alerts for new chat/call requests", Icons.Default.Notifications, hasNotificationPermission) {
                 val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.fromParts("package", context.packageName, null) }
                 context.startActivity(intent)
+            }
+
+            if (Build.VERSION.SDK_INT >= 34) {
+                PermissionItemRow("Full Screen Calls", "Wake up phone screen on calls", Icons.Default.Fullscreen, hasFullScreenIntentPermission) {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply { data = Uri.parse("package:${context.packageName}") }
+                    context.startActivity(intent)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

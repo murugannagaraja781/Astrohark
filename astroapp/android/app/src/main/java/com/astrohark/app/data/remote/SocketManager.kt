@@ -89,6 +89,7 @@ object SocketManager {
             put("toUserId", toUserId)
             put("fromUserId", currentUserId) // Always send for robustness
             put("type", type)
+            put("callType", type) // Added for FCM payload mapping
             if (birthData != null) {
                 put("birthData", birthData)
             }

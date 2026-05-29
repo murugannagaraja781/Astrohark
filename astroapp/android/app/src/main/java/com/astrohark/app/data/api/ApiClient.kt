@@ -13,7 +13,16 @@ object ApiClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
+    private val userAgentInterceptor = okhttp3.Interceptor { chain ->
+        val originalRequest = chain.request()
+        val requestWithUserAgent = originalRequest.newBuilder()
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+            .build()
+        chain.proceed(requestWithUserAgent)
+    }
+
     private val client = OkHttpClient.Builder()
+        .addInterceptor(userAgentInterceptor)
         .addInterceptor(loggingInterceptor)
         .connectTimeout(60, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)

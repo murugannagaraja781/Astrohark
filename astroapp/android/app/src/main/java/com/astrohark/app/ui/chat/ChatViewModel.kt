@@ -37,6 +37,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _typingStatus = MutableLiveData<Boolean>()
     val typingStatus: LiveData<Boolean> = _typingStatus
 
+    private val _isAstrologerViewingChart = MutableLiveData<Boolean>()
+    val isAstrologerViewingChart: LiveData<Boolean> = _isAstrologerViewingChart
+
     private val _sessionEnded = MutableLiveData<Boolean>()
     val sessionEnded: LiveData<Boolean> = _sessionEnded
 
@@ -58,20 +61,24 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 // Save to local DB first (optimistic)
                 val msgId = data.getString("messageId")
-                val text = data.getJSONObject("content").getString("text")
+                val content = data.getJSONObject("content")
+                val text = content.optString("text", "")
+                val type = content.optString("type", "text")
                 val sessionId = data.optString("sessionId")
                 val senderId = com.astrohark.app.data.local.TokenManager(getApplication()).getUserSession()?.userId ?: ""
 
-                val entity = ChatMessageEntity(
-                    messageId = msgId,
-                    sessionId = sessionId,
-                    text = text,
-                    senderId = senderId,
-                    timestamp = System.currentTimeMillis(),
-                    status = "sent",
-                    isSentByMe = true
-                )
-                repository.saveMessage(entity)
+                if (type != "system-chart-viewing") {
+                    val entity = ChatMessageEntity(
+                        messageId = msgId,
+                        sessionId = sessionId,
+                        text = text,
+                        senderId = senderId,
+                        timestamp = System.currentTimeMillis(),
+                        status = "sent",
+                        isSentByMe = true
+                    )
+                    repository.saveMessage(entity)
+                }
             } catch (e: Exception) { e.printStackTrace() }
 
             repository.sendMessage(data)
@@ -101,6 +108,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             repository.markRead(messageId, toUserId, sessionId)
         }
     }
+
+
 
     fun acceptSession(sessionId: String, toUserId: String) {
         // Use default dispatcher (Main) for Coroutine to allow delay loop to work properly
@@ -167,7 +176,18 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun startListeners() {
         repository.listenIncoming { data ->
             val content = data.getJSONObject("content")
-            val text = content.getString("text")
+            val type = content.optString("type", "text")
+
+            if (type == "system-chart-viewing") {
+                _isAstrologerViewingChart.postValue(true)
+                viewModelScope.launch {
+                    kotlinx.coroutines.delay(15000)
+                    _isAstrologerViewingChart.postValue(false)
+                }
+                return@listenIncoming
+            }
+
+            val text = content.optString("text", "")
             val msgId = data.optString("messageId")
             val sessionId = data.optString("sessionId")
             val senderId = data.optString("fromUserId")

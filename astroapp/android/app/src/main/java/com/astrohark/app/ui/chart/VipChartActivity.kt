@@ -598,35 +598,96 @@ fun DashaNodeInternal(period: DashaPeriod) {
     }
 }
 
-fun getKBAPlanetConnections(planetName: String, data: ChartData): String {
-    val planet = data.planets.find { it.name.equals(planetName, ignoreCase = true) } ?: return ""
+fun applyKp12thLordDefeatRule(connections: List<Int>): List<Int> {
+    val result = mutableListOf<Int>()
+    for (bhava in connections) {
+        val twelth = if (bhava == 1) 12 else bhava - 1
+        if (!connections.contains(twelth)) {
+            result.add(bhava)
+        }
+    }
+    return result
+}
+
+fun getKPKBPlanetConnections(planetName: String, data: ChartData): String {
+    val planet = data.planets.find { it.name.equals(planetName, ignoreCase = true) } ?: return "-"
+    
+    // 1. Houses signified by the Star-Lord (Primary)
     val starLordName = planet.starLord ?: ""
     val starLordPlanet = data.planets.find { it.name.equals(starLordName, ignoreCase = true) }
     
-    val slHouse = starLordPlanet?.house ?: 0
-    val pHouse = planet.house
+    val primaryConnections = mutableListOf<Int>()
+    if (starLordPlanet != null) {
+        val starLordOccupies = starLordPlanet.house
+        val starLordOwns = data.houses.details.mapIndexedNotNull { index, h -> 
+            if (h.signLord.equals(starLordName, ignoreCase = true)) index + 1 else null 
+        }
+        if (starLordOccupies != 0) primaryConnections.add(starLordOccupies)
+        primaryConnections.addAll(starLordOwns)
+    }
     
-    if (slHouse == 0) return pHouse.toString()
-    if (slHouse == pHouse) return slHouse.toString()
-    return "$slHouse, $pHouse"
+    val filteredPrimary = applyKp12thLordDefeatRule(primaryConnections.distinct().sorted())
+    val primaryStr = filteredPrimary.joinToString(", ")
+    
+    // 2. Houses signified by the Planet itself (Secondary)
+    val planetOccupies = planet.house
+    val planetOwns = data.houses.details.mapIndexedNotNull { index, h -> 
+        if (h.signLord.equals(planet.name, ignoreCase = true)) index + 1 else null 
+    }
+    
+    val secondaryConnections = mutableListOf<Int>()
+    if (planetOccupies != 0) secondaryConnections.add(planetOccupies)
+    secondaryConnections.addAll(planetOwns)
+    
+    val filteredSecondary = applyKp12thLordDefeatRule(secondaryConnections.distinct().sorted())
+    val secondaryStr = filteredSecondary.joinToString(", ")
+    
+    if (primaryStr.isEmpty() && secondaryStr.isEmpty()) return "-"
+    if (primaryStr.isEmpty()) return secondaryStr
+    return primaryStr
 }
 
-fun getKBAHouseConnections(houseIndex: Int, data: ChartData): String {
+fun getKPKBHouseConnections(houseIndex: Int, data: ChartData): String {
     val house = data.houses.details.getOrNull(houseIndex) ?: return ""
-    val starLordName = house.starLord ?: ""
-    val starLordPlanet = data.planets.find { it.name.equals(starLordName, ignoreCase = true) }
     
-    val subLordName = house.subLord ?: ""
-    val subLordPlanet = data.planets.find { it.name.equals(subLordName, ignoreCase = true) }
+    // 1. Cuspal Sub-Lord of the requested Bhava
+    val subLordName = house.subLord ?: return "-"
+    val subLordPlanet = data.planets.find { it.name.equals(subLordName, ignoreCase = true) } ?: return "-"
     
-    val slHouse = starLordPlanet?.house ?: 0
-    val subHouse = subLordPlanet?.house ?: 0
+    // 2. Star-Lord of that Sub-Lord
+    val starLordName = subLordPlanet.starLord ?: return "-"
+    val starLordPlanet = data.planets.find { it.name.equals(starLordName, ignoreCase = true) } ?: return "-"
     
-    if (slHouse == 0 && subHouse == 0) return "-"
-    if (subHouse == 0) return slHouse.toString()
-    if (slHouse == 0) return subHouse.toString()
-    if (subHouse == slHouse) return subHouse.toString()
-    return "$subHouse, $slHouse"
+    // 3. Houses signified by the Star-Lord (Primary connections)
+    val starLordOccupies = starLordPlanet.house
+    val starLordOwns = data.houses.details.mapIndexedNotNull { index, h -> 
+        if (h.signLord.equals(starLordName, ignoreCase = true)) index + 1 else null 
+    }
+    
+    val primaryConnections = mutableListOf<Int>()
+    if (starLordOccupies != 0) primaryConnections.add(starLordOccupies)
+    primaryConnections.addAll(starLordOwns)
+    
+    val filteredPrimary = applyKp12thLordDefeatRule(primaryConnections.distinct().sorted())
+    val primaryStr = filteredPrimary.joinToString(", ")
+    
+    // 4. Houses signified by the Sub-Lord (for confirmation)
+    val subLordOccupies = subLordPlanet.house
+    val subLordOwns = data.houses.details.mapIndexedNotNull { index, h -> 
+        if (h.signLord.equals(subLordName, ignoreCase = true)) index + 1 else null 
+    }
+    
+    val secondaryConnections = mutableListOf<Int>()
+    if (subLordOccupies != 0) secondaryConnections.add(subLordOccupies)
+    secondaryConnections.addAll(subLordOwns)
+    
+    val filteredSecondary = applyKp12thLordDefeatRule(secondaryConnections.distinct().sorted())
+    val secondaryStr = filteredSecondary.joinToString(", ")
+    
+    if (primaryStr.isEmpty() && secondaryStr.isEmpty()) return "-"
+    if (primaryStr.isEmpty()) return secondaryStr
+    // Return Primary Connections
+    return primaryStr
 }
 
 @Composable
@@ -662,7 +723,7 @@ fun IndicatorsTab(data: ChartData) {
                 val col1 = "$planetTa $planetHouse"
                 val col3 = if (starLordTa.isNotEmpty()) "$starLordTa $starLordHouse ல்" else "-"
                 
-                val connection = getKBAPlanetConnections(planet.name, data)
+                val connection = getKPKBPlanetConnections(planet.name, data)
 
                 HorizontalDivider(color = Color(0xFFE0D5C9))
                 Row(modifier = Modifier.fillMaxWidth().background(if (index % 2 == 0) Color.White else Color(0xFFFAF6F2)).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -680,7 +741,7 @@ fun IndicatorsTab(data: ChartData) {
 
         Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFE0D5C9))) {
             Row(modifier = Modifier.fillMaxWidth().background(Color(0xFFF9F0E6)).padding(8.dp)) {
-                listOf("பாவ\nஆரம்ப\nமுனை", "நட்சத்திர\nபாதம்", "நட்சத்திர\nஅதிபதி", "நின்ற\nநட்சத்திர\nஅதிபதி", "பாவ\nதொடர்பு").forEach { head ->
+                listOf("பாவ\nஆரம்ப\nமுனை", "நட்சத்திர\nபாதம்", "உப\nஅதிபதி", "நின்ற\nநட்சத்திர\nஅதிபதி", "பாவ\nதொடர்பு").forEach { head ->
                     Text(
                         text = head,
                         modifier = Modifier.weight(1f),
@@ -695,20 +756,22 @@ fun IndicatorsTab(data: ChartData) {
                 val bhavaNum = index + 1
                 val nakshatra = "${house.nakshatra ?: ""} ${house.nakshatraPada ?: ""}"
                 
-                val starLordEn = house.starLord ?: ""
-                val starLordTa = planetTamil[starLordEn] ?: starLordEn
-                val starLordPlanet = data.planets.find { it.name.equals(starLordEn, ignoreCase = true) }
-                val starLordHouse = starLordPlanet?.house?.toString() ?: ""
-                
+                // 1. Cuspal Sub-Lord of the requested Bhava
                 val subLordEn = house.subLord ?: ""
-                val subLordTa = planetAbbrTamil[subLordEn] ?: planetTamil[subLordEn] ?: subLordEn
+                val subLordTa = planetTamil[subLordEn] ?: subLordEn
                 val subLordPlanet = data.planets.find { it.name.equals(subLordEn, ignoreCase = true) }
                 val subLordHouse = subLordPlanet?.house?.toString() ?: ""
-
-                val col3 = if (starLordTa.isNotEmpty()) "$starLordTa $starLordHouse" else "-"
-                val col4 = if (subLordTa.isNotEmpty()) "$subLordTa $subLordHouse" else "-"
                 
-                val connection = getKBAHouseConnections(index, data)
+                // 2. Star-Lord of that Sub-Lord
+                val starLordEn = subLordPlanet?.starLord ?: ""
+                val starLordTa = planetAbbrTamil[starLordEn] ?: planetTamil[starLordEn] ?: starLordEn
+                val starLordPlanet = data.planets.find { it.name.equals(starLordEn, ignoreCase = true) }
+                val starLordHouse = starLordPlanet?.house?.toString() ?: ""
+
+                val col3 = if (subLordTa.isNotEmpty()) "$subLordTa $subLordHouse" else "-"
+                val col4 = if (starLordTa.isNotEmpty()) "$starLordTa $starLordHouse" else "-"
+                
+                val connection = getKPKBHouseConnections(index, data)
                 
                 HorizontalDivider(color = Color(0xFFE0D5C9))
                 Row(modifier = Modifier.fillMaxWidth().background(if (index % 2 == 0) Color.White else Color(0xFFFAF6F2)).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {

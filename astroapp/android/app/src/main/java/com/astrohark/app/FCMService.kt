@@ -161,6 +161,8 @@ class FCMService : FirebaseMessagingService() {
                     val senderId = data["callerId"] ?: "unknown"
                     val sessionId = data["sessionId"] ?: ""
                     val messageId = data["messageId"] ?: System.currentTimeMillis().toString()
+                    val type = data["messageType"] ?: "text"
+                    val fileUrl = data["fileUrl"] ?: ""
 
                     // Save to Room DB directly
                     serviceScope.launch {
@@ -173,10 +175,12 @@ class FCMService : FirebaseMessagingService() {
                                 senderId = senderId,
                                 timestamp = System.currentTimeMillis(),
                                 status = "delivered",
-                                isSentByMe = false
+                                isSentByMe = false,
+                                type = type,
+                                fileUrl = fileUrl
                             )
                             db.chatDao().insertMessage(entity)
-                            Log.d(TAG, "Saved background message to Room: $messageId")
+                            Log.d(TAG, "Saved background message to Room: $messageId, type: $type")
                         } catch (e: Exception) {
                             Log.e(TAG, "Failed to save background message", e)
                         }

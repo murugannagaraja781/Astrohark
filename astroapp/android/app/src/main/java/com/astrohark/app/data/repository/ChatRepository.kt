@@ -121,6 +121,8 @@ class ChatRepository(private val context: Context) {
                      val content = json.optJSONObject("content")
                      val text = content?.optString("text") // Handle both structure styles if needed
                         ?: json.optString("text", "") // Fallback
+                     val type = content?.optString("type") ?: json.optString("type", "text")
+                     val fileUrl = content?.optString("fileUrl") ?: json.optString("fileUrl", "")
 
                      val msgId = json.optString("messageId")
                      val senderId = json.optString("fromUserId")
@@ -138,7 +140,9 @@ class ChatRepository(private val context: Context) {
                              senderId = senderId,
                              timestamp = timestamp,
                              status = "read",
-                             isSentByMe = isMe
+                             isSentByMe = isMe,
+                             type = type,
+                             fileUrl = fileUrl
                          )
                          saveMessage(entity)
                      }

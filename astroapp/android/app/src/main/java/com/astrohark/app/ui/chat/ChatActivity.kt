@@ -62,7 +62,7 @@ import com.astrohark.app.utils.SoundManager
 import org.json.JSONObject
 import java.util.UUID
 
-data class ChatMessage(val id: String, val text: String, val isSent: Boolean, var status: String = "sent", val timestamp: Long = 0)
+data class ChatMessage(val id: String, val text: String, val isSent: Boolean, var status: String = "sent", val timestamp: Long = 0, val type: String = "text", val fileUrl: String = "")
 
 class ChatActivity : ComponentActivity() {
 
@@ -413,6 +413,29 @@ fun ChatScreen(
         }
     )
 
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            uri?.let {
+                coroutineScope.launch(Dispatchers.IO) {
+                    try {
+                        val inputStream = context.contentResolver.openInputStream(it)
+                        if (inputStream != null && toUserId != null && sessionId != null) {
+                            val tempFile = File.createTempFile("upload", ".jpg", context.cacheDir)
+                            tempFile.outputStream().use { os -> inputStream.copyTo(os) }
+                            withContext(Dispatchers.Main) {
+                                android.widget.Toast.makeText(context, "Uploading image...", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                            viewModel.uploadFileAndSend(tempFile, "image", sessionId, toUserId)
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+    )
+
     // History Visibility State
     // Filter messages: Show all messages by default to ensure no data loss
     val displayedMessages = remember(messages) { messages }
@@ -432,20 +455,27 @@ fun ChatScreen(
                             color = CosmicAppTheme.colors.accent,
                             maxLines = 1
                         )
-                        if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                         if (isTyping) {
                              Text(
-                                 text = "Time: $remainingTime",
+                                 text = "Typing...",
                                  style = MaterialTheme.typography.labelSmall,
-                                 color = Color.Black,
+                                 color = Color(0xFF00C853), // Green for typing
                                  fontWeight = FontWeight.Bold
                              )
-                        } else {
-                             Text(
-                                 text = "Online",
-                                 style = MaterialTheme.typography.labelSmall,
-                                 color = CosmicAppTheme.colors.textSecondary
-                             )
-                        }
+                         } else if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                              Text(
+                                  text = "Time: $remainingTime",
+                                  style = MaterialTheme.typography.labelSmall,
+                                  color = Color.Black,
+                                  fontWeight = FontWeight.Bold
+                              )
+                         } else {
+                              Text(
+                                  text = "Online",
+                                  style = MaterialTheme.typography.labelSmall,
+                                  color = CosmicAppTheme.colors.textSecondary
+                              )
+                         }
                     }
                 },
                 navigationIcon = {
@@ -518,6 +548,9 @@ fun ChatScreen(
                          viewModel.sendStopTyping(toUserId)
                     }
                 },
+                onAttachImage = {
+                    imagePickerLauncher.launch("image/*")
+                },
                 onViewChart = if (isAstrologer) onViewChart else null,
                 clientBirthData = clientBirthData,
                 isRecording = isRecording,
@@ -559,39 +592,13 @@ fun ChatScreen(
                                                 return@launch
                                             }
                                             
-                                            android.widget.Toast.makeText(context, "Sending voice message...", android.widget.Toast.LENGTH_SHORT).show()
-                                            delay(1000) // Increase delay to ensure file is completely written and unlocked by OS
-                                            val fileBytes = file.readBytes()
-                                            val requestFile = okhttp3.RequestBody.create("audio/mp4".toMediaTypeOrNull(), fileBytes)
-                                            val body = MultipartBody.Part.createFormData("file", file.name, requestFile)
-                                            val apiInterface = com.astrohark.app.data.api.ApiClient.api
-                                            val response = apiInterface.uploadFile(body)
-                                        
-                                        if (response.isSuccessful && response.body() != null) {
-                                            val urlElement = response.body()!!.get("url")
-                                            val url = if (urlElement != null && !urlElement.isJsonNull) urlElement.asString else ""
-                                            
-                                            if (url.isNotEmpty()) {
-                                                val finalText = "[VOICE]:$url|${String.format("%02d:%02d", durationSec / 60, durationSec % 60)}"
-                                                
-                                                val payload = org.json.JSONObject().apply {
-                                                    put("toUserId", toUserId)
-                                                    put("sessionId", sessionId)
-                                                    put("messageId", java.util.UUID.randomUUID().toString())
-                                                    put("timestamp", System.currentTimeMillis())
-                                                    put("content", org.json.JSONObject().put("text", finalText))
-                                                }
-                                                viewModel.sendMessage(payload)
-                                                com.astrohark.app.utils.SoundManager.playSentSound()
-                                            } else {
-                                                android.widget.Toast.makeText(context, "Upload failed: empty URL", android.widget.Toast.LENGTH_SHORT).show()
+                                            withContext(Dispatchers.Main) {
+                                                android.widget.Toast.makeText(context, "Sending voice message...", android.widget.Toast.LENGTH_SHORT).show()
                                             }
-                                        } else {
-                                            android.widget.Toast.makeText(context, "Upload failed: ${response.code()}", android.widget.Toast.LENGTH_SHORT).show()
-                                        }
+                                            delay(1000) // Increase delay to ensure file is completely written and unlocked by OS
+                                            viewModel.uploadFileAndSend(file, "audio", sessionId, toUserId)
                                     } catch (e: Exception) {
                                         e.printStackTrace()
-                                        android.widget.Toast.makeText(context, "Upload error: ${e.message}", android.widget.Toast.LENGTH_LONG).show()
                                     }
                                 }
                             }
@@ -786,11 +793,19 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                             }
                         }
 
-                        if (displayText.startsWith("[VOICE]:")) {
-                            val parts = displayText.substringAfter("[VOICE]:").split("|")
-                            val audioUrlRaw = parts.getOrNull(0) ?: ""
-                            val audioUrl = audioUrlRaw.replace("\\", "/")
-                            val duration = parts.getOrNull(1) ?: "00:00"
+                        if (msg.type == "image") {
+                            coil.compose.AsyncImage(
+                                model = if (msg.fileUrl.startsWith("http")) msg.fileUrl else "${com.astrohark.app.utils.Constants.SERVER_URL}/${msg.fileUrl}",
+                                contentDescription = "Image",
+                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .padding(bottom = 4.dp)
+                                    .background(Color.Gray, RoundedCornerShape(8.dp))
+                            )
+                        } else if (msg.type == "audio" || displayText.startsWith("[VOICE]:")) {
+                            val audioUrl = if (msg.type == "audio") msg.fileUrl else displayText.substringAfter("[VOICE]:").split("|").getOrNull(0)?.replace("\\", "/") ?: ""
+                            val duration = if (msg.type == "audio") "0:00" else displayText.substringAfter("[VOICE]:").split("|").getOrNull(1) ?: "00:00"
                             
                             val fullAudioUrl = if (audioUrl.startsWith("http")) {
                                 audioUrl
@@ -859,6 +874,7 @@ fun ChatInputBar(
     onTextChange: (String) -> Unit,
     onCancelReply: () -> Unit,
     onSend: () -> Unit,
+    onAttachImage: () -> Unit,
     onViewChart: (() -> Unit)?,
     clientBirthData: JSONObject? = null,
     isRecording: Boolean = false,
@@ -935,6 +951,19 @@ fun ChatInputBar(
                                 )
                             }
                         }
+                    }
+
+                    // Attach Image Button
+                    IconButton(
+                        onClick = onAttachImage,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Attachment,
+                            contentDescription = "Attach Image",
+                            tint = Color.White.copy(alpha = 0.7f),
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
                     
                     if (isRecording) {

@@ -138,9 +138,35 @@ module.exports = (io, SERVER_URL) => {
             }
         });
 
+        // Typing Indicators
+        socket.on('typing', (data) => {
+            const { toUserId, sessionId, isTyping } = data || {};
+            const fromUserId = socketToUser.get(socket.id);
+            if (fromUserId && toUserId) {
+                io.to(toUserId).emit('typing', { fromUserId, sessionId, isTyping });
+            }
+        });
+
+        // Message Status (Read/Delivered)
+        socket.on('message-status-update', async (data) => {
+            const { messageId, status, toUserId } = data || {}; // status: 'delivered', 'read'
+            if (!messageId || !status) return;
+
+            try {
+                // Update in DB
+                await ChatMessage.updateOne({ messageId }, { status });
+                // Notify sender
+                if (toUserId) {
+                    io.to(toUserId).emit('message-status', { messageId, status });
+                }
+            } catch (err) {
+                console.error('Error updating message status', err);
+            }
+        });
+
         // Chat Message
         socket.on('chat-message', async (data) => {
-            const { toUserId, sessionId, content, timestamp, messageId } = data || {};
+            const { toUserId, sessionId, content, timestamp, messageId, type, fileUrl, fileName, fileSize } = data || {};
             const fromUserId = socketToUser.get(socket.id);
             if (!fromUserId || !toUserId || !content || !messageId) return;
 
@@ -148,11 +174,17 @@ module.exports = (io, SERVER_URL) => {
 
             ChatMessage.create({
                 messageId, sessionId, fromUserId, toUserId,
-                text: content.text, timestamp: timestamp || Date.now()
+                text: content.text, timestamp: timestamp || Date.now(),
+                type: type || 'text',
+                fileUrl: fileUrl || '',
+                fileName: fileName || '',
+                fileSize: fileSize || 0,
+                status: 'sent'
             }).catch(e => console.error('ChatSave Error', e));
 
             io.to(toUserId).emit('chat-message', {
-                fromUserId, content, sessionId, timestamp: timestamp || Date.now(), messageId
+                fromUserId, content, sessionId, timestamp: timestamp || Date.now(), messageId,
+                type: type || 'text', fileUrl: fileUrl || '', fileName: fileName || '', fileSize: fileSize || 0
             });
 
             // FCM Push
@@ -164,7 +196,11 @@ module.exports = (io, SERVER_URL) => {
                     callerId: fromUserId,
                     text: (content.text || 'New message').substring(0, 200),
                     messageId,
-                    timestamp: Date.now().toString()
+                    timestamp: Date.now().toString(),
+                    messageType: type || 'text',
+                    fileUrl: fileUrl || '',
+                    fileName: fileName || '',
+                    fileSize: (fileSize || 0).toString()
                 };
                 sendFcmV1Push(toUser.fcmToken, payload, null, toUserId);
             }

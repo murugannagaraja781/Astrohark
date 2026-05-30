@@ -102,6 +102,10 @@ dependencies {
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Audio Playback
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+    implementation("androidx.media3:media3-ui:1.3.1")
+
     // Firebase (Safe 2024 versions)
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-messaging")

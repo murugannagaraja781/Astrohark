@@ -262,10 +262,15 @@ class IncomingCallActivity : ComponentActivity() {
     }
 
     private fun clearAllCallNotifications() {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-        notificationManager.cancel(9999) // FCM Incoming
-        notificationManager.cancel(1001) // Foreground Service
-        notificationManager.cancel(1002) // Generic FCM
+        try {
+            val notificationManager = getSystemService(android.app.NotificationManager::class.java)
+            notificationManager.cancel(1001) // old CALL_NOTIFICATION_ID if used
+            if (callId.isNotEmpty()) {
+                notificationManager.cancel(callId.hashCode())
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to clear notifications", e)
+        }
     }
 
     private fun startCallForegroundService() {
@@ -461,8 +466,8 @@ class IncomingCallActivity : ComponentActivity() {
                 shouldStopServiceOnDestroy = false
                 if (callType == "chat") {
                     stopService(Intent(this, CallForegroundService::class.java))
-                    clearAllCallNotifications()
                 }
+                clearAllCallNotifications()
                 finish()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start activity", e)
@@ -519,6 +524,7 @@ class IncomingCallActivity : ComponentActivity() {
 
         // Stop foreground service
         stopService(Intent(this, CallForegroundService::class.java))
+        clearAllCallNotifications()
 
         finish()
     }

@@ -1,5 +1,6 @@
 package com.astrohark.app.ui.chat
 
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -75,7 +76,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         senderId = senderId,
                         timestamp = System.currentTimeMillis(),
                         status = "sent",
-                        isSentByMe = true
+                        isSentByMe = true,
+                        type = type,
+                        fileUrl = content.optString("fileUrl", "")
                     )
                     repository.saveMessage(entity)
                 }
@@ -106,6 +109,36 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun markRead(messageId: String, toUserId: String, sessionId: String) {
          viewModelScope.launch(Dispatchers.IO) {
             repository.markRead(messageId, toUserId, sessionId)
+        }
+    }
+
+    fun uploadFileAndSend(file: java.io.File, type: String, sessionId: String, toUserId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val mediaType = (if (type == "image") "image/*" else "audio/*").toMediaTypeOrNull()
+                val requestFile = okhttp3.RequestBody.create(mediaType, file)
+                val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
+                val response = com.astrohark.app.data.api.ApiClient.api.uploadFile(body)
+                if (response.isSuccessful) {
+                    val urlElement = response.body()?.get("fileUrl")
+                    val url = if (urlElement != null && !urlElement.isJsonNull) urlElement.asString else ""
+                    if (url.isNotEmpty()) {
+                        val payload = JSONObject().apply {
+                            put("messageId", java.util.UUID.randomUUID().toString())
+                            put("sessionId", sessionId)
+                            put("toUserId", toUserId)
+                            put("content", JSONObject().apply {
+                                put("type", type)
+                                put("fileUrl", url)
+                                put("text", if (type == "image") "Sent an Image" else "Sent a Voice Message")
+                            })
+                        }
+                        sendMessage(payload)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -192,6 +225,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             val sessionId = data.optString("sessionId")
             val senderId = data.optString("fromUserId")
 
+            val fileUrl = content.optString("fileUrl", "")
+
             // Save to DB
             viewModelScope.launch(Dispatchers.IO) {
                 try {
@@ -202,7 +237,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         senderId = senderId,
                         timestamp = System.currentTimeMillis(),
                         status = "read",
-                        isSentByMe = false
+                        isSentByMe = false,
+                        type = type,
+                        fileUrl = fileUrl
                     )
                     repository.saveMessage(entity)
 
@@ -213,7 +250,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 } catch (e: Exception) { e.printStackTrace() }
             }
 
-            val msg = ChatMessage(msgId, text, false, timestamp = System.currentTimeMillis())
+            val msg = ChatMessage(msgId, text, false, "read", timestamp = System.currentTimeMillis(), type = type, fileUrl = fileUrl)
             _messages.postValue(msg)
         }
 
@@ -274,7 +311,9 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                         text = entity.text,
                         isSent = entity.isSentByMe,
                         status = entity.status,
-                        timestamp = entity.timestamp
+                        timestamp = entity.timestamp,
+                        type = entity.type,
+                        fileUrl = entity.fileUrl
                     )
                 }
                 _history.postValue(uiMessages)

@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import com.astrohark.app.data.local.dao.ChatDao
 import com.astrohark.app.data.local.entity.ChatMessageEntity
 
-@Database(entities = [ChatMessageEntity::class], version = 1, exportSchema = false)
+@Database(entities = [ChatMessageEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun chatDao(): ChatDao
 
@@ -21,7 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "astrohark_db"
-                ).build()
+                ).fallbackToDestructiveMigration().build()
                 INSTANCE = instance
                 instance
             }

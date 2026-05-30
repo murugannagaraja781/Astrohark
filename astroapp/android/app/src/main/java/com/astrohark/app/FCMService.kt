@@ -268,6 +268,10 @@ class FCMService : FirebaseMessagingService() {
         try {
             // Attempt to use native TelecomManager (ConnectionService) API
             // This is the guaranteed way to wake devices on Android 8+
+            // HOWEVER: If users haven't granted PhoneAccount permissions, it fails silently.
+            // Bypassing TelecomHelper to force the reliable fullScreenIntent fallback.
+            throw Exception("Forcing fullScreenIntent fallback to guarantee notification pop-up")
+            /*
             com.astrohark.app.telecom.TelecomHelper.startIncomingCall(
                 this,
                 callId = callId,
@@ -276,29 +280,55 @@ class FCMService : FirebaseMessagingService() {
                 callerId = callerId,
                 birthData = data["birthData"]
             )
+            */
         } catch (e: Exception) {
-            Log.e(TAG, "TelecomManager failed, falling back to Notification", e)
+            Log.e(TAG, "TelecomManager bypassed/failed, falling back to direct fullScreenIntent Notification", e)
             
-            // --- THE MASTER FIX FOR KILLED APPS: Start Foreground Service FIRST ---
-            // By starting the service, we move the process into the foreground state.
-            // The service itself will now show the high-priority notification with fullScreenIntent.
             try {
-                val serviceIntent = Intent(this, CallForegroundService::class.java).apply {
+                val notificationIntent = Intent(this, IncomingCallActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or 
+                            Intent.FLAG_ACTIVITY_CLEAR_TOP or 
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP
                     putExtra("callerId", callerId)
                     putExtra("callerName", callerName)
                     putExtra("callId", callId)
                     putExtra("callType", callType)
-                    putExtra("birthData", data["birthData"])
+                    if (data["birthData"] != null) {
+                        putExtra("birthData", data["birthData"])
+                    }
                 }
                 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(serviceIntent)
-                } else {
-                    startService(serviceIntent)
+                val pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                val pendingIntent = PendingIntent.getActivity(
+                    this, System.currentTimeMillis().toInt(), notificationIntent, pendingIntentFlags
+                )
+                
+                val notification = NotificationCompat.Builder(this, CALL_CHANNEL_ID)
+                    .setContentTitle("Incoming $callType Call")
+                    .setContentText("$callerName is calling...")
+                    .setSmallIcon(android.R.drawable.ic_menu_call)
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setCategory(NotificationCompat.CATEGORY_CALL)
+                    .setFullScreenIntent(pendingIntent, true) // CRITICAL for lock screen pop-up
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(false)
+                    .setOngoing(true)
+                    .build()
+
+                val notificationManager = getSystemService(NotificationManager::class.java)
+                // Use callId hashcode to uniquely identify this call's notification
+                notificationManager.notify(callId.hashCode(), notification)
+                
+                // Also attempt direct activity start (Allowed during high-priority FCM window)
+                try {
+                    startActivity(notificationIntent)
+                } catch (e2: Exception) {
+                    Log.w(TAG, "Direct startActivity failed, relying on fullScreenIntent", e2)
                 }
-                Log.d(TAG, "CallForegroundService started from FCM")
+                
+                Log.d(TAG, "Direct fullScreenIntent Notification fired from FCM")
             } catch (ex: Exception) {
-                Log.e(TAG, "Failed to start CallForegroundService from FCM", ex)
+                Log.e(TAG, "Failed to show fullScreenIntent Notification", ex)
             }
         }
     }

@@ -67,6 +67,7 @@ data class ChatMessage(val id: String, val text: String, val isSent: Boolean, va
 class ChatActivity : ComponentActivity() {
 
     private val viewModel: ChatViewModel by viewModels()
+    private lateinit var audioPlayer: ChatAudioPlayer
     private var toUserId: String? = null
     private var sessionId: String? = null
     private var clientBirthData by mutableStateOf<JSONObject?>(null)
@@ -133,10 +134,13 @@ class ChatActivity : ComponentActivity() {
             com.astrohark.app.utils.CallState.isCallActive = true
             com.astrohark.app.utils.CallState.currentSessionId = sessionId
             
+            audioPlayer = ChatAudioPlayer(this)
+            
             setContent {
                 CosmicAppTheme {
                     ChatScreen(
                         viewModel = viewModel,
+                        audioPlayer = audioPlayer,
                         sessionDuration = sessionDuration,
                         title = intent?.getStringExtra("toUserName") ?: "Chat",
                         onBack = { finish() },
@@ -362,6 +366,7 @@ class ChatActivity : ComponentActivity() {
         super.onDestroy()
         timerHandler.removeCallbacks(timerRunnable)
         viewModel.stopListeners()
+        audioPlayer.release()
     }
 }
 
@@ -369,6 +374,7 @@ class ChatActivity : ComponentActivity() {
 @Composable
 fun ChatScreen(
     viewModel: ChatViewModel,
+    audioPlayer: ChatAudioPlayer,
     sessionDuration: String,
     title: String,
     onBack: () -> Unit,
@@ -669,7 +675,7 @@ fun ChatScreen(
                 }
 
                 items(displayedMessages) { msg ->
-                    ChatBubble(msg, isAstrologer, onReply = { replyingTo = msg })
+                    ChatBubble(msg, isAstrologer, audioPlayer, onReply = { replyingTo = msg })
                 }
                 if (isTyping) item { TypingBubble() }
             }
@@ -680,7 +686,7 @@ fun ChatScreen(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
+fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioPlayer, onReply: () -> Unit) {
     val isMe = msg.isSent
     val bubbleColor = if (isMe) Color(0xFFE7FFDB) else Color.White // WhatsApp Colors
     val align = if (isMe) Alignment.End else Alignment.Start
@@ -797,7 +803,8 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, onReply: () -> Unit) {
                             AudioPlayerBubble(
                                 audioUrl = fullAudioUrl,
                                 durationStr = duration,
-                                isMe = isMe
+                                isMe = isMe,
+                                audioPlayer = audioPlayer
                             )
                         } else {
                             Text(

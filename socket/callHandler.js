@@ -122,13 +122,17 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
 
             if (toUser.fcmToken) {
                 const isVideo = type === 'video';
+                const fcmType = type === 'chat' ? 'INCOMING_CHAT' : 'INCOMING_CALL';
                 const fcmData = {
-                    type: 'INCOMING_CALL', sessionId, callType: type,
+                    type: fcmType, sessionId, callType: type,
                     callerName: fromUser?.name || 'User',
                     callerId: fromUserId, timestamp: Date.now().toString(),
                     birthData: JSON.stringify(birthData || {})
                 };
-                const fcmNotif = {
+                const fcmNotif = type === 'chat' ? {
+                    title: `💬 Incoming Chat Request`,
+                    body: `${fromUser?.name || 'Someone'} wants to chat with you`
+                } : {
                     title: `📞 Incoming ${isVideo ? 'Video' : 'Audio'} Call`,
                     body: `${fromUser?.name || 'Someone'} is calling you for ${isVideo ? 'video' : 'audio'} consultation`
                 };

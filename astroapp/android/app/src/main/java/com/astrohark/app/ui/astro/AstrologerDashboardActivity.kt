@@ -205,19 +205,45 @@ class AstrologerDashboardActivity : ComponentActivity() {
 
             // Launch IncomingCallActivity on main thread
             runOnUiThread {
-                val intent = Intent(this@AstrologerDashboardActivity, com.astrohark.app.IncomingCallActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                            Intent.FLAG_ACTIVITY_SINGLE_TOP
-                    putExtra("callerId", fromUserId)
-                    putExtra("callerName", callerName)
-                    putExtra("callId", sessionId)
-                    putExtra("callType", type)
-                    if (birthDataStr != null) {
-                        putExtra("birthData", birthDataStr)
+                if (type == "chat") {
+                    android.app.AlertDialog.Builder(this@AstrologerDashboardActivity)
+                        .setTitle("Incoming Chat Request")
+                        .setMessage("$callerName wants to chat with you.")
+                        .setPositiveButton("Accept") { _, _ ->
+                            val intent = Intent(this@AstrologerDashboardActivity, com.astrohark.app.ui.chat.ChatActivity::class.java).apply {
+                                putExtra("toUserId", fromUserId)
+                                putExtra("sessionId", sessionId)
+                                putExtra("isNewRequest", true)
+                            }
+                            startActivity(intent)
+                        }
+                        .setNegativeButton("Reject") { _, _ ->
+                            val payload = JSONObject().apply {
+                                put("sessionId", sessionId)
+                                put("toUserId", fromUserId)
+                                put("type", "chat")
+                                put("accept", false)
+                            }
+                            SocketManager.getSocket()?.emit("answer-session-native", payload)
+                            CallState.currentSessionId = null
+                        }
+                        .setCancelable(false)
+                        .show()
+                } else {
+                    val intent = Intent(this@AstrologerDashboardActivity, com.astrohark.app.IncomingCallActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        putExtra("callerId", fromUserId)
+                        putExtra("callerName", callerName)
+                        putExtra("callId", sessionId)
+                        putExtra("callType", type)
+                        if (birthDataStr != null) {
+                            putExtra("birthData", birthDataStr)
+                        }
                     }
+                    startActivity(intent)
                 }
-                startActivity(intent)
             }
         }
 

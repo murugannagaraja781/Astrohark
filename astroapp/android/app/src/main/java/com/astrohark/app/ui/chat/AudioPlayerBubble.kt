@@ -1,6 +1,5 @@
 package com.astrohark.app.ui.chat
 
-import android.media.MediaPlayer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,30 +14,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import com.astrohark.app.ui.theme.CosmicAppTheme
-import java.io.IOException
 
 @Composable
-fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean) {
-    var isPlaying by remember { mutableStateOf(false) }
-    var isPreparing by remember { mutableStateOf(false) }
-    var currentPosition by remember { mutableStateOf(0f) }
-    var duration by remember { mutableStateOf(0f) }
-    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
-    val coroutineScope = rememberCoroutineScope()
-    val context = androidx.compose.ui.platform.LocalContext.current
+fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audioPlayer: ChatAudioPlayer) {
+    val isPlayingGlobal by audioPlayer.isPlaying.collectAsState()
+    val currentUrlGlobal by audioPlayer.currentUrl.collectAsState()
+    val progressGlobal by audioPlayer.progress.collectAsState()
+    val isPreparingGlobal by audioPlayer.isPreparing.collectAsState()
+    val durationGlobal by audioPlayer.duration.collectAsState()
 
-    DisposableEffect(audioUrl) {
-        onDispose {
-            mediaPlayer?.release()
-            mediaPlayer = null
-            isPreparing = false
-        }
-    }
+    val isThisPlaying = isPlayingGlobal && currentUrlGlobal == audioUrl
+    val isThisPreparing = isPreparingGlobal && currentUrlGlobal == audioUrl
+    
+    val currentProgress = if (currentUrlGlobal == audioUrl) progressGlobal else 0f
+    val currentDuration = if (currentUrlGlobal == audioUrl) durationGlobal else 0f
+    
+    val currentPosition = currentProgress * currentDuration
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -52,183 +44,17 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean) {
             modifier = Modifier
                 .size(40.dp)
                 .clickable {
-                    if (isPreparing) {
-                        return@clickable // Do nothing if it's currently preparing
-                    }
-                    if (isPlaying) {
-                        mediaPlayer?.pause()
-                        isPlaying = false
-                    } else {
-                        if (mediaPlayer == null) {
-                            try {
-                                isPreparing = true
-                                mediaPlayer = MediaPlayer().apply {
-                                    setAudioAttributes(
-                                        android.media.AudioAttributes.Builder()
-                                            .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-                                            .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                                            .build()
-                                    )
-                                    setOnPreparedListener { mp ->
-                                        isPreparing = false
-                                        duration = mp.duration.toFloat()
-                                        mp.start()
-                                        isPlaying = true
-                                        coroutineScope.launch {
-                                            while (isPlaying) {
-                                                currentPosition = mp.currentPosition.toFloat()
-                                                delay(100)
-                                            }
-                                        }
-                                    }
-                                    setOnCompletionListener {
-                                        isPlaying = false
-                                        currentPosition = 0f
-                                    }
-                                    setOnErrorListener { _, what, extra ->
-                                        isPreparing = false
-                                        isPlaying = false
-                                        mediaPlayer?.release()
-                                        mediaPlayer = null
-                                        val fileName = "cached_audio_${audioUrl.hashCode()}.mp4"
-                                        val cachedFile = java.io.File(context.cacheDir, fileName)
-                                        if (cachedFile.exists()) {
-                                            val size = cachedFile.length()
-                                            cachedFile.delete()
-                                            android.widget.Toast.makeText(context, "Corrupt MP4.\nSize: $size bytes\nURL: $audioUrl\nError: $what, $extra", android.widget.Toast.LENGTH_LONG).show()
-                                        } else {
-                                            android.widget.Toast.makeText(context, "Audio Error: $what, $extra", android.widget.Toast.LENGTH_SHORT).show()
-                                        }
-                                        android.util.Log.e("AudioPlayerBubble", "MediaPlayer error: $what, $extra, URL: $audioUrl")
-                                        true
-                                    }
-                                }
-
-                                coroutineScope.launch(Dispatchers.IO) {
-                                    try {
-                                        if (audioUrl.startsWith("http")) {
-                                            val urlObj = java.net.URL(audioUrl)
-                                            val fileName = "cached_audio_${audioUrl.hashCode()}.mp4"
-                                            val cachedFile = java.io.File(context.cacheDir, fileName)
-                                            if (!cachedFile.exists()) {
-                                                val client = okhttp3.OkHttpClient.Builder()
-                                                    .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-                                                    .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
-                                                    .build()
-                                                    
-                                                val request = okhttp3.Request.Builder()
-                                                    .url(audioUrl)
-                                                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-                                                    .build()
-                                                    
-                                                val response = client.newCall(request).execute()
-                                                if (!response.isSuccessful) {
-                                                    throw Exception("Server returned HTTP ${response.code}")
-                                                }
-                                                
-                                                val contentType = response.header("Content-Type") ?: ""
-                                                if (contentType.contains("text/html")) {
-                                                    throw Exception("Server returned HTML instead of audio file")
-                                                }
-                                                
-                                                val bodyStream = response.body?.byteStream() ?: throw Exception("Empty response body")
-                                                bodyStream.use { input ->
-                                                    java.io.FileOutputStream(cachedFile).use { output ->
-                                                        input.copyTo(output)
-                                                    }
-                                                }
-                                                if (cachedFile.length() == 0L) {
-                                                    cachedFile.delete()
-                                                    throw Exception("Downloaded file is 0 bytes")
-                                                }
-                                            }
-                                                var fis: java.io.FileInputStream? = null
-                                                withContext(Dispatchers.Main) {
-                                                    fis = java.io.FileInputStream(cachedFile)
-                                                    mediaPlayer?.setDataSource(fis!!.fd)
-                                                    
-                                                    // Close fis when media player finishes preparing or encounters error
-                                                    mediaPlayer?.setOnPreparedListener { mp ->
-                                                        isPreparing = false
-                                                        duration = mp.duration.toFloat()
-                                                        mp.start()
-                                                        isPlaying = true
-                                                        try { fis?.close() } catch (e: Exception) {}
-                                                        coroutineScope.launch {
-                                                            while (isPlaying) {
-                                                                currentPosition = mp.currentPosition.toFloat()
-                                                                delay(100)
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    mediaPlayer?.prepareAsync()
-                                                }
-                                            } else {
-                                                var fisLocal: java.io.FileInputStream? = null
-                                                withContext(Dispatchers.Main) {
-                                                    val localFile = java.io.File(audioUrl)
-                                                    if (localFile.exists()) {
-                                                        fisLocal = java.io.FileInputStream(localFile)
-                                                        mediaPlayer?.setDataSource(fisLocal!!.fd)
-                                                    } else {
-                                                        mediaPlayer?.setDataSource(audioUrl)
-                                                    }
-                                                    
-                                                    mediaPlayer?.setOnPreparedListener { mp ->
-                                                        isPreparing = false
-                                                        duration = mp.duration.toFloat()
-                                                        mp.start()
-                                                        isPlaying = true
-                                                        try { fisLocal?.close() } catch (e: Exception) {}
-                                                        coroutineScope.launch {
-                                                            while (isPlaying) {
-                                                                currentPosition = mp.currentPosition.toFloat()
-                                                                delay(100)
-                                                            }
-                                                        }
-                                                    }
-                                                    
-                                                    mediaPlayer?.prepareAsync()
-                                                }
-                                            }
-                                        } catch (e: Exception) {
-                                            e.printStackTrace()
-
-                                        withContext(Dispatchers.Main) {
-                                            isPreparing = false
-                                            isPlaying = false
-                                            mediaPlayer?.release()
-                                            mediaPlayer = null
-                                            android.widget.Toast.makeText(context, "Download failed: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                isPreparing = false
-                                e.printStackTrace()
-                                android.widget.Toast.makeText(context, "Audio Exception: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            mediaPlayer?.start()
-                            isPlaying = true
-                            coroutineScope.launch {
-                                while (isPlaying) {
-                                    currentPosition = mediaPlayer?.currentPosition?.toFloat() ?: 0f
-                                    delay(100)
-                                }
-                            }
-                        }
-                    }
+                    if (isThisPreparing) return@clickable
+                    audioPlayer.play(audioUrl)
                 }
         ) {
             Box(contentAlignment = Alignment.Center) {
-                if (isPreparing) {
+                if (isThisPreparing) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
                     Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        imageVector = if (isThisPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isThisPlaying) "Pause" else "Play",
                         tint = Color.White
                     )
                 }
@@ -238,9 +64,8 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean) {
         Spacer(modifier = Modifier.width(8.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            val progress = if (duration > 0f) currentPosition / duration else 0f
             LinearProgressIndicator(
-                progress = { progress },
+                progress = { currentProgress },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp),
@@ -255,7 +80,7 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean) {
                 val currentSec = (currentPosition / 1000).toInt()
                 val currentStr = String.format("%02d:%02d", currentSec / 60, currentSec % 60)
                 Text(
-                    text = if (isPlaying) currentStr else durationStr,
+                    text = if (isThisPlaying) currentStr else durationStr,
                     fontSize = 12.sp,
                     color = Color.Gray
                 )

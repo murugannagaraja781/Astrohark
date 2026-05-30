@@ -166,7 +166,13 @@ module.exports = (io, SERVER_URL) => {
 
         // Chat Message
         socket.on('chat-message', async (data) => {
-            const { toUserId, sessionId, content, timestamp, messageId, type, fileUrl, fileName, fileSize } = data || {};
+            const { toUserId, sessionId, content, timestamp, messageId } = data || {};
+            const type = data.type || (content && content.type) || 'text';
+            const fileUrl = data.fileUrl || (content && content.fileUrl) || '';
+            const fileName = data.fileName || (content && content.fileName) || '';
+            const fileSize = data.fileSize || (content && content.fileSize) || 0;
+            const textContent = (content && content.text) || '';
+
             const fromUserId = socketToUser.get(socket.id);
             if (!fromUserId || !toUserId || !content || !messageId) return;
 
@@ -174,17 +180,17 @@ module.exports = (io, SERVER_URL) => {
 
             ChatMessage.create({
                 messageId, sessionId, fromUserId, toUserId,
-                text: content.text, timestamp: timestamp || Date.now(),
-                type: type || 'text',
-                fileUrl: fileUrl || '',
-                fileName: fileName || '',
-                fileSize: fileSize || 0,
+                text: textContent, timestamp: timestamp || Date.now(),
+                type: type,
+                fileUrl: fileUrl,
+                fileName: fileName,
+                fileSize: fileSize,
                 status: 'sent'
             }).catch(e => console.error('ChatSave Error', e));
 
             io.to(toUserId).emit('chat-message', {
                 fromUserId, content, sessionId, timestamp: timestamp || Date.now(), messageId,
-                type: type || 'text', fileUrl: fileUrl || '', fileName: fileName || '', fileSize: fileSize || 0
+                type: type, fileUrl: fileUrl, fileName: fileName, fileSize: fileSize
             });
 
             // FCM Push

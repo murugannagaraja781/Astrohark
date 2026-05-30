@@ -596,8 +596,13 @@ fun ChatScreen(
                                                 android.widget.Toast.makeText(context, "Sending voice message...", android.widget.Toast.LENGTH_SHORT).show()
                                             }
                                             delay(1000) // Increase delay to ensure file is completely written and unlocked by OS
-                                            viewModel.uploadFileAndSend(file, "audio", sessionId, toUserId)
+                                            
+                                            val durStr = String.format("%02d:%02d", durationSec / 60, durationSec % 60)
+                                            viewModel.uploadFileAndSend(file, "audio", sessionId, toUserId, durStr)
                                     } catch (e: Exception) {
+                                        withContext(Dispatchers.Main) {
+                                            android.widget.Toast.makeText(context, "Failed to send: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
                                         e.printStackTrace()
                                     }
                                 }
@@ -805,7 +810,14 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                             )
                         } else if (msg.type == "audio" || displayText.startsWith("[VOICE]:")) {
                             val audioUrl = if (msg.type == "audio") msg.fileUrl else displayText.substringAfter("[VOICE]:").split("|").getOrNull(0)?.replace("\\", "/") ?: ""
-                            val duration = if (msg.type == "audio") "0:00" else displayText.substringAfter("[VOICE]:").split("|").getOrNull(1) ?: "00:00"
+                            
+                            // Parse duration correctly instead of forcing 0:00
+                            var duration = "0:00"
+                            if (displayText.startsWith("[VOICE]:")) {
+                                duration = displayText.substringAfter("[VOICE]:").split("|").getOrNull(1) ?: "00:00"
+                            } else if (displayText.contains("|")) {
+                                duration = displayText.split("|").getOrNull(1) ?: "00:00"
+                            }
                             
                             val fullAudioUrl = if (audioUrl.startsWith("http")) {
                                 audioUrl

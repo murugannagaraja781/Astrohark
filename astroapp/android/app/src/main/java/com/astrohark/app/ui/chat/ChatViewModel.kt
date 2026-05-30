@@ -112,7 +112,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun uploadFileAndSend(file: java.io.File, type: String, sessionId: String, toUserId: String) {
+    fun uploadFileAndSend(file: java.io.File, type: String, sessionId: String, toUserId: String, durationStr: String = "") {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val mediaType = (if (type == "image") "image/*" else "audio/*").toMediaTypeOrNull()
@@ -130,7 +130,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                             put("content", JSONObject().apply {
                                 put("type", type)
                                 put("fileUrl", url)
-                                put("text", if (type == "image") "Sent an Image" else "Sent a Voice Message")
+                                put("text", if (type == "image") "Sent an Image" else if (durationStr.isNotEmpty()) "Voice Message|$durationStr" else "Sent a Voice Message")
                             })
                         }
                         sendMessage(payload)

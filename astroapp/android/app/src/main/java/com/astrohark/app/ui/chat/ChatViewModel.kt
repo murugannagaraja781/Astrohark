@@ -120,7 +120,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
                 val response = com.astrohark.app.data.api.ApiClient.api.uploadFile(body)
                 if (response.isSuccessful) {
-                    val urlElement = response.body()?.get("fileUrl")
+                    val urlElement = response.body()?.get("url")
                     val url = if (urlElement != null && !urlElement.isJsonNull) urlElement.asString else ""
                     if (url.isNotEmpty()) {
                         val payload = JSONObject().apply {

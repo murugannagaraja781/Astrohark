@@ -188,9 +188,17 @@ module.exports = (io, SERVER_URL) => {
                 status: 'sent'
             }).catch(e => console.error('ChatSave Error', e));
 
+            // Emit with BOTH root-level and content fields so Android parses either way
             io.to(toUserId).emit('chat-message', {
-                fromUserId, content, sessionId, timestamp: timestamp || Date.now(), messageId,
-                type: type, fileUrl: fileUrl, fileName: fileName, fileSize: fileSize
+                fromUserId,
+                content: { text: textContent, type: type, fileUrl: fileUrl },
+                sessionId,
+                timestamp: timestamp || Date.now(),
+                messageId,
+                type: type,
+                fileUrl: fileUrl,
+                fileName: fileName,
+                fileSize: fileSize
             });
 
             // FCM Push
@@ -209,6 +217,42 @@ module.exports = (io, SERVER_URL) => {
                     fileSize: (fileSize || 0).toString()
                 };
                 sendFcmV1Push(toUser.fcmToken, payload, null, toUserId);
+            }
+        });
+
+        // Get Chat History
+        socket.on('get-history', async (data, cb) => {
+            const { sessionId, limit = 50 } = data || {};
+            if (!sessionId) {
+                if (typeof cb === 'function') cb({ ok: false, messages: [] });
+                return;
+            }
+            try {
+                const messages = await ChatMessage.find({ sessionId })
+                    .sort({ timestamp: 1 })
+                    .limit(limit)
+                    .lean();
+
+                const formatted = messages.map(m => ({
+                    messageId: m.messageId,
+                    fromUserId: m.fromUserId,
+                    toUserId: m.toUserId,
+                    sessionId: m.sessionId,
+                    timestamp: m.timestamp,
+                    type: m.type || 'text',
+                    fileUrl: m.fileUrl || '',
+                    fileName: m.fileName || '',
+                    content: {
+                        text: m.text || '',
+                        type: m.type || 'text',
+                        fileUrl: m.fileUrl || ''
+                    }
+                }));
+
+                if (typeof cb === 'function') cb({ ok: true, messages: formatted });
+            } catch (e) {
+                console.error('get-history error', e);
+                if (typeof cb === 'function') cb({ ok: false, messages: [] });
             }
         });
 

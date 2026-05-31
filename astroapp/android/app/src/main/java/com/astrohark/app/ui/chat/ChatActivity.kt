@@ -799,8 +799,15 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                         }
 
                         if (msg.type == "image") {
+                            val cleanImageUrl = if (msg.fileUrl.startsWith("http")) {
+                                msg.fileUrl
+                            } else if (msg.fileUrl.startsWith("/")) {
+                                "${com.astrohark.app.utils.Constants.SERVER_URL}${msg.fileUrl}"
+                            } else {
+                                "${com.astrohark.app.utils.Constants.SERVER_URL}/${msg.fileUrl}"
+                            }
                             coil.compose.AsyncImage(
-                                model = if (msg.fileUrl.startsWith("http")) msg.fileUrl else "${com.astrohark.app.utils.Constants.SERVER_URL}/${msg.fileUrl}",
+                                model = cleanImageUrl,
                                 contentDescription = "Image",
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 modifier = Modifier

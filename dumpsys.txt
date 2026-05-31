@@ -1,0 +1,477 @@
+Activity Resolver Table:
+  Schemes:
+      astrohark:
+        1245ea0 com.astrohark.app/.MainActivity filter df3261e
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "astrohark"
+          Scheme: "astro5"
+          Authority: "referral": -1
+          Authority: "referral": -1
+          AutoVerify=true
+        f588eff com.astrohark.app/.ui.payment.PaymentActivity filter c80c4cc
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "astrohark"
+          Authority: "payment-success": -1
+        922315 com.astrohark.app/.ui.wallet.PaymentStatusActivity filter c27862a
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "astrohark"
+      astro5:
+        1245ea0 com.astrohark.app/.MainActivity filter df3261e
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "astrohark"
+          Scheme: "astro5"
+          Authority: "referral": -1
+          Authority: "referral": -1
+          AutoVerify=true
+      fb1336489748329643:
+        6311c1b com.astrohark.app/com.facebook.CustomTabActivity filter 15b61b8
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "fb1336489748329643"
+      fbconnect:
+        6311c1b com.astrohark.app/com.facebook.CustomTabActivity filter 7fedb91
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "fbconnect"
+          Authority: "cct.com.astrohark.app": -1
+      razorpay:
+        d40e164 com.astrohark.app/com.razorpay.DeeplinkActivity filter a49fcd
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "razorpay"
+          Authority: "com.astrohark.app": -1
+
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        1245ea0 com.astrohark.app/.MainActivity filter 1113a59
+          Action: "android.intent.action.MAIN"
+          Category: "android.intent.category.LAUNCHER"
+        18fdaf6 com.astrohark.app/com.razorpay.CheckoutActivity filter f3b5ef7
+          Action: "android.intent.action.MAIN"
+
+Receiver Resolver Table:
+  Non-Data Actions:
+      androidx.profileinstaller.action.SAVE_PROFILE:
+        624f8fc com.astrohark.app/androidx.profileinstaller.ProfileInstallReceiver filter 90d420b
+          Action: "androidx.profileinstaller.action.SAVE_PROFILE"
+      com.facebook.sdk.ACTION_CURRENT_AUTHENTICATION_TOKEN_CHANGED:
+        c352ce com.astrohark.app/com.facebook.AuthenticationTokenManager$CurrentAuthenticationTokenChangedBroadcastReceiver filter fb935ef
+          Action: "com.facebook.sdk.ACTION_CURRENT_AUTHENTICATION_TOKEN_CHANGED"
+      com.facebook.sdk.ACTION_CURRENT_ACCESS_TOKEN_CHANGED:
+        7dcafd0 com.astrohark.app/com.facebook.CurrentAccessTokenExpirationBroadcastReceiver filter 1686bc9
+          Action: "com.facebook.sdk.ACTION_CURRENT_ACCESS_TOKEN_CHANGED"
+      androidx.profileinstaller.action.INSTALL_PROFILE:
+        624f8fc com.astrohark.app/androidx.profileinstaller.ProfileInstallReceiver filter 82fb85
+          Action: "androidx.profileinstaller.action.INSTALL_PROFILE"
+      com.google.android.c2dm.intent.RECEIVE:
+        456b082 com.astrohark.app/com.google.firebase.iid.FirebaseInstanceIdReceiver filter 93cf393
+          Action: "com.google.android.c2dm.intent.RECEIVE"
+      androidx.profileinstaller.action.SKIP_FILE:
+        624f8fc com.astrohark.app/androidx.profileinstaller.ProfileInstallReceiver filter e45cdda
+          Action: "androidx.profileinstaller.action.SKIP_FILE"
+      androidx.profileinstaller.action.BENCHMARK_OPERATION:
+        624f8fc com.astrohark.app/androidx.profileinstaller.ProfileInstallReceiver filter 446a8e8
+          Action: "androidx.profileinstaller.action.BENCHMARK_OPERATION"
+
+Service Resolver Table:
+  Non-Data Actions:
+      com.google.firebase.MESSAGING_EVENT:
+        4fccb01 com.astrohark.app/.FCMService filter 942eda6
+          Action: "com.google.firebase.MESSAGING_EVENT"
+        3ea163d com.astrohark.app/com.google.firebase.messaging.FirebaseMessagingService filter da03e32
+          Action: "com.google.firebase.MESSAGING_EVENT"
+          mPriority=-500, originPriority=0, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+      android.telecom.ConnectionService:
+        a4bf3e7 com.astrohark.app/.telecom.CallConnectionService filter 2516b94 permission android.permission.BIND_TELECOM_CONNECTION_SERVICE
+          Action: "android.telecom.ConnectionService"
+
+Domain verification status:
+
+Permissions:
+  Permission [com.astrohark.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION] (42a2ba1):
+    sourcePackage=com.astrohark.app
+    uid=11575 gids=[] type=0 prot=signature
+    perm=PermissionInfo{fa54c01 com.astrohark.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION}
+    flags=0x0
+
+Registered ContentProviders:
+  com.astrohark.app/com.google.firebase.provider.FirebaseInitProvider:
+    Provider{4fdaa6 com.astrohark.app/com.google.firebase.provider.FirebaseInitProvider}
+  com.astrohark.app/com.facebook.internal.FacebookInitProvider:
+    Provider{902dce7 com.astrohark.app/com.facebook.internal.FacebookInitProvider}
+  com.astrohark.app/androidx.startup.InitializationProvider:
+    Provider{730a094 com.astrohark.app/androidx.startup.InitializationProvider}
+  com.astrohark.app/androidx.core.content.FileProvider:
+    Provider{719a73d com.astrohark.app/androidx.core.content.FileProvider}
+
+ContentProvider Authorities:
+  [com.astrohark.app.firebaseinitprovider]:
+    Provider{4fdaa6 com.astrohark.app/com.google.firebase.provider.FirebaseInitProvider}
+      applicationInfo=ApplicationInfo{ec5d1c6 com.astrohark.app}
+  [com.astrohark.app.FacebookInitProvider]:
+    Provider{902dce7 com.astrohark.app/com.facebook.internal.FacebookInitProvider}
+      applicationInfo=ApplicationInfo{548d587 com.astrohark.app}
+  [com.astrohark.app.fileprovider]:
+    Provider{719a73d com.astrohark.app/androidx.core.content.FileProvider}
+      applicationInfo=ApplicationInfo{e7c3cb4 com.astrohark.app}
+  [com.astrohark.app.androidx-startup]:
+    Provider{730a094 com.astrohark.app/androidx.startup.InitializationProvider}
+      applicationInfo=ApplicationInfo{c9ce0dd com.astrohark.app}
+
+Key Set Manager:
+  [com.astrohark.app]
+      Signing KeySets: 1037
+
+Packages:
+  Package [com.astrohark.app] (414502e):
+    appId=11575
+    pkg=Package{22d987e com.astrohark.app}
+    codePath=/data/app/~~2tfv8KdNtK1i9t76wRB9Fg==/com.astrohark.app-mNV4a8rC3NcmSdQG1T7cYg==
+    resourcePath=/data/app/~~2tfv8KdNtK1i9t76wRB9Fg==/com.astrohark.app-mNV4a8rC3NcmSdQG1T7cYg==
+    legacyNativeLibraryDir=/data/app/~~2tfv8KdNtK1i9t76wRB9Fg==/com.astrohark.app-mNV4a8rC3NcmSdQG1T7cYg==/lib
+    extractNativeLibs=false
+    primaryCpuAbi=arm64-v8a
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=17 minSdk=24 targetSdk=35
+    minExtensionVersions=[]
+    versionName=17.0
+    hiddenApiEnforcementPolicy=2
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=2
+    flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PARTIALLY_DIRECT_BOOT_AWARE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    pageSizeCompat=0
+    queriesPackages=[com.phonepe.app, com.phonepe.app.business, com.google.android.apps.nbu.paisa.user, net.one97.paytm, in.org.npci.upiapp, com.whatsapp, com.phonepe.simulator, com.facebook.katana]
+    queriesIntents=[Intent { act=android.intent.action.VIEW dat=upi:/... }, Intent { act=android.intent.action.VIEW dat=paytmmp:/... }, Intent { act=android.intent.action.VIEW dat=phonepe:/... }, Intent { act=android.intent.action.VIEW dat=tez:/... }, Intent { act=android.intent.action.VIEW dat=upi://pay/... }, Intent { act=android.intent.action.VIEW dat=mandate://upi/... }, Intent { act=android.intent.action.VIEW dat=*:/... typ=*/* }, Intent { act=android.intent.action.VIEW cat=[android.intent.category.BROWSABLE] dat=upi://pay/... typ=*/* }, Intent { act=android.intent.action.MAIN }, Intent { act=android.intent.action.SEND dat=content://*/... typ=*/* }, Intent { act=rzp.device_token.share }]
+    scannedAsStoppedSystemApp=false
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    usesOptionalLibraries:
+      org.apache.http.legacy
+      android.ext.adservices
+    usesLibraryFiles:
+      /system/framework/org.apache.http.legacy.jar
+    timeStamp=2026-05-30 22:24:43
+    lastUpdateTime=2026-05-30 22:24:45
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=com.android.shell
+    originatingPackageName=null
+    packageSource=1
+    appMetadataFilePath=null
+    appMetadataSource=0
+    signatures=PackageSignatures{15481df version:2, signatures:[2bec2971], past signatures:[]}
+    installPermissionsFixed=false
+    pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PARTIALLY_DIRECT_BOOT_AWARE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    declared permissions:
+      com.astrohark.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: prot=signature
+    requested permissions:
+      android.permission.FOREGROUND_SERVICE_CAMERA
+      com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE
+      android.permission.POST_NOTIFICATIONS
+      com.google.android.c2dm.permission.RECEIVE
+      android.permission.MODIFY_AUDIO_SETTINGS
+      android.permission.SYSTEM_ALERT_WINDOW
+      com.astrohark.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+      android.permission.FOREGROUND_SERVICE
+      android.permission.RECEIVE_BOOT_COMPLETED
+      android.permission.FOREGROUND_SERVICE_SPECIAL_USE
+      android.permission.ACCESS_ADSERVICES_AD_ID
+      android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+      android.permission.INTERNET
+      android.permission.USE_FULL_SCREEN_INTENT
+      android.permission.FOREGROUND_SERVICE_DATA_SYNC
+      android.permission.ACCESS_NETWORK_STATE
+      android.permission.CAMERA
+      android.permission.ACCESS_ADSERVICES_ATTRIBUTION
+      android.permission.READ_BASIC_PHONE_STATE
+      android.permission.MANAGE_OWN_CALLS
+      android.permission.FOREGROUND_SERVICE_MICROPHONE
+      android.permission.VIBRATE
+      android.permission.RECORD_AUDIO
+      com.google.android.gms.permission.AD_ID
+      android.permission.WAKE_LOCK
+      android.permission.FOREGROUND_SERVICE_PHONE_CALL
+    install permissions:
+      android.permission.FOREGROUND_SERVICE_CAMERA: granted=true
+      com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE: granted=true
+      com.google.android.c2dm.permission.RECEIVE: granted=true
+      android.permission.MODIFY_AUDIO_SETTINGS: granted=true
+      com.astrohark.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: granted=true
+      android.permission.FOREGROUND_SERVICE: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      android.permission.FOREGROUND_SERVICE_SPECIAL_USE: granted=true
+      android.permission.ACCESS_ADSERVICES_AD_ID: granted=true
+      android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS: granted=true
+      android.permission.INTERNET: granted=true
+      android.permission.USE_FULL_SCREEN_INTENT: granted=true
+      android.permission.FOREGROUND_SERVICE_DATA_SYNC: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.ACCESS_ADSERVICES_ATTRIBUTION: granted=true
+      android.permission.READ_BASIC_PHONE_STATE: granted=true
+      android.permission.MANAGE_OWN_CALLS: granted=true
+      android.permission.FOREGROUND_SERVICE_MICROPHONE: granted=true
+      android.permission.VIBRATE: granted=true
+      com.google.android.gms.permission.AD_ID: granted=true
+      android.permission.WAKE_LOCK: granted=true
+      android.permission.FOREGROUND_SERVICE_PHONE_CALL: granted=true
+    User 0: ceDataInode=1229382 deDataInode=1222520 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 ofs=0 pdm=false instant=false virtual=false quarantined=false
+      installReason=0
+      dataDir=/data/user/0/com.astrohark.app
+      firstInstallTime=2026-05-30 22:20:21
+      uninstallReason=0
+      overlay paths:
+        /data/resource-cache/com.android.systemui-neutral-aWOY.frro
+        /data/resource-cache/com.android.systemui-accent-DlEs.frro
+        /data/resource-cache/com.android.systemui-dynamic-CUQf.frro
+      gids=[3003]
+      runtime permissions:
+        android.permission.POST_NOTIFICATIONS: granted=true, flags=[ USER_SET|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.CAMERA: granted=true, flags=[ USER_SET|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.RECORD_AUDIO: granted=true, flags=[ USER_SET|USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+
+Queries:
+  system apps queryable: false
+  queries via forceQueryable:
+  queries via package name:
+    com.astrohark.app:
+      com.google.android.apps.nbu.paisa.user
+      com.phonepe.app
+      com.whatsapp
+      net.one97.paytm
+  queries via component:
+    com.google.android.as.oss:
+      com.astrohark.app
+    com.google.android.apps.messaging:
+      com.astrohark.app
+    com.oplus.ndsf:
+      com.astrohark.app
+    com.oppo.quicksearchbox:
+      com.astrohark.app
+    com.heytap.market:
+      com.astrohark.app
+    com.oplus.themestore:
+      com.astrohark.app
+    com.oplus.account:
+      com.astrohark.app
+    com.coloros.oshare:
+      com.astrohark.app
+    com.glance.internet:
+      com.astrohark.app
+    com.heytap.htms:
+      com.astrohark.app
+    com.oplus.pay:
+      com.astrohark.app
+    com.heytap.music:
+      com.astrohark.app
+    com.redteamobile.roaming:
+      com.astrohark.app
+    com.android.settings.intelligence:
+      com.astrohark.app
+    com.android.launcher:
+      com.astrohark.app
+    com.android.systemui:
+      com.astrohark.app
+    com.olacabs.customer:
+      com.astrohark.app
+    com.phonepe.app:
+      com.astrohark.app
+    com.rapido.passenger:
+      com.astrohark.app
+    com.whatsapp:
+      com.astrohark.app
+    in.swiggy.android:
+      com.astrohark.app
+    com.coloros.note:
+      com.astrohark.app
+    net.one97.paytm:
+      com.astrohark.app
+    in.startv.hotstar:
+      com.astrohark.app
+    in.swiggy.android.toing:
+      com.astrohark.app
+    com.truecaller:
+      com.astrohark.app
+    com.instagram.basel:
+      com.astrohark.app
+    com.dashaspeaks.astrology.online.chat:
+      com.astrohark.app
+    org.cris.aikyam:
+      com.astrohark.app
+    com.jio.myjio:
+      com.astrohark.app
+    in.redbus.android:
+      com.astrohark.app
+    com.instagram.android:
+      com.astrohark.app
+    com.snapchat.android:
+      com.astrohark.app
+    com.application.zomato:
+      com.astrohark.app
+    ticketnew.android.ui:
+      com.astrohark.app
+    com.application.zomato.district:
+      com.astrohark.app
+    com.facebook.lite:
+      com.astrohark.app
+    com.meesho.supply:
+      com.astrohark.app
+    in.gov.uidai.pehchaan:
+      com.astrohark.app
+    com.astrohark.app:
+      com.google.android.documentsui
+      com.android.apps.tag
+      com.google.android.projection.gearhead
+      com.oplus.calendar
+      com.google.android.apps.nbu.files
+      com.google.android.apps.restore
+      com.google.android.as.oss
+      com.google.android.apps.safetyhub
+      com.google.android.apps.messaging
+      com.google.android.googlequicksearchbox
+      com.oplus.blacklistapp
+      com.android.contacts
+      com.oplus.games
+      com.heytap.market
+      com.oplus.themestore
+      com.oplus.account
+      com.android.mms
+      com.coloros.oshare
+      com.mediatek.omacp
+      com.oplus.screenrecorder
+      com.coloros.bootreg
+      com.coloros.video
+      com.nearme.instant.platform
+      com.google.android.apps.nbu.paisa.user
+      com.google.android.apps.bard
+      com.android.chrome
+      com.google.ar.lens
+      com.google.android.apps.walletnfcrel
+      com.google.android.contacts
+      com.google.android.inputmethod.latin
+      com.google.android.gm
+      com.google.android.apps.tachyon
+      com.google.android.apps.maps
+      in.mobility.cumta
+      com.google.android.apps.photos
+      com.google.android.accessibility.switchaccess
+      com.oplus.aiunit
+      com.google.android.youtube
+      com.oplus.aod
+      com.heytap.browser
+      com.coloros.calculator
+      com.coloros.childrenspace
+      com.coloros.alarmclock
+      com.heytap.cloud
+      com.glance.internet
+      com.coloros.filemanager
+      com.oplus.pay
+      com.heytap.music
+      com.coloros.operationManual
+      com.coloros.soundrecorder
+      com.coloros.compass2
+      com.coloros.weather2
+      com.heytap.pictorial
+      com.redteamobile.roaming
+      com.coloros.smartsidebar
+      com.android.bips
+      com.android.htmlviewer
+      com.android.printspooler
+      com.google.android.setupwizard
+      com.google.android.healthconnect.controller
+      com.google.android.cellbroadcastreceiver
+      com.google.android.photopicker
+      com.olacabs.customer
+      com.phonepe.app
+      com.rapido.passenger
+      com.google.android.apps.docs
+      com.ubercab
+      com.coloros.backuprestore
+      com.realmecomm.app
+      com.whatsapp
+      in.swiggy.android
+      com.coloros.note
+      com.dreamplug.androidapp
+      net.one97.paytm
+      com.openai.chatgpt
+      com.skylum.luminar
+      in.startv.hotstar
+      in.swiggy.android.toing
+      com.truecaller
+      com.instagram.basel
+      com.capslock.shanticlub
+      com.dashaspeaks.astrology.online.chat
+      cris.org.in.prs.ima
+      in.co.refyne.android
+      org.cris.aikyam
+      com.booking
+      com.google.android.apps.work.clouddpc
+      com.google.android.devicelockcontroller
+      com.tnstc
+      com.linkedin.android
+      naukriApp.appModules.login
+      com.jio.myjio
+      com.makemytrip
+      com.plasticore.billing
+      com.hdfcbank.payzapp
+      com.google.android.videos
+      in.redbus.android
+      com.instagram.android
+      com.google.android.keep
+      com.whereismytrain.android
+      com.done.faasos
+      com.snapchat.android
+      com.application.zomato
+      com.astroluna
+      org.telegram.messenger
+      ticketnew.android.ui
+      com.application.zomato.district
+      com.facebook.lite
+      com.tcsprep.app
+      com.meesho.supply
+      com.google.android.apps.youtube.music
+      in.gov.uidai.pehchaan
+      in.gov.uidai.mAadhaarPlus
+      com.astro5star.app
+      lms.wohozo.com
+      com.brave.browser
+  queryable via interaction:
+    User 0:
+      [com.oplus.qualityprotect,com.oplus.healthservice,com.oplus.owkservice,com.android.location.fused,com.oplus.wifibackuprestore,com.oplus.crashbox,com.oplus.mediaturbo,com.android.keychain,com.oplus.obrain,com.oplus.athena,com.oplus.battery,com.android.server.telecom,com.oplus.nas,com.oplus.lfeh,com.realme.aiengine,com.oplus.powermonitor,oplus,com.oplus.appplatform,com.oplus.stdid,com.android.settings,com.mediatek.atci.service,com.oplus.onetrace,com.oplus.securitypermission,com.oplus.audio.effectcenter,com.oplus.sau,com.android.DeviceAsWebcam,com.oplus.trafficmonitor,com.oplus.notificationmanager,com.android.localtransport,com.oplus.olc,com.oplus.logkit,com.oplus.sauhelper,com.mediatek.location.lppe.main,com.wapi.wapicertmanager,com.oplus.engineermode,com.heytap.mcs,com.oplus.engineernetwork,com.oplus.atlas,com.android.providers.settings,com.android.dynsystem,com.oplus.wirelesssettings,com.oplus.customize.coreapp,com.oplus.postmanservice,com.android.inputdevices,com.oplus.rom.server,com.oplus.safecenter,com.oplus.exsystemservice,com.mediatek,android,com.oplus.subsys]:
+        com.astrohark.app
+      [com.google.android.gsf,com.google.android.gms]:
+        com.astrohark.app
+      com.google.android.inputmethod.latin:
+        com.astrohark.app
+      com.android.launcher:
+        com.astrohark.app
+      com.android.systemui:
+        com.astrohark.app
+      com.astrohark.app:
+        com.google.android.providers.media.module
+  queryable via uses-library:
+
+Dexopt state:
+  [com.astrohark.app]
+    path: /data/app/~~2tfv8KdNtK1i9t76wRB9Fg==/com.astrohark.app-mNV4a8rC3NcmSdQG1T7cYg==/base.apk
+      arm64: [status=run-from-apk] [reason=unknown] [primary-abi]
+        [location is error]
+
+Compiler stats:
+  [com.astrohark.app]
+    (No recorded stats)

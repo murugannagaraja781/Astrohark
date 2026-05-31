@@ -96,6 +96,13 @@ class AstrologerDashboardActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         tokenManager = TokenManager(this)
         val session = tokenManager.getUserSession()
+        
+        // CRITICAL FIX: Always register FCM token when dashboard opens
+        // This ensures the backend always has a valid token for pushes,
+        // even if the app was updated or re-installed.
+        session?.userId?.let { userId ->
+            com.astrohark.app.utils.FcmTokenHelper.registerFcmToken(userId)
+        }
 
         setupSocket(session?.userId)
 
@@ -242,7 +249,50 @@ class AstrologerDashboardActivity : ComponentActivity() {
                             putExtra("birthData", birthDataStr)
                         }
                     }
-                    startActivity(intent)
+                    
+                    // CRITICAL FIX: If app is in background, startActivity() is silently blocked by Android 10+.
+                    // We must use a Full-Screen Intent Notification to force the UI to open.
+                    try {
+                        val pendingIntent = android.app.PendingIntent.getActivity(
+                            this@AstrologerDashboardActivity,
+                            sessionId.hashCode(),
+                            intent,
+                            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                        )
+                        
+                        val notificationManager = getSystemService(android.app.NotificationManager::class.java)
+                        val channelId = "incoming_calls"
+                        
+                        // Ensure channel exists
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                            val channel = android.app.NotificationChannel(
+                                channelId,
+                                "Incoming Calls",
+                                android.app.NotificationManager.IMPORTANCE_HIGH // Must be HIGH or MAX
+                            ).apply {
+                                description = "Notifications for incoming calls"
+                                setBypassDnd(true)
+                            }
+                            notificationManager.createNotificationChannel(channel)
+                        }
+                        
+                        val notification = androidx.core.app.NotificationCompat.Builder(this@AstrologerDashboardActivity, channelId)
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setContentTitle("Incoming Call")
+                            .setContentText("$callerName is calling")
+                            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MAX)
+                            .setCategory(androidx.core.app.NotificationCompat.CATEGORY_CALL)
+                            .setFullScreenIntent(pendingIntent, true)
+                            .setAutoCancel(true)
+                            .setOngoing(true)
+                            .build()
+                            
+                        notificationManager.notify(200, notification)
+                        android.util.Log.d("AstrologerDashboard", "Fired Full-Screen Intent Notification for socket call")
+                    } catch (e: Exception) {
+                        android.util.Log.e("AstrologerDashboard", "Failed to fire notification, falling back to startActivity", e)
+                        startActivity(intent)
+                    }
                 }
             }
         }

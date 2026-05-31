@@ -208,26 +208,27 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     fun startListeners() {
         repository.listenIncoming { data ->
-            val content = data.getJSONObject("content")
-            val type = content.optString("type", "text")
+            try {
+                val content = data.optJSONObject("content")
+                val type = content?.optString("type") ?: data.optString("type", "text")
 
-            if (type == "system-chart-viewing") {
-                _isAstrologerViewingChart.postValue(true)
-                viewModelScope.launch {
-                    kotlinx.coroutines.delay(15000)
-                    _isAstrologerViewingChart.postValue(false)
+                if (type == "system-chart-viewing") {
+                    _isAstrologerViewingChart.postValue(true)
+                    viewModelScope.launch {
+                        kotlinx.coroutines.delay(15000)
+                        _isAstrologerViewingChart.postValue(false)
+                    }
+                    return@listenIncoming
                 }
-                return@listenIncoming
-            }
 
-            val text = content.optString("text", "")
-            val msgId = data.optString("messageId")
-            val sessionId = data.optString("sessionId")
-            val senderId = data.optString("fromUserId")
+                val text = content?.optString("text") ?: data.optString("text", "")
+                val msgId = data.optString("messageId")
+                val sessionId = data.optString("sessionId")
+                val senderId = data.optString("fromUserId")
 
-            val fileUrl = content.optString("fileUrl", "")
+                val fileUrl = content?.optString("fileUrl") ?: data.optString("fileUrl", "")
 
-            // Save to DB
+                // Save to DB
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     val entity = ChatMessageEntity(
@@ -252,6 +253,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
             val msg = ChatMessage(msgId, text, false, "read", timestamp = System.currentTimeMillis(), type = type, fileUrl = fileUrl)
             _messages.postValue(msg)
+            } catch (e: Exception) { e.printStackTrace() }
         }
 
         repository.listenMessageStatus { data ->

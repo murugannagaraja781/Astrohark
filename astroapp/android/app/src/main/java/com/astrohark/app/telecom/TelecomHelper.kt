@@ -15,9 +15,9 @@ object TelecomHelper {
     fun registerPhoneAccount(context: Context): PhoneAccountHandle {
         val telecomManager = context.getSystemService(Context.TELECOM_SERVICE) as TelecomManager
         val componentName = ComponentName(context, CallConnectionService::class.java)
-        val phoneAccountHandle = PhoneAccountHandle(componentName, "AstroharkCalls")
+        val phoneAccountHandle = PhoneAccountHandle(componentName, "Astro5StarCalls")
         
-        val builder = PhoneAccount.builder(phoneAccountHandle, "Astrohark")
+        val builder = PhoneAccount.builder(phoneAccountHandle, "Astro 5 Star")
             .setCapabilities(PhoneAccount.CAPABILITY_SELF_MANAGED)
             
         telecomManager.registerPhoneAccount(builder.build())
@@ -54,6 +54,7 @@ object TelecomHelper {
             telecomManager.addNewIncomingCall(handle, callBundle)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to add incoming call via TelecomManager", e)
+            throw e // Rethrow so FCMService fallback triggers
         }
     }
 }

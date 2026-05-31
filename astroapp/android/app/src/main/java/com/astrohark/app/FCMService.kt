@@ -10,6 +10,8 @@ import android.os.Build
 import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.astrohark.app.receiver.ChatActionReceiver
 import com.astrohark.app.data.api.ApiService
 import com.astrohark.app.data.local.AppDatabase
 import com.astrohark.app.data.local.entity.ChatMessageEntity
@@ -51,6 +53,8 @@ class FCMService : FirebaseMessagingService() {
         private const val CALL_CHANNEL_NAME = "Incoming Calls"
         private const val CHAT_CHANNEL_ID = "chat_messages_v1"
         private const val CHAT_CHANNEL_NAME = "Chat Messages"
+        private const val CHAT_CALL_CHANNEL_ID = "incoming_chats_v2"
+        private const val CHAT_CALL_CHANNEL_NAME = "Incoming Chat Requests"
         private const val CALL_NOTIFICATION_ID = 9999
         private const val GENERIC_NOTIFICATION_ID = 1002
     }
@@ -269,25 +273,9 @@ class FCMService : FirebaseMessagingService() {
         // Wake up the screen
         wakeUpDevice()
 
-        try {
-            // Attempt to use native TelecomManager (ConnectionService) API
-            // This is the guaranteed way to wake devices on Android 8+
-            // HOWEVER: If users haven't granted PhoneAccount permissions, it fails silently.
-            // Bypassing TelecomHelper to force the reliable fullScreenIntent fallback.
-            throw Exception("Forcing fullScreenIntent fallback to guarantee notification pop-up")
-            /*
-            com.astrohark.app.telecom.TelecomHelper.startIncomingCall(
-                this,
-                callId = callId,
-                callerName = callerName,
-                callType = callType,
-                callerId = callerId,
-                birthData = data["birthData"]
-            )
-            */
-        } catch (e: Exception) {
-            Log.e(TAG, "TelecomManager bypassed/failed, falling back to direct fullScreenIntent Notification", e)
-            
+        // WhatsApp style: ALWAYS use FullScreenIntent, completely bypass TelecomManager
+        // TelecomManager addNewIncomingCall is highly unreliable on OEM devices (silently fails)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 val notificationIntent = Intent(this, IncomingCallActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or 
@@ -301,38 +289,49 @@ class FCMService : FirebaseMessagingService() {
                         putExtra("birthData", data["birthData"])
                     }
                 }
-                
                 val pendingIntentFlags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 val pendingIntent = PendingIntent.getActivity(
                     this, System.currentTimeMillis().toInt(), notificationIntent, pendingIntentFlags
                 )
-                
                 val notification = NotificationCompat.Builder(this, CALL_CHANNEL_ID)
                     .setContentTitle("Incoming $callType Call")
                     .setContentText("$callerName is calling...")
                     .setSmallIcon(android.R.drawable.ic_menu_call)
                     .setPriority(NotificationCompat.PRIORITY_MAX)
                     .setCategory(NotificationCompat.CATEGORY_CALL)
-                    .setFullScreenIntent(pendingIntent, true) // CRITICAL for lock screen pop-up
+                    .setFullScreenIntent(pendingIntent, true)
                     .setContentIntent(pendingIntent)
                     .setAutoCancel(false)
                     .setOngoing(true)
                     .build()
-
                 val notificationManager = getSystemService(NotificationManager::class.java)
-                // Use callId hashcode to uniquely identify this call's notification
                 notificationManager.notify(callId.hashCode(), notification)
-                
-                // Also attempt direct activity start (Allowed during high-priority FCM window)
                 try {
                     startActivity(notificationIntent)
                 } catch (e2: Exception) {
                     Log.w(TAG, "Direct startActivity failed, relying on fullScreenIntent", e2)
                 }
-                
-                Log.d(TAG, "Direct fullScreenIntent Notification fired from FCM")
+                Log.d(TAG, "Direct fullScreenIntent Notification fired from FCM (WhatsApp Style)")
             } catch (ex: Exception) {
                 Log.e(TAG, "Failed to show fullScreenIntent Notification", ex)
+            }
+        } else {
+            // Legacy fallback for Android API < 21: start activity directly without notification
+            try {
+                val intent = Intent(this, IncomingCallActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra("callerId", callerId)
+                    putExtra("callerName", callerName)
+                    putExtra("callId", callId)
+                    putExtra("callType", callType)
+                    if (data["birthData"] != null) {
+                        putExtra("birthData", data["birthData"])
+                    }
+                }
+                startActivity(intent)
+                Log.d(TAG, "Started IncomingCallActivity directly for legacy API level")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to start IncomingCallActivity on legacy device", e)
             }
         }
     }
@@ -401,7 +400,7 @@ class FCMService : FirebaseMessagingService() {
             val chatChannel = NotificationChannel(
                 CHAT_CHANNEL_ID,
                 CHAT_CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Notifications for chat messages"
                 enableVibration(true)
@@ -409,37 +408,97 @@ class FCMService : FirebaseMessagingService() {
             }
             notificationManager.createNotificationChannel(chatChannel)
 
+            // 3. Chat Call Channel (High Importance for incoming chat requests)
+            val chatCallChannel = NotificationChannel(
+                CHAT_CALL_CHANNEL_ID,
+                CHAT_CALL_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifications for incoming chat requests"
+                enableVibration(true)
+                enableLights(true)
+                val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
+                setSound(soundUri, AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build())
+                setShowBadge(true)
+                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+            }
+            notificationManager.createNotificationChannel(chatCallChannel)
+
             Log.d(TAG, "Notification channels created")
         }
     }
 
     private fun handleIncomingChat(callerName: String, callerId: String, sessionId: String) {
-        val intent = Intent(this, com.astrohark.app.ui.chat.ChatActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra("toUserId", callerId)
-            putExtra("sessionId", sessionId)
-            putExtra("isNewRequest", true) // Auto-accept when opened
-        }
+        Log.d(TAG, "=== INCOMING CHAT (via SERVICE) ===")
+        Log.d(TAG, "From: $callerName ($callerId), sessionId: $sessionId")
 
-        val pendingIntent = PendingIntent.getActivity(
+        // Wake up the screen
+        wakeUpDevice()
+
+        // Build full‑screen intent that launches IncomingCallActivity in a WhatsApp-like ringing UI
+        val fullScreenIntent = Intent(this, com.astrohark.app.IncomingCallActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            putExtra("callerId", callerId)
+            putExtra("callerName", callerName)
+            putExtra("callId", sessionId)
+            putExtra("callType", "chat")
+        }
+        val fullScreenPending = PendingIntent.getActivity(
             this,
             System.currentTimeMillis().toInt(),
-            intent,
+            fullScreenIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(this, CHAT_CHANNEL_ID)
+        // Action intents for Accept and Reject (keeps notification buttons functional)
+        val acceptIntent = Intent(this, com.astrohark.app.receiver.ChatActionReceiver::class.java).apply {
+            action = ChatActionReceiver.ACTION_ACCEPT_CHAT
+            putExtra("callerId", callerId)
+            putExtra("sessionId", sessionId)
+        }
+        val rejectIntent = Intent(this, com.astrohark.app.receiver.ChatActionReceiver::class.java).apply {
+            action = ChatActionReceiver.ACTION_REJECT_CHAT
+            putExtra("callerId", callerId)
+            putExtra("sessionId", sessionId)
+        }
+        val acceptPending = PendingIntent.getBroadcast(
+            this,
+            System.currentTimeMillis().toInt(),
+            acceptIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val rejectPending = PendingIntent.getBroadcast(
+            this,
+            System.currentTimeMillis().toInt() + 1,
+            rejectIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, CHAT_CALL_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_menu_agenda)
-            .setContentTitle("New Chat Request")
+            .setContentTitle("Chat Request")
             .setContentText("$callerName wants to chat")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_CALL) // use CALL category for full‑screen behaviour
+            .setFullScreenIntent(fullScreenPending, true)
+            .setContentIntent(fullScreenPending)
+            .addAction(android.R.drawable.sym_action_call, "Accept", acceptPending)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Reject", rejectPending)
+            .setAutoCancel(false)
+            .setOngoing(true)
             .build()
 
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(callerId.hashCode(), notification)
+
+        try {
+            startActivity(fullScreenIntent)
+        } catch (e2: Exception) {
+            Log.w(TAG, "Direct IncomingCallActivity startActivity for Chat failed, relying on fullScreenIntent", e2)
+        }
     }
 
     private fun showChatMessageNotification(senderName: String, text: String, senderId: String, sessionId: String) {

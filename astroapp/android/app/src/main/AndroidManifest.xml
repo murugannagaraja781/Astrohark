@@ -141,7 +141,7 @@
         <activity android:name=".ui.home.HomeActivity" />
         <activity android:name=".ui.wallet.WalletActivity" />
         <activity android:name=".ui.wallet.SuperWalletActivity" />
-        <activity android:name=".ui.chat.ChatActivity" android:windowSoftInputMode="adjustResize" android:launchMode="singleTop"/>
+        <activity android:name=".ui.chat.ChatActivity" android:windowSoftInputMode="adjustResize" android:launchMode="singleTop" android:showWhenLocked="true" android:turnScreenOn="true"/>
         <activity android:name=".ui.call.CallActivity"
             android:showWhenLocked="true"
             android:turnScreenOn="true" />
@@ -263,6 +263,9 @@
                 <data android:scheme="@string/fb_login_protocol_scheme" />
             </intent-filter>
         </activity>
+        <receiver
+            android:name=".receiver.ChatActionReceiver"
+            android:exported="false" />
 
     </application>
 

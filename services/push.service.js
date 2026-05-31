@@ -21,8 +21,8 @@ async function sendFcmV1Push(fcmToken, data, notification, userId = null) {
     try {
         const accessToken = await fcmAuth.getAccessToken();
 
-        // Determine if this should be a data-only message (Required for background calls)
-        const isCall = data && data.type === 'INCOMING_CALL';
+        // Determine if this should be a data-only message (Required for background calls/chats)
+        const isCall = data && (data.type === 'INCOMING_CALL' || data.type === 'INCOMING_CHAT');
         
         const messagePayload = {
             token: fcmToken,

@@ -1804,47 +1804,11 @@ io.on('connection', (socket) => {
 
 
   // --- Chat message (text / audio / file) ---
-  socket.on('chat-message', async (data) => {
-    try {
-      const { toUserId, sessionId, content, timestamp, messageId } = data || {};
-      const fromUserId = socketToUser.get(socket.id);
-      if (!fromUserId || !toUserId || !content || !messageId) return;
-
-      socket.emit('message-status', {
-        messageId,
-        status: 'sent',
-      });
-
-      // Save to DB (Async)
-      ChatMessage.create({
-        messageId,
-        sessionId,
-        fromUserId,
-        toUserId,
-        text: content.text,
-        timestamp: timestamp || Date.now()
-      }).catch(e => console.error('ChatSave Error', e));
-
-      // Emit to Room (userId) - works even after reconnect
-      io.to(toUserId).emit('chat-message', {
-        fromUserId,
-        content,
-        sessionId: sessionId || null,
-        timestamp: timestamp || Date.now(),
-        messageId,
-      });
-
-      // ALWAYS send FCM push for background delivery
-      // App may be in background but socket still connected
-      // FCM ensures message is delivered even if app is killed
-      sendChatMessagePush(toUserId, fromUserId, content.text || 'New message', sessionId, messageId);
-    } catch (err) {
-      console.error('chat-message error', err);
-    }
-  });
+  // NOTE: chat-message socket event is handled in socket/socketHandler.js
+  // Do NOT add a duplicate handler here — it conflicts and loses type/fileUrl fields.
 
   // --- Helper: Send Chat Message Push (for background messages) ---
-  async function sendChatMessagePush(toUserId, fromUserId, messageText, sessionId, messageId) {
+  async function sendChatMessagePush(toUserId, fromUserId, messageText, sessionId, messageId, type = 'text', fileUrl = '') {
     try {
       const toUser = await User.findOne({ userId: toUserId });
       const fromUser = await User.findOne({ userId: fromUserId });
@@ -1857,7 +1821,9 @@ io.on('connection', (socket) => {
           callerId: fromUserId,
           text: (messageText || 'New message').substring(0, 200),
           messageId: messageId || Date.now().toString(),
-          timestamp: Date.now().toString()
+          timestamp: Date.now().toString(),
+          messageType: type || 'text',
+          fileUrl: fileUrl || ''
         };
 
         // Data-only message for background handling

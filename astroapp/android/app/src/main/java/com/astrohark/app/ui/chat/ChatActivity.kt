@@ -62,7 +62,7 @@ import com.astrohark.app.utils.SoundManager
 import org.json.JSONObject
 import java.util.UUID
 
-data class ChatMessage(val id: String, val text: String, val isSent: Boolean, var status: String = "sent", val timestamp: Long = 0, val type: String = "text", val fileUrl: String = "")
+data class ChatMessage(val id: String, val text: String?, val isSent: Boolean, var status: String? = "sent", val timestamp: Long = 0, val type: String? = "text", val fileUrl: String? = "")
 
 class ChatActivity : ComponentActivity() {
 
@@ -754,11 +754,11 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                 ) {
                     Column(modifier = Modifier.padding(8.dp)) {
 
-                        var displayText = msg.text
+                        var displayText = msg.text ?: ""
                         // Check if this is a reply message
-                        if (msg.text.contains("> Replying to:")) {
+                        if (displayText.contains("> Replying to:")) {
                             // Robust splitting
-                            val parts = msg.text.split("\n", limit = 2)
+                            val parts = displayText.split("\n", limit = 2)
                             if (parts.size >= 1 && parts[0].startsWith("> Replying to:")) {
                                 val quoteText = parts[0].removePrefix("> Replying to: ").trim()
                                 if (parts.size > 1) displayText = parts[1] else displayText = ""
@@ -799,12 +799,13 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                         }
 
                         if (msg.type == "image") {
-                            val cleanImageUrl = if (msg.fileUrl.startsWith("http")) {
-                                msg.fileUrl
-                            } else if (msg.fileUrl.startsWith("/")) {
-                                "${com.astrohark.app.utils.Constants.SERVER_URL}${msg.fileUrl}"
+                            val rawUrl = msg.fileUrl ?: ""
+                            val cleanImageUrl = if (rawUrl.startsWith("http")) {
+                                rawUrl
+                            } else if (rawUrl.startsWith("/")) {
+                                "${com.astrohark.app.utils.Constants.SERVER_URL}$rawUrl"
                             } else {
-                                "${com.astrohark.app.utils.Constants.SERVER_URL}/${msg.fileUrl}"
+                                "${com.astrohark.app.utils.Constants.SERVER_URL}/$rawUrl"
                             }
                             val context = androidx.compose.ui.platform.LocalContext.current
                             val imageRequest = androidx.compose.runtime.remember(cleanImageUrl) {
@@ -824,7 +825,7 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                                     .background(Color.Gray, RoundedCornerShape(8.dp))
                             )
                         } else if (msg.type == "audio" || displayText.startsWith("[VOICE]:")) {
-                            val audioUrl = if (msg.type == "audio") msg.fileUrl else displayText.substringAfter("[VOICE]:").split("|").getOrNull(0)?.replace("\\", "/") ?: ""
+                            val audioUrl = if (msg.type == "audio") (msg.fileUrl ?: "") else displayText.substringAfter("[VOICE]:").split("|").getOrNull(0)?.replace("\\", "/") ?: ""
                             
                             // Parse duration correctly instead of forcing 0:00
                             var duration = "0:00"

@@ -8,11 +8,11 @@ data class ChatMessageEntity(
     @PrimaryKey
     val messageId: String,
     val sessionId: String,
-    val text: String,
+    val text: String?,
     val senderId: String,
     val timestamp: Long,
-    val status: String, // "sent", "delivered", "read"
+    val status: String?, // "sent", "delivered", "read"
     val isSentByMe: Boolean,
-    val type: String = "text",
-    val fileUrl: String = ""
+    val type: String? = "text",
+    val fileUrl: String? = ""
 )

@@ -806,8 +806,16 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                             } else {
                                 "${com.astrohark.app.utils.Constants.SERVER_URL}/${msg.fileUrl}"
                             }
+                            val context = androidx.compose.ui.platform.LocalContext.current
+                            val imageRequest = androidx.compose.runtime.remember(cleanImageUrl) {
+                                coil.request.ImageRequest.Builder(context)
+                                    .data(cleanImageUrl)
+                                    .setHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                                    .crossfade(true)
+                                    .build()
+                            }
                             coil.compose.AsyncImage(
-                                model = cleanImageUrl,
+                                model = imageRequest,
                                 contentDescription = "Image",
                                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                                 modifier = Modifier

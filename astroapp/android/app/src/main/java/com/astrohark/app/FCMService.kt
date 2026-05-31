@@ -154,8 +154,8 @@ class FCMService : FirebaseMessagingService() {
                     sendBroadcast(cancelIntent)
                 }
                 "INCOMING_CHAT" -> {
-                    val callerName = data["callerName"] ?: "Unknown"
-                    val callerId = data["callerId"] ?: ""
+                    val callerId = data["callerId"] ?: data["fromUserId"] ?: ""
+                    val callerName = data["callerName"] ?: data["userName"] ?: data["name"] ?: "Unknown"
                     val sessionId = data["sessionId"] ?: ""
                     handleIncomingChat(callerName, callerId, sessionId)
                 }

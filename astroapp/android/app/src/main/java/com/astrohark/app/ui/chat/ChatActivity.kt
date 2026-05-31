@@ -530,7 +530,7 @@ fun ChatScreen(
                          var finalText = inputText
                          if (replyingTo != null) {
                              // Prepend Reply Quote
-                             val snippet = replyingTo!!.text.take(50).replace("\n", " ")
+                             val snippet = (replyingTo!!.text ?: "").take(50).replace("\n", " ")
                              finalText = "> Replying to: $snippet\n$inputText"
                          }
 
@@ -937,7 +937,7 @@ fun ChatInputBar(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text("Replying to", fontSize = 10.sp, color = colors.accent, fontWeight = FontWeight.Bold)
-                            Text(replyingTo.text, fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f), maxLines = 1)
+                            Text(replyingTo.text ?: "", fontSize = 12.sp, color = Color.White.copy(alpha = 0.7f), maxLines = 1)
                         }
                         IconButton(onClick = onCancelReply, modifier = Modifier.size(24.dp)) {
                             Icon(Icons.Default.Close, "Cancel", tint = Color.White.copy(alpha = 0.5f))

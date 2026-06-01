@@ -1,9 +1,9 @@
 package com.astrohark.app.ui.chat
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.astrohark.app.ui.theme.CosmicAppTheme
 
 @Composable
 fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audioPlayer: ChatAudioPlayer) {
@@ -32,15 +31,19 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audi
     
     val currentPosition = currentProgress * currentDuration
 
+    // WhatsApp-style colors
+    val contentColor = Color(0xFF4A4A4A) // Dark gray for icons/text
+    val sliderColor = if (isMe) Color(0xFF25D366) else Color(0xFF34B7F1) // Green for me, blue for other
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .padding(8.dp)
-            .width(220.dp)
+            .width(260.dp)
+            .padding(4.dp)
     ) {
-        Surface(
-            shape = CircleShape,
-            color = if (isMe) CosmicAppTheme.colors.accent else Color(0xFF34B7F1),
+        // Play/Pause/Loading Button
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(40.dp)
                 .clickable {
@@ -48,41 +51,50 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audi
                     audioPlayer.play(audioUrl)
                 }
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                if (isThisPreparing) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                } else {
-                    Icon(
-                        imageVector = if (isThisPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isThisPlaying) "Pause" else "Play",
-                        tint = Color.White
-                    )
-                }
+            if (isThisPreparing) {
+                CircularProgressIndicator(color = sliderColor, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            } else {
+                Icon(
+                    imageVector = if (isThisPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    contentDescription = if (isThisPlaying) "Pause" else "Play",
+                    tint = contentColor,
+                    modifier = Modifier.size(32.dp)
+                )
             }
         }
 
         Spacer(modifier = Modifier.width(8.dp))
 
+        // Slider and Duration Text
         Column(modifier = Modifier.weight(1f)) {
-            LinearProgressIndicator(
-                progress = { currentProgress },
+            Slider(
+                value = currentProgress,
+                onValueChange = { newProgress -> 
+                    if (isThisPlaying || isThisPreparing || currentUrlGlobal == audioUrl) {
+                        audioPlayer.seekTo(newProgress)
+                    }
+                },
+                colors = SliderDefaults.colors(
+                    thumbColor = sliderColor,
+                    activeTrackColor = sliderColor,
+                    inactiveTrackColor = Color.Gray.copy(alpha = 0.3f)
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(4.dp),
-                color = if (isMe) CosmicAppTheme.colors.accent else Color(0xFF34B7F1),
-                trackColor = Color.Gray.copy(alpha = 0.3f),
+                    .height(24.dp)
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 val currentSec = (currentPosition / 1000).toInt()
                 val currentStr = String.format("%02d:%02d", currentSec / 60, currentSec % 60)
+                
                 Text(
                     text = if (isThisPlaying) currentStr else durationStr,
-                    fontSize = 12.sp,
-                    color = Color.Gray
+                    fontSize = 11.sp,
+                    color = contentColor.copy(alpha = 0.7f)
                 )
             }
         }

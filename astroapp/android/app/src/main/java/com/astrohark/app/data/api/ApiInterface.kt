@@ -113,5 +113,8 @@ interface ApiInterface {
 
     @retrofit2.http.GET("api/home/data")
     suspend fun getHomeData(): Response<com.astrohark.app.data.model.HomeDataResponse>
+
+    @POST("api/rasi-eng/kp-chart")
+    suspend fun getKpChart(@Body request: com.google.gson.JsonObject): Response<com.google.gson.JsonObject>
 }
 

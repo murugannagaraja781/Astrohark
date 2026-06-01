@@ -414,6 +414,7 @@ fun ChatScreen(
     var isRecording by remember { mutableStateOf(false) }
     var recordingDuration by remember { mutableStateOf("00:00") }
     var recordingTimerJob: kotlinx.coroutines.Job? by remember { mutableStateOf(null) }
+    var showKpChartDialog by remember { mutableStateOf(false) }
 
     val recordPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -563,6 +564,7 @@ fun ChatScreen(
                     imagePickerLauncher.launch("image/*")
                 },
                 onViewChart = if (isAstrologer) onViewChart else null,
+                onViewKpChart = if (isAstrologer) { { showKpChartDialog = true } } else null,
                 clientBirthData = clientBirthData,
                 isRecording = isRecording,
                 recordingDuration = recordingDuration,
@@ -619,14 +621,22 @@ fun ChatScreen(
                                 }
                             }
                         } else {
-                            voiceRecorder.cancelRecording()
-                            android.widget.Toast.makeText(context, "Recording too short", android.widget.Toast.LENGTH_SHORT).show()
+                            // Too short, delete
+                            val audioPath = voiceRecorder.currentOutputFile
+                            File(audioPath).delete()
                         }
                     }
                 }
             )
         }
     ) { padding ->
+        if (showKpChartDialog && clientBirthData != null) {
+            KpChartDialog(
+                birthData = clientBirthData,
+                onDismiss = { showKpChartDialog = false }
+            )
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -674,6 +684,32 @@ fun ChatScreen(
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp
                         )
+                    }
+                }
+
+                if (clientBirthData != null) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(AstroDimens.Medium),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Column {
+                                Text(text = "Client Details", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                                val name = clientBirthData.optString("name", "User")
+                                val rasi = clientBirthData.optString("moonSign", "")
+                                val nakshatra = clientBirthData.optString("nakshatra", "")
+                                Text(text = name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = Color.Black)
+                                if (rasi.isNotEmpty() || nakshatra.isNotEmpty()) {
+                                    Text(text = "$rasi Rasi • $nakshatra Nakshatra", style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
+                                }
+                            }
+                            if (isAstrologer) {
+                                OutlinedButton(onClick = onViewChart, border = BorderStroke(1.dp, Color(0xFFFF9800))) {
+                                    Text("Open Chart", color = Color(0xFFFF9800))
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -852,8 +888,23 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                                         context.startActivity(intent)
                                     },
                                     loading = {
-                                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                            CircularProgressIndicator(modifier = Modifier.size(32.dp), strokeWidth = 2.dp)
+                                        // WhatsApp Style Image Loading Overlay
+                                        Box(
+                                            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(48.dp)
+                                                    .background(Color.Black.copy(alpha = 0.4f), androidx.compose.foundation.shape.CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                CircularProgressIndicator(
+                                                    color = Color.White,
+                                                    modifier = Modifier.size(24.dp),
+                                                    strokeWidth = 2.5.dp
+                                                )
+                                            }
                                         }
                                     },
                                     error = {
@@ -954,6 +1005,7 @@ fun ChatInputBar(
     onSend: () -> Unit,
     onAttachImage: () -> Unit,
     onViewChart: (() -> Unit)?,
+    onViewKpChart: (() -> Unit)? = null,
     clientBirthData: JSONObject? = null,
     isRecording: Boolean = false,
     recordingDuration: String = "00:00",
@@ -1007,6 +1059,20 @@ fun ChatInputBar(
                     modifier = Modifier.padding(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    if (onViewKpChart != null) {
+                        val isReady = clientBirthData != null
+                        IconButton(
+                            onClick = onViewKpChart,
+                            modifier = Modifier.size(40.dp).background(if(isReady) colors.accent.copy(alpha=0.1f) else Color.Transparent, CircleShape)
+                        ) {
+                            if (isReady) {
+                                Icon(Icons.Default.GridView, "KP Chart", tint = Color(0xFFE91E63))
+                            } else {
+                                Icon(Icons.Default.Refresh, "Pending", tint = Color.LightGray)
+                            }
+                        }
+                    }
+
                     if (onViewChart != null) {
                         val isReady = clientBirthData != null
                         IconButton(

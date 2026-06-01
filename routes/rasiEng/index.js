@@ -9,6 +9,7 @@ const panchanga = require('./panchanga');
 const planets = require('./planets');
 const tamilDate = require('./tamilDate');
 const horoscope = require('./horoscope');
+const kpChart = require('./kpChart');
 
 const router = express.Router();
 
@@ -21,5 +22,6 @@ router.use('/panchanga', panchanga);
 router.use('/planets', planets);
 router.use('/tamil-date', tamilDate);
 router.use('/horoscope', horoscope);
+router.use('/kp-chart', kpChart);
 
 module.exports = router;

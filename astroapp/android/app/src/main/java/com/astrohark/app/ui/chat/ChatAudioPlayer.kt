@@ -38,12 +38,17 @@ class ChatAudioPlayer(private val context: Context) {
 
     fun play(url: String) {
         if (_currentUrl.value == url) {
+            if (_isPreparing.value) return
             if (_isPlaying.value) {
-                mediaPlayer?.pause()
+                try {
+                    mediaPlayer?.pause()
+                } catch (e: Exception) { e.printStackTrace() }
                 _isPlaying.value = false
                 stopProgressUpdate()
             } else {
-                mediaPlayer?.start()
+                try {
+                    mediaPlayer?.start()
+                } catch (e: Exception) { e.printStackTrace() }
                 _isPlaying.value = true
                 startProgressUpdate()
             }
@@ -117,7 +122,9 @@ class ChatAudioPlayer(private val context: Context) {
                             try { fis?.close() } catch (e: Exception) {}
                             _isPreparing.value = false
                             _duration.value = mp.duration.toFloat()
-                            mp.start()
+                            try {
+                                mp.start()
+                            } catch (e: Exception) { e.printStackTrace() }
                             _isPlaying.value = true
                             startProgressUpdate()
                         }
@@ -136,7 +143,14 @@ class ChatAudioPlayer(private val context: Context) {
                             stop()
                             true
                         }
-                        prepareAsync()
+                        try {
+                            prepareAsync()
+                        } catch (e: Exception) {
+                            try { fis?.close() } catch (ex: Exception) {}
+                            _isPreparing.value = false
+                            _currentUrl.value = null
+                            e.printStackTrace()
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -168,8 +182,12 @@ class ChatAudioPlayer(private val context: Context) {
     }
 
     fun stop() {
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
+        try {
+            mediaPlayer?.stop()
+        } catch (e: Exception) { e.printStackTrace() }
+        try {
+            mediaPlayer?.release()
+        } catch (e: Exception) { e.printStackTrace() }
         mediaPlayer = null
         _isPlaying.value = false
         _progress.value = 0f

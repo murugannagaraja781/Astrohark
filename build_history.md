@@ -35,3 +35,15 @@ A clean rebuild was performed after fixing the persistent ringtone sound and top
 * **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
 * **Size:** 123,430,092 Bytes (~117.71 MB)
 * **Status:** Rebuild Successful
+
+---
+
+## [2026-06-01] - Debug Build (MediaPlayer Error -38 Fixes)
+
+A clean rebuild was performed after fixing the MediaPlayer error -38 issue by adding preparation guards and wrapping playback methods in try-catch blocks within `ChatAudioPlayer.kt`.
+
+* **Date & Time:** June 01, 2026 - 02:02:40 PM (IST)
+* **File Name:** `app-debug.apk`
+* **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
+* **Size:** 120,646,062 Bytes (~115.06 MB)
+* **Status:** Rebuild Successful

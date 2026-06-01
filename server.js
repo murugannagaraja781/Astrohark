@@ -420,8 +420,9 @@ app.use('/uploads', express.static(uploadDir));
 
 
 app.post('/upload', upload.single('file'), (req, res) => {
-  // ... (keeping upload logic if valid) ...
-  return res.json({ ok: true, url: req.file ? '/uploads/' + req.file.filename : '' });
+  const filename = req.file ? req.file.filename : '';
+  const fileUrl = filename ? '/uploads/' + filename : '';
+  return res.json({ ok: true, url: fileUrl, fileUrl: fileUrl });
 });
 
 app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {

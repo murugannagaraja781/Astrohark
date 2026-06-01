@@ -251,7 +251,10 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 } catch (e: Exception) { e.printStackTrace() }
             }
 
-            val msg = ChatMessage(msgId, text, false, "read", timestamp = System.currentTimeMillis(), type = type, fileUrl = fileUrl)
+            val myUserId = com.astrohark.app.data.local.TokenManager(getApplication()).getUserSession()?.userId
+            val isMe = (senderId == myUserId)
+
+            val msg = ChatMessage(msgId, text, isMe, "read", timestamp = System.currentTimeMillis(), type = type, fileUrl = fileUrl)
             _messages.postValue(msg)
             } catch (e: Exception) { e.printStackTrace() }
         }

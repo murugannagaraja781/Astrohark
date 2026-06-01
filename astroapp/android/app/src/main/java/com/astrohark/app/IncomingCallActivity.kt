@@ -268,6 +268,11 @@ class IncomingCallActivity : ComponentActivity() {
             if (callId.isNotEmpty()) {
                 notificationManager.cancel(callId.hashCode())
             }
+            if (callerId.isNotEmpty() && callerId != "Unknown") {
+                notificationManager.cancel(callerId.hashCode())
+            }
+            // Cancel global notification ID as well
+            notificationManager.cancel(9999)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to clear notifications", e)
         }

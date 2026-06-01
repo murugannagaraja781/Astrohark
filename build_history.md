@@ -11,3 +11,27 @@ A clean rebuild was performed. Permitted domains configured inside `network_secu
 * **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
 * **Size:** 123,430,092 Bytes (~117.71 MB)
 * **Status:** Clean Rebuild Successful
+
+---
+
+## [2026-06-01] - Debug Build (Updated Code Rebuild)
+
+A rebuild was performed containing major chat fixes (Image & Voice notes), including server response formatting alignments (`fileUrl` vs `url`) and socket response parsing fixes (`isMe` bubbled alignments) in `ChatViewModel.kt`.
+
+* **Date & Time:** June 01, 2026 - 01:06:42 PM (IST)
+* **File Name:** `app-debug.apk`
+* **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
+* **Size:** 123,430,092 Bytes (~117.71 MB)
+* **Status:** Rebuild Successful
+
+---
+
+## [2026-06-01] - Debug Build (Ringtone & Notification Dismiss Fixes)
+
+A clean rebuild was performed after fixing the persistent ringtone sound and top notification issue. `ChatActivity.kt` and `IncomingCallActivity.kt` were updated to dismiss call notifications (`callerId.hashCode()`, `callId.hashCode()`, `9999`) and stop background sound loops of `CallForegroundService`.
+
+* **Date & Time:** June 01, 2026 - 01:37:12 PM (IST)
+* **File Name:** `app-debug.apk`
+* **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
+* **Size:** 123,430,092 Bytes (~117.71 MB)
+* **Status:** Rebuild Successful

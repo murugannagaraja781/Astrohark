@@ -223,33 +223,47 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
                 val text = content?.optString("text") ?: data.optString("text", "")
                 val msgId = data.optString("messageId")
-                val sessionId = data.optString("sessionId")
+                
+                // Fallback to nested content sessionId if root is missing
+                val sessionId = if (data.has("sessionId") && !data.optString("sessionId").isNullOrEmpty()) {
+                    data.optString("sessionId")
+                } else {
+                    content?.optString("sessionId") ?: ""
+                }
+                
                 val senderId = data.optString("fromUserId")
-
                 val fileUrl = content?.optString("fileUrl") ?: data.optString("fileUrl", "")
 
-                // Save to DB
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    val entity = ChatMessageEntity(
-                        messageId = msgId,
-                        sessionId = sessionId,
-                        text = text,
-                        senderId = senderId,
-                        timestamp = System.currentTimeMillis(),
-                        status = "read",
-                        isSentByMe = false,
-                        type = type,
-                        fileUrl = fileUrl
-                    )
-                    repository.saveMessage(entity)
+                // High visibility log to trace incoming chat payload structure
+                android.util.Log.d("SOCKET_DEBUG", "Received socket msg payload: ${data.toString(2)}")
+                android.util.Log.d("SOCKET_DEBUG", "Parsed: msgId=$msgId, sessionId=$sessionId, senderId=$senderId, type=$type")
 
-                    // IMPORTANT: Emit read status back to sender for double tick
-                    if (msgId.isNotEmpty() && senderId.isNotEmpty() && sessionId.isNotEmpty()) {
-                        repository.markRead(msgId, senderId, sessionId)
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-            }
+                // Save to DB
+                viewModelScope.launch(Dispatchers.IO) {
+                    try {
+                        if (sessionId.isNotEmpty()) {
+                            val entity = ChatMessageEntity(
+                                messageId = msgId,
+                                sessionId = sessionId,
+                                text = text,
+                                senderId = senderId,
+                                timestamp = System.currentTimeMillis(),
+                                status = "read",
+                                isSentByMe = false,
+                                type = type,
+                                fileUrl = fileUrl
+                            )
+                            repository.saveMessage(entity)
+
+                            // IMPORTANT: Emit read status back to sender for double tick
+                            if (msgId.isNotEmpty() && senderId.isNotEmpty()) {
+                                repository.markRead(msgId, senderId, sessionId)
+                            }
+                        } else {
+                            android.util.Log.e("SOCKET_DEBUG", "Cannot save message: sessionId is empty!")
+                        }
+                    } catch (e: Exception) { e.printStackTrace() }
+                }
 
             val myUserId = com.astrohark.app.data.local.TokenManager(getApplication()).getUserSession()?.userId
             val isMe = (senderId == myUserId)

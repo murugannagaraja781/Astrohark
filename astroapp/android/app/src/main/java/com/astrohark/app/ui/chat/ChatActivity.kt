@@ -129,6 +129,16 @@ class ChatActivity : ComponentActivity() {
             
             handleIntent(intent)
 
+            try {
+                val nm = getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                nm.cancel(9999)
+                toUserId?.let { nm.cancel(it.hashCode()) }
+                sessionId?.let { nm.cancel(it.hashCode()) }
+                nm.cancelAll()
+                // Stop CallForegroundService to stop ringtone and vibrate loops
+                stopService(Intent(this, com.astrohark.app.CallForegroundService::class.java))
+            } catch (e: Exception) { e.printStackTrace() }
+
             val role = TokenManager(this).getUserSession()?.role
 
             // --- GLOBAL STATE FIX: Mark chat as active to prevent incoming calls during session ---
@@ -802,7 +812,7 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                         // Smart type detection fallback: if server saved without type, detect from text
                         val effectiveType = when {
                             msg.type == "image" -> "image"
-                            msg.type == "audio" -> "audio"
+                            msg.type == "audio" || msg.type == "voice" -> "audio"
                             displayText == "Sent an Image" && !msg.fileUrl.isNullOrEmpty() -> "image"
                             displayText.startsWith("Voice Message|") && !msg.fileUrl.isNullOrEmpty() -> "audio"
                             displayText.startsWith("[VOICE]:") -> "audio"

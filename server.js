@@ -1804,8 +1804,49 @@ io.on('connection', (socket) => {
 
 
   // --- Chat message (text / audio / file) ---
-  // NOTE: chat-message socket event is handled in socket/socketHandler.js
-  // Do NOT add a duplicate handler here — it conflicts and loses type/fileUrl fields.
+  socket.on('chat-message', async (data) => {
+    try {
+      const { toUserId, sessionId, content, timestamp, messageId } = data || {};
+      const type = data.type || (content && content.type) || 'text';
+      const fileUrl = data.fileUrl || (content && content.fileUrl) || '';
+      const fileName = data.fileName || (content && content.fileName) || '';
+      const fileSize = data.fileSize || (content && content.fileSize) || 0;
+      const textContent = (content && content.text) || '';
+
+      const fromUserId = socketToUser.get(socket.id);
+      if (!fromUserId || !toUserId || !content || !messageId) return;
+
+      socket.emit('message-status', { messageId, status: 'sent' });
+
+      ChatMessage.create({
+        messageId, sessionId, fromUserId, toUserId,
+        text: textContent, timestamp: timestamp || Date.now(),
+        type: type,
+        fileUrl: fileUrl,
+        fileName: fileName,
+        fileSize: fileSize,
+        status: 'sent'
+      }).catch(e => console.error('ChatSave Error', e));
+
+      // Emit with BOTH root-level and content fields so Android parses either way
+      io.to(toUserId).emit('chat-message', {
+        fromUserId,
+        content: { text: textContent, type: type, fileUrl: fileUrl },
+        sessionId,
+        timestamp: timestamp || Date.now(),
+        messageId,
+        type: type,
+        fileUrl: fileUrl,
+        fileName: fileName,
+        fileSize: fileSize
+      });
+
+      // ALWAYS send FCM push for background delivery
+      sendChatMessagePush(toUserId, fromUserId, textContent, sessionId, messageId, type, fileUrl);
+    } catch (err) {
+      console.error('chat-message error', err);
+    }
+  });
 
   // --- Helper: Send Chat Message Push (for background messages) ---
   async function sendChatMessagePush(toUserId, fromUserId, messageText, sessionId, messageId, type = 'text', fileUrl = '') {

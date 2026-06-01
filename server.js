@@ -398,7 +398,6 @@ app.get('/api/webrtc-config', (req, res) => {
   }
 });
 
-const multer = require('multer');
 const fs = require('fs');
 
 // ===== File upload setup =====

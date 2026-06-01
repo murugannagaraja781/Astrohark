@@ -11,6 +11,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -798,7 +799,17 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                             }
                         }
 
-                        if (msg.type == "image") {
+                        // Smart type detection fallback: if server saved without type, detect from text
+                        val effectiveType = when {
+                            msg.type == "image" -> "image"
+                            msg.type == "audio" -> "audio"
+                            displayText == "Sent an Image" && !msg.fileUrl.isNullOrEmpty() -> "image"
+                            displayText.startsWith("Voice Message|") && !msg.fileUrl.isNullOrEmpty() -> "audio"
+                            displayText.startsWith("[VOICE]:") -> "audio"
+                            else -> "text"
+                        }
+
+                        if (effectiveType == "image") {
                             val rawUrl = msg.fileUrl ?: ""
                             val cleanImageUrl = if (rawUrl.startsWith("http")) {
                                 rawUrl
@@ -815,26 +826,55 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                                     .crossfade(true)
                                     .build()
                             }
-                            coil.compose.AsyncImage(
-                                model = imageRequest,
-                                contentDescription = "Image",
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            Box(
                                 modifier = Modifier
-                                    .size(200.dp)
-                                    .padding(bottom = 4.dp)
-                                    .background(Color.Gray, RoundedCornerShape(8.dp))
-                            )
-                        } else if (msg.type == "audio" || displayText.startsWith("[VOICE]:")) {
-                            val audioUrl = if (msg.type == "audio") (msg.fileUrl ?: "") else displayText.substringAfter("[VOICE]:").split("|").getOrNull(0)?.replace("\\", "/") ?: ""
-                            
-                            // Parse duration correctly instead of forcing 0:00
-                            var duration = "0:00"
-                            if (displayText.startsWith("[VOICE]:")) {
-                                duration = displayText.substringAfter("[VOICE]:").split("|").getOrNull(1) ?: "00:00"
-                            } else if (displayText.contains("|")) {
-                                duration = displayText.split("|").getOrNull(1) ?: "00:00"
+                                    .fillMaxWidth()
+                                    .heightIn(min = 150.dp, max = 300.dp)
+                                    .background(Color.Gray.copy(alpha = 0.1f))
+                            ) {
+                                coil.compose.SubcomposeAsyncImage(
+                                    model = imageRequest,
+                                    contentDescription = "Image",
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp, max = 300.dp).clickable {
+                                        val intent = Intent(context, com.astrohark.app.ui.chat.FullScreenImageActivity::class.java).apply {
+                                            putExtra("imageUrl", cleanImageUrl)
+                                        }
+                                        context.startActivity(intent)
+                                    },
+                                    loading = {
+                                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                            CircularProgressIndicator(modifier = Modifier.size(32.dp), strokeWidth = 2.dp)
+                                        }
+                                    },
+                                    error = {
+                                        Box(Modifier.fillMaxSize().background(Color(0xFFFFEBEE)), contentAlignment = Alignment.Center) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Icon(androidx.compose.material.icons.Icons.Default.Error, "Error", tint = Color.Red, modifier = Modifier.size(40.dp))
+                                                Text("Image Load Failed", color = Color.Red, style = MaterialTheme.typography.labelMedium)
+                                            }
+                                        }
+                                    },
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                )
                             }
-                            
+                        } else if (effectiveType == "audio") {
+                            val audioUrl = when {
+                                msg.type == "audio" -> (msg.fileUrl ?: "")
+                                displayText.startsWith("[VOICE]:") -> displayText.substringAfter("[VOICE]:").split("|").getOrNull(0)?.replace("\\", "/") ?: ""
+                                else -> (msg.fileUrl ?: "")
+                            }
+
+                            // Parse duration
+                            var duration = "0:00"
+                            when {
+                                displayText.startsWith("[VOICE]:") ->
+                                    duration = displayText.substringAfter("[VOICE]:").split("|").getOrNull(1) ?: "00:00"
+                                displayText.startsWith("Voice Message|") ->
+                                    duration = displayText.substringAfter("Voice Message|").trim()
+                                displayText.contains("|") ->
+                                    duration = displayText.split("|").getOrNull(1) ?: "00:00"
+                            }
+
                             val fullAudioUrl = if (audioUrl.startsWith("http")) {
                                 audioUrl
                             } else if (audioUrl.startsWith("/")) {
@@ -842,7 +882,7 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                             } else {
                                 "${com.astrohark.app.utils.Constants.SERVER_URL}/$audioUrl"
                             }
-                            
+
                             AudioPlayerBubble(
                                 audioUrl = fullAudioUrl,
                                 durationStr = duration,

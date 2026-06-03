@@ -24,6 +24,7 @@ class ChatActionReceiver : BroadcastReceiver() {
         val action = intent.action
         val callerId = intent.getStringExtra("callerId") ?: return
         val sessionId = intent.getStringExtra("sessionId") ?: return
+        val birthDataStr = intent.getStringExtra("birthData")
 
         when (action) {
             ACTION_ACCEPT_CHAT -> {
@@ -34,6 +35,9 @@ class ChatActionReceiver : BroadcastReceiver() {
                     putExtra("toUserId", callerId)
                     putExtra("sessionId", sessionId)
                     putExtra("isNewRequest", true)
+                    if (birthDataStr != null) {
+                        putExtra("birthData", birthDataStr)
+                    }
                 }
                 context.startActivity(chatIntent)
             }

@@ -289,6 +289,15 @@ class CallActivity : ComponentActivity() {
                     if (obj.length() > 0) clientBirthData = obj
                  } catch (e: Exception) { e.printStackTrace() }
             }
+            if (clientBirthData == null && TokenManager(this).getUserSession()?.role == "client") {
+                try {
+                    val prefs = getSharedPreferences("AstroharkIntake", android.content.Context.MODE_PRIVATE)
+                    val json = prefs.getString("lastForm", null)
+                    if (json != null) {
+                        clientBirthData = JSONObject(json)
+                    }
+                } catch (e: Exception) { e.printStackTrace() }
+            }
 
             tokenManager = TokenManager(this)
             session = tokenManager.getUserSession()
@@ -577,6 +586,19 @@ class CallActivity : ComponentActivity() {
     /**
      * Ensure socket is connected after returning from background activity
      */
+    private fun emitBirthDataIfClient() {
+        val socket = SocketManager.getSocket()
+        val role = session?.role ?: TokenManager(this).getUserSession()?.role
+        if (role == "client" && clientBirthData != null && sessionId != null && partnerId != null) {
+            socket?.emit("client-birth-chart", JSONObject().apply {
+                put("sessionId", sessionId)
+                put("toUserId", partnerId)
+                put("birthData", clientBirthData)
+            })
+            Log.d(TAG, "Auto-emitted client-birth-chart for session $sessionId")
+        }
+    }
+
     private fun ensureSocketConnected() {
         val socket = SocketManager.getSocket()
         if (socket == null || !socket.connected()) {
@@ -588,8 +610,10 @@ class CallActivity : ComponentActivity() {
             SocketManager.getSocket()?.emit("rejoin-session", JSONObject().apply {
                 put("sessionId", sessionId)
             })
+            emitBirthDataIfClient()
         } else {
             Log.d(TAG, "Socket still connected")
+            emitBirthDataIfClient()
         }
     }
 
@@ -802,6 +826,7 @@ class CallActivity : ComponentActivity() {
                         Log.d(TAG, "Initiator: Registered. Creating offer immediately.")
                         // Re-emit session-connect after registration for robustness
                         SocketManager.emitReliable("session-connect", connectPayload)
+                        emitBirthDataIfClient()
                         // Create WebRTC offer immediately - don't wait for billing-started
                         if (::peerConnection.isInitialized) {
                             timerHandler.postDelayed({
@@ -832,6 +857,7 @@ class CallActivity : ComponentActivity() {
 
                         // Re-emit session-connect after registration for robustness
                         SocketManager.emitReliable("session-connect", connectPayload)
+                        emitBirthDataIfClient()
                         Log.d(TAG, "Recipient: Registered. session-connect emitted.")
                     }
                 }

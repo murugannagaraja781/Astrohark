@@ -213,6 +213,14 @@ class ChatActivity : ComponentActivity() {
                         viewModel.acceptSession(sessionId!!, toUserId!!)
                         android.util.Log.d("ChatActivity", "Immediate answer-session emitted for $sessionId")
                     }
+                    if (role == "client" && clientBirthData != null && sessionId != null && toUserId != null) {
+                        SocketManager.getSocket()?.emit("client-birth-chart", JSONObject().apply {
+                            put("sessionId", sessionId)
+                            put("toUserId", toUserId)
+                            put("birthData", clientBirthData)
+                        })
+                        android.util.Log.d("ChatActivity", "Auto-emitted client-birth-chart for session $sessionId on creation")
+                    }
                 }
             }
 
@@ -259,6 +267,15 @@ class ChatActivity : ComponentActivity() {
                 val obj = JSONObject(birthDataStr)
                 if (obj.length() > 0) clientBirthData = obj
              } catch (e: Exception) { e.printStackTrace() }
+        }
+        if (clientBirthData == null && TokenManager(this).getUserSession()?.role == "client") {
+            try {
+                val prefs = getSharedPreferences("AstroharkIntake", android.content.Context.MODE_PRIVATE)
+                val json = prefs.getString("lastForm", null)
+                if (json != null) {
+                    clientBirthData = JSONObject(json)
+                }
+            } catch (e: Exception) { e.printStackTrace() }
         }
         if (sessionId == null) {
             finish()
@@ -347,6 +364,7 @@ class ChatActivity : ComponentActivity() {
 
         viewModel.startListeners()
         val myUserId = TokenManager(this).getUserSession()?.userId
+        val role = TokenManager(this).getUserSession()?.role
         if (myUserId != null) {
             SocketManager.registerUser(myUserId) {
                 // Socket registered - now emit pending accept if any
@@ -354,6 +372,15 @@ class ChatActivity : ComponentActivity() {
                     pendingAccept = false
                     viewModel.acceptSession(sessionId!!, toUserId!!)
                     android.util.Log.d("ChatActivity", "Emitted acceptSession after socket registration")
+                }
+                // Auto-emit birth data if we are the client
+                if (role == "client" && clientBirthData != null && sessionId != null && toUserId != null) {
+                    SocketManager.getSocket()?.emit("client-birth-chart", JSONObject().apply {
+                        put("sessionId", sessionId)
+                        put("toUserId", toUserId)
+                        put("birthData", clientBirthData)
+                    })
+                    android.util.Log.d("ChatActivity", "Auto-emitted client-birth-chart for session $sessionId in onResume")
                 }
             }
         }

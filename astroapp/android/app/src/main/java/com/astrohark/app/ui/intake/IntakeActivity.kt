@@ -116,11 +116,15 @@ class IntakeActivity : ComponentActivity() {
     }
 
     private fun navigateToSession(sessionId: String, type: String) {
+        val savedData = loadSavedFormData()?.toString()
         if (type == "chat") {
             val intent = Intent(this, ChatActivity::class.java).apply {
                 putExtra("sessionId", sessionId)
                 putExtra("toUserId", partnerId)
                 putExtra("toUserName", partnerName)
+                if (savedData != null) {
+                    putExtra("birthData", savedData)
+                }
             }
             startActivity(intent)
         } else {
@@ -130,6 +134,9 @@ class IntakeActivity : ComponentActivity() {
                 putExtra("partnerName", partnerName)
                 putExtra("isInitiator", true)
                 putExtra("callType", type)
+                if (savedData != null) {
+                    putExtra("birthData", savedData)
+                }
             }
             startActivity(intent)
         }

@@ -8,6 +8,47 @@ const { userSockets, socketToUser, activeSessions, userActiveSession, sessionDis
 const billingService = require('../services/billing.service');
 const presenceService = require('../services/presence.service');
 const { broadcastAstroUpdate } = require('../services/astrologer.service');
+const { getPanchanga } = require('../utils/rasiEng/panchangaCalc');
+const { swissEph } = require('../utils/rasiEng/swisseph');
+const { DateTime } = require('luxon');
+
+function enrichBirthData(birthData) {
+    if (!birthData) return null;
+    try {
+        const { year, month, day, hour, minute, latitude, longitude, timezone } = birthData;
+        if (!year || !month || !day) return birthData;
+
+        const h = hour !== undefined ? hour : 12;
+        const m = minute !== undefined ? minute : 0;
+        const lat = latitude !== undefined ? parseFloat(latitude) : 13.0827;
+        const lon = longitude !== undefined ? parseFloat(longitude) : 80.2707;
+        const tz = timezone || 'Asia/Kolkata';
+
+        const dt = DateTime.fromObject(
+            { year, month, day, hour: h, minute: m },
+            { zone: tz }
+        );
+        const dtUtc = dt.toUTC();
+        
+        const jd = swissEph.julday(
+            dtUtc.year,
+            dtUtc.month,
+            dtUtc.day,
+            dtUtc.hour + dtUtc.minute / 60 + dtUtc.second / 3600
+        );
+
+        const panchanga = getPanchanga(jd, lat, lon);
+        
+        birthData.moonSign = panchanga.moonSign;
+        birthData.nakshatra = panchanga.nakshatra?.name || '';
+        birthData.pada = panchanga.nakshatra?.pada || '';
+        birthData.sunSign = panchanga.sunSign;
+        birthData.tithi = panchanga.tithi?.name || '';
+    } catch (e) {
+        console.error('[CallHandler] Failed to enrichBirthData:', e);
+    }
+    return birthData;
+}
 
 // Helper to get partner ID
 function getOtherUserIdFromSession(sessionId, userId) {
@@ -58,6 +99,35 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             if (fromUser && fromUser.role === 'client' && (fromUser.walletBalance || 0) <= 0) {
                 console.warn(`[CallHandler][request-session] Insufficient balance for ${fromUserId}`);
                 return typeof cb === 'function' && cb({ ok: false, error: 'Insufficient Main Balance.' });
+            }
+
+            // Enrich and save birthData/intakeDetails
+            let enrichedBirthData = null;
+            if (birthData) {
+                enrichedBirthData = enrichBirthData(birthData);
+                if (fromUser && fromUser.role === 'client') {
+                    fromUser.name = birthData.name || fromUser.name;
+                    fromUser.birthDetails = {
+                        dob: `${birthData.year}-${String(birthData.month).padStart(2, '0')}-${String(birthData.day).padStart(2, '0')}`,
+                        tob: `${String(birthData.hour).padStart(2, '0')}:${String(birthData.minute).padStart(2, '0')}`,
+                        pob: birthData.city,
+                        lat: birthData.latitude,
+                        lon: birthData.longitude
+                    };
+                    fromUser.intakeDetails = {
+                        gender: birthData.gender,
+                        marital: birthData.marital,
+                        occupation: birthData.occupation,
+                        topic: birthData.topic,
+                        partner: birthData.partnerData ? {
+                            name: birthData.partnerData.name,
+                            dob: birthData.partnerData.year ? `${birthData.partnerData.year}-${String(birthData.partnerData.month).padStart(2, '0')}-${String(birthData.partnerData.day).padStart(2, '0')}` : undefined,
+                            tob: birthData.partnerData.hour !== undefined ? `${String(birthData.partnerData.hour).padStart(2, '0')}:${String(birthData.partnerData.minute).padStart(2, '0')}` : undefined,
+                            pob: birthData.partnerData.city
+                        } : undefined
+                    };
+                    await fromUser.save();
+                }
             }
 
             if (userActiveSession.has(toUserId)) {
@@ -117,7 +187,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 callerId: fromUserId, // Map to FCM style
                 callerName: fromUser?.name || 'User',
                 type, 
-                birthData: birthData || null
+                birthData: enrichedBirthData || null
             });
 
             if (toUser.fcmToken) {
@@ -127,7 +197,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     type: fcmType, sessionId, callType: type,
                     callerName: fromUser?.name || 'User',
                     callerId: fromUserId, timestamp: Date.now().toString(),
-                    birthData: JSON.stringify(birthData || {})
+                    birthData: JSON.stringify(enrichedBirthData || {})
                 };
                 const fcmNotif = type === 'chat' ? {
                     title: `💬 Incoming Chat Request`,

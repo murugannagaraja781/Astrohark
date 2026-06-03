@@ -188,7 +188,12 @@ class AstrologerDashboardActivity : ComponentActivity() {
             val sessionId = data.optString("sessionId", "")
             val fromUserId = data.optString("fromUserId", "Unknown")
             val type = data.optString("type", "audio")
-            val birthDataStr = data.optString("birthData", null)
+            val birthDataStr = if (data.has("birthData") && !data.isNull("birthData")) {
+                val bdObj = data.optJSONObject("birthData")
+                bdObj?.toString() ?: data.optString("birthData", null)
+            } else {
+                null
+            }
 
             // CRITICAL FIX: Prevent multiple incoming call screens if already in a call
             if (!CallState.canReceiveCall(sessionId)) {
@@ -221,6 +226,9 @@ class AstrologerDashboardActivity : ComponentActivity() {
                                 putExtra("toUserId", fromUserId)
                                 putExtra("sessionId", sessionId)
                                 putExtra("isNewRequest", true)
+                                if (birthDataStr != null) {
+                                    putExtra("birthData", birthDataStr)
+                                }
                             }
                             startActivity(intent)
                         }

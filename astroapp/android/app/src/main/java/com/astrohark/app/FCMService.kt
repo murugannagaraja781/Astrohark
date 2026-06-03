@@ -157,7 +157,8 @@ class FCMService : FirebaseMessagingService() {
                     val callerId = data["callerId"] ?: data["fromUserId"] ?: ""
                     val callerName = data["callerName"] ?: data["userName"] ?: data["name"] ?: "Unknown"
                     val sessionId = data["sessionId"] ?: ""
-                    handleIncomingChat(callerName, callerId, sessionId)
+                    val birthDataStr = data["birthData"]
+                    handleIncomingChat(callerName, callerId, sessionId, birthDataStr)
                 }
                 "CHAT_MESSAGE" -> {
                     val text = data["text"] ?: "New message"
@@ -431,7 +432,7 @@ class FCMService : FirebaseMessagingService() {
         }
     }
 
-    private fun handleIncomingChat(callerName: String, callerId: String, sessionId: String) {
+    private fun handleIncomingChat(callerName: String, callerId: String, sessionId: String, birthDataStr: String? = null) {
         Log.d(TAG, "=== INCOMING CHAT (via SERVICE) ===")
         Log.d(TAG, "From: $callerName ($callerId), sessionId: $sessionId")
 
@@ -445,6 +446,9 @@ class FCMService : FirebaseMessagingService() {
             putExtra("callerName", callerName)
             putExtra("callId", sessionId)
             putExtra("callType", "chat")
+            if (birthDataStr != null) {
+                putExtra("birthData", birthDataStr)
+            }
         }
         val fullScreenPending = PendingIntent.getActivity(
             this,
@@ -458,6 +462,9 @@ class FCMService : FirebaseMessagingService() {
             action = ChatActionReceiver.ACTION_ACCEPT_CHAT
             putExtra("callerId", callerId)
             putExtra("sessionId", sessionId)
+            if (birthDataStr != null) {
+                putExtra("birthData", birthDataStr)
+            }
         }
         val rejectIntent = Intent(this, com.astrohark.app.receiver.ChatActionReceiver::class.java).apply {
             action = ChatActionReceiver.ACTION_REJECT_CHAT

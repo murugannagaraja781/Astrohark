@@ -154,8 +154,8 @@ class AstronomyEngine {
 
         let cusps = new Array(12);
         cusps[0] = asc; cusps[9] = mc; cusps[3] = (mc + 180) % 360; cusps[6] = (asc + 180) % 360;
-        const sa1 = (mc - asc + 360) % 360 / 3;
-        cusps[10] = (asc + sa1) % 360; cusps[11] = (asc + 2 * sa1) % 360;
+        const sa1 = (asc - mc + 360) % 360 / 3;
+        cusps[10] = (mc + sa1) % 360; cusps[11] = (mc + 2 * sa1) % 360;
         const sa2 = (cusps[3] - asc + 360) % 360 / 3;
         cusps[1] = (asc + sa2) % 360; cusps[2] = (asc + 2 * sa2) % 360;
         cusps[4] = (cusps[10] + 180) % 360; cusps[5] = (cusps[11] + 180) % 360;

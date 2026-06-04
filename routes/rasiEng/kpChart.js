@@ -58,7 +58,10 @@ router.post(['/', '/kp-chart'], (req, res) => {
         const { date, time, lat, lon } = req.body;
         // date: YYYY-MM-DD, time: HH:MM:SS
         const [year, month, day] = date.split('-').map(Number);
-        const [hour, min, sec] = time.split(':').map(Number);
+        const timeParts = time.split(':').map(Number);
+        const hour = timeParts[0] || 0;
+        const min = timeParts[1] || 0;
+        const sec = timeParts[2] || 0;
         
         // IST to UT offset = -5.5 hours
         const utHour = hour + (min / 60) + (sec / 3600) - 5.5;

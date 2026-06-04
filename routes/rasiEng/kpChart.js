@@ -53,7 +53,7 @@ function getNakshatraInfo(longitude) {
     };
 }
 
-router.post('/kp-chart', (req, res) => {
+router.post(['/', '/kp-chart'], (req, res) => {
     try {
         const { date, time, lat, lon } = req.body;
         // date: YYYY-MM-DD, time: HH:MM:SS

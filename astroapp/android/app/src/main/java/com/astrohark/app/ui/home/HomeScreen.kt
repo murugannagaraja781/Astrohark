@@ -123,7 +123,7 @@ fun BannerSection(
             pageSpacing = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp) // Adjusted to match AstrologerCard size
+                .height(112.dp) // Reduced by 25% (from 150dp to 112dp)
         ) { page ->
              val pageOffset = (pagerState.currentPage - page) + pagerState.currentPageOffsetFraction
              val scale by animateFloatAsState(targetValue = if (pageOffset == 0f) 1f else 0.9f, label = "scale")
@@ -156,21 +156,21 @@ fun BannerSection(
                          ) {
                              Text(
                                  text = "Refer Your Friend & Earn Upto ₹5000",
-                                 style = MaterialTheme.typography.titleMedium,
+                                 style = MaterialTheme.typography.titleSmall, // Reduced size
                                  fontWeight = FontWeight.Bold,
                                  color = Color.Black
                              )
-                             Spacer(modifier = Modifier.height(12.dp))
+                             Spacer(modifier = Modifier.height(6.dp)) // Reduced spacer
                              Surface(
                                  shape = RoundedCornerShape(50),
                                  color = Color(0xFFFF5252),
-                                 modifier = Modifier.height(24.dp)
+                                 modifier = Modifier.height(20.dp) // Reduced height
                              ) {
-                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 12.dp)) {
-                                     Text("REFER & EARN", color = Color.White, fontSize = 8.sp, fontWeight = FontWeight.Black)
+                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp)) {
+                                     Text("REFER & EARN", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.Black) // Reduced text size
                                  }
                              }
-                             Spacer(modifier = Modifier.height(8.dp))
+                             Spacer(modifier = Modifier.height(4.dp)) // Reduced spacer
 
                          }
 
@@ -178,8 +178,8 @@ fun BannerSection(
                          Box(
                              modifier = Modifier
                                  .align(Alignment.TopEnd)
-                                 .padding(8.dp)
-                                 .size(36.dp)
+                                 .padding(6.dp)
+                                 .size(30.dp)
                                  .clip(CircleShape)
                                  .background(Color.White.copy(alpha = 0.5f))
                                  .clickable { onShareClick() },
@@ -189,7 +189,7 @@ fun BannerSection(
                                  imageVector = androidx.compose.material.icons.Icons.Rounded.Share,
                                  contentDescription = "Share",
                                  tint = Color(0xFFFF5252),
-                                 modifier = Modifier.size(20.dp)
+                                 modifier = Modifier.size(16.dp)
                              )
                          }
 
@@ -197,7 +197,7 @@ fun BannerSection(
                          Image(
                              painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
                              contentDescription = null,
-                             modifier = Modifier.align(Alignment.CenterEnd).size(110.dp).padding(end = 10.dp),
+                             modifier = Modifier.align(Alignment.CenterEnd).size(82.dp).padding(end = 10.dp), // Reduced size by 25% (from 110dp to 82dp)
                              alpha = 0.8f
                          )
                      }
@@ -250,7 +250,7 @@ fun BannerSection(
                              if (!banner.title.isNullOrEmpty()) {
                                  Text(
                                      text = banner.title,
-                                     style = MaterialTheme.typography.titleMedium,
+                                     style = MaterialTheme.typography.titleSmall, // Reduced size
                                      color = Color.White
                                  )
                                  Spacer(modifier = Modifier.height(AstroDimens.XSmall))
@@ -260,9 +260,11 @@ fun BannerSection(
                                  Text(
                                      text = banner.subtitle,
                                      style = MaterialTheme.typography.bodySmall,
-                                     color = Color.White.copy(alpha=0.85f)
+                                     color = Color.White.copy(alpha=0.85f),
+                                     maxLines = 1,
+                                     overflow = TextOverflow.Ellipsis
                                  )
-                                 Spacer(modifier = Modifier.height(AstroDimens.Medium))
+                                 Spacer(modifier = Modifier.height(AstroDimens.Small)) // Reduced spacer
                              }
 
                              // CTA Pill (Fixed Contrast & Overflow)

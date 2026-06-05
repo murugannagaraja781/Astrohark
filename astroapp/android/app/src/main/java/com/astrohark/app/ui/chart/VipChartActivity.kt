@@ -381,15 +381,16 @@ fun SouthIndianGridEnhanced(
                                         val houseIndex = houses.indexOfFirst { it.signName == signEn }
                                         if (houseIndex != -1) {
                                             val h = houses[houseIndex]
-                                            val hNum = romanNumerals.getOrElse(houseIndex) { (houseIndex + 1).toString() }
                                             val hDeg = h.degreeFormatted ?: ""
-                                            val topText = if (hDeg.isNotEmpty()) "$hNum $hDeg" else hNum
-                                            Text(
-                                                text = topText,
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF0A1172)
-                                            )
+                                            val topText = hDeg
+                                            if (topText.isNotEmpty()) {
+                                                Text(
+                                                    text = topText,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFF0A1172)
+                                                )
+                                            }
                                         }
                                     }
 

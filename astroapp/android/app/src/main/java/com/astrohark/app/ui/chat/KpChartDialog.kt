@@ -95,7 +95,36 @@ fun KpChartDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF9E6)),
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(0.5.dp, Color(0xFFE6C280))
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "ஜாதகர் விவரங்கள் (Client Details):",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF8B0000)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                Text(text = "பெயர் (Name): ${birthData.optString("name", "User")}", fontSize = 11.sp, color = Color.Black)
+                                val dateStr = String.format("%02d-%02d-%04d", birthData.optInt("day"), birthData.optInt("month"), birthData.optInt("year"))
+                                Text(text = "தேதி (Date): $dateStr", fontSize = 11.sp, color = Color.Black)
+                            }
+                            Column {
+                                val timeStr = String.format("%02d:%02d", birthData.optInt("hour"), birthData.optInt("minute"))
+                                Text(text = "நேரம் (Time): $timeStr", fontSize = 11.sp, color = Color.Black)
+                                Text(text = "ஊர் (Place): ${birthData.optString("place", birthData.optString("birthPlace", "-"))}", fontSize = 11.sp, color = Color.Black)
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
 
                 if (isLoading) {
                     Box(modifier = Modifier.fillMaxWidth().height(300.dp), contentAlignment = Alignment.Center) {
@@ -122,6 +151,31 @@ fun KpChartDialog(
     }
 }
 
+val planetShortNames = mapOf(
+    "Sun" to "சூரி", "Moon" to "சந்", "Mars" to "செவ்",
+    "Mercury" to "புத", "Jupiter" to "குரு", "Venus" to "சுக்",
+    "Saturn" to "சனி", "Rahu" to "ராகு", "Ketu" to "கேது"
+)
+
+val nakshatraTamil = mapOf(
+    "Ashwini" to "அஸ்வினி", "Bharani" to "பரணி", "Krittika" to "கிருத்திகை", 
+    "Rohini" to "ரோகிணி", "Mrigashira" to "மிருகசீரிஷம்", "Ardra" to "திருவாதிரை", 
+    "Punarvasu" to "புனர்பூசம்", "Pushya" to "பூசம்", "Ashlesha" to "ஆயில்யம்", 
+    "Magha" to "மகம்", "Purva Phalguni" to "பூரம்", "Uttara Phalguni" to "உத்திரம்", 
+    "Hasta" to "அஸ்தம்", "Chitra" to "சித்திரை", "Swati" to "சுவாதி", 
+    "Vishakha" to "விசாகம்", "Anuradha" to "அனுஷம்", "Jyeshtha" to "கேட்டை", 
+    "Mula" to "மூலம்", "Purva Ashadha" to "பூராடம்", "Uttara Ashadha" to "உத்திராடம்", 
+    "Shravana" to "திருவோணம்", "Dhanishta" to "அவிட்டம்", "Shatabhisha" to "சதயம்", 
+    "Purva Bhadrapada" to "பூரட்டாதி", "Uttara Bhadrapada" to "உத்திரட்டாதி", "Revati" to "ரேவதி"
+)
+
+fun formatKpDegree(longitude: Double): String {
+    val degInSign = longitude % 30
+    val deg = degInSign.toInt()
+    val min = ((degInSign - deg) * 60).toInt()
+    return String.format("%02d°%02d", deg, min)
+}
+
 @Composable
 fun DynamicKpRasiKadam(kpData: JSONObject) {
     val signNames = listOf("Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces")
@@ -130,25 +184,45 @@ fun DynamicKpRasiKadam(kpData: JSONObject) {
     val planetsArray = kpData.optJSONArray("planets") ?: JSONArray()
     val housesArray = kpData.optJSONArray("houses") ?: JSONArray()
 
-    val planetsByRasi = mutableMapOf<String, MutableList<String>>()
-    val housesByRasi = mutableMapOf<String, MutableList<Int>>()
+    val gridItemsByRasi = mutableMapOf<String, MutableList<Pair<String, Color>>>()
 
+    val planetColors = mapOf(
+        "Sun" to Color(0xFFFF5722), // Orange
+        "Moon" to Color(0xFF2196F3), // Blue
+        "Mars" to Color(0xFFE91E63), // Pink/Red
+        "Mercury" to Color(0xFF4CAF50), // Green
+        "Jupiter" to Color(0xFFFFC107), // Gold
+        "Venus" to Color(0xFF9C27B0), // Purple
+        "Saturn" to Color(0xFF3F51B5), // Dark Blue
+        "Rahu" to Color(0xFF607D8B), // Grey
+        "Ketu" to Color(0xFF795548) // Brown
+    )
+
+    // Fill planets
     for (i in 0 until planetsArray.length()) {
         val p = planetsArray.optJSONObject(i)
         if (p != null) {
             val rasi = p.optString("rasi")
             val name = p.optString("name")
-            val abbr = name.take(2)
-            planetsByRasi.getOrPut(rasi) { mutableListOf() }.add(abbr)
+            val abbr = planetShortNames[name] ?: name.take(2)
+            val lon = p.optDouble("longitude")
+            val label = "$abbr ${formatKpDegree(lon)}"
+            val color = planetColors[name] ?: Color.DarkGray
+            gridItemsByRasi.getOrPut(rasi) { mutableListOf() }.add(Pair(label, color))
         }
     }
 
+    // Fill only Cusp 1 (Lagnam) to keep chart simple and traditional
     for (i in 0 until housesArray.length()) {
         val h = housesArray.optJSONObject(i)
         if (h != null) {
-            val rasi = h.optString("rasi")
             val bhava = h.optInt("bhava")
-            housesByRasi.getOrPut(rasi) { mutableListOf() }.add(bhava)
+            if (bhava == 1) {
+                val rasi = h.optString("rasi")
+                val lon = h.optDouble("longitude")
+                val label = "லக் ${formatKpDegree(lon)}"
+                gridItemsByRasi.getOrPut(rasi) { mutableListOf() }.add(Pair(label, Color.Black))
+            }
         }
     }
 
@@ -205,27 +279,20 @@ fun DynamicKpRasiKadam(kpData: JSONObject) {
                         Box(Modifier.weight(1f).fillMaxHeight()) {
                             if (signIdx != -1) {
                                 val signEn = signNames[signIdx]
-                                val pList = planetsByRasi[signEn] ?: emptyList()
-                                val hList = housesByRasi[signEn] ?: emptyList()
+                                val items = gridItemsByRasi[signEn] ?: emptyList()
 
                                 Column(
                                     Modifier.fillMaxSize().padding(2.dp),
                                     verticalArrangement = Arrangement.Center,
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    // Draw Houses (Bhavas)
-                                    hList.forEach { bh ->
-                                        Text(text = romanNumeral(bh), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Red)
-                                    }
-                                    
-                                    // Draw Planets
-                                    pList.forEach { pl ->
-                                        Text(text = pl, fontSize = 12.sp, color = Color.Black)
+                                    items.forEach { (text, color) ->
+                                        Text(text = text, fontSize = 9.sp, color = color, fontWeight = FontWeight.Bold)
                                     }
                                 }
                             } else if (pos == 5) {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    // Center of chart is spanning 2x2. We anchor text here optionally.
+                                    // Center of chart is spanning 2x2.
                                 }
                             }
                         }
@@ -306,7 +373,9 @@ fun PlanetIndicatorsTable(kpData: JSONObject) {
             if (p != null) {
                 val x = p.optInt("bhavaOccupied", 0)
                 val planetName = "${planetTamilNames[key] ?: key} $x"
-                val nakshatraPada = "${p.optString("nakshatra", "-")} ${p.optInt("pada", 0)}"
+                val nakName = p.optString("nakshatra", "-")
+                val nakTamilName = nakshatraTamil[nakName] ?: nakName
+                val nakshatraPada = "$nakTamilName ${p.optInt("pada", 0)}"
                 
                 val starLordEn = p.optString("starLord", "")
                 val y = p.optInt("starLordBhava", 0)
@@ -356,7 +425,9 @@ fun BhavaIndicatorsTable(kpData: JSONObject) {
             val h = housesList.find { it.optInt("bhava") == i }
             if (h != null) {
                 val cuspName = "$i"
-                val nakshatraPada = "${h.optString("nakshatra", "-")} ${h.optInt("pada", 0)}"
+                val nakName = h.optString("nakshatra", "-")
+                val nakTamilName = nakshatraTamil[nakName] ?: nakName
+                val nakshatraPada = "$nakTamilName ${h.optInt("pada", 0)}"
                 
                 val starLordEn = h.optString("starLord", "")
                 val bhavaThodarbu = h.optJSONArray("bhavaThodarbu")

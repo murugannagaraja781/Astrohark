@@ -10,7 +10,7 @@ const { getTamilDate } = require('../../utils/rasiEng/tamilDate');
 
 const router = express.Router();
 
-// Helper function to format longitude as degrees/minutes/seconds
+// Helper function to format longitude as degrees/minutes/secondssssss
 function formatLongitude(longitude) {
     const degInSign = longitude % 30;
     const deg = Math.floor(degInSign);

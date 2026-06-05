@@ -997,12 +997,14 @@ fun LazyListScope.HomeTab(
 
 
 
-    // 3. Quick Action Section (Chat, Call, Video)
+    // 3. Quick Action Section (Chat, Call, Video) commented out
+    /*
     item {
         QuickActionsSection(isTamil) { action ->
             onAction(action)
         }
     }
+    */
 
     item {
         LiveAstrologersSection(filteredAstros, onAstroClick, onViewAllClick, isTamil)
@@ -1971,6 +1973,13 @@ fun AstrologerCard(
                 val intent = Intent(context, com.astrohark.app.ui.profile.AstrologerProfileActivity::class.java).apply {
                     putExtra("astro_id", astro.userId)
                     putExtra("astro_name", astro.name)
+                    putExtra("astro_exp", astro.experience.toString())
+                    putExtra("astro_skills", astro.skills.joinToString(", "))
+                    putExtra("astro_image", astro.image)
+                    putExtra("astro_price", astro.price)
+                    putExtra("is_chat_online", astro.isChatOnline)
+                    putExtra("is_audio_online", astro.isAudioOnline)
+                    putExtra("is_video_online", astro.isVideoOnline)
                 }
                 context.startActivity(intent)
             }

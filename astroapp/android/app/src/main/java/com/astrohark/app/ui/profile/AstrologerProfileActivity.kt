@@ -193,7 +193,6 @@ fun AstrologerProfileScreen(
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top=4.dp)) {
                     Text("★★★★★", color = Color(0xFFFFC107), fontSize = 16.sp)
-                    Text(" 8,942 reviews", style = MaterialTheme.typography.bodySmall, color = CosmicAppTheme.colors.textSecondary, modifier = Modifier.padding(start=4.dp))
                 }
 
                 Text(
@@ -296,26 +295,7 @@ fun AstrologerProfileScreen(
                     }
                 }
 
-                // Reviews Section Placeholder
-                Text(
-                    "User Reviews",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = CosmicAppTheme.colors.accent,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, top = 24.dp)
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp)
-                ) {
-                    // Placeholder review avatars
-                     Box(modifier = Modifier.size(50.dp).background(Color(0xFF1A237E), CircleShape))
-                     Spacer(modifier = Modifier.width(8.dp))
-                     Box(modifier = Modifier.size(50.dp).background(Color(0xFFE87A1E), CircleShape))
-                     Spacer(modifier = Modifier.width(8.dp))
-                     Box(modifier = Modifier.size(50.dp).background(Color(0xFFD81B60), CircleShape))
-                }
+                // Reviews Section Placeholder removed
             }
         }
     }

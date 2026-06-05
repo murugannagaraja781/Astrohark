@@ -184,10 +184,9 @@ function isBetween(lon, start, end) {
  * Format longitude as sign position
  */
 function formatLongitude(longitude) {
-    const sign = swissEph.getSign(longitude);
     const degInSign = longitude % 30;
     const dms = swissEph.decimalToDms(degInSign);
-    return `${sign.name} ${dms.d}°${dms.m}'${Math.floor(dms.s)}"`;
+    return `${dms.d}°${dms.m}'${Math.floor(dms.s)}"`;
 }
 
 /**

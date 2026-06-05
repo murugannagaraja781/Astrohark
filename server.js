@@ -2475,6 +2475,61 @@ io.on('connection', (socket) => {
     }
   });
 
+  // --- Admin: Get Full Sessions History ---
+  socket.on('admin-get-sessions-history', async (cb) => {
+    if (!await checkAdmin(socket.id)) return cb({ ok: false, error: 'Unauthorized' });
+    try {
+      const sessions = await Session.find({ status: 'ended' }).sort({ startTime: -1, sessionEndAt: -1 }).lean();
+      
+      const populated = await Promise.all(sessions.map(async (s) => {
+        const cId = s.clientId || s.fromUserId;
+        const aId = s.astrologerId || s.toUserId;
+        const [client, astro] = await Promise.all([
+          User.findOne({ userId: cId }).select('name').lean(),
+          User.findOne({ userId: aId }).select('name').lean()
+        ]);
+        
+        let calculatedDuration = s.duration || 0;
+        if (!calculatedDuration && s.startTime && s.endTime) {
+          calculatedDuration = Math.round((s.endTime - s.startTime) / 1000);
+        } else if (!calculatedDuration && s.actualBillingStart && s.sessionEndAt) {
+          calculatedDuration = Math.round((s.sessionEndAt - s.actualBillingStart) / 1000);
+        }
+        
+        return {
+          ...s,
+          clientName: client ? client.name : 'Unknown Client',
+          astrologerName: astro ? astro.name : 'Unknown Astrologer',
+          duration: calculatedDuration
+        };
+      }));
+
+      const astroStats = {};
+      populated.forEach(s => {
+        const aId = s.astrologerId || s.toUserId;
+        if (!aId) return;
+        if (!astroStats[aId]) {
+          astroStats[aId] = {
+            astrologerId: aId,
+            astrologerName: s.astrologerName,
+            sessionCount: 0,
+            totalDuration: 0
+          };
+        }
+        astroStats[aId].sessionCount++;
+        astroStats[aId].totalDuration += (s.duration || 0);
+      });
+
+      const sortedAstros = Object.values(astroStats).sort((a, b) => b.sessionCount - a.sessionCount);
+      const top3AstroIds = sortedAstros.slice(0, 3).map(a => a.astrologerId);
+
+      cb({ ok: true, sessions: populated, top3AstroIds });
+    } catch (e) {
+      console.error('[AdminHistory] Error:', e);
+      cb({ ok: false, error: e.message });
+    }
+  });
+
   // --- Save FCM Token (for push notifications) ---
   socket.on('save-fcm-token', async ({ fcmToken }) => {
     const userId = socketToUser.get(socket.id);

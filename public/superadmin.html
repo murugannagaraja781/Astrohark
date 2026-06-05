@@ -786,6 +786,56 @@
                 </div>
             </div>
 
+            <!-- Tab: History -->
+            <div id="admin-sect-history" class="admin-tab-section">
+                <div class="dashboard-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <h2 class="dashboard-title" style="margin:0;"><i class="fas fa-history" style="color:var(--primary);"></i> Communication History</h2>
+                    <button class="btn-admin" onclick="loadSessionsHistory()"><i class="fas fa-sync"></i> Refresh History</button>
+                </div>
+
+                <!-- Top Astrologers Highlights -->
+                <div id="topAstrologersHistorySection" style="margin-bottom: 25px;">
+                    <h3 style="margin:0 0 15px 0; font-family:var(--font-heading); color:var(--primary); font-size:1.1rem;"><i class="fas fa-medal" style="color:#FFD700;"></i> Top 3 Astrologers (Most History)</h3>
+                    <div id="topAstrologersHistoryList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:15px;">
+                        <div class="loader"></div>
+                    </div>
+                </div>
+
+                <!-- History Table / Cards -->
+                <div class="admin-card" style="padding:0; overflow:hidden;">
+                    <div style="padding: 15px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-soft); display: flex; gap: 15px; align-items: center;">
+                        <input type="text" id="adminHistorySearch" oninput="searchHistory()" placeholder="Search by Client or Astrologer name..." class="app-input" style="margin:0; flex:1;">
+                        <select id="adminHistoryTypeFilter" onchange="searchHistory()" class="app-input" style="margin:0; width:150px; padding: 0 10px;">
+                            <option value="all">All Types</option>
+                            <option value="chat">Chat</option>
+                            <option value="call">Call</option>
+                        </select>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; color:var(--text-main);">
+                            <thead>
+                                <tr style="background:rgba(255,255,255,0.05); text-align:left;">
+                                    <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted);">Session ID</th>
+                                    <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted);">Client</th>
+                                    <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted);">Astrologer</th>
+                                    <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); text-align:center;">Type</th>
+                                    <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); text-align:center;">Duration</th>
+                                    <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); text-align:right;">Charged (₹)</th>
+                                    <th style="padding:15px; font-size:0.8rem; text-transform:uppercase; color:var(--text-muted); text-align:center;">Date & Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessionsHistoryTableBody">
+                                <tr>
+                                    <td colspan="7" style="text-align:center; padding:30px;">
+                                        <div class="loader"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <div class="admin-footer"
                 style="background: var(--bg-glass-heavy); backdrop-filter: var(--glass-blur); border-top: 1px solid var(--border-soft);">
                 <div class="admin-footer-content">
@@ -1017,6 +1067,8 @@
                     class="fas fa-cog"></i><span>Settings</span></div>
             <div class="admin-nav-item" onclick="navAdmin('workflow', event)"><i
                     class="fas fa-microchip" style="color:#10B981;"></i><span>Workflow</span></div>
+            <div class="admin-nav-item" onclick="navAdmin('history', event)"><i
+                    class="fas fa-history" style="color:#F59E0B;"></i><span>History</span></div>
             <div class="admin-nav-item" onclick="logout()"
                 style="margin-top: auto; color: #EF4444; border-top: 1px solid #eee;">
                 <i class="fas fa-sign-out-alt"></i><span>Logout</span>
@@ -1236,6 +1288,7 @@
             if (id === 'rituals') fetchRituals();
             if (id === 'workflow') fetchWorkflowStatus();
             if (id === 'feedback') fetchFeedback();
+            if (id === 'history') loadSessionsHistory();
 
             document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
             if (ev) ev.currentTarget.classList.add('active');
@@ -2581,6 +2634,138 @@
                     container.innerHTML = `<div style="color:#EF4444; padding:20px;">Error: ${res.error}</div>`;
                 }
             });
+        };
+
+        let adminSessionsCache = [];
+        let top3AstrologersCache = [];
+
+        window.loadSessionsHistory = () => {
+            const tableBody = document.getElementById('sessionsHistoryTableBody');
+            const topList = document.getElementById('topAstrologersHistoryList');
+            tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;"><div class="loader"></div></td></tr>';
+            topList.innerHTML = '<div class="loader"></div>';
+
+            socket.emit('admin-get-sessions-history', (res) => {
+                if (res.ok) {
+                    adminSessionsCache = res.sessions || [];
+                    top3AstrologersCache = res.top3AstroIds || [];
+                    renderHistory();
+                    renderTopAstrologers();
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#EF4444; padding:20px;">Error: ${res.error || 'Failed to load'}</td></tr>`;
+                    topList.innerHTML = `<div style="color:#EF4444; padding:10px;">Error: ${res.error || 'Failed to load'}</div>`;
+                }
+            });
+        };
+
+        function formatDuration(sec) {
+            if (!sec) return '0s';
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            let res = '';
+            if (h > 0) res += h + 'h ';
+            if (m > 0) res += m + 'm ';
+            if (s > 0 || res === '') res += s + 's';
+            return res.trim();
+        }
+
+        function renderHistory() {
+            const tableBody = document.getElementById('sessionsHistoryTableBody');
+            const searchVal = document.getElementById('adminHistorySearch').value.toLowerCase();
+            const typeFilter = document.getElementById('adminHistoryTypeFilter').value;
+
+            const filtered = adminSessionsCache.filter(s => {
+                const matchesSearch = s.clientName.toLowerCase().includes(searchVal) || 
+                                      s.astrologerName.toLowerCase().includes(searchVal);
+                const matchesType = typeFilter === 'all' || (s.type && s.type.toLowerCase() === typeFilter);
+                return matchesSearch && matchesType;
+            });
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No matching history logs found</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = filtered.map(s => {
+                const dateStr = s.startTime ? new Date(s.startTime).toLocaleString() : (s.actualBillingStart ? new Date(s.actualBillingStart).toLocaleString() : 'N/A');
+                const isTopAstro = top3AstrologersCache.includes(s.astrologerId || s.toUserId);
+                
+                const astroId = s.astrologerId || s.toUserId;
+                const totalAstroSessions = adminSessionsCache.filter(x => (x.astrologerId || x.toUserId) === astroId).length;
+                const hasMoreHistory = totalAstroSessions >= 5;
+
+                let badge = '';
+                if (isTopAstro) {
+                    badge = '<span style="background:#F59E0B; color:#000; font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:8px;"><i class="fas fa-crown"></i> Top Astro</span>';
+                } else if (hasMoreHistory) {
+                    badge = '<span style="background:#10B981; color:#fff; font-size:0.65rem; font-weight:600; padding:2px 6px; border-radius:4px; margin-left:8px;"><i class="fas fa-history"></i> Active</span>';
+                }
+
+                return `
+                    <tr style="border-bottom: 1px solid var(--border-soft);">
+                        <td style="padding:15px; font-size:0.8rem; color:var(--text-dim);">${s.sessionId ? s.sessionId.slice(0, 8) : 'N/A'}</td>
+                        <td style="padding:15px; font-weight:600; color:var(--text-main);">${s.clientName}</td>
+                        <td style="padding:15px; font-weight:600; color:var(--text-main);">${s.astrologerName}${badge}</td>
+                        <td style="padding:15px; text-align:center;"><span style="background:rgba(255,127,0,0.1); color:var(--primary); font-size:0.75rem; padding:4px 8px; border-radius:50px; text-transform:uppercase; font-weight:600;">${s.type || 'Chat'}</span></td>
+                        <td style="padding:15px; text-align:center; font-weight:bold; color:var(--text-main);">${formatDuration(s.duration)}</td>
+                        <td style="padding:15px; text-align:right; font-weight:700; color:#10B981;">₹${s.totalCharged || 0}</td>
+                        <td style="padding:15px; text-align:center; font-size:0.8rem; color:var(--text-dim);">${dateStr}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderTopAstrologers() {
+            const topList = document.getElementById('topAstrologersHistoryList');
+            const stats = {};
+            adminSessionsCache.forEach(s => {
+                const aId = s.astrologerId || s.toUserId;
+                if (!aId) return;
+                if (!stats[aId]) {
+                    stats[aId] = {
+                        astrologerId: aId,
+                        name: s.astrologerName,
+                        sessions: 0,
+                        duration: 0
+                    };
+                }
+                stats[aId].sessions++;
+                stats[aId].duration += (s.duration || 0);
+            });
+
+            const sorted = Object.values(stats).sort((a, b) => b.sessions - a.sessions).slice(0, 3);
+
+            if (sorted.length === 0) {
+                topList.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-dim);">No top astrologers data available.</div>';
+                return;
+            }
+
+            const medals = [
+                { color: '#FFD700', icon: 'fa-trophy', label: '1st Place' },
+                { color: '#C0C0C0', icon: 'fa-medal', label: '2nd Place' },
+                { color: '#CD7F32', icon: 'fa-award', label: '3rd Place' }
+            ];
+
+            topList.innerHTML = sorted.map((ast, idx) => `
+                <div class="admin-card" style="border-top: 4px solid ${medals[idx].color}; display:flex; align-items:center; gap:15px; padding:20px;">
+                    <div style="width:45px; height:45px; border-radius:50%; background:${medals[idx].color}20; display:flex; align-items:center; justify-content:center; color:${medals[idx].color}; font-size:1.4rem;">
+                        <i class="fas ${medals[idx].icon}"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-weight:800; color:var(--text-main); font-size:1.05rem;">${ast.name}</div>
+                        <div style="font-size:0.75rem; color:${medals[idx].color}; font-weight:700; text-transform:uppercase;">${medals[idx].label}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:1.3rem; font-weight:bold; color:var(--text-main);">${ast.sessions}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Sessions</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.searchHistory = () => {
+            renderHistory();
         };
 
         init();

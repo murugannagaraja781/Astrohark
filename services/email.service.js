@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 exports.sendFeedbackEmail = async (feedbackData) => {
-    let destinationEmail = 'info@astrohark.com';
+    let destinationEmail = process.env.EMAIL_TO || 'info@astrohark.com';
     try {
         const User = require('../models/User');
         const superadmin = await User.findOne({ role: 'superadmin' });

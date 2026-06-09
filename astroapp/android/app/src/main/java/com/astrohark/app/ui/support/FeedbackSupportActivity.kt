@@ -72,12 +72,12 @@ fun FeedbackSupportScreen(onBack: () -> Unit) {
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Type", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    
                     Row(
                         modifier = Modifier.padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Text("Type: ", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(8.dp))
                         RadioButton(
                             selected = selectedTab == 0, 
                             onClick = { selectedTab = 0 }, 
@@ -100,21 +100,7 @@ fun FeedbackSupportScreen(onBack: () -> Unit) {
                     
                     if (selectedTab == 0) {
                         CustomTextField("Subject", subject, { subject = it }, "Message subject")
-                        
-                        Text("Issue Type", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
-                        OutlinedTextField(
-                            value = issueType,
-                            onValueChange = { issueType = it },
-                            placeholder = { Text("Select option", color = Color.LightGray) },
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
-                            readOnly = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFFE87A1E),
-                                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
-                            )
-                        )
+                        CustomTextField("Issue Type", issueType, { issueType = it }, "Enter issue type")
                     } else {
                         CustomTextField("I suggest you", subject, { subject = it }, "Enter your idea")
                     }
@@ -134,14 +120,40 @@ fun FeedbackSupportScreen(onBack: () -> Unit) {
 
                     Spacer(modifier = Modifier.height(32.dp))
 
+                    var isSending by remember { mutableStateOf(false) }
+
                     Button(
                         onClick = {
-                            Toast.makeText(context, "Request Submitted!", Toast.LENGTH_SHORT).show()
-                            onBack()
+                            if (email.trim().isEmpty() || contactNumber.trim().isEmpty() || suggestion.trim().isEmpty()) {
+                                Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                                return@Button
+                            }
+                            isSending = true
+                            val message = """
+                                Type: ${if (selectedTab == 0) "Contact Support" else "Feedback"}
+                                Email: $email
+                                Contact Number: $contactNumber
+                                Subject/Idea: $subject
+                                Issue Type: $issueType
+                                Message: $suggestion
+                            """.trimIndent()
+
+                            com.astrohark.app.data.remote.SocketManager.sendFeedback(message) { success ->
+                                (context as? ComponentActivity)?.runOnUiThread {
+                                    isSending = false
+                                    if (success) {
+                                        Toast.makeText(context, "Request Submitted Successfully!", Toast.LENGTH_SHORT).show()
+                                        onBack()
+                                    } else {
+                                        Toast.makeText(context, "Submission Failed. Try again.", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            }
                         },
                         modifier = Modifier.fillMaxWidth().height(50.dp),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB300))
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB300)),
+                        enabled = !isSending
                     ) {
                         Text(
                             text = if (selectedTab == 0) "Send Message" else "Post Feedback", 

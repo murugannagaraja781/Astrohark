@@ -85,7 +85,7 @@ fun SuperPowerScreen(
     onThemeSelected: (AppTheme) -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Approval", "Branding", "Workflow", "Reports")
+    val tabs = listOf("Approval", "Branding", "Workflow", "Profile")
 
     Scaffold(
         topBar = {
@@ -117,7 +117,106 @@ fun SuperPowerScreen(
                 0 -> PendingAstrologersTab()
                 1 -> BrandingTab(onThemeSelected)
                 2 -> WorkflowTab()
+                3 -> AdminProfileTab()
                 else -> Box(Modifier.fillMaxSize()) { Text("More features coming soon", modifier = Modifier.align(Alignment.Center)) }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminProfileTab() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val tokenManager = remember { com.astrohark.app.data.local.TokenManager(context) }
+    val session = tokenManager.getUserSession()
+
+    var name by remember { mutableStateOf(session?.name ?: "Super Admin") }
+    var email by remember { mutableStateOf(session?.email ?: "") }
+    var isSaving by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            "Admin Profile Settings",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            "Update your name and email address. Feedback and support notifications will be sent to this email.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Display Name") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
+            )
+        )
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Notifications Email") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (name.trim().isEmpty() || email.trim().isEmpty()) {
+                    Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+                isSaving = true
+                val updates = org.json.JSONObject().apply {
+                    put("name", name)
+                    put("email", email)
+                }
+                com.astrohark.app.data.remote.SocketManager.updateProfile(updates) { res ->
+                    (context as? android.app.Activity)?.runOnUiThread {
+                        isSaving = false
+                        if (res?.optBoolean("ok") == true) {
+                            val updatedUser = session?.copy(name = name, email = email)
+                            if (updatedUser != null) {
+                                tokenManager.saveUserSession(updatedUser)
+                            }
+                            Toast.makeText(context, "Profile Updated Successfully!", Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(context, "Failed to update profile", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            enabled = !isSaving
+        ) {
+            if (isSaving) {
+                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+            } else {
+                Text("Save Profile Settings", fontWeight = FontWeight.Bold)
             }
         }
     }

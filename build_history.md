@@ -57,4 +57,15 @@ A clean rebuild was performed containing all 11 branding and functional changes,
 * **Date & Time:** June 09, 2026 - 11:30:00 PM (IST)
 * **File Name:** `app-debug.apk`
 * **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
-* **Status:** Rebuild Pending/Running
+* **Status:** Rebuild Successful
+
+---
+
+## [2026-06-10] - Debug Build (Super Admin Profile & Dynamic Feedback Email Routing)
+
+A clean rebuild was performed after adding the Super Admin profile settings tab (allowing display name and notification email updates) and configuring dynamic email routing in the feedback system based on the database super admin email, alongside removing the dropdown for issue types to allow typing in Feedback & Support.
+
+* **Date & Time:** June 10, 2026 - 12:10:00 AM (IST)
+* **File Name:** `app-debug.apk`
+* **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
+* **Status:** Rebuild Successful

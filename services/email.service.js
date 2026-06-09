@@ -12,9 +12,20 @@ const transporter = nodemailer.createTransport({
 });
 
 exports.sendFeedbackEmail = async (feedbackData) => {
+    let destinationEmail = 'info@astrohark.com';
+    try {
+        const User = require('../models/User');
+        const superadmin = await User.findOne({ role: 'superadmin' });
+        if (superadmin && superadmin.email) {
+            destinationEmail = superadmin.email;
+        }
+    } catch (err) {
+        console.error('Failed to retrieve superadmin email from database, falling back:', err);
+    }
+
     const mailOptions = {
         from: process.env.EMAIL_FROM || '"Astrohark Feedback" <info@astrohark.com>',
-        to: process.env.EMAIL_TO || 'info@astrohark.com',
+        to: destinationEmail,
         subject: `New Astrohark Feedback from ${feedbackData.userName}`,
         text: `
 You have received a new feedback comment on Astrohark.

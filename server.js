@@ -1787,6 +1787,8 @@ io.on('connection', (socket) => {
         if (data.price) user.price = parseInt(data.price);
         if (data.experience) user.experience = parseInt(data.experience);
         if (data.image) user.image = data.image; // URL
+        if (data.email) user.email = data.email;
+        if (data.name) user.name = data.name;
         if (data.birthDetails) {
           user.birthDetails = { ...user.birthDetails, ...data.birthDetails };
         }

@@ -27,6 +27,7 @@ data class AuthResponse(
     val image: String?,
     val error: String?,
     val referralCode: String? = null,
-    val isNewUser: Boolean? = false
+    val isNewUser: Boolean? = false,
+    val email: String? = null
 )
 

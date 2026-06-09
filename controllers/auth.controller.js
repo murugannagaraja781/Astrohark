@@ -56,7 +56,8 @@ exports.verifyOtp = async (req, res) => {
         return res.json({
             ok: true, userId: user.userId, name: user.name, role: user.role,
             phone: user.phone, walletBalance: user.walletBalance,
-            totalEarnings: user.totalEarnings || 0, image: user.image
+            totalEarnings: user.totalEarnings || 0, image: user.image,
+            email: user.email
         });
     }
 
@@ -91,7 +92,8 @@ exports.verifyOtp = async (req, res) => {
             phone: user.phone, walletBalance: user.walletBalance,
             totalEarnings: user.totalEarnings || 0,
             image: formatImageUrl(user.image, user.name, SERVER_URL),
-            ratePerMinute: user.ratePerMinute
+            ratePerMinute: user.ratePerMinute,
+            email: user.email
         });
     }
 
@@ -114,7 +116,8 @@ exports.verifyOtp = async (req, res) => {
             phone: user.phone, walletBalance: user.walletBalance,
             superWalletBalance: user.superWalletBalance || 0,
             totalEarnings: user.totalEarnings || 0,
-            image: formatImageUrl(user.image, user.name, SERVER_URL)
+            image: formatImageUrl(user.image, user.name, SERVER_URL),
+            email: user.email
         });
     }
 
@@ -163,7 +166,8 @@ exports.verifyOtp = async (req, res) => {
             image: formatImageUrl(user.image, user.name, SERVER_URL),
             referralCode: user.referralCode, isNewUser: user.isNewUser,
             referredBy: user.referredBy,
-            approvalStatus: user.approvalStatus, documentStatus: user.documentStatus
+            approvalStatus: user.approvalStatus, documentStatus: user.documentStatus,
+            email: user.email
         });
     } catch (e) {
         console.error(e);

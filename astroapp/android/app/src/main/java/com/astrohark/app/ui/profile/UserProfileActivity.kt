@@ -79,7 +79,7 @@ fun UserProfileScreen(
     // Personal Info State
     var name by remember { mutableStateOf(session?.name ?: "") }
     var phone by remember { mutableStateOf(session?.phone ?: "") }
-    var email by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf(session?.email ?: "") }
     var dob by remember { mutableStateOf("") }
     var gender by remember { mutableStateOf("Male") }
     var location by remember { mutableStateOf("") }
@@ -240,7 +240,7 @@ fun UserProfileScreen(
                                     }
                                     SocketManager.updateProfile(updates) { res ->
                                         if (res?.optBoolean("ok") == true) {
-                                            val updatedUser = session?.copy(name = name, image = imageUrl, phone = phone)
+                                            val updatedUser = session?.copy(name = name, image = imageUrl, phone = phone, email = email)
                                             if (updatedUser != null) tokenManager.saveUserSession(updatedUser)
                                             scope.launch(Dispatchers.Main) {
                                                 Toast.makeText(context, "Profile Updated!", Toast.LENGTH_SHORT).show()

@@ -1654,7 +1654,6 @@ fun AppDrawer(onItemClick: (String) -> Unit, onClose: () -> Unit, session: AuthR
 }
 
 // --- 2. HEADER ---
-@Composable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTopBar(
@@ -3045,7 +3044,6 @@ fun CustomerStoryCard(name: String, loc: String, review: String) {
     }
 }
 
-@Composable
 @Composable
 fun StickyFooterButtons(
     isGuest: Boolean,

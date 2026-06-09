@@ -199,14 +199,14 @@ fun SplashScreen() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF140F0A)),
+            .background(Color.White),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Image(
-                painter = painterResource(id = R.mipmap.ic_launcher),
+                painter = painterResource(id = R.drawable.app_logo),
                 contentDescription = "App Logo",
-                modifier = Modifier.size(150.dp),
+                modifier = Modifier.size(180.dp),
                 contentScale = ContentScale.Fit
             )
 
@@ -218,3 +218,5 @@ fun SplashScreen() {
         }
     }
 }
+
+

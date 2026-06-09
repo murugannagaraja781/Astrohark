@@ -131,13 +131,13 @@ exports.verifyOtp = async (req, res) => {
         if (!user) {
             const { referralCode: codeApplied } = req.body;
             let referredBy = null;
-            let initialBalance = 108; // Standard bonus
+            let initialBalance = 0; // Standard bonus (Disabled - set to 0)
 
             if (codeApplied) {
                 const referrer = await User.findOne({ referralCode: codeApplied.trim().toUpperCase() });
                 if (referrer) {
                     referredBy = referrer.userId;
-                    initialBalance = 188; // Referral bonus
+                    initialBalance = 0; // Referral bonus (Disabled - set to 0)
                 }
             }
 

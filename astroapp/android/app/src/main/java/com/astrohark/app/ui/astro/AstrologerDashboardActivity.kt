@@ -1042,9 +1042,24 @@ fun AstrologerDashboardScreen(
                                      .clickable {
                                          when (label) {
                                              "Call" -> showRecordingsDialog(context)
-                                             "Profile" -> context.startActivity(Intent(context, com.astrohark.app.ui.settings.SettingsActivity::class.java))
+                                             "Profile" -> {
+                                                 val intent = Intent(context, com.astrohark.app.ui.profile.AstrologerProfileActivity::class.java).apply {
+                                                     putExtra("astro_id", sessionId)
+                                                     putExtra("astro_name", sessionName)
+                                                     putExtra("astro_image", profileImage ?: "")
+                                                     putExtra("astro_exp", "5")
+                                                     putExtra("astro_skills", "Vedic, Tarot")
+                                                     putExtra("astro_price", 15)
+                                                     putExtra("is_chat_online", isChatOnline)
+                                                     putExtra("is_audio_online", isAudioOnline)
+                                                     putExtra("is_video_online", isVideoOnline)
+                                                 }
+                                                 context.startActivity(intent)
+                                             }
                                              "History" -> context.startActivity(Intent(context, com.astrohark.app.ui.astro.AstrologerHistoryActivity::class.java))
                                              "Earnings" -> Toast.makeText(context, "Fetching Data...", Toast.LENGTH_SHORT).show()
+                                             "Settings" -> context.startActivity(Intent(context, com.astrohark.app.ui.settings.SettingsActivity::class.java))
+                                             "Star" -> Toast.makeText(context, "Astrologer Reviews coming soon", Toast.LENGTH_SHORT).show()
                                          }
                                      }
                              ) {

@@ -1639,7 +1639,7 @@ io.on('connection', (socket) => {
 
     try {
       const user = await User.findOne({ userId });
-      await Feedback.create({
+      const fb = await Feedback.create({
         userId,
         userName: user ? user.name : 'Unknown User',
         astrologerId: data.astrologerId,
@@ -1648,6 +1648,10 @@ io.on('connection', (socket) => {
         comment: data.comment,
         sessionType: data.sessionType
       });
+
+      // Send Email Notification
+      const { sendFeedbackEmail } = require('./services/email.service');
+      sendFeedbackEmail(fb).catch(err => console.error("Email send failed:", err));
 
       feedbackCooldowns.set(userId, now);
       if (typeof cb === 'function') cb({ ok: true });

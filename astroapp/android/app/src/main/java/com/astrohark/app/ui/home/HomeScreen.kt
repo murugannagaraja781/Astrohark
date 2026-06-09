@@ -405,14 +405,14 @@ fun HomeScreen(
     val listState = rememberLazyListState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var selectedTab by remember { mutableIntStateOf(0) }
-    var selectedFilter by remember { mutableStateOf("All") }
+    var selectedTab by remember { mutableIntStateOf(1) }
+    var selectedFilter by remember { mutableStateOf("Chat") }
     var searchQuery by remember { mutableStateOf("") }
     var showReferralDialog by remember { mutableStateOf(false) }
     var referralInput by remember { mutableStateOf("") }
     var isApplyingReferral by remember { mutableStateOf(false) }
     var selectedLiveAstro by remember { mutableStateOf<Astrologer?>(null) }
-    var activeServiceView by remember { mutableStateOf<String?>(null) }
+    var activeServiceView by remember { mutableStateOf<String?>("chat") }
 
     // Dynamic Share Link State (Placeholder until configured in Admin Dashboard)
     var shareLink by remember { mutableStateOf("https://astrohark.com") }
@@ -730,43 +730,57 @@ fun HomeScreen(
                     isTamil = isTamil,
                     onToggleLanguage = { isTamil = !isTamil },
                     onReferClick = { showReferralDialog = true },
+                    userName = userSession?.name ?: if (isTamil) "அன்பர்" else "User",
                     shareLink = shareLink,
-                    referralCode = referralCode
+                    referralCode = referralCode,
+                    searchQuery = searchQuery,
+                    onSearchQueryChange = { searchQuery = it }
                 )
 
             },
             floatingActionButton = {},
             bottomBar = {
                 Column {
-                    // STICKY FOOTER: Dual Yellow Buttons
-                    val showFooter = selectedTab == 0 // Only show on Home tab
+                    // STICKY FOOTER: Dual Yellow Buttons (shown on Home and Chat lists)
+                    val showFooter = selectedTab == 0 || (selectedTab == 1 && activeServiceView == "chat")
                     if (showFooter) {
-                    StickyFooterButtons(
-                        isGuest = isGuest,
-                        isTamil = false, // English show
-                        onTabSelected = { selectedTab = it },
-                        onLoginClick = { onBannerClick(com.astrohark.app.data.model.Banner(id = "", imageUrl = "")) }
-                    )
-                }
-                HomeBottomBar(
-                    selectedTab = selectedTab,
-                    activeServiceView = activeServiceView,
-                    isTamil = isTamil,
-                    onTabSelected = { tabIndex, serviceView ->
-                        selectedTab = tabIndex
-                        activeServiceView = serviceView
-                        if (tabIndex == 1) {
-                            selectedFilter = when (serviceView) {
-                                "chat" -> "Chat"
-                                "call" -> "Call"
-                                "video" -> "Video"
-                                else -> "All"
+                        StickyFooterButtons(
+                            isGuest = isGuest,
+                            isTamil = isTamil,
+                            onTabSelected = { tabIndex, serviceView ->
+                                selectedTab = tabIndex
+                                activeServiceView = serviceView
+                                if (tabIndex == 1) {
+                                    selectedFilter = when (serviceView) {
+                                        "chat" -> "Chat"
+                                        "call" -> "Call"
+                                        "video" -> "Video"
+                                        else -> "All"
+                                    }
+                                }
+                            },
+                            onLoginClick = { onBannerClick(com.astrohark.app.data.model.Banner(id = "", imageUrl = "")) }
+                        )
+                    }
+                    HomeBottomBar(
+                        selectedTab = selectedTab,
+                        activeServiceView = activeServiceView,
+                        isTamil = isTamil,
+                        onTabSelected = { tabIndex, serviceView ->
+                            selectedTab = tabIndex
+                            activeServiceView = serviceView
+                            if (tabIndex == 1) {
+                                selectedFilter = when (serviceView) {
+                                    "chat" -> "Chat"
+                                    "call" -> "Call"
+                                    "video" -> "Video"
+                                    else -> "All"
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
-        }
     ) { padding ->
             // Profile Action Sheet for Live Astrologers
             if (selectedLiveAstro != null) {
@@ -1442,32 +1456,7 @@ fun LazyListScope.ConsultTab(
         }
     }
 
-    item {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = { Text(if (isTamil) "ஜோதிடர் பெயர்" else "Search Name ") },
-            leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null, tint = CosmicAppTheme.colors.accent) },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { onSearchChange("") }) {
-                        Icon(Icons.Rounded.Close, contentDescription = null, tint = Color.Gray)
-                    }
-                }
-            },
-            shape = RoundedCornerShape(12.dp),
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedBorderColor = CosmicAppTheme.colors.accent,
-                unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f)
-            )
-        )
-    }
+
 
     items(astrologers) { astro ->
         AstrologerCard(
@@ -1666,6 +1655,8 @@ fun AppDrawer(onItemClick: (String) -> Unit, onClose: () -> Unit, session: AuthR
 
 // --- 2. HEADER ---
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun HomeTopBar(
     balance: Double,
     superBalance: Double,
@@ -1675,113 +1666,185 @@ fun HomeTopBar(
     isTamil: Boolean = false,
     onToggleLanguage: () -> Unit = {},
     onReferClick: () -> Unit = {},
-    userName: String = "Seeker",
+    userName: String = "User",
     shareLink: String = "",
-    referralCode: String? = null
+    referralCode: String? = null,
+    searchQuery: String = "",
+    onSearchQueryChange: (String) -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF0F0F15)) // Deep Space Black/Navy
+            .background(Color.White)
             .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 8.dp), // Reduced from 14dp
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(bottom = 8.dp)
     ) {
-        // User Info
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .border(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.4f), CircleShape)
-                    .background(Color.White.copy(alpha = 0.05f))
-                    .clickable { onMenuClick() },
-                contentAlignment = Alignment.Center
+        // Row 1: Avatar, Greeting, Wallet Pill, Translate, Support
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // User Info (Avatar + "Hi Name")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Image(
-                    painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
-                    contentDescription = "Avatar",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = "AstroHark",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        color = CosmicAppTheme.colors.accent,
-                        letterSpacing = 1.sp
-                    )
-                )
-            }
-        }
-
-        // Action Buttons (Share & Wallet)
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Share Button
-            Surface(
-                onClick = {
-                    val msg = if (isTamil)
-                        "Astrohark செயலியில் இணையுங்கள்! நீங்கள் இணைய என் Referral Code: ${referralCode ?: ""} -ஐ பயன்படுத்தினால் ₹188 போனஸ் கிடைக்கும். $shareLink"
-                    else "Join Astrohark! Use my Referral Code: ${referralCode ?: ""} and get ₹188 bonus on signup. $shareLink"
-                    val intent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, msg)
+                // Avatar with Menu Overlay
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clickable { onMenuClick() }
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(Color.White)
+                            .border(1.dp, Color(0xFFF0F0F0), CircleShape)
+                    ) {
+                        Image(
+                            painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Fit
+                        )
                     }
-                    context.startActivity(Intent.createChooser(intent, "Share via"))
-                },
-                shape = CircleShape,
-                color = Color.White,
-                shadowElevation = 4.dp,
-                modifier = Modifier.size(36.dp)
+
+                    // Bottom-Right Menu Icon Overlay
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(16.dp)
+                            .background(Color.White, CircleShape)
+                            .border(1.dp, Color(0xFFE0E0E0), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Menu,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(10.dp)
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Hi $userName",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = Color.Black
+                )
+            }
+
+            // Wallet Pill, Translate, Support Icons
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
+                // Wallet Pill (Outlined with black/gray border, white bg, black text, plus icon inside black circle)
+                Surface(
+                    onClick = onWalletClick,
+                    shape = RoundedCornerShape(50),
+                    color = Color.White,
+                    border = BorderStroke(1.dp, Color.Black),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(start = 10.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.AccountBalanceWallet,
+                            contentDescription = null,
+                            tint = Color.Black,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "₹${balance.toInt()}",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            ),
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        // Plus inside black circle
+                        Box(
+                            modifier = Modifier
+                                .size(22.dp)
+                                .background(Color.Black, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("+", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                // Translate Icon (A -> அ)
+                IconButton(
+                    onClick = onToggleLanguage,
+                    modifier = Modifier.size(34.dp)
+                ) {
                     Icon(
-                        imageVector = Icons.Rounded.Share,
-                        contentDescription = "Share",
-                        tint = Color(0xFF1E1E2C),
+                        imageVector = Icons.Rounded.Translate,
+                        contentDescription = "Language",
+                        tint = Color.Black,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                // Support circular button (yellow background with headset icon)
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .background(Color(0xFFFFD600), CircleShape) // AstroTalk Yellow
+                        .clickable {
+                            context.startActivity(Intent(context, com.astrohark.app.ui.support.FeedbackSupportActivity::class.java))
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.SupportAgent,
+                        contentDescription = "Support",
+                        tint = Color.Black,
                         modifier = Modifier.size(18.dp)
                     )
                 }
             }
-
-            // Wallet Pill (Premium Style)
-            Surface(
-                onClick = onWalletClick,
-                shape = RoundedCornerShape(50),
-                color = Color.White,
-                shadowElevation = 4.dp,
-                modifier = Modifier.height(36.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Rounded.AccountBalanceWallet,
-                        contentDescription = null,
-                        tint = Color(0xFFC62828), // Premium Red
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "₹${balance.toInt()}",
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = (if (balance > 999999) 11.sp else 14.sp)
-                        ),
-                        color = Color.Black,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
         }
+
+        // Row 2: Capsule Search Bar (directly below, matching search icon on right)
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            placeholder = { Text(if (isTamil) "தேடுக..." else "Search...", color = Color.Gray, fontSize = 14.sp) },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Rounded.Search,
+                    contentDescription = null,
+                    tint = Color.Gray,
+                    modifier = Modifier.size(20.dp)
+                )
+            },
+            shape = RoundedCornerShape(50), // Capsule shape
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White,
+                focusedBorderColor = Color(0xFFCCCCCC),
+                unfocusedBorderColor = Color(0xFFE0E0E0),
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black
+            )
+        )
     }
 }
 
@@ -1993,9 +2056,9 @@ fun AstrologerCard(
                 // LEFT COLUMN: Circle avatar, rating, review/order count
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.width(76.dp)
+                    modifier = Modifier.width(86.dp)
                 ) {
-                    Box(modifier = Modifier.size(60.dp)) {
+                    Box(modifier = Modifier.size(72.dp)) {
                         AsyncImage(
                             model = getImageUrl(astro.image),
                             contentDescription = astro.name,
@@ -2167,7 +2230,7 @@ fun AstrologerCard(
                                 text = Localization.get("chat", isTamil),
                                 icon = Icons.Rounded.Chat,
                                 active = (astro.isChatOnline && !astro.isBusy),
-                                borderColor = Color(0xFF00BFA5),
+                                borderColor = Color(0xFF2196F3), // Blue border
                                 onClick = { onChatClick(astro) },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2177,7 +2240,7 @@ fun AstrologerCard(
                                 text = Localization.get("call", isTamil),
                                 icon = Icons.Rounded.Call,
                                 active = (astro.isAudioOnline && !astro.isBusy),
-                                borderColor = Color(0xFFE87A1E),
+                                borderColor = Color(0xFF4CAF50), // Green border
                                 onClick = { onCallClick(astro, "call") },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2187,7 +2250,7 @@ fun AstrologerCard(
                                 text = Localization.get("video", isTamil),
                                 icon = Icons.Rounded.VideoCall,
                                 active = (astro.isVideoOnline && !astro.isBusy),
-                                borderColor = Color(0xFFD32F2F),
+                                borderColor = Color(0xFFD32F2F), // Keep Red border
                                 onClick = { onCallClick(astro, "video") },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2396,75 +2459,73 @@ fun HomeBottomBar(
     isTamil: Boolean,
     onTabSelected: (Int, String?) -> Unit
 ) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(start = 20.dp, end = 20.dp, bottom = 14.dp)
+            .background(Color.White)
     ) {
-        Surface(
-            color = Color.White,
-            shape = CircleShape,
-            shadowElevation = 10.dp,
-            border = BorderStroke(1.dp, Color(0xFFF2F2F2)),
-            modifier = Modifier.fillMaxWidth()
+        // Thin top divider line
+        androidx.compose.material3.HorizontalDivider(
+            color = Color(0xFFE5E5E5),
+            thickness = 1.dp
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+            val isHomeSelected = selectedTab == 0
+            BottomNavItem(
+                label = if (isTamil) "முகப்பு" else "Home",
+                icon = Icons.Rounded.Home,
+                isSelected = isHomeSelected,
+                modifier = Modifier.weight(1f)
             ) {
-                val isHomeSelected = selectedTab == 0
-                BottomNavItem(
-                    label = Localization.get("home", isTamil),
-                    icon = Icons.Rounded.Home,
-                    isSelected = isHomeSelected,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    onTabSelected(0, null)
-                }
+                onTabSelected(0, null)
+            }
 
-                val isChatSelected = selectedTab == 1 && activeServiceView == "chat"
-                BottomNavItem(
-                    label = Localization.get("chat", isTamil),
-                    icon = Icons.Rounded.Chat,
-                    isSelected = isChatSelected,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    onTabSelected(1, "chat")
-                }
+            val isChatSelected = selectedTab == 1 && activeServiceView == "chat"
+            BottomNavItem(
+                label = if (isTamil) "அரட்டை" else "Chat",
+                icon = Icons.Rounded.Chat,
+                isSelected = isChatSelected,
+                modifier = Modifier.weight(1f)
+            ) {
+                onTabSelected(1, "chat")
+            }
 
-                val isCallSelected = selectedTab == 1 && activeServiceView == "call"
-                BottomNavItem(
-                    label = Localization.get("call", isTamil),
-                    icon = Icons.Rounded.Call,
-                    isSelected = isCallSelected,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    onTabSelected(1, "call")
-                }
+            val isVideoSelected = selectedTab == 1 && activeServiceView == "video"
+            BottomNavItem(
+                label = if (isTamil) "நேரலை" else "Live",
+                icon = Icons.Rounded.VideoCall,
+                isSelected = isVideoSelected,
+                modifier = Modifier.weight(1f)
+            ) {
+                onTabSelected(1, "video")
+            }
 
-                val isVideoSelected = selectedTab == 1 && activeServiceView == "video"
-                BottomNavItem(
-                    label = Localization.get("video", isTamil),
-                    icon = Icons.Rounded.VideoCall,
-                    isSelected = isVideoSelected,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    onTabSelected(1, "video")
-                }
+            val isCallSelected = selectedTab == 1 && activeServiceView == "call"
+            BottomNavItem(
+                label = if (isTamil) "அழைப்பு" else "Call",
+                icon = Icons.Rounded.Call,
+                isSelected = isCallSelected,
+                modifier = Modifier.weight(1f)
+            ) {
+                onTabSelected(1, "call")
+            }
 
-                val isRemediesSelected = selectedTab == 2
-                BottomNavItem(
-                    label = Localization.get("remedies", isTamil),
-                    icon = Icons.Rounded.Eco,
-                    isSelected = isRemediesSelected,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    onTabSelected(2, null)
-                }
+            val isRemediesSelected = selectedTab == 2
+            BottomNavItem(
+                label = if (isTamil) "பரிகாரம்" else "Remedies",
+                icon = Icons.Rounded.SelfImprovement,
+                isSelected = isRemediesSelected,
+                modifier = Modifier.weight(1f)
+            ) {
+                onTabSelected(2, null)
             }
         }
     }
@@ -2478,23 +2539,20 @@ fun BottomNavItem(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val contentColor = if (isSelected) Color(0xFFD32F2F) else Color.Gray
-    val bgColor = if (isSelected) Color(0xFFD32F2F).copy(alpha = 0.08f) else Color.Transparent
+    val contentColor = if (isSelected) Color.Black else Color.Gray
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = modifier
-            .clip(CircleShape)
-            .background(bgColor)
             .clickable { onClick() }
-            .padding(vertical = 6.dp)
+            .padding(vertical = 4.dp)
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
             tint = contentColor,
-            modifier = Modifier.size(22.dp)
+            modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
@@ -2988,76 +3046,58 @@ fun CustomerStoryCard(name: String, loc: String, review: String) {
 }
 
 @Composable
+@Composable
 fun StickyFooterButtons(
     isGuest: Boolean,
     isTamil: Boolean,
-    onTabSelected: (Int) -> Unit,
+    onTabSelected: (Int, String?) -> Unit,
     onLoginClick: () -> Unit
 ) {
-    val yellowGradient = Brush.linearGradient(
-        listOf(
-            Color(0xFFFFE57F), // Lighter Gold
-            Color(0xFFFFD700), // Gold
-            Color(0xFFFFA500)  // Orange/Amber
-        )
-    )
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Chat Button (Yellow/Gold)
+        // Chat with Astrologer Button (Solid Yellow, Black text)
         Button(
             onClick = {
-                if (isGuest) onLoginClick() else onTabSelected(1)
+                if (isGuest) onLoginClick() else onTabSelected(1, "chat")
             },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-            shape = RoundedCornerShape(18.dp),
-            contentPadding = PaddingValues(0.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD600)), // AstroTalk Yellow
+            shape = RoundedCornerShape(28.dp),
             modifier = Modifier
                 .weight(1f)
-                .height(54.dp)
-                .background(
-                    brush = yellowGradient,
-                    shape = RoundedCornerShape(18.dp)
-                )
+                .height(48.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Chat, null, modifier = Modifier.size(18.dp), tint = Color.Black)
-                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Rounded.Chat, null, modifier = Modifier.size(16.dp), tint = Color.Black)
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Chat Now",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    text = if (isTamil) "ஜோதிடருடன் அரட்டை" else "Chat with Astrologer",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color.Black
                 )
             }
         }
 
-        // Talk Button (Yellow/Gold)
+        // Call with Astrologer Button (Solid Yellow, Black text)
         Button(
             onClick = {
-                if (isGuest) onLoginClick() else onTabSelected(1)
+                if (isGuest) onLoginClick() else onTabSelected(1, "call")
             },
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
-            shape = RoundedCornerShape(18.dp),
-            contentPadding = PaddingValues(0.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD600)), // AstroTalk Yellow
+            shape = RoundedCornerShape(28.dp),
             modifier = Modifier
-                .weight(1.2f)
-                .height(54.dp)
-                .shadow(elevation = 8.dp, shape = RoundedCornerShape(18.dp), spotColor = Color(0xFFFFD700).copy(alpha = 0.5f))
-                .background(
-                    brush = yellowGradient,
-                    shape = RoundedCornerShape(18.dp)
-                )
+                .weight(1f)
+                .height(48.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Call, null, modifier = Modifier.size(18.dp), tint = Color.Black)
-                Spacer(modifier = Modifier.width(8.dp))
+                Icon(Icons.Rounded.Call, null, modifier = Modifier.size(16.dp), tint = Color.Black)
+                Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Talk to Astrologer",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.ExtraBold),
+                    text = if (isTamil) "ஜோதிடருடன் அழைப்பு" else "Call with Astrologer",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = Color.Black
                 )
             }

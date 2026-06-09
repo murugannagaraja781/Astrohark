@@ -47,3 +47,14 @@ A clean rebuild was performed after fixing the MediaPlayer error -38 issue by ad
 * **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
 * **Size:** 120,646,062 Bytes (~115.06 MB)
 * **Status:** Rebuild Successful
+
+---
+
+## [2026-06-09] - Debug Build (Branding, Flow & Calculation Updates)
+
+A clean rebuild was performed containing all 11 branding and functional changes, including top/bottom bar UI redesigns, splash screen updates, default consult tab, introductory ₹20 wallet options, astrologer profile click flows, and KP astrology significator union calculations.
+
+* **Date & Time:** June 09, 2026 - 11:30:00 PM (IST)
+* **File Name:** `app-debug.apk`
+* **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
+* **Status:** Rebuild Pending/Running

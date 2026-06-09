@@ -147,6 +147,10 @@ async function endSessionRecord(sessionId, broadcastAstroUpdate) {
         status: 'ended'
     });
 
+    if (s.clientId && billableSeconds > 0) {
+        await User.updateOne({ userId: s.clientId }, { isNewUser: false });
+    }
+
     if (s.pairMonthId) {
         await PairMonth.updateOne(
             { _id: s.pairMonthId },

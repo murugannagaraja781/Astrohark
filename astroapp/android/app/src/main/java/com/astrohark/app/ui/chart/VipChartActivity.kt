@@ -627,9 +627,6 @@ fun getKPKBPlanetConnections(planetName: String, data: ChartData): String {
         primaryConnections.addAll(starLordOwns)
     }
     
-    val filteredPrimary = applyKp12thLordDefeatRule(primaryConnections.distinct().sorted())
-    val primaryStr = filteredPrimary.joinToString(", ")
-    
     // 2. Houses signified by the Planet itself (Secondary)
     val planetOccupies = planet.house
     val planetOwns = data.houses.details.mapIndexedNotNull { index, h -> 
@@ -640,12 +637,9 @@ fun getKPKBPlanetConnections(planetName: String, data: ChartData): String {
     if (planetOccupies != 0) secondaryConnections.add(planetOccupies)
     secondaryConnections.addAll(planetOwns)
     
-    val filteredSecondary = applyKp12thLordDefeatRule(secondaryConnections.distinct().sorted())
-    val secondaryStr = filteredSecondary.joinToString(", ")
-    
-    if (primaryStr.isEmpty() && secondaryStr.isEmpty()) return "-"
-    if (primaryStr.isEmpty()) return secondaryStr
-    return primaryStr
+    val union = (primaryConnections + secondaryConnections).distinct().sorted()
+    if (union.isEmpty()) return "-"
+    return union.joinToString(", ")
 }
 
 fun getKPKBHouseConnections(houseIndex: Int, data: ChartData): String {
@@ -669,9 +663,6 @@ fun getKPKBHouseConnections(houseIndex: Int, data: ChartData): String {
     if (starLordOccupies != 0) primaryConnections.add(starLordOccupies)
     primaryConnections.addAll(starLordOwns)
     
-    val filteredPrimary = applyKp12thLordDefeatRule(primaryConnections.distinct().sorted())
-    val primaryStr = filteredPrimary.joinToString(", ")
-    
     // 4. Houses signified by the Sub-Lord (for confirmation)
     val subLordOccupies = subLordPlanet.house
     val subLordOwns = data.houses.details.mapIndexedNotNull { index, h -> 
@@ -682,13 +673,9 @@ fun getKPKBHouseConnections(houseIndex: Int, data: ChartData): String {
     if (subLordOccupies != 0) secondaryConnections.add(subLordOccupies)
     secondaryConnections.addAll(subLordOwns)
     
-    val filteredSecondary = applyKp12thLordDefeatRule(secondaryConnections.distinct().sorted())
-    val secondaryStr = filteredSecondary.joinToString(", ")
-    
-    if (primaryStr.isEmpty() && secondaryStr.isEmpty()) return "-"
-    if (primaryStr.isEmpty()) return secondaryStr
-    // Return Primary Connections
-    return primaryStr
+    val union = (primaryConnections + secondaryConnections).distinct().sorted()
+    if (union.isEmpty()) return "-"
+    return union.joinToString(", ")
 }
 
 @Composable

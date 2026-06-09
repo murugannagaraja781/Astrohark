@@ -3,7 +3,7 @@ const { swissEph } = require('./swisseph');
 const { SIGN_LORDS } = require('./config');
 
 /**
- * Get full planet data with KP details
+ * Get full planet data with KP detailsss
  */
 function getPlanetsWithDetails(jd, houseCusps, ayanamsaName = 'Lahiri') {
     const rawPlanets = swissEph.getAllPlanets(jd, ayanamsaName);

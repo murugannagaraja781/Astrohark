@@ -50,9 +50,11 @@ class SuperWalletActivity : ComponentActivity() {
 
         setContent {
             CosmicAppTheme {
+                val isNewUser = tokenManager.getUserSession()?.isNewUser == true
                 SuperWalletScreen(
                     title = bannerTitle,
                     offerPercent = offerPercentage,
+                    isNewUser = isNewUser,
                     onBack = { finish() },
                     onPay = { amount ->
                         initiatePayment(amount)
@@ -82,6 +84,7 @@ class SuperWalletActivity : ComponentActivity() {
 fun SuperWalletScreen(
     title: String,
     offerPercent: Double,
+    isNewUser: Boolean = false,
     onBack: () -> Unit,
     onPay: (Int) -> Unit
 ) {
@@ -89,8 +92,8 @@ fun SuperWalletScreen(
     val pinkLight = Color(0xFFFDF2F8)
     val pinkGradient = Brush.verticalGradient(listOf(Color(0xFFDB2777), Color(0xFFF472B6)))
 
-    val rechargeOptions = listOf(100, 500, 1000, 2000)
-    var selectedAmount by remember { mutableIntStateOf(100) }
+    val rechargeOptions = if (isNewUser) listOf(20, 100, 500, 1000) else listOf(100, 500, 1000, 2000)
+    var selectedAmount by remember { mutableIntStateOf(if (isNewUser) 20 else 100) }
 
     Scaffold(
         topBar = {
@@ -157,7 +160,6 @@ fun SuperWalletScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(Modifier.selectableGroup()) {
-                val rechargeOptions = listOf(100, 500, 1000, 2000)
                 rechargeOptions.chunked(2).forEach { row ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         row.forEach { amount ->

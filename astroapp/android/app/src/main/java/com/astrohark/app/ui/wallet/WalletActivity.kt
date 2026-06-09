@@ -198,13 +198,15 @@ fun WalletScreen(
     onAddMoney: (Int, String?) -> Unit,
     onRefreshHistory: () -> Unit
 ) {
-    var amountInput by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val tokenManager = remember { TokenManager(context) }
+    val isNewUser = tokenManager.getUserSession()?.isNewUser == true
+    var amountInput by remember { mutableStateOf(if (isNewUser) "20" else "") }
     var couponInput by remember { mutableStateOf("") }
     var appliedCoupon by remember { mutableStateOf<String?>(null) }
     var couponBonus by remember { mutableStateOf(0.0) }
     var couponMessage by remember { mutableStateOf<String?>(null) }
     var isCouponLoading by remember { mutableStateOf(false) }
-    val context = LocalContext.current
 
     val colors = CosmicAppTheme.colors
     val goldPrimary = colors.accent
@@ -419,7 +421,8 @@ fun WalletScreen(
                             Text(stringResource(R.string.recharge_wallet), color = CosmicAppTheme.colors.accent, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
 
                             Row(Modifier.fillMaxWidth(), Arrangement.spacedBy(8.dp)) {
-                                listOf(100, 500, 1000, 2000).forEach { amount ->
+                                val rechargeOptions = if (isNewUser) listOf(20, 100, 500, 1000) else listOf(100, 500, 1000, 2000)
+                                rechargeOptions.forEach { amount ->
                                     val isSelected = amountInput == amount.toString()
                                     Surface(
                                         onClick = { amountInput = amount.toString() },

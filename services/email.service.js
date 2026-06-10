@@ -1,15 +1,17 @@
 // services/email.service.js
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-    auth: {
-        user: process.env.SMTP_USER || 'info@astrohark.com',
-        pass: process.env.SMTP_PASS || 'your_email_password'
-    }
-});
+const getTransporter = () => {
+    return nodemailer.createTransport({
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === true, // true for 465, false for other ports
+        auth: {
+            user: process.env.SMTP_USER || 'info@astrohark.com',
+            pass: process.env.SMTP_PASS || 'your_email_password'
+        }
+    });
+};
 
 exports.sendFeedbackEmail = async (feedbackData) => {
     let destinationEmail = process.env.EMAIL_TO || 'info@astrohark.com';
@@ -57,6 +59,7 @@ Submitted At: ${new Date()}
     };
 
     try {
+        const transporter = getTransporter();
         const info = await transporter.sendMail(mailOptions);
         console.log('Feedback email sent successfully:', info.messageId);
         return { success: true, messageId: info.messageId };

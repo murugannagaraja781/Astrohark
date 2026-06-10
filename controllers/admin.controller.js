@@ -131,18 +131,26 @@ exports.getConfig = async (req, res) => {
     try {
         const envPath = path.join(__dirname, '../.env');
         const content = fs.readFileSync(envPath, 'utf8');
-        const lines = content.split('\n');
+        const lines = content.split(/\r?\n/);
         const SENSITIVE_KEYS = [
             'TURN_USERNAME', 'TURN_SERVER', 'TURN_PASSWORD', 'TURN_REALM', 
             'MONGO_URI', 'JWT_SECRET', 'FCM_SERVER_KEY'
         ];
+        const config = {};
 
         lines.forEach(line => {
             const trimmed = line.trim();
             if (trimmed && !trimmed.startsWith('#')) {
                 const [key, ...valueParts] = trimmed.split('=');
-                if (key && !SENSITIVE_KEYS.includes(key)) {
-                    config[key] = valueParts.join('=');
+                const k = key.trim();
+                if (k && !SENSITIVE_KEYS.includes(k)) {
+                    let val = valueParts.join('=').trim();
+                    if (val.startsWith('"') && val.endsWith('"')) {
+                        val = val.substring(1, val.length - 1);
+                    } else if (val.startsWith("'") && val.endsWith("'")) {
+                        val = val.substring(1, val.length - 1);
+                    }
+                    config[k] = val;
                 }
             }
         });
@@ -159,15 +167,20 @@ exports.updateConfig = async (req, res) => {
 
         const envPath = path.join(__dirname, '../.env');
         let content = fs.readFileSync(envPath, 'utf8');
-        const lines = content.split('\n');
+        const lines = content.split(/\r?\n/);
 
         const updatedLines = lines.map(line => {
             const trimmed = line.trim();
             if (trimmed && !trimmed.startsWith('#')) {
                 const [key] = trimmed.split('=');
-                if (key && config[key] !== undefined) {
-                    process.env[key] = config[key];
-                    return `${key}=${config[key]}`;
+                const k = key.trim();
+                if (k && config[k] !== undefined) {
+                    process.env[k] = config[k];
+                    let val = config[k];
+                    if (val.includes(' ') && !val.startsWith('"')) {
+                        val = `"${val}"`;
+                    }
+                    return `${k}=${val}`;
                 }
             }
             return line;
@@ -177,7 +190,7 @@ exports.updateConfig = async (req, res) => {
         const existingKeys = lines.map(line => {
             const trimmed = line.trim();
             if (trimmed && !trimmed.startsWith('#')) {
-                return trimmed.split('=')[0];
+                return trimmed.split('=')[0].trim();
             }
             return null;
         }).filter(Boolean);
@@ -185,7 +198,11 @@ exports.updateConfig = async (req, res) => {
         Object.keys(config).forEach(key => {
             process.env[key] = config[key]; // Update current process env as well
             if (!existingKeys.includes(key)) {
-                updatedLines.push(`${key}=${config[key]}`);
+                let val = config[key];
+                if (val.includes(' ') && !val.startsWith('"')) {
+                    val = `"${val}"`;
+                }
+                updatedLines.push(`${key}=${val}`);
             }
         });
 
@@ -195,3 +212,96 @@ exports.updateConfig = async (req, res) => {
         res.json({ ok: false, error: e.message });
     }
 };
+
+exports.getSmtpConfig = async (req, res) => {
+    try {
+        const envPath = path.join(__dirname, '../.env');
+        let content = '';
+        if (fs.existsSync(envPath)) {
+            content = fs.readFileSync(envPath, 'utf8');
+        }
+        const config = {
+            SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
+            SMTP_PORT: process.env.SMTP_PORT || '587',
+            SMTP_SECURE: process.env.SMTP_SECURE || 'false',
+            SMTP_USER: process.env.SMTP_USER || '',
+            SMTP_PASS: process.env.SMTP_PASS || '',
+            EMAIL_FROM: process.env.EMAIL_FROM || '',
+            EMAIL_TO: process.env.EMAIL_TO || ''
+        };
+        const lines = content.split(/\r?\n/);
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('#')) {
+                const [key, ...valueParts] = trimmed.split('=');
+                if (key) {
+                    const k = key.trim();
+                    if (config.hasOwnProperty(k)) {
+                        let val = valueParts.join('=').trim();
+                        if (val.startsWith('"') && val.endsWith('"')) {
+                            val = val.substring(1, val.length - 1);
+                        } else if (val.startsWith("'") && val.endsWith("'")) {
+                            val = val.substring(1, val.length - 1);
+                        }
+                        config[k] = val;
+                    }
+                }
+            }
+        });
+        res.json({ ok: true, config });
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};
+
+exports.updateSmtpConfig = async (req, res) => {
+    try {
+        const { config } = req.body;
+        if (!config) return res.json({ ok: false, error: 'Config object required' });
+
+        const envPath = path.join(__dirname, '../.env');
+        let content = '';
+        if (fs.existsSync(envPath)) {
+            content = fs.readFileSync(envPath, 'utf8');
+        }
+        const lines = content.split(/\r?\n/);
+
+        const allowedKeys = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_SECURE', 'SMTP_USER', 'SMTP_PASS', 'EMAIL_FROM', 'EMAIL_TO'];
+        const updatedKeys = new Set();
+
+        const updatedLines = lines.map(line => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('#')) {
+                const [key] = trimmed.split('=');
+                const k = key.trim();
+                if (k && allowedKeys.includes(k) && config[k] !== undefined) {
+                    updatedKeys.add(k);
+                    process.env[k] = config[k];
+                    let val = config[k];
+                    if (val.includes(' ') && !val.startsWith('"')) {
+                        val = `"${val}"`;
+                    }
+                    return `${k}=${val}`;
+                }
+            }
+            return line;
+        });
+
+        allowedKeys.forEach(k => {
+            if (config[k] !== undefined && !updatedKeys.has(k)) {
+                process.env[k] = config[k];
+                let val = config[k];
+                if (val.includes(' ') && !val.startsWith('"')) {
+                    val = `"${val}"`;
+                }
+                updatedLines.push(`${k}=${val}`);
+            }
+        });
+
+        fs.writeFileSync(envPath, updatedLines.join('\n'), 'utf8');
+        res.json({ ok: true });
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};
+

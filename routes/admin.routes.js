@@ -16,6 +16,7 @@ router.get('/astrologer-performance/:astrologerId', adminController.getAstrologe
 router.get('/astrologers-performance', adminController.getAllAstrologersPerformance);
 router.get('/config', adminController.getConfig);
 router.post('/config', adminController.updateConfig);
-
+router.get('/smtp-config', adminController.getSmtpConfig);
+router.post('/smtp-config', adminController.updateSmtpConfig);
 
 module.exports = router;

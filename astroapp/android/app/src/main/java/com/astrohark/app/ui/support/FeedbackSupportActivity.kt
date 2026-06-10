@@ -73,24 +73,36 @@ fun FeedbackSupportScreen(onBack: () -> Unit) {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        Text("Type: ", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        RadioButton(
-                            selected = selectedTab == 0, 
-                            onClick = { selectedTab = 0 }, 
-                            colors = RadioButtonDefaults.colors(selectedColor = Color.Red)
-                        )
-                        Text("Contact Support", modifier = Modifier.clickable { selectedTab = 0 })
-                        Spacer(modifier = Modifier.width(16.dp))
-                        RadioButton(
-                            selected = selectedTab == 1, 
-                            onClick = { selectedTab = 1 }, 
-                            colors = RadioButtonDefaults.colors(selectedColor = Color.Red)
-                        )
-                        Text("Feedback", modifier = Modifier.clickable { selectedTab = 1 })
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { selectedTab = 0 }
+                        ) {
+                            RadioButton(
+                                selected = selectedTab == 0, 
+                                onClick = { selectedTab = 0 }, 
+                                colors = RadioButtonDefaults.colors(selectedColor = Color.Red)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Contact Support", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { selectedTab = 1 }
+                        ) {
+                            RadioButton(
+                                selected = selectedTab == 1, 
+                                onClick = { selectedTab = 1 }, 
+                                colors = RadioButtonDefaults.colors(selectedColor = Color.Red)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Feedback", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))

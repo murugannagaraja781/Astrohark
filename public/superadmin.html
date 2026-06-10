@@ -682,6 +682,50 @@
                 </div>
             </div>
 
+            <!-- Tab SMTP Configuration -->
+            <div id="admin-sect-smtp" class="admin-tab-section">
+                <h2 style="margin-bottom:20px; font-family: var(--font-heading); color: var(--primary);"><i class="fas fa-envelope"></i> SMTP / Email Configuration</h2>
+                <p style="color:var(--text-dim); margin-bottom:20px;">Configure your email sending credentials and destination address. <br><b>Note:</b> Changes are saved directly to the .env file.</p>
+                <div class="admin-card">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <label class="app-label">SMTP HOST</label>
+                            <input type="text" id="smtpHost" class="app-input" placeholder="e.g. smtp.gmail.com">
+                        </div>
+                        <div>
+                            <label class="app-label">SMTP PORT</label>
+                            <input type="number" id="smtpPort" class="app-input" placeholder="e.g. 587">
+                        </div>
+                        <div>
+                            <label class="app-label">SMTP SECURE (true/false)</label>
+                            <select id="smtpSecure" class="app-input" style="padding: 0 10px; height: 42px;">
+                                <option value="false">false (TLS - Port 587)</option>
+                                <option value="true">true (SSL - Port 465)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="app-label">SMTP USER (Email Address)</label>
+                            <input type="text" id="smtpUser" class="app-input" placeholder="e.g. info@astrohark.com">
+                        </div>
+                        <div>
+                            <label class="app-label">SMTP PASS (App Password)</label>
+                            <input type="password" id="smtpPass" class="app-input" placeholder="Your SMTP Password / App Password">
+                        </div>
+                        <div>
+                            <label class="app-label">EMAIL FROM (Sender Identity)</label>
+                            <input type="text" id="emailFrom" class="app-input" placeholder='e.g. "Astrohark Support" &lt;info@astrohark.com&gt;'>
+                        </div>
+                        <div>
+                            <label class="app-label">EMAIL TO (Feedback Destination Email)</label>
+                            <input type="text" id="emailTo" class="app-input" placeholder="e.g. info@astrohark.com">
+                        </div>
+                    </div>
+                    <div style="margin-top:30px; display:flex; gap:15px; border-top: 1px solid var(--border-soft); padding-top:20px;">
+                        <button class="cosmic-btn" style="width:200px;" onclick="saveSmtpConfig()"><i class="fas fa-save"></i> Save SMTP Config</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tab 12: Workflow (Lively System Health) -->
             <div id="admin-sect-workflow" class="admin-tab-section">
                 <h2 style="margin-bottom:20px; font-family: var(--font-heading); color: var(--primary);"><i class="fas fa-microchip"></i> System Workflow Health</h2>
@@ -1065,6 +1109,8 @@
                     class="fas fa-comment-alt"></i><span>Feedback</span></div>
             <div class="admin-nav-item" onclick="navAdmin('settings', event)"><i
                     class="fas fa-cog"></i><span>Settings</span></div>
+            <div class="admin-nav-item" onclick="navAdmin('smtp', event)"><i
+                    class="fas fa-envelope"></i><span>SMTP Config</span></div>
             <div class="admin-nav-item" onclick="navAdmin('workflow', event)"><i
                     class="fas fa-microchip" style="color:#10B981;"></i><span>Workflow</span></div>
             <div class="admin-nav-item" onclick="navAdmin('history', event)"><i
@@ -1284,6 +1330,7 @@
             if (id === 'notifications') loadFullNotifications();
             if (id === 'refunds') renderRefunds();
             if (id === 'settings') fetchConfig();
+            if (id === 'smtp') fetchSmtpConfig();
             if (id === 'services') fetchServices();
             if (id === 'rituals') fetchRituals();
             if (id === 'workflow') fetchWorkflowStatus();
@@ -2420,6 +2467,56 @@
 
                 if (res.ok) {
                     alert('Configuration updated successfully!');
+                } else {
+                    alert('Error: ' + res.error);
+                }
+            } catch (e) {
+                alert('Connection error');
+            }
+        };
+
+        // SMTP Config Logic
+        window.fetchSmtpConfig = async () => {
+            try {
+                const res = await fetch('/api/admin/smtp-config').then(r => r.json());
+                if (res.ok) {
+                    document.getElementById('smtpHost').value = res.config.SMTP_HOST || '';
+                    document.getElementById('smtpPort').value = res.config.SMTP_PORT || '587';
+                    document.getElementById('smtpSecure').value = String(res.config.SMTP_SECURE || 'false');
+                    document.getElementById('smtpUser').value = res.config.SMTP_USER || '';
+                    document.getElementById('smtpPass').value = res.config.SMTP_PASS || '';
+                    document.getElementById('emailFrom').value = res.config.EMAIL_FROM || '';
+                    document.getElementById('emailTo').value = res.config.EMAIL_TO || '';
+                } else {
+                    alert('Error loading SMTP Config: ' + res.error);
+                }
+            } catch (e) {
+                alert('Failed to connect to server for SMTP config');
+            }
+        };
+
+        window.saveSmtpConfig = async () => {
+            const config = {
+                SMTP_HOST: document.getElementById('smtpHost').value.trim(),
+                SMTP_PORT: document.getElementById('smtpPort').value.trim(),
+                SMTP_SECURE: document.getElementById('smtpSecure').value.trim(),
+                SMTP_USER: document.getElementById('smtpUser').value.trim(),
+                SMTP_PASS: document.getElementById('smtpPass').value.trim(),
+                EMAIL_FROM: document.getElementById('emailFrom').value.trim(),
+                EMAIL_TO: document.getElementById('emailTo').value.trim()
+            };
+
+            if (!confirm('Are you sure you want to update the SMTP Configuration?')) return;
+
+            try {
+                const res = await fetch('/api/admin/smtp-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ config })
+                }).then(r => r.json());
+
+                if (res.ok) {
+                    alert('SMTP Configuration updated successfully!');
                 } else {
                     alert('Error: ' + res.error);
                 }

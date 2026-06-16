@@ -2139,7 +2139,7 @@
         <!-- Premium Services Grid -->
         <div class="services-grid-container"
           style="margin-bottom: 25px; overflow-x: auto; -webkit-overflow-scrolling: touch;">
-          <div style="display: flex; gap: 12px; padding: 5px 0;">
+          <div class="services-flex-row" style="display: flex; gap: 12px; padding: 5px 0;">
             <div class="service-item-card" onclick="selectQuickService('chat')">
               <img src="https://cdn-icons-png.flaticon.com/512/134/134914.png" alt="Chat">
               <span>Chat with Astro</span>
@@ -2184,6 +2184,16 @@
         <style>
           .services-grid-container::-webkit-scrollbar {
             display: none;
+          }
+
+          .services-flex-row {
+            justify-content: flex-start;
+          }
+          @media (min-width: 930px) {
+            .services-flex-row {
+              justify-content: center;
+              width: 100%;
+            }
           }
 
           .service-item-card {

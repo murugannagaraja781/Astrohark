@@ -834,11 +834,13 @@ app.post('/api/admin/banners', upload.single('bannerImage'), async (req, res) =>
       finalImageUrl = 'uploads/' + req.file.filename;
     }
 
+    const parsedExpiryDate = expiryDate ? new Date(new Date(expiryDate).setHours(23, 59, 59, 999)) : null;
+
     if (id && id !== 'undefined') {
       const banner = await Banner.findByIdAndUpdate(id, {
         title, subtitle, ctaText, ctaButtonSize, order: parseInt(order || 0),
         offerPercentage: parseFloat(offerPercentage || 0),
-        expiryDate: expiryDate || null,
+        expiryDate: parsedExpiryDate,
         isActive: isActive === 'true' || isActive === true,
         imageUrl: finalImageUrl
       }, { returnDocument: 'after' });
@@ -848,7 +850,7 @@ app.post('/api/admin/banners', upload.single('bannerImage'), async (req, res) =>
       const banner = await Banner.create({
         title, subtitle, ctaText, ctaButtonSize, order: parseInt(order || 0),
         offerPercentage: parseFloat(offerPercentage || 0),
-        expiryDate: expiryDate || null,
+        expiryDate: parsedExpiryDate,
         isActive: isActive === 'true' || isActive === true,
         imageUrl: finalImageUrl
       });

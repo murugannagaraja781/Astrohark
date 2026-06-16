@@ -1713,23 +1713,6 @@ fun HomeTopBar(
                             contentScale = ContentScale.Fit
                         )
                     }
-
-                    // Bottom-Right Menu Icon Overlay
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(16.dp)
-                            .background(Color.White, CircleShape)
-                            .border(1.dp, Color(0xFFE0E0E0), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Menu,
-                            contentDescription = null,
-                            tint = Color.Black,
-                            modifier = Modifier.size(10.dp)
-                        )
-                    }
                 }
 
                 Text(
@@ -2865,12 +2848,25 @@ fun TopServicesSection(services: List<GridService>, isTamil: Boolean) {
         services
     }
 
+    val scrollState = rememberScrollState()
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 8.dp, end = 8.dp, top = 4.dp, bottom = 4.dp)
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+            .padding(
+                start = if (listToUse.size > 4) 8.dp else 7.dp,
+                end = if (listToUse.size > 4) 8.dp else 7.dp,
+                top = 4.dp,
+                bottom = 4.dp
+            )
+            .then(
+                if (listToUse.size > 4) Modifier.horizontalScroll(scrollState)
+                else Modifier
+            ),
+        horizontalArrangement = if (listToUse.size > 4) {
+            Arrangement.spacedBy(6.dp)
+        } else {
+            Arrangement.SpaceBetween
+        }
     ) {
         listToUse.forEach { service ->
             val displayName = if (isTamil && !service.titleTamil.isNullOrBlank()) {

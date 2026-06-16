@@ -365,7 +365,7 @@
                     </div>
 
                     <div style="margin-top:30px;">
-                        <button class="cosmic-btn" style="width:100%;" onclick="createNewAstrologer()"><i class="fas fa-user-check"></i> Create Astrologer Account</button>
+                        <button class="cosmic-btn" style="width:100%;" onclick="createNewAstrologer(event)"><i class="fas fa-user-check"></i> Create Astrologer Account</button>
                     </div>
                 </div>
             </div>
@@ -528,7 +528,7 @@
                         </div>
                     </div>
 
-                    <button class="cosmic-btn" style="width:100%;" onclick="saveBanner()"><i class="fas fa-save"></i> Save Banner</button>
+                    <button class="cosmic-btn" style="width:100%;" onclick="saveBanner(event)"><i class="fas fa-save"></i> Save Banner</button>
                 </div>
 
                 <div id="adminBannerList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:15px;">
@@ -1336,6 +1336,7 @@
             if (id === 'workflow') fetchWorkflowStatus();
             if (id === 'feedback') fetchFeedback();
             if (id === 'history') loadSessionsHistory();
+            if (id === 'slider') fetchBanners();
 
             document.querySelectorAll('.admin-nav-item').forEach(i => i.classList.remove('active'));
             if (ev) ev.currentTarget.classList.add('active');
@@ -1658,7 +1659,7 @@
             // Scroll to form
             document.getElementById('admin-sect-slider').querySelector('.admin-card').scrollIntoView({ behavior: 'smooth' });
         };
-        window.saveBanner = async () => {
+        window.saveBanner = async (event) => {
             const formData = new FormData();
             const id = document.getElementById('editBannerId')?.value;
             if (id) formData.append('id', id);
@@ -1679,10 +1680,12 @@
                 formData.append('bannerImage', fileInput.files[0]);
             }
 
-            const btn = event.target;
-            const oldText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            btn.disabled = true;
+            const btn = event ? (event.target || event.currentTarget) : document.querySelector('#admin-sect-slider .cosmic-btn');
+            const oldText = btn ? btn.innerHTML : 'Save Banner';
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                btn.disabled = true;
+            }
 
             try {
                 const res = await fetch('/api/admin/banners', {
@@ -1699,14 +1702,18 @@
                     document.getElementById('bannerImageUrl').value = '';
                     document.getElementById('bannerCta').value = '';
                     document.getElementById('bannerImageFile').value = '';
+                    const editIdInput = document.getElementById('editBannerId');
+                    if (editIdInput) editIdInput.remove();
                 } else {
                     alert('Error: ' + res.error);
                 }
             } catch (e) {
                 alert('Connection Error');
             } finally {
-                btn.innerHTML = oldText;
-                btn.disabled = false;
+                if (btn) {
+                    btn.innerHTML = oldText;
+                    btn.disabled = false;
+                }
             }
         };
         window.deleteBanner = async (id) => {
@@ -2074,7 +2081,7 @@
             }
         };
 
-        window.createNewAstrologer = () => {
+        window.createNewAstrologer = (event) => {
             const name = document.getElementById('addAstroName').value.trim();
             const phone = document.getElementById('addAstroPhone').value.trim();
             const email = document.getElementById('addAstroEmail').value.trim();
@@ -2092,10 +2099,12 @@
 
             if (!confirm(`Create new astrologer account for ${name} (${phone})?`)) return;
 
-            const btn = event.target.closest('button');
-            const oldText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
-            btn.disabled = true;
+            const btn = event ? (event.target || event.currentTarget).closest('button') : document.querySelector('#admin-sect-add-astro .cosmic-btn');
+            const oldText = btn ? btn.innerHTML : 'Create Astrologer Account';
+            if (btn) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+                btn.disabled = true;
+            }
 
             const payload = {
                 name, phone, email, image, price, experience, skills, profession,
@@ -2103,8 +2112,10 @@
             };
 
             socket.emit('admin-create-astrologer', payload, (res) => {
-                btn.innerHTML = oldText;
-                btn.disabled = false;
+                if (btn) {
+                    btn.innerHTML = oldText;
+                    btn.disabled = false;
+                }
 
                 if (res.ok) {
                     alert('Astrologer Created Successfully! They can now log in using their phone number.');

@@ -69,3 +69,37 @@ A clean rebuild was performed after adding the Super Admin profile settings tab 
 * **File Name:** `app-debug.apk`
 * **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
 * **Status:** Rebuild Successful
+
+---
+
+## [2026-06-10] - Debug Build (SMTP Config Menu Integration)
+
+A clean rebuild was performed containing the updated codebase after adding the SMTP configuration settings and menus to the Super Admin dashboard.
+
+* **Date & Time:** June 10, 2026 - 08:50:00 AM (IST)
+* **File Name:** `app-debug.apk`
+* **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
+* **Status:** Clean Rebuild Successful
+
+---
+
+## [2026-06-10] - Debug Build (Avatar Menu Icon Overlay Removal)
+
+A clean rebuild was performed after removing the small overlay menu (hamburger) icon from the top-left user avatar on the home screen.
+
+* **Date & Time:** June 10, 2026 - 09:14:00 AM (IST)
+* **File Name:** `app-debug.apk`
+* **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
+* **Status:** Clean Rebuild Successful
+
+---
+
+## [2026-06-15] - Debug Build (Service Cards Centering & Alignment Fix)
+
+A clean rebuild was performed after modifying the service cards (Free Horoscope, Daily Horoscope, Horoscope Match, Astro Academy) layout on the home screen. The container `Row` was modified to disable horizontal scrolling and apply `Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)` when there are 4 or fewer items, centering the cards perfectly and resolving the empty space on the right.
+
+* **Date & Time:** June 15, 2026 - 05:33:00 PM (IST)
+* **File Name:** `app-debug.apk`
+* **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
+* **Size:** 123,777,848 Bytes (~118.04 MB)
+* **Status:** Rebuild Successful

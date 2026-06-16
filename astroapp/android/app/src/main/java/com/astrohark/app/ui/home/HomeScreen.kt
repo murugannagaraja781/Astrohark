@@ -2940,7 +2940,7 @@ fun ServiceItem(name: String, icon: String, onClick: () -> Unit) {
                     AsyncImage(
                         model = getImageUrl(icon),
                         contentDescription = name,
-                        modifier = Modifier.fillMaxSize().padding(12.dp),
+                        modifier = Modifier.fillMaxSize().padding(6.dp),
                         contentScale = ContentScale.Fit,
                         error = painterResource(id = com.astrohark.app.R.drawable.ic_kundali_matching),
                         placeholder = painterResource(id = com.astrohark.app.R.drawable.ic_kundali_matching)
@@ -2956,7 +2956,7 @@ fun ServiceItem(name: String, icon: String, onClick: () -> Unit) {
                     Image(
                         painter = painterResource(id = localIconRes),
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier.fillMaxSize().padding(6.dp),
                         contentScale = ContentScale.Fit
                     )
                 }

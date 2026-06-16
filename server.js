@@ -192,12 +192,11 @@ app.get('/api/test-link', async (req, res) => {
 
 // Middleware to capture host for absolute image paths
 app.use((req, res, next) => {
-  if (!SERVER_URL) {
+  if (!process.env.SERVER_URL) {
     const host = req.get('x-forwarded-host') || req.get('host');
     const protocol = req.get('x-forwarded-proto') || req.protocol;
     if (host) {
       SERVER_URL = `${protocol}://${host}`;
-      console.log(`[Config] Automatically detected SERVER_URL: ${SERVER_URL}`);
     }
   }
   app.set('SERVER_URL', SERVER_URL);

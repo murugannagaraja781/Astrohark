@@ -61,7 +61,8 @@ exports.getAppConfig = async (req, res) => {
                 shareLink: process.env.PLAYSTORE_URL || (shareLinkRecord ? shareLinkRecord.value : "https://play.google.com/store/apps/details?id=com.astrohark.app"),
                 deepLinkPrefix: process.env.DEEP_LINK_PREFIX || "astrohark://referral/",
                 showBanner: process.env.SHOW_BANNER === 'true',
-                appBackgroundColor: process.env.APP_BG_COLOR || "#FEF9F3"
+                appBackgroundColor: process.env.APP_BG_COLOR || "#FEF9F3",
+                referralText: process.env.REFERRAL_TEXT || "Refer Your Friend & Earn Upto ₹5000"
             }
         });
     } catch (error) {

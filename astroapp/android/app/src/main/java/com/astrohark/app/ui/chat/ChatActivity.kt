@@ -170,32 +170,26 @@ class ChatActivity : ComponentActivity() {
                         },
                          onViewChart = {
                              if (clientBirthData != null) {
-                                 // Prevent duplicate chart open events
-                                 if (!chartOpened) {
-                                     // Send system message if astrologer
-                                     if (role == "astrologer" && toUserId != null && sessionId != null) {
-                                         val payload = org.json.JSONObject().apply {
-                                             put("messageId", java.util.UUID.randomUUID().toString())
-                                             put("sessionId", sessionId)
-                                             put("toUserId", toUserId)
-                                             put("content", org.json.JSONObject().apply {
-                                                 put("type", "system-chart-viewing")
-                                                 put("text", "chart_opened")
-                                             })
-                                         }
-                                         android.util.Log.e("CHART_DEBUG", "Sending chart-open payload: $payload")
-                                         viewModel.sendMessage(payload)
+                                 // Send system message if astrologer and first time
+                                 if (!chartOpened && role == "astrologer" && toUserId != null && sessionId != null) {
+                                     val payload = org.json.JSONObject().apply {
+                                         put("messageId", java.util.UUID.randomUUID().toString())
+                                         put("sessionId", sessionId)
+                                         put("toUserId", toUserId)
+                                         put("content", org.json.JSONObject().apply {
+                                             put("type", "system-chart-viewing")
+                                             put("text", "chart_opened")
+                                         })
                                      }
-                                     // Launch chart activity
-                                     val intent = Intent(this, com.astrohark.app.ui.chart.VipChartActivity::class.java).apply {
-                                         putExtra("birthData", clientBirthData.toString())
-                                     }
-                                     startActivity(intent)
+                                     android.util.Log.e("CHART_DEBUG", "Sending chart-open payload: $payload")
+                                     viewModel.sendMessage(payload)
                                      chartOpened = true
-                                 } else {
-                                     // Chart already opened – bring to front if needed
-                                     Toast.makeText(this, "Chart already opened", Toast.LENGTH_SHORT).show()
                                  }
+                                 // Launch chart activity
+                                 val intent = Intent(this, com.astrohark.app.ui.chart.VipChartActivity::class.java).apply {
+                                     putExtra("birthData", clientBirthData.toString())
+                                 }
+                                 startActivity(intent)
                              } else {
                                  Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
                              }

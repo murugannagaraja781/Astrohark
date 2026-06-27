@@ -95,7 +95,8 @@ fun BannerSection(
     banners: List<com.astrohark.app.data.model.Banner>,
     onBannerClick: (com.astrohark.app.data.model.Banner) -> Unit,
     onReferClick: () -> Unit,
-    onShareClick: () -> Unit
+    onShareClick: () -> Unit,
+    referralText: String = "Refer Your Friend & Earn Upto ₹5000"
 ) {
     // Total slides = 1 (Referral) + Dynamic Banners
     val totalSlides = banners.size + 1
@@ -155,7 +156,7 @@ fun BannerSection(
                              verticalArrangement = Arrangement.Center
                          ) {
                              Text(
-                                 text = "Refer Your Friend & Earn Upto ₹5000",
+                                 text = referralText,
                                  style = MaterialTheme.typography.titleSmall, // Reduced size
                                  fontWeight = FontWeight.Bold,
                                  color = Color.Black
@@ -424,9 +425,10 @@ fun HomeScreen(
     val tokenManager = remember { TokenManager(context) }
     val userSession by remember { mutableStateOf(tokenManager.getUserSession()) }
 
-    // Fetch App Config (Share Link, Banner Toggle, BG Color)
+    // Fetch App Config (Share Link, Banner Toggle, BG Color, Referral Text)
     var showBanner by remember { mutableStateOf(true) }
     var appBackgroundColor by remember { mutableStateOf(Color(0xFFFEF9F3)) }
+    var referralTextState by remember { mutableStateOf("Refer Your Friend & Earn Upto ₹5000") }
 
     LaunchedEffect(Unit) {
         try {
@@ -448,6 +450,9 @@ fun HomeScreen(
                         } catch (e: Exception) {
                             appBackgroundColor = Color(0xFFFEF9F3)
                         }
+                    }
+                    if (config.has("referralText")) {
+                        referralTextState = config.get("referralText").getAsString()
                     }
                 }
             }
@@ -818,6 +823,7 @@ fun HomeScreen(
                             selectedFilter = selectedFilter,
                             onAstroClick = { selectedLiveAstro = it },
                             onViewAllClick = { selectedTab = 1; selectedFilter = "All" },
+                            referralText = referralTextState,
                             onAction = { action ->
                                 if (action == "referral") {
                                     selectedTab = 4
@@ -991,6 +997,7 @@ fun LazyListScope.HomeTab(
     selectedFilter: String = "All",
     onAstroClick: (Astrologer) -> Unit,
     onViewAllClick: () -> Unit,
+    referralText: String = "Refer Your Friend & Earn Upto ₹5000",
     onAction: (String) -> Unit
 ) {
     // 1. Services Section (Top Icons - Horoscope, Match, etc.)
@@ -1004,7 +1011,8 @@ fun LazyListScope.HomeTab(
             banners = banners,
             onBannerClick = onBannerClick,
             onReferClick = { onAction("referral") },
-            onShareClick = { onAction("referral_share") }
+            onShareClick = { onAction("referral_share") },
+            referralText = referralText
         )
     }
 

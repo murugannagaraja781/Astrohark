@@ -103,3 +103,16 @@ A clean rebuild was performed after modifying the service cards (Free Horoscope,
 * **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk`
 * **Size:** 123,777,848 Bytes (~118.04 MB)
 * **Status:** Rebuild Successful
+
+---
+
+## [2026-06-21] - Release Build v18.0 (KP Chart Dialog in Call & Video Call UI)
+
+A clean rebuild was performed after adding the KP Chart dialog support to the astrologer call and video call screen. The `KpChartDialog` from the chat package is imported and loaded as a Compose overlay in `CallActivity.kt`. Standard Rasi Chart button icon has been replaced with the custom `R.drawable.ic_chart` drawable to match the chat activity controls. App version code was bumped to `18` and version name to `"18.0"`.
+
+* **Date & Time:** June 21, 2026 - 10:55 PM (IST)
+* **File Name:** `app-debug.apk`, `app-release.aab`
+* **File Path:** `astroapp/android/app/build/outputs/apk/debug/app-debug.apk` and `astroapp/android/app/build/outputs/bundle/release/app-release.aab`
+* **Size (APK):** 123,777,936 Bytes (~118.04 MB)
+* **Size (AAB):** 92,946,695 Bytes (~88.64 MB)
+* **Status:** Build and Packaging Successful

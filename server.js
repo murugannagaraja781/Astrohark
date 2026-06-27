@@ -2016,52 +2016,44 @@ io.on('connection', (socket) => {
       // 1. Check if Billing Started
       if (!session.actualBillingStart || now < session.actualBillingStart) continue;
 
-      // 2. Check Connections (BOTH must be connected)
-      const clientSocketId = userSockets.get(session.clientId);
-      const astroSocketId = userSockets.get(session.astrologerId);
+      // 2. Increment billable seconds as long as session is active.
+      // Transient socket disconnects during the call shouldn't freeze the billing timer.
+      session.elapsedBillableSeconds++;
 
-      const isClientConnected = !!clientSocketId;
-      const isAstroConnected = !!astroSocketId;
+      // DEBUG LOGGING
+      if (session.elapsedBillableSeconds % 30 === 0) {
+        console.log(`[${sessionId}] Tick: ${session.elapsedBillableSeconds}s, TotalDed: ${session.totalDeducted}`);
+      }
 
-      if (isClientConnected && isAstroConnected) {
-        session.elapsedBillableSeconds++;
+      // Phase 3: First Minute Check (at 60s exactly)
+      if (session.elapsedBillableSeconds === 60) {
+        console.log(`Session ${sessionId}: First 60s completed.`);
+        billingService.processBillingCharge(sessionId, 60, 1, 'first_60_full');
+      }
 
-        // DEBUG LOGGING - Throttle to every 10s or 1 minute in production?
-        // For now keep it but it adds up in logs.
-        if (session.elapsedBillableSeconds % 30 === 0) {
-          console.log(`[${sessionId}] Tick: ${session.elapsedBillableSeconds}s, TotalDed: ${session.totalDeducted}`);
+      // Phase 4: Check Slab Upgrade
+      if (session.pairMonthId) {
+        const totalSeconds = (session.initialPairSeconds || 0) + session.elapsedBillableSeconds;
+        const calculatedSlab = getSlabBySeconds(totalSeconds);
+        const effectiveSlab = Math.max(calculatedSlab, session.currentSlab || 0);
+
+        if (effectiveSlab > session.currentSlab) {
+          console.log(`Session ${sessionId}: Slab Upgraded ${session.currentSlab} -> ${effectiveSlab}`);
+          session.currentSlab = effectiveSlab;
+          PairMonth.updateOne({ _id: session.pairMonthId }, { currentSlab: effectiveSlab }).exec();
         }
+      }
 
-        // Phase 3: First Minute Check (at 60s exactly)
-        if (session.elapsedBillableSeconds === 60) {
-          console.log(`Session ${sessionId}: First 60s completed.`);
-          billingService.processBillingCharge(sessionId, 60, 1, 'first_60_full');
-        }
+      // Phase 5: Post-First-Minute Billing
+      if (session.elapsedBillableSeconds > 60) {
+        const eligibleSeconds = session.elapsedBillableSeconds - 60;
+        const eligibleMinutes = Math.floor(eligibleSeconds / 60);
+        const totalShouldBeBilled = 1 + eligibleMinutes;
 
-        // Phase 4: Check Slab Upgrade
-        if (session.pairMonthId) {
-          const totalSeconds = (session.initialPairSeconds || 0) + session.elapsedBillableSeconds;
-          const calculatedSlab = getSlabBySeconds(totalSeconds);
-          const effectiveSlab = Math.max(calculatedSlab, session.currentSlab || 0);
-
-          if (effectiveSlab > session.currentSlab) {
-            console.log(`Session ${sessionId}: Slab Upgraded ${session.currentSlab} -> ${effectiveSlab}`);
-            session.currentSlab = effectiveSlab;
-            PairMonth.updateOne({ _id: session.pairMonthId }, { currentSlab: effectiveSlab }).exec();
-          }
-        }
-
-        // Phase 5: Post-First-Minute Billing
-        if (session.elapsedBillableSeconds > 60) {
-          const eligibleSeconds = session.elapsedBillableSeconds - 60;
-          const eligibleMinutes = Math.floor(eligibleSeconds / 60);
-          const totalShouldBeBilled = 1 + eligibleMinutes;
-
-          if (totalShouldBeBilled > session.lastBilledMinute) {
-            console.log(`Session ${sessionId}: Minute ${totalShouldBeBilled} reached.`);
-            billingService.processBillingCharge(sessionId, 60, totalShouldBeBilled, 'slab');
-            session.lastBilledMinute = totalShouldBeBilled;
-          }
+        if (totalShouldBeBilled > session.lastBilledMinute) {
+          console.log(`Session ${sessionId}: Minute ${totalShouldBeBilled} reached.`);
+          billingService.processBillingCharge(sessionId, 60, totalShouldBeBilled, 'slab');
+          session.lastBilledMinute = totalShouldBeBilled;
         }
       }
     }

@@ -49,6 +49,8 @@ import com.astrohark.app.data.model.AuthResponse
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.ui.theme.AstroDimens
 import com.astrohark.app.ui.common.ModernSummaryDialog
+import com.astrohark.app.ui.chat.KpChartDialog
+import com.astrohark.app.R
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
@@ -1483,6 +1485,7 @@ fun CallScreen(
 ) {
     val colors = com.astrohark.app.ui.theme.CosmicAppTheme.colors
     val context = LocalContext.current
+    var showKpChartDialog by remember { mutableStateOf(false) }
     
     // Modern Summary Overlay
     if (summary != null) {
@@ -1498,6 +1501,13 @@ fun CallScreen(
 
     BackHandler {
         Toast.makeText(context, "Call irugum pothu back button vela seiyathu. Mudika 'End Call' azhuthavum", Toast.LENGTH_LONG).show()
+    }
+
+    if (showKpChartDialog && clientBirthData != null) {
+        KpChartDialog(
+            birthData = clientBirthData,
+            onDismiss = { showKpChartDialog = false }
+        )
     }
 
     Box(
@@ -1674,8 +1684,19 @@ fun CallScreen(
                     // Left Actions (Astrologer only)
                     if (role == "astrologer") {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            ControlBtnItem(onClick = onShowRasi, icon = Icons.Default.GridView, label = "Chart", active = true)
-                            
+                            ControlBtnItem(onClick = onShowRasi, icon = R.drawable.ic_chart, label = "Chart", active = true)
+                            ControlBtnItem(
+                                onClick = {
+                                    if (clientBirthData != null) {
+                                        showKpChartDialog = true
+                                    } else {
+                                        Toast.makeText(context, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                icon = Icons.Default.GridView,
+                                label = "KP Chart",
+                                active = showKpChartDialog
+                            )
                             val hasPartner = clientBirthData?.has("partnerData") == true || clientBirthData?.has("partner") == true
                             ControlBtnItem(
                                 onClick = onShowMatch, 

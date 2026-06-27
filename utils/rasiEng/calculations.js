@@ -204,6 +204,9 @@ function getPositionString(longitude) {
  * Calculate Navamsa sign for a longitude
  */
 function getNavamsaSign(longitude) {
+    if (longitude === undefined || longitude === null || isNaN(longitude)) {
+        return "Unknown";
+    }
     const signs = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
     const navamsaLon = (longitude * 9) % 360;
     const idx = Math.floor(navamsaLon / 30);

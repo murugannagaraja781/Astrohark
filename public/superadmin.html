@@ -877,6 +877,8 @@
                             </tbody>
                         </table>
                     </div>
+                    <!-- Pagination Container -->
+                    <div id="adminHistoryPagination" style="padding: 15px; border-top: 1px solid var(--border-soft); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.01);"></div>
                 </div>
             </div>
 
@@ -2446,17 +2448,58 @@
                 const res = await fetch('/api/admin/config').then(r => r.json());
                 if (res.ok) {
                     const keys = Object.keys(res.config);
-                    container.innerHTML = keys.map(key => `
-                        <div>
-                            <label class="app-label" style="font-size:0.75rem; color:var(--primary);">${key.replace(/_/g, ' ')}</label>
-                            <input type="text" class="app-input env-input" data-key="${key}" value="${res.config[key]}" placeholder="${key}">
-                        </div>
-                    `).join('');
+                    container.innerHTML = keys.map(key => {
+                        if (key === 'SHARE_BANNER_URL') {
+                            return `
+                                <div>
+                                    <label class="app-label" style="font-size:0.75rem; color:var(--primary);">${key.replace(/_/g, ' ')}</label>
+                                    <div style="display:flex; gap:10px;">
+                                        <input type="text" class="app-input env-input" id="env-SHARE_BANNER_URL" data-key="${key}" value="${res.config[key] || ''}" placeholder="${key}" style="flex:1;">
+                                        <input type="file" id="file-SHARE_BANNER_URL" style="display:none;" onchange="uploadEnvFile('SHARE_BANNER_URL')">
+                                        <button class="btn-admin" onclick="document.getElementById('file-SHARE_BANNER_URL').click(); event.preventDefault();"><i class="fas fa-upload"></i></button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        return `
+                            <div>
+                                <label class="app-label" style="font-size:0.75rem; color:var(--primary);">${key.replace(/_/g, ' ')}</label>
+                                <input type="text" class="app-input env-input" data-key="${key}" value="${res.config[key]}" placeholder="${key}">
+                            </div>
+                        `;
+                    }).join('');
                 } else {
                     container.innerHTML = `<div style="color:#EF4444; padding:20px;">Error: ${res.error}</div>`;
                 }
             } catch (e) {
                 container.innerHTML = `<div style="color:#EF4444; padding:20px;">Failed to connect to server</div>`;
+            }
+        };
+
+        window.uploadEnvFile = async (key) => {
+            const fileInput = document.getElementById('file-' + key);
+            const inputField = document.getElementById('env-' + key);
+            if (!fileInput.files || fileInput.files.length === 0) return;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                const res = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                }).then(r => r.json());
+
+                if (res.ok) {
+                    let relativeUrl = res.url;
+                    if (relativeUrl.startsWith('/')) relativeUrl = relativeUrl.substring(1);
+                    inputField.value = relativeUrl;
+                    alert('Image uploaded! Click "Save All Changes" to persist to config.');
+                } else {
+                    alert('Upload failed: ' + (res.error || 'Unknown error'));
+                }
+            } catch (e) {
+                alert('Upload connection error');
             }
         };
 
@@ -2746,22 +2789,43 @@
 
         let adminSessionsCache = [];
         let top3AstrologersCache = [];
+        let adminHistoryPage = 1;
+        let adminHistoryLimit = 5;
+        let adminHistoryTotalPages = 1;
 
-        window.loadSessionsHistory = () => {
+        window.loadSessionsHistory = (page = 1) => {
+            adminHistoryPage = page;
             const tableBody = document.getElementById('sessionsHistoryTableBody');
             const topList = document.getElementById('topAstrologersHistoryList');
             tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:30px;"><div class="loader"></div></td></tr>';
-            topList.innerHTML = '<div class="loader"></div>';
+            
+            if (page === 1) {
+                topList.innerHTML = '<div class="loader"></div>';
+            }
 
-            socket.emit('admin-get-sessions-history', (res) => {
+            const searchVal = document.getElementById('adminHistorySearch').value;
+            const typeFilter = document.getElementById('adminHistoryTypeFilter').value;
+
+            socket.emit('admin-get-sessions-history', {
+                page: adminHistoryPage,
+                limit: adminHistoryLimit,
+                search: searchVal,
+                type: typeFilter
+            }, (res) => {
                 if (res.ok) {
                     adminSessionsCache = res.sessions || [];
-                    top3AstrologersCache = res.top3AstroIds || [];
+                    top3AstrologersCache = res.topAstrologers || [];
+                    adminHistoryTotalPages = res.totalPages || 1;
                     renderHistory();
-                    renderTopAstrologers();
+                    if (page === 1) {
+                        renderTopAstrologers();
+                    }
+                    renderPagination();
                 } else {
                     tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#EF4444; padding:20px;">Error: ${res.error || 'Failed to load'}</td></tr>`;
-                    topList.innerHTML = `<div style="color:#EF4444; padding:10px;">Error: ${res.error || 'Failed to load'}</div>`;
+                    if (page === 1) {
+                        topList.innerHTML = `<div style="color:#EF4444; padding:10px;">Error: ${res.error || 'Failed to load'}</div>`;
+                    }
                 }
             });
         };
@@ -2780,15 +2844,7 @@
 
         function renderHistory() {
             const tableBody = document.getElementById('sessionsHistoryTableBody');
-            const searchVal = document.getElementById('adminHistorySearch').value.toLowerCase();
-            const typeFilter = document.getElementById('adminHistoryTypeFilter').value;
-
-            const filtered = adminSessionsCache.filter(s => {
-                const matchesSearch = s.clientName.toLowerCase().includes(searchVal) || 
-                                      s.astrologerName.toLowerCase().includes(searchVal);
-                const matchesType = typeFilter === 'all' || (s.type && s.type.toLowerCase() === typeFilter);
-                return matchesSearch && matchesType;
-            });
+            const filtered = adminSessionsCache;
 
             if (filtered.length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--text-dim);">No matching history logs found</td></tr>';
@@ -2797,10 +2853,9 @@
 
             tableBody.innerHTML = filtered.map(s => {
                 const dateStr = s.startTime ? new Date(s.startTime).toLocaleString() : (s.actualBillingStart ? new Date(s.actualBillingStart).toLocaleString() : 'N/A');
-                const isTopAstro = top3AstrologersCache.includes(s.astrologerId || s.toUserId);
+                const isTopAstro = (top3AstrologersCache.map(x => x.astrologerId) || []).includes(s.astrologerId || s.toUserId);
                 
-                const astroId = s.astrologerId || s.toUserId;
-                const totalAstroSessions = adminSessionsCache.filter(x => (x.astrologerId || x.toUserId) === astroId).length;
+                const totalAstroSessions = s.totalAstroSessions || 0;
                 const hasMoreHistory = totalAstroSessions >= 5;
 
                 let badge = '';
@@ -2826,23 +2881,7 @@
 
         function renderTopAstrologers() {
             const topList = document.getElementById('topAstrologersHistoryList');
-            const stats = {};
-            adminSessionsCache.forEach(s => {
-                const aId = s.astrologerId || s.toUserId;
-                if (!aId) return;
-                if (!stats[aId]) {
-                    stats[aId] = {
-                        astrologerId: aId,
-                        name: s.astrologerName,
-                        sessions: 0,
-                        duration: 0
-                    };
-                }
-                stats[aId].sessions++;
-                stats[aId].duration += (s.duration || 0);
-            });
-
-            const sorted = Object.values(stats).sort((a, b) => b.sessions - a.sessions).slice(0, 3);
+            const sorted = top3AstrologersCache || [];
 
             if (sorted.length === 0) {
                 topList.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-dim);">No top astrologers data available.</div>';
@@ -2872,8 +2911,52 @@
             `).join('');
         }
 
+        function renderPagination() {
+            const container = document.getElementById('adminHistoryPagination');
+            if (!container) return;
+
+            if (adminHistoryTotalPages <= 1) {
+                container.style.display = 'none';
+                return;
+            }
+            container.style.display = 'flex';
+
+            let html = `
+                <div style="color: var(--text-dim); font-size: 0.85rem;">
+                    Page <b>${adminHistoryPage}</b> of <b>${adminHistoryTotalPages}</b>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-admin" style="padding: 6px 12px; height: auto;" ${adminHistoryPage === 1 ? 'disabled' : ''} onclick="loadSessionsHistory(${adminHistoryPage - 1})">
+                        <i class="fas fa-chevron-left"></i> Prev
+                    </button>
+            `;
+
+            const maxPageButtons = 5;
+            let startPage = Math.max(1, adminHistoryPage - 2);
+            let endPage = Math.min(adminHistoryTotalPages, startPage + maxPageButtons - 1);
+            if (endPage - startPage + 1 < maxPageButtons) {
+                startPage = Math.max(1, endPage - maxPageButtons + 1);
+            }
+
+            for (let p = startPage; p <= endPage; p++) {
+                html += `
+                    <button class="btn-admin" style="padding: 6px 12px; height: auto; ${p === adminHistoryPage ? 'background: var(--primary); color: #000; font-weight: bold;' : ''}" onclick="loadSessionsHistory(${p})">
+                        ${p}
+                    </button>
+                `;
+            }
+
+            html += `
+                    <button class="btn-admin" style="padding: 6px 12px; height: auto;" ${adminHistoryPage === adminHistoryTotalPages ? 'disabled' : ''} onclick="loadSessionsHistory(${adminHistoryPage + 1})">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
         window.searchHistory = () => {
-            renderHistory();
+            loadSessionsHistory(1);
         };
 
         init();

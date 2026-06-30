@@ -435,19 +435,49 @@ app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Missing userId or image' });
     }
 
-    const imageUrl = 'uploads/' + req.file.filename;
-    // Use a safe case-insensitive lookup
+    // Use a safe case-insensitive lookup to find the user first
     const escapedId = userId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const user = await User.findOneAndUpdate(
-      { userId: { $regex: new RegExp("^" + escapedId + "$", "i") } },
-      { $set: { image: imageUrl } },
-      { returnDocument: 'after' }
-    );
+    const user = await User.findOne({ userId: { $regex: new RegExp("^" + escapedId + "$", "i") } });
 
     if (!user) {
       console.warn(`[Upload] Failed: User ${userId} not found`);
+      // Clean up uploaded file if user not found
+      if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
       return res.status(404).json({ ok: false, error: 'User not found' });
     }
+
+    // Perform image compression if the user is an astrologer
+    if (user.role === 'astrologer') {
+      try {
+        const sharp = require('sharp');
+        const originalPath = req.file.path;
+        console.log(`[Compression] Compressing profile image for astrologer ${userId}: ${originalPath}`);
+        const tempPath = originalPath + '.tmp';
+        
+        // Rename original to temp
+        fs.renameSync(originalPath, tempPath);
+        
+        // Resize to max 800x800 and compress with 80% JPEG quality
+        await sharp(tempPath)
+          .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
+          .jpeg({ quality: 80 })
+          .toFile(originalPath);
+          
+        // Remove temp file
+        fs.unlinkSync(tempPath);
+        console.log(`[Compression] Image compressed successfully for astrologer ${userId}`);
+      } catch (compressErr) {
+        console.error(`[Compression] Error compressing image: ${compressErr.message}`);
+      }
+    }
+
+    const imageUrl = 'uploads/' + req.file.filename;
+    
+    // Save image path to the database
+    user.image = imageUrl;
+    await user.save();
 
     // Broadcast if astrologer to update client list
     if (user.role === 'astrologer') {
@@ -2475,57 +2505,184 @@ io.on('connection', (socket) => {
   });
 
   // --- Admin: Get Full Sessions History ---
-  socket.on('admin-get-sessions-history', async (cb) => {
-    if (!await checkAdmin(socket.id)) return cb({ ok: false, error: 'Unauthorized' });
+  socket.on('admin-get-sessions-history', async (options, cb) => {
+    let callback = cb;
+    let opts = options;
+    if (typeof options === 'function') {
+      callback = options;
+      opts = {};
+    }
+    if (!callback || typeof callback !== 'function') return;
+
+    if (!await checkAdmin(socket.id)) return callback({ ok: false, error: 'Unauthorized' });
     try {
-      const sessions = await Session.find({ status: 'ended' }).sort({ startTime: -1, sessionEndAt: -1 }).lean();
+      const page = parseInt(opts.page) || 1;
+      const limit = parseInt(opts.limit) || 5;
+      const search = opts.search || '';
+      const type = opts.type || 'all';
+
+      // Build aggregation pipeline
+      const pipeline = [
+        { $match: { status: 'ended' } }
+      ];
+
+      if (type && type !== 'all') {
+        pipeline.push({ $match: { type: new RegExp(`^${type}$`, 'i') } });
+      }
+
+      pipeline.push({
+        $addFields: {
+          searchClientId: { $ifNull: ['$clientId', '$fromUserId'] },
+          searchAstroId: { $ifNull: ['$astrologerId', '$toUserId'] }
+        }
+      });
+
+      pipeline.push({
+        $lookup: {
+          from: 'users',
+          localField: 'searchClientId',
+          foreignField: 'userId',
+          as: 'clientDoc'
+        }
+      });
+
+      pipeline.push({
+        $lookup: {
+          from: 'users',
+          localField: 'searchAstroId',
+          foreignField: 'userId',
+          as: 'astroDoc'
+        }
+      });
+
+      pipeline.push({
+        $project: {
+          sessionId: 1,
+          clientId: 1,
+          astrologerId: 1,
+          fromUserId: 1,
+          toUserId: 1,
+          type: 1,
+          startTime: 1,
+          endTime: 1,
+          duration: 1,
+          totalEarned: 1,
+          totalCharged: 1,
+          actualBillingStart: 1,
+          sessionEndAt: 1,
+          clientName: { $ifNull: [ { $arrayElemAt: ['$clientDoc.name', 0] }, 'Unknown Client' ] },
+          astrologerName: { $ifNull: [ { $arrayElemAt: ['$astroDoc.name', 0] }, 'Unknown Astrologer' ] }
+        }
+      });
+
+      if (search) {
+        const searchRegex = new RegExp(search, 'i');
+        pipeline.push({
+          $match: {
+            $or: [
+              { clientName: searchRegex },
+              { astrologerName: searchRegex }
+            ]
+          }
+        });
+      }
+
+      // Calculate totals, matching records, and top astrologers in parallel using Mongo aggregation
+      const totalCountPipeline = [...pipeline, { $count: 'total' }];
       
-      const populated = await Promise.all(sessions.map(async (s) => {
-        const cId = s.clientId || s.fromUserId;
-        const aId = s.astrologerId || s.toUserId;
-        const [client, astro] = await Promise.all([
-          User.findOne({ userId: cId }).select('name').lean(),
-          User.findOne({ userId: aId }).select('name').lean()
-        ]);
-        
+      const dataPipeline = [
+        ...pipeline,
+        { $sort: { startTime: -1, sessionEndAt: -1 } },
+        { $skip: (page - 1) * limit },
+        { $limit: limit }
+      ];
+
+      const top3AstroPipeline = [
+        { $match: { status: 'ended' } },
+        {
+          $group: {
+            _id: { $ifNull: ['$astrologerId', '$toUserId'] },
+            sessions: { $sum: 1 },
+            durationSum: { $sum: { $ifNull: ['$duration', 0] } }
+          }
+        },
+        { $sort: { sessions: -1 } },
+        { $limit: 3 },
+        {
+          $lookup: {
+            from: 'users',
+            localField: '_id',
+            foreignField: 'userId',
+            as: 'userDoc'
+          }
+        },
+        {
+          $project: {
+            astrologerId: '$_id',
+            name: { $ifNull: [ { $arrayElemAt: ['$userDoc.name', 0] }, 'Unknown Astrologer' ] },
+            sessions: 1,
+            duration: '$durationSum'
+          }
+        }
+      ];
+
+      const [countResult, dataResult, topAstrologers] = await Promise.all([
+        Session.aggregate(totalCountPipeline),
+        Session.aggregate(dataPipeline),
+        Session.aggregate(top3AstroPipeline)
+      ]);
+
+      const total = countResult[0] ? countResult[0].total : 0;
+      const top3AstroIds = topAstrologers.map(r => r.astrologerId).filter(Boolean);
+
+      // Populate calculated durations if missing
+      const sessions = dataResult.map(s => {
         let calculatedDuration = s.duration || 0;
         if (!calculatedDuration && s.startTime && s.endTime) {
           calculatedDuration = Math.round((s.endTime - s.startTime) / 1000);
         } else if (!calculatedDuration && s.actualBillingStart && s.sessionEndAt) {
           calculatedDuration = Math.round((s.sessionEndAt - s.actualBillingStart) / 1000);
         }
-        
-        return {
-          ...s,
-          clientName: client ? client.name : 'Unknown Client',
-          astrologerName: astro ? astro.name : 'Unknown Astrologer',
-          duration: calculatedDuration
-        };
-      }));
-
-      const astroStats = {};
-      populated.forEach(s => {
-        const aId = s.astrologerId || s.toUserId;
-        if (!aId) return;
-        if (!astroStats[aId]) {
-          astroStats[aId] = {
-            astrologerId: aId,
-            astrologerName: s.astrologerName,
-            sessionCount: 0,
-            totalDuration: 0
-          };
-        }
-        astroStats[aId].sessionCount++;
-        astroStats[aId].totalDuration += (s.duration || 0);
+        return { ...s, duration: calculatedDuration };
       });
 
-      const sortedAstros = Object.values(astroStats).sort((a, b) => b.sessionCount - a.sessionCount);
-      const top3AstroIds = sortedAstros.slice(0, 3).map(a => a.astrologerId);
+      // Fetch astrologer total sessions count to decide Active badges on the client
+      const astroIds = sessions.map(s => s.astrologerId || s.toUserId).filter(Boolean);
+      const astroSessionCounts = await Session.aggregate([
+        { $match: { status: 'ended', $or: [ { astrologerId: { $in: astroIds } }, { toUserId: { $in: astroIds } } ] } },
+        {
+          $group: {
+            _id: { $ifNull: ['$astrologerId', '$toUserId'] },
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+      const astroCountsMap = {};
+      astroSessionCounts.forEach(c => {
+        if (c._id) astroCountsMap[c._id] = c.count;
+      });
 
-      cb({ ok: true, sessions: populated, top3AstroIds });
+      const populatedSessions = sessions.map(s => {
+        const aId = s.astrologerId || s.toUserId;
+        return {
+          ...s,
+          totalAstroSessions: astroCountsMap[aId] || 0
+        };
+      });
+
+      callback({
+        ok: true,
+        sessions: populatedSessions,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        topAstrologers,
+        top3AstroIds
+      });
     } catch (e) {
       console.error('[AdminHistory] Error:', e);
-      cb({ ok: false, error: e.message });
+      callback({ ok: false, error: e.message });
     }
   });
 

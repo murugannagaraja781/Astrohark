@@ -96,7 +96,8 @@ fun BannerSection(
     onBannerClick: (com.astrohark.app.data.model.Banner) -> Unit,
     onReferClick: () -> Unit,
     onShareClick: () -> Unit,
-    referralText: String = "Refer Your Friend & Earn Upto ₹5000"
+    referralText: String = "Refer Your Friend & Earn Upto ₹5000",
+    shareBannerUrl: String = ""
 ) {
     // Total slides = 1 (Referral) + Dynamic Banners
     val totalSlides = banners.size + 1
@@ -147,32 +148,48 @@ fun BannerSection(
                          .clickable { onReferClick() }
                  ) {
                      Box(modifier = Modifier.fillMaxSize()) {
-                         // Content Side
-                         Column(
-                             modifier = Modifier
-                                 .fillMaxHeight()
-                                 .fillMaxWidth(0.65f)
-                                 .padding(AstroDimens.Large),
-                             verticalArrangement = Arrangement.Center
-                         ) {
-                             Text(
-                                 text = referralText,
-                                 style = MaterialTheme.typography.titleSmall, // Reduced size
-                                 fontWeight = FontWeight.Bold,
-                                 color = Color.Black
+                         if (!shareBannerUrl.isNullOrEmpty()) {
+                             AsyncImage(
+                                 model = getImageUrl(shareBannerUrl),
+                                 contentDescription = "Share Banner",
+                                 contentScale = ContentScale.Crop,
+                                 modifier = Modifier.fillMaxSize()
                              )
-                             Spacer(modifier = Modifier.height(6.dp)) // Reduced spacer
-                             Surface(
-                                 shape = RoundedCornerShape(50),
-                                 color = Color(0xFFFF5252),
-                                 modifier = Modifier.height(20.dp) // Reduced height
+                         } else {
+                             // Content Side
+                             Column(
+                                 modifier = Modifier
+                                     .fillMaxHeight()
+                                     .fillMaxWidth(0.65f)
+                                     .padding(AstroDimens.Large),
+                                 verticalArrangement = Arrangement.Center
                              ) {
-                                 Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp)) {
-                                     Text("REFER & EARN", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.Black) // Reduced text size
+                                 Text(
+                                     text = referralText,
+                                     style = MaterialTheme.typography.titleSmall, // Reduced size
+                                     fontWeight = FontWeight.Bold,
+                                     color = Color.Black
+                                 )
+                                 Spacer(modifier = Modifier.height(6.dp)) // Reduced spacer
+                                 Surface(
+                                     shape = RoundedCornerShape(50),
+                                     color = Color(0xFFFF5252),
+                                     modifier = Modifier.height(20.dp) // Reduced height
+                                 ) {
+                                     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 10.dp)) {
+                                         Text("REFER & EARN", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.Black) // Reduced text size
+                                     }
                                  }
+                                 Spacer(modifier = Modifier.height(4.dp)) // Reduced spacer
                              }
-                             Spacer(modifier = Modifier.height(4.dp)) // Reduced spacer
 
+                             // Decoration
+                             Image(
+                                 painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
+                                 contentDescription = null,
+                                 modifier = Modifier.align(Alignment.CenterEnd).size(82.dp).padding(end = 10.dp), // Reduced size by 25% (from 110dp to 82dp)
+                                 alpha = 0.8f
+                             )
                          }
 
                          // Share Icon (Top-right)
@@ -193,14 +210,6 @@ fun BannerSection(
                                  modifier = Modifier.size(16.dp)
                              )
                          }
-
-                         // Decoration
-                         Image(
-                             painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
-                             contentDescription = null,
-                             modifier = Modifier.align(Alignment.CenterEnd).size(82.dp).padding(end = 10.dp), // Reduced size by 25% (from 110dp to 82dp)
-                             alpha = 0.8f
-                         )
                      }
                  }
              } else {
@@ -423,12 +432,11 @@ fun HomeScreen(
     var isHistoryLoading by remember { mutableStateOf(false) }
 
     val tokenManager = remember { TokenManager(context) }
-    val userSession by remember { mutableStateOf(tokenManager.getUserSession()) }
-
-    // Fetch App Config (Share Link, Banner Toggle, BG Color, Referral Text)
+    val userSession by remember { mutableStateOf(tokenManager.getUserSession()) }    // Fetch App Config (Share Link, Banner Toggle, BG Color, Referral Text)
     var showBanner by remember { mutableStateOf(true) }
     var appBackgroundColor by remember { mutableStateOf(Color(0xFFFEF9F3)) }
     var referralTextState by remember { mutableStateOf("Refer Your Friend & Earn Upto ₹5000") }
+    var shareBannerUrl by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         try {
@@ -453,6 +461,9 @@ fun HomeScreen(
                     }
                     if (config.has("referralText")) {
                         referralTextState = config.get("referralText").getAsString()
+                    }
+                    if (config.has("shareBannerUrl")) {
+                        shareBannerUrl = config.get("shareBannerUrl").getAsString()
                     }
                 }
             }
@@ -1012,7 +1023,8 @@ fun LazyListScope.HomeTab(
             onBannerClick = onBannerClick,
             onReferClick = { onAction("referral") },
             onShareClick = { onAction("referral_share") },
-            referralText = referralText
+            referralText = referralTextState,
+            shareBannerUrl = shareBannerUrl
         )
     }
 

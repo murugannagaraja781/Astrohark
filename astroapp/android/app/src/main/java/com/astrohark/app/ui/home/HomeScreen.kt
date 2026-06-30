@@ -835,6 +835,7 @@ fun HomeScreen(
                             onAstroClick = { selectedLiveAstro = it },
                             onViewAllClick = { selectedTab = 1; selectedFilter = "All" },
                             referralText = referralTextState,
+                            shareBannerUrl = shareBannerUrl,
                             onAction = { action ->
                                 if (action == "referral") {
                                     selectedTab = 4
@@ -1009,6 +1010,7 @@ fun LazyListScope.HomeTab(
     onAstroClick: (Astrologer) -> Unit,
     onViewAllClick: () -> Unit,
     referralText: String = "Refer Your Friend & Earn Upto ₹5000",
+    shareBannerUrl: String = "",
     onAction: (String) -> Unit
 ) {
     // 1. Services Section (Top Icons - Horoscope, Match, etc.)
@@ -1023,7 +1025,7 @@ fun LazyListScope.HomeTab(
             onBannerClick = onBannerClick,
             onReferClick = { onAction("referral") },
             onShareClick = { onAction("referral_share") },
-            referralText = referralTextState,
+            referralText = referralText,
             shareBannerUrl = shareBannerUrl
         )
     }

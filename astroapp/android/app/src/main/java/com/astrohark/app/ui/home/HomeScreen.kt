@@ -1127,8 +1127,8 @@ fun LiveAstrologersSection(
 fun LiveAstroCarouselItem(astro: Astrologer, onClick: () -> Unit) {
     Card(
         modifier = Modifier
-            .width(135.dp)
-            .height(185.dp)
+            .width(115.dp)
+            .height(140.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -2062,17 +2062,17 @@ fun AstrologerCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.width(86.dp)
                 ) {
-                    Box(modifier = Modifier.size(72.dp)) {
+                    Box(modifier = Modifier.size(width = 72.dp, height = 60.dp)) {
                         AsyncImage(
                             model = getImageUrl(astro.image),
                             contentDescription = astro.name,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(CircleShape)
+                                .clip(RoundedCornerShape(30.dp))
                                 .border(
                                     if (isPandit) 2.dp else 1.dp,
                                     if (isPandit) Color(0xFFFFD700) else Color(0xFFF0F0F0),
-                                    CircleShape
+                                    RoundedCornerShape(30.dp)
                                 ),
                             contentScale = ContentScale.Crop,
                             error = painterResource(id = com.astrohark.app.R.drawable.ic_person_placeholder)
@@ -2953,7 +2953,7 @@ fun ServiceItem(name: String, icon: String, onClick: () -> Unit) {
         Card(
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            border = BorderStroke(1.dp, Color(0xFFF0F0F0)),
+            border = null, // Removed border as requested
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             modifier = Modifier.size(64.dp)
         ) {

@@ -1919,15 +1919,27 @@
         async function uploadProfileImage(input) {
             const file = input.files[0];
             if (!file) return;
+            
+            const maxSizeMB = 50;
+            if (file.size > maxSizeMB * 1024 * 1024) {
+                alert(`File size is too large! Maximum allowed size is ${maxSizeMB}MB. Your file is ${(file.size / (1024*1024)).toFixed(2)}MB.`);
+                return;
+            }
+
             const formData = new FormData();
             formData.append('file', file);
             try {
-                const res = await fetch('/upload', { method: 'POST', body: formData }).then(r => r.json());
-                if (res.ok) {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                if (response.status === 413) {
+                    alert(`Upload failed: File is too large for the server (Error 413). Max limit is ${maxSizeMB}MB.`);
+                    return;
+                }
+                const res = await response.json();
+                if (response.ok && res.ok) {
                     document.getElementById('editImage').value = res.url;
                     alert('Image Uploaded');
-                } else alert('Upload failed');
-            } catch (e) { alert('Upload error'); }
+                } else alert('Upload failed: ' + (res.error || 'Unknown error'));
+            } catch (e) { alert('Upload error or File too large.'); }
         }
 
         window.filterWithdrawals = (status, btn) => {
@@ -2244,27 +2256,42 @@
         };
 
         window.uploadAvatar = async (input) => {
-            if (!input.files[0]) return;
-            const formData = new FormData();
-            formData.append('file', input.files[0]);
-
+            const file = input.files[0];
+            if (!file) return;
+            
             const btn = input.nextElementSibling;
             const oldText = btn.textContent;
+            
+            const maxSizeMB = 50;
+            if (file.size > maxSizeMB * 1024 * 1024) {
+                alert(`File size is too large! Maximum allowed size is ${maxSizeMB}MB. Your file is ${(file.size / (1024*1024)).toFixed(2)}MB.`);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
             btn.textContent = 'Uploading...';
 
             try {
-                const res = await fetch('/upload', { method: 'POST', body: formData }).then(r => r.json());
-                if (res.ok) {
+                const response = await fetch('/upload', { method: 'POST', body: formData });
+                if (response.status === 413) {
+                    alert(`Upload failed: File is too large for the server (Error 413). Max limit is ${maxSizeMB}MB.`);
+                    btn.textContent = oldText;
+                    return;
+                }
+                const res = await response.json();
+                if (response.ok && res.ok) {
                     tempAvatarUrl = res.url;
                     document.getElementById('adminEditAvatar').src = res.url;
                     btn.textContent = 'Uploaded';
                     setTimeout(() => btn.textContent = 'Change Photo', 2000);
                 } else {
-                    alert('Upload Failed');
+                    alert('Upload Failed: ' + (res.error || 'Unknown error'));
                     btn.textContent = oldText;
                 }
             } catch (e) {
-                alert('Error uploading');
+                alert('Error uploading or File too large.');
                 btn.textContent = oldText;
             }
         };
@@ -2480,17 +2507,31 @@
             const fileInput = document.getElementById('file-' + key);
             const inputField = document.getElementById('env-' + key);
             if (!fileInput.files || fileInput.files.length === 0) return;
+            
+            const file = fileInput.files[0];
+            const maxSizeMB = 50;
+            if (file.size > maxSizeMB * 1024 * 1024) {
+                alert(`File size is too large! Maximum allowed size is ${maxSizeMB}MB. Your file is ${(file.size / (1024*1024)).toFixed(2)}MB.`);
+                return;
+            }
 
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            formData.append('file', file);
 
             try {
-                const res = await fetch('/upload', {
+                const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
-                }).then(r => r.json());
+                });
+                
+                if (response.status === 413) {
+                    alert(`Upload failed: File is too large for the server (Error 413). Max limit is ${maxSizeMB}MB.`);
+                    return;
+                }
+                
+                const res = await response.json();
 
-                if (res.ok) {
+                if (response.ok && res.ok) {
                     let relativeUrl = res.url;
                     if (relativeUrl.startsWith('/')) relativeUrl = relativeUrl.substring(1);
                     inputField.value = relativeUrl;
@@ -2499,7 +2540,7 @@
                     alert('Upload failed: ' + (res.error || 'Unknown error'));
                 }
             } catch (e) {
-                alert('Upload connection error');
+                alert('Upload connection error or File too large (Server rejected).');
             }
         };
 

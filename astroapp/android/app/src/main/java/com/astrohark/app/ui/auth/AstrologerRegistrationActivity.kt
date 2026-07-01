@@ -140,6 +140,7 @@ fun AstrologerRegistrationScreen(onBack: () -> Unit) {
                     val cal = Calendar.getInstance()
                     val datePickerDialog = android.app.DatePickerDialog(
                         context,
+                        android.app.AlertDialog.THEME_DEVICE_DEFAULT_DARK,
                         { _, year, month, dayOfMonth ->
                             dob = "$dayOfMonth/${month + 1}/$year"
                         },
@@ -154,6 +155,7 @@ fun AstrologerRegistrationScreen(onBack: () -> Unit) {
                 item {
                     val timePickerDialog = android.app.TimePickerDialog(
                         context,
+                        android.app.AlertDialog.THEME_DEVICE_DEFAULT_DARK,
                         { _, hourOfDay, minute ->
                             tob = String.format("%02d:%02d", hourOfDay, minute)
                         },
@@ -298,8 +300,8 @@ fun CustomTextField(
             unfocusedBorderColor = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.5f),
             focusedLabelColor = CosmicAppTheme.colors.accent,
             cursorColor = CosmicAppTheme.colors.accent,
-            focusedTextColor = CosmicAppTheme.colors.textPrimary,
-            unfocusedTextColor = CosmicAppTheme.colors.textPrimary
+            focusedTextColor = Color.White,
+            unfocusedTextColor = Color.White
         ),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = singleLine,

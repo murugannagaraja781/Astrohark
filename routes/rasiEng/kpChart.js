@@ -55,7 +55,14 @@ function getNakshatraInfo(longitude) {
 
 router.post(['/', '/kp-chart'], (req, res) => {
     try {
-        const { date, time, lat, lon } = req.body;
+        let { date, time, lat, lon } = req.body;
+        
+        // Fallbacks for empty/null values
+        date = date || new Date().toISOString().split('T')[0];
+        time = time || '12:00:00';
+        lat = parseFloat(lat) || 13.0827;
+        lon = parseFloat(lon) || 80.2707;
+
         // date: YYYY-MM-DD, time: HH:MM:SS
         const [year, month, day] = date.split('-').map(Number);
         const timeParts = time.split(':').map(Number);

@@ -24,14 +24,13 @@ function formatLongitude(longitude) {
 // Get complete chart data in one call
 router.post('/full', async (req, res) => {
     try {
-        const {
-            date = DateTime.now().setZone('UTC+5.5').toFormat('yyyy-MM-dd'),
-            time = '12:00',
-            lat = 13.0827,
-            lng = 80.2707,
-            timezone = 5.5,
-            ayanamsa = 'Lahiri'
-        } = req.body;
+        let { date, time, lat, lng, timezone, ayanamsa } = req.body;
+        date = date || DateTime.now().setZone('UTC+5.5').toFormat('yyyy-MM-dd');
+        time = time || '12:00';
+        lat = parseFloat(lat) || 13.0827;
+        lng = parseFloat(lng) || 80.2707;
+        timezone = parseFloat(timezone) || 5.5;
+        ayanamsa = ayanamsa || 'Lahiri';
 
         const offsetHours = Math.floor(Math.abs(timezone));
         const offsetMinutes = Math.round((Math.abs(timezone) - offsetHours) * 60);
@@ -159,11 +158,13 @@ router.post('/full', async (req, res) => {
 // Quick chart (planets and houses only)
 router.post('/quick', (req, res) => {
     try {
-        const { date, time, lat, lng, timezone = 5.5, ayanamsa = 'Lahiri' } = req.body;
-
-        if (!date || !time || lat === undefined || lng === undefined) {
-            return res.status(400).json({ error: 'Missing required fields: date, time, lat, lng' });
-        }
+        let { date, time, lat, lng, timezone, ayanamsa } = req.body;
+        date = date || DateTime.now().setZone('UTC+5.5').toFormat('yyyy-MM-dd');
+        time = time || '12:00';
+        lat = parseFloat(lat) || 13.0827;
+        lng = parseFloat(lng) || 80.2707;
+        timezone = parseFloat(timezone) || 5.5;
+        ayanamsa = ayanamsa || 'Lahiri';
 
         const offsetHours = Math.floor(Math.abs(timezone));
         const offsetMinutes = Math.round((Math.abs(timezone) - offsetHours) * 60);

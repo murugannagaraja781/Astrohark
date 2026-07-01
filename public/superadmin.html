@@ -451,6 +451,7 @@
                                 <input type="file" id="ritualImageFile" style="display:none;" onchange="document.getElementById('ritualImageUrl').value = this.files[0].name">
                                 <button class="btn-admin" onclick="document.getElementById('ritualImageFile').click()"><i class="fas fa-upload"></i></button>
                             </div>
+                            <small style="color:#10B981; font-size:0.7rem; font-weight:bold;">Recommended: 800x800 px (1:1 ratio) | Max: 50MB</small>
                         </div>
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                             <div>
@@ -495,7 +496,7 @@
                                 <input type="file" id="bannerImageFile" style="display:none;" onchange="document.getElementById('bannerImageUrl').value = this.files[0].name">
                                 <button class="btn-admin" onclick="document.getElementById('bannerImageFile').click()"><i class="fas fa-upload"></i></button>
                             </div>
-                            <small style="color:var(--text-dim); font-size:0.65rem;">Recommended: 1200 x 400 px (3:1 aspect ratio)</small>
+                            <small style="color:#10B981; font-size:0.7rem; font-weight:bold;">Recommended: 1024x500 px (2:1 ratio) | Max: 50MB</small>
                         </div>
 
                         <input type="text" id="bannerCta" class="app-input" placeholder="CTA Text (e.g. Visit Now)">
@@ -995,6 +996,7 @@
                         <input type="file" id="editImageFile" onchange="uploadProfileImage(this)" style="display:none;">
                         <button class="btn-admin" onclick="document.getElementById('editImageFile').click()"><i class="fas fa-upload"></i></button>
                     </div>
+                    <small style="color:#10B981; font-size:0.7rem; font-weight:bold;">Recommended: Astrologers: 600x800 px (3:4) | Users: 500x500 px | Max: 50MB</small>
                 </div>
 
                 <div id="astroFields" style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border-soft);">
@@ -1781,7 +1783,7 @@
                             <input type="file" id="service-icon-file-${service.id}" style="display:none;" onchange="document.getElementById('service-icon-url-${service.id}').value = this.files[0].name">
                             <button class="btn-admin" onclick="document.getElementById('service-icon-file-${service.id}').click()"><i class="fas fa-upload"></i></button>
                         </div>
-                        <small style="color:var(--text-dim); font-size:0.65rem;">Recommended: PNG/SVG with transparent background</small>
+                        <small style="color:#10B981; font-size:0.7rem; font-weight:bold;">Recommended: 256x256 px or 512x512 px (Transparent PNG) | Max: 50MB</small>
                     </div>
                     <button class="cosmic-btn" style="margin-top:10px; width:100%;" onclick="saveService('${service.id}', this)"><i class="fas fa-save"></i> Save Changes</button>
                 `;

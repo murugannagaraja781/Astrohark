@@ -3001,6 +3001,39 @@
         };
 
         init();
+    <script>
+        // Global listener to show image dimensions and file size in red text below any file input when an image is selected
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.type === 'file' && e.target.files.length > 0) {
+                const file = e.target.files[0];
+                if (!file.type.startsWith('image/')) return;
+                
+                let infoSpan = e.target.nextElementSibling;
+                if (!infoSpan || !infoSpan.classList.contains('img-size-info')) {
+                    infoSpan = document.createElement('div');
+                    infoSpan.className = 'img-size-info';
+                    infoSpan.style.color = '#EF4444'; // Red color
+                    infoSpan.style.fontSize = '12px';
+                    infoSpan.style.marginTop = '4px';
+                    infoSpan.style.fontWeight = 'bold';
+                    e.target.parentNode.insertBefore(infoSpan, e.target.nextSibling);
+                }
+                
+                const sizeKB = (file.size / 1024).toFixed(2);
+                let sizeText = sizeKB + ' KB';
+                if (sizeKB > 1024) {
+                    sizeText = (sizeKB / 1024).toFixed(2) + ' MB';
+                }
+                
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = function() {
+                    infoSpan.textContent = `Selected Image: ${this.width}px x ${this.height}px | Size: ${sizeText}`;
+                    URL.revokeObjectURL(url);
+                };
+                img.src = url;
+            }
+        });
     </script>
 </body>
 

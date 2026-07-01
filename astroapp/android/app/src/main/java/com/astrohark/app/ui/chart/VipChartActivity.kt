@@ -167,6 +167,7 @@ class VipChartActivity : ComponentActivity() {
 @Composable
 fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
     var chartState by remember { mutableStateOf<ChartData?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var selectedTab by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
@@ -175,7 +176,11 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
         scope.launch {
             try {
                 val result = fetchFullChart(birthData)
-                chartState = result
+                if (result.first != null) {
+                    chartState = result.first
+                } else {
+                    errorMessage = result.second ?: "Unknown error occurred while fetching chart"
+                }
             } finally {
                 isLoading = false
             }
@@ -210,6 +215,16 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
             if (isLoading) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = ChocolateBrown)
+                }
+            } else if (errorMessage != null) {
+                Box(Modifier.fillMaxSize().padding(16.dp), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Default.Warning, contentDescription = "Error", tint = Color.Red, modifier = Modifier.size(48.dp))
+                        Spacer(Modifier.height(16.dp))
+                        Text("Failed to load chart", fontWeight = FontWeight.Bold, color = Color.Red)
+                        Spacer(Modifier.height(8.dp))
+                        Text(errorMessage!!, color = Color.DarkGray, fontSize = 12.sp, textAlign = TextAlign.Center)
+                    }
                 }
             } else if (chartState != null) {
                 ScrollableTabRow(
@@ -854,7 +869,7 @@ fun PanchangaTab(data: ChartData) {
     }
 }
 
-private suspend fun fetchFullChart(birthData: JSONObject): ChartData? = withContext(Dispatchers.IO) {
+private suspend fun fetchFullChart(birthData: JSONObject): Pair<ChartData?, String?> = withContext(Dispatchers.IO) {
     try {
         val payload = com.google.gson.JsonObject().apply {
             addProperty("date", String.format("%04d-%02d-%02d", birthData.optInt("year"), birthData.optInt("month"), birthData.optInt("day")))
@@ -866,12 +881,23 @@ private suspend fun fetchFullChart(birthData: JSONObject): ChartData? = withCont
 
         val response = com.astrohark.app.data.api.ApiClient.api.getRasiEngBirthChart(payload)
         if (response.isSuccessful && response.body() != null) {
-            val chartResponse = Gson().fromJson(response.body().toString(), ChartResponse::class.java)
-            if (chartResponse.success) return@withContext chartResponse.data
+            val jsonString = response.body().toString()
+            try {
+                val chartResponse = Gson().fromJson(jsonString, ChartResponse::class.java)
+                if (chartResponse.success) {
+                    return@withContext Pair(chartResponse.data, null)
+                } else {
+                    return@withContext Pair(null, "API returned success: false")
+                }
+            } catch (parseError: Exception) {
+                parseError.printStackTrace()
+                return@withContext Pair(null, "JSON Parse Error: ${parseError.message}")
+            }
+        } else {
+            return@withContext Pair(null, "HTTP Error: ${response.code()} - ${response.message()}")
         }
-        null
     } catch (e: Exception) {
         e.printStackTrace()
-        null
+        return@withContext Pair(null, "Network/Unknown Error: ${e.message}")
     }
 }

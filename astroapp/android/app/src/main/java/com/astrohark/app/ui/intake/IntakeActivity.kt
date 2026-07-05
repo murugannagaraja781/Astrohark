@@ -350,9 +350,9 @@ fun IntakeScreen(
             put("hour", hour24)
             put("minute", minute.toInt())
             put("city", cityName)
-            put("latitude", latitude)
-            put("longitude", longitude)
-            put("timezone", timezoneId)
+            put("latitude", latitude ?: 0.0)
+            put("longitude", longitude ?: 0.0)
+            put("timezone", timezoneId ?: "")
             put("isMatching", isMatchingLocal)
             if (isMatchingLocal) {
                val partner = JSONObject()
@@ -366,9 +366,9 @@ fun IntakeScreen(
                partner.put("hour", pHour24)
                partner.put("minute", pMinute.toInt())
                partner.put("city", pCityName)
-               partner.put("latitude", pLatitude)
-               partner.put("longitude", pLongitude)
-               partner.put("timezone", pTimezoneId)
+               partner.put("latitude", pLatitude ?: 0.0)
+               partner.put("longitude", pLongitude ?: 0.0)
+               partner.put("timezone", pTimezoneId ?: "")
                put("partnerData", partner)
             }
         }

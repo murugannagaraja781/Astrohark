@@ -131,6 +131,10 @@ class ChatActivity : ComponentActivity() {
             // Ensure socket is initialized and connected
             com.astrohark.app.data.remote.SocketManager.init()
             com.astrohark.app.data.remote.SocketManager.ensureConnection()
+            val myUserId = TokenManager(this).getUserSession()?.userId
+            if (myUserId != null) {
+                com.astrohark.app.data.remote.SocketManager.registerUser(myUserId)
+            }
             window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             
             handleIntent(intent)
@@ -210,7 +214,6 @@ class ChatActivity : ComponentActivity() {
             isTimerStarted = true
             timerHandler.post(timerRunnable)
 
-            val myUserId = TokenManager(this).getUserSession()?.userId
             if (role == "astrologer" && myUserId != null) {
                 com.astrohark.app.AstrologerStatusService.startService(this, myUserId)
             }

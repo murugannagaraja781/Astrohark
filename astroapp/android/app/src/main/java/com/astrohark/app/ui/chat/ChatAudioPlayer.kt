@@ -64,8 +64,19 @@ class ChatAudioPlayer(private val context: Context) {
                 val httpDataSourceFactory = DefaultHttpDataSource.Factory()
                     .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
                 val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
+
+                val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
+                    .setBufferDurationsMs(
+                        1000, // minBufferMs
+                        2500, // maxBufferMs
+                        400,  // bufferForPlaybackMs
+                        800   // bufferForPlaybackAfterRebufferMs
+                    )
+                    .build()
+
                 sharedExoPlayer = ExoPlayer.Builder(context.applicationContext)
                     .setMediaSourceFactory(mediaSourceFactory)
+                    .setLoadControl(loadControl)
                     .build()
             }
             

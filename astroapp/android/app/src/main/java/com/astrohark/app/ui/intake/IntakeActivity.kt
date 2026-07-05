@@ -394,13 +394,24 @@ fun IntakeScreen(
         if (partnerId != null && callType != null) {
             SocketManager.init()
             SocketManager.ensureConnection()
-            SocketManager.requestSession(partnerId, callType, payload) { response ->
-                if (response?.optBoolean("ok") == true) {
-                    waitingSessionId = response.optString("sessionId")
-                    scope.launch { isWaiting = true }
-                } else {
-                    scope.launch { Toast.makeText(context, response?.optString("error") ?: "Failed", Toast.LENGTH_SHORT).show() }
+            val myUserId = tokenManager.getUserSession()?.userId
+            if (myUserId != null) {
+                SocketManager.registerUser(myUserId) { success ->
+                    if (success) {
+                        SocketManager.requestSession(partnerId, callType, payload) { response ->
+                            if (response?.optBoolean("ok") == true) {
+                                waitingSessionId = response.optString("sessionId")
+                                scope.launch { isWaiting = true }
+                            } else {
+                                scope.launch { Toast.makeText(context, response?.optString("error") ?: "Failed", Toast.LENGTH_SHORT).show() }
+                            }
+                        }
+                    } else {
+                        scope.launch { Toast.makeText(context, "Failed to connect to chat server", Toast.LENGTH_SHORT).show() }
+                    }
                 }
+            } else {
+                Toast.makeText(context, "User session expired", Toast.LENGTH_SHORT).show()
             }
         }
     }

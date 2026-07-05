@@ -421,6 +421,13 @@ app.use('/uploads', express.static(uploadDir));
 app.post('/upload', upload.single('file'), (req, res) => {
   const filename = req.file ? req.file.filename : '';
   const fileUrl = filename ? '/uploads/' + filename : '';
+  if (req.file && req.file.path) {
+    try {
+      fs.chmodSync(req.file.path, 0o644);
+    } catch (err) {
+      console.error('[Upload] chmodSync failed:', err);
+    }
+  }
   return res.json({ ok: true, url: fileUrl, fileUrl: fileUrl });
 });
 

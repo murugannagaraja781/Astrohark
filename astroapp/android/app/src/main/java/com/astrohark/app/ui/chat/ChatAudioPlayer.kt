@@ -58,23 +58,28 @@ class ChatAudioPlayer(private val context: Context) {
     }
 
     private fun initExoPlayer() {
-        if (sharedExoPlayer == null) {
-            // Configure DefaultHttpDataSource with Chrome User-Agent to bypass Cloudflare
-            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-            val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
-            sharedExoPlayer = ExoPlayer.Builder(context.applicationContext)
-                .setMediaSourceFactory(mediaSourceFactory)
-                .build()
-        }
-        
-        if (activePlayerInstance != this) {
-            // Detach listener from the previous active instance (resetting its UI states)
-            activePlayerInstance?.detachPlayerListeners()
+        try {
+            if (sharedExoPlayer == null) {
+                // Configure DefaultHttpDataSource with Chrome User-Agent to bypass Cloudflare
+                val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                    .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
+                sharedExoPlayer = ExoPlayer.Builder(context.applicationContext)
+                    .setMediaSourceFactory(mediaSourceFactory)
+                    .build()
+            }
             
-            // Attach listener for this instance
-            activePlayerInstance = this
-            attachPlayerListeners()
+            if (activePlayerInstance != this) {
+                // Detach listener from the previous active instance (resetting its UI states)
+                activePlayerInstance?.detachPlayerListeners()
+                
+                // Attach listener for this instance
+                activePlayerInstance = this
+                attachPlayerListeners()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            android.util.Log.e("ChatAudioPlayer", "Failed to initialize ExoPlayer", e)
         }
     }
 

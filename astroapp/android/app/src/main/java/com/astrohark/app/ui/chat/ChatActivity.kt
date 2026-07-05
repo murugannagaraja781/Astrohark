@@ -137,7 +137,9 @@ class ChatActivity : ComponentActivity() {
             }
             window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
             
-            handleIntent(intent)
+            if (!handleIntent(intent)) {
+                return
+            }
 
             try {
                 val nm = getSystemService(android.content.Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
@@ -274,7 +276,7 @@ class ChatActivity : ComponentActivity() {
 
     private var pendingAccept = false
 
-    private fun handleIntent(intent: Intent?) {
+    private fun handleIntent(intent: Intent?): Boolean {
         toUserId = intent?.getStringExtra("toUserId")
         sessionId = intent?.getStringExtra("sessionId")
         val birthDataStr = intent?.getStringExtra("birthData")
@@ -295,7 +297,7 @@ class ChatActivity : ComponentActivity() {
         }
         if (sessionId == null) {
             finish()
-            return
+            return false
         }
         val isNewRequest = intent?.getBooleanExtra("isNewRequest", false) == true
         if (isNewRequest && sessionId != null && toUserId != null) {
@@ -373,6 +375,7 @@ class ChatActivity : ComponentActivity() {
                   }
               }
         }
+        return true
     }
 
     private fun setupObservers() {

@@ -1,25 +1,28 @@
 package com.astrohark.app.ui.chat
 
 import android.content.Context
-import android.media.MediaPlayer
+import android.net.Uri
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import java.util.concurrent.TimeUnit
 import android.widget.Toast
-import android.os.Handler
-import android.os.Looper
 import android.media.AudioManager
 import android.os.Build
 
 class ChatAudioPlayer(private val context: Context) {
-    private var mediaPlayer: MediaPlayer? = null
+    companion object {
+        // Shared single instance of ExoPlayer globally
+        private var sharedExoPlayer: ExoPlayer? = null
+        private var activePlayerInstance: ChatAudioPlayer? = null
+    }
+
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var progressJob: Job? = null
 
@@ -38,19 +41,101 @@ class ChatAudioPlayer(private val context: Context) {
     private val _duration = MutableStateFlow(0f)
     val duration: StateFlow<Float> = _duration.asStateFlow()
 
-    // Internal robust state flags
-    private var isPrepared = false
-    private var isReleased = false
-
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private var audioFocusRequest: Any? = null
 
     private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
         if (focusChange == AudioManager.AUDIOFOCUS_LOSS || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
             if (_isPlaying.value) {
-                try { mediaPlayer?.pause(); _isPlaying.value = false; stopProgressUpdate() } catch(e: Exception) {}
+                pause()
             }
         }
+    }
+
+    init {
+        // Initialize ExoPlayer on the Main thread
+        initExoPlayer()
+    }
+
+    private fun initExoPlayer() {
+        if (sharedExoPlayer == null) {
+            // Configure DefaultHttpDataSource with Chrome User-Agent to bypass Cloudflare
+            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+            val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
+            sharedExoPlayer = ExoPlayer.Builder(context.applicationContext)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build()
+        }
+        
+        if (activePlayerInstance != this) {
+            // Detach listener from the previous active instance (resetting its UI states)
+            activePlayerInstance?.detachPlayerListeners()
+            
+            // Attach listener for this instance
+            activePlayerInstance = this
+            attachPlayerListeners()
+        }
+    }
+
+    private val playerListener = object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            when (playbackState) {
+                Player.STATE_BUFFERING -> {
+                    _isPreparing.value = true
+                }
+                Player.STATE_READY -> {
+                    _isPreparing.value = false
+                    _duration.value = (sharedExoPlayer?.duration ?: 0L).toFloat()
+                    _isPlaying.value = sharedExoPlayer?.playWhenReady ?: false
+                    if (sharedExoPlayer?.playWhenReady == true) {
+                        startProgressUpdate()
+                    }
+                }
+                Player.STATE_ENDED -> {
+                    _isPlaying.value = false
+                    _progress.value = 0f
+                    _currentUrl.value = null
+                    stopProgressUpdate()
+                    abandonAudioFocus()
+                }
+                Player.STATE_IDLE -> {
+                    _isPlaying.value = false
+                    _isPreparing.value = false
+                }
+            }
+        }
+
+        override fun onIsPlayingChanged(isPlayingNow: Boolean) {
+            _isPlaying.value = isPlayingNow
+            if (isPlayingNow) {
+                startProgressUpdate()
+            } else {
+                stopProgressUpdate()
+            }
+        }
+
+        override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+            _isPreparing.value = false
+            _isPlaying.value = false
+            stopProgressUpdate()
+            abandonAudioFocus()
+            Toast.makeText(context, "Audio playback error: ${error.message}", Toast.LENGTH_SHORT).show()
+            _currentUrl.value = null
+        }
+    }
+
+    private fun attachPlayerListeners() {
+        sharedExoPlayer?.addListener(playerListener)
+    }
+
+    private fun detachPlayerListeners() {
+        sharedExoPlayer?.removeListener(playerListener)
+        _isPlaying.value = false
+        _progress.value = 0f
+        _isPreparing.value = false
+        _currentUrl.value = null
+        stopProgressUpdate()
     }
 
     private fun requestAudioFocus(): Boolean {
@@ -97,151 +182,43 @@ class ChatAudioPlayer(private val context: Context) {
     }
 
     fun play(url: String) {
-        if (_isPreparing.value) {
-            // Ignore rapid clicks while preparing
-            return
-        }
+        initExoPlayer()
 
         if (_currentUrl.value == url) {
+            if (_isPreparing.value) {
+                return
+            }
             if (_isPlaying.value) {
-                try {
-                    if (isPrepared && mediaPlayer != null) {
-                        mediaPlayer?.pause()
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-                _isPlaying.value = false
-                stopProgressUpdate()
+                pause()
             } else {
-                try {
-                    if (isPrepared && mediaPlayer != null) {
-                        try { requestAudioFocus() } catch(e: Exception){}
-                        mediaPlayer?.start()
-                        _isPlaying.value = true
-                        startProgressUpdate()
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
+                start()
             }
             return
         }
 
-        stop()
+        stopProgressUpdate()
+        abandonAudioFocus()
+
         _currentUrl.value = url
         _isPreparing.value = true
-        isPrepared = false
-        isReleased = false
+        _isPlaying.value = false
+        _progress.value = 0f
 
-        coroutineScope.launch(Dispatchers.IO) {
-            try {
-                val cachedFile = if (url.startsWith("http")) {
-                    val fileName = "cached_audio_${url.hashCode()}.mp4"
-                    val file = File(context.cacheDir, fileName)
-                    if (!file.exists() || file.length() == 0L) {
-                        file.delete()
-                        try {
-                            val client = OkHttpClient.Builder()
-                                .connectTimeout(15, TimeUnit.SECONDS)
-                                .readTimeout(15, TimeUnit.SECONDS)
-                                .build()
-                            val request = Request.Builder()
-                                .url(url)
-                                .header("User-Agent", "Mozilla/5.0")
-                                .build()
-                            val response = client.newCall(request).execute()
-                            if (response.isSuccessful) {
-                                response.body?.byteStream()?.use { input ->
-                                    FileOutputStream(file).use { output ->
-                                        input.copyTo(output)
-                                    }
-                                }
-                                if (file.length() == 0L) {
-                                    file.delete()
-                                    throw Exception("Downloaded file is empty")
-                                }
-                            } else {
-                                throw Exception("Network Error: ${response.code}")
-                            }
-                        } catch (e: Exception) {
-                            file.delete()
-                            throw e
-                        }
-                    }
-                    file
-                } else {
-                    File(url)
-                }
+        val mediaUri = if (url.startsWith("http") || url.startsWith("/")) {
+            Uri.parse(url)
+        } else {
+            Uri.fromFile(File(url))
+        }
+        val mediaItem = MediaItem.fromUri(mediaUri)
 
-                withContext(Dispatchers.Main) {
-                    if (isReleased) return@withContext
-                    
-                    if (!cachedFile.exists() && url.startsWith("http")) {
-                        _isPreparing.value = false
-                        return@withContext
-                    }
-                    
-                    mediaPlayer = MediaPlayer().apply {
-                        setAudioAttributes(
-                            android.media.AudioAttributes.Builder()
-                                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
-                                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                                .build()
-                        )
-                        
-                        if (cachedFile.exists()) {
-                            setDataSource(cachedFile.absolutePath)
-                        } else {
-                            setDataSource(url)
-                        }
-
-                        setOnPreparedListener { mp ->
-                            if (isReleased) return@setOnPreparedListener
-                            
-                            isPrepared = true
-                            _isPreparing.value = false
-                            _duration.value = mp.duration.toFloat()
-                            
-                            try {
-                                try { requestAudioFocus() } catch (e: Exception) {}
-                                mp.start()
-                                _isPlaying.value = true
-                                startProgressUpdate()
-                            } catch (e: Exception) { e.printStackTrace() }
-                        }
-                        
-                        setOnCompletionListener {
-                            _isPlaying.value = false
-                            _progress.value = 0f
-                            _currentUrl.value = null
-                            stopProgressUpdate()
-                            abandonAudioFocus()
-                        }
-                        
-                        setOnErrorListener { _, what, extra ->
-                            if (!isReleased) {
-                                _isPreparing.value = false
-                                Handler(Looper.getMainLooper()).post {
-                                    Toast.makeText(context, "Audio play error: $what, $extra", Toast.LENGTH_SHORT).show()
-                                }
-                                stop()
-                            }
-                            true
-                        }
-                        
-                        try {
-                            prepareAsync()
-                        } catch (e: Exception) {
-                            _isPreparing.value = false
-                            _currentUrl.value = null
-                            e.printStackTrace()
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    _isPreparing.value = false
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    stop()
-                }
-            }
+        sharedExoPlayer?.let { player ->
+            player.stop()
+            player.clearMediaItems()
+            player.setMediaItem(mediaItem)
+            player.prepare()
+            
+            requestAudioFocus()
+            player.playWhenReady = true
         }
     }
 
@@ -249,20 +226,12 @@ class ChatAudioPlayer(private val context: Context) {
         progressJob?.cancel()
         progressJob = coroutineScope.launch {
             while (isActive && _isPlaying.value) {
-                try {
-                    if (mediaPlayer != null && isPrepared && !isReleased) {
-                        mediaPlayer?.let {
-                            if (it.isPlaying) {
-                                val current = it.currentPosition.toFloat()
-                                val dur = it.duration.toFloat()
-                                if (dur > 0) {
-                                    _progress.value = current / dur
-                                }
-                            }
-                        }
+                sharedExoPlayer?.let { player ->
+                    val current = player.currentPosition.toFloat()
+                    val dur = player.duration.toFloat()
+                    if (dur > 0) {
+                        _progress.value = current / dur
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
                 }
                 delay(100)
             }
@@ -273,19 +242,32 @@ class ChatAudioPlayer(private val context: Context) {
         progressJob?.cancel()
     }
 
+    fun start() {
+        sharedExoPlayer?.let { player ->
+            if (player.playbackState != Player.STATE_IDLE) {
+                requestAudioFocus()
+                player.playWhenReady = true
+            }
+        }
+    }
+
+    fun pause() {
+        sharedExoPlayer?.let { player ->
+            player.playWhenReady = false
+        }
+        _isPlaying.value = false
+        stopProgressUpdate()
+    }
+
     fun stop() {
         stopProgressUpdate()
         abandonAudioFocus()
-        try {
-            mediaPlayer?.reset()
-        } catch (e: Exception) { e.printStackTrace() }
-        try {
-            mediaPlayer?.release()
-        } catch (e: Exception) { e.printStackTrace() }
         
-        mediaPlayer = null
-        isReleased = true
-        isPrepared = false
+        sharedExoPlayer?.let { player ->
+            player.stop()
+            player.clearMediaItems()
+        }
+
         _isPreparing.value = false
         _isPlaying.value = false
         _progress.value = 0f
@@ -293,22 +275,22 @@ class ChatAudioPlayer(private val context: Context) {
     }
 
     fun seekTo(progress: Float) {
-        coroutineScope.launch(Dispatchers.Main) {
-            if (isPrepared && mediaPlayer != null && !isReleased) {
-                try {
-                    val dur = mediaPlayer?.duration ?: 0
-                    if (dur > 0) {
-                        val pos = (dur * progress).toInt()
-                        mediaPlayer?.seekTo(pos)
-                        _progress.value = progress
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
+        sharedExoPlayer?.let { player ->
+            val dur = player.duration
+            if (dur > 0) {
+                val pos = (dur * progress).toLong()
+                player.seekTo(pos)
+                _progress.value = progress
             }
         }
     }
 
     fun release() {
-        stop()
+        if (activePlayerInstance == this) {
+            stop()
+            detachPlayerListeners()
+            activePlayerInstance = null
+        }
         coroutineScope.cancel()
     }
 }

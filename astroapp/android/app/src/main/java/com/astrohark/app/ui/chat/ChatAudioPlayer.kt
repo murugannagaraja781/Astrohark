@@ -135,33 +135,35 @@ class ChatAudioPlayer(private val context: Context) {
                 val cachedFile = if (url.startsWith("http")) {
                     val fileName = "cached_audio_${url.hashCode()}.mp4"
                     val file = File(context.cacheDir, fileName)
-                    if (!file.exists()) {
-                        val client = OkHttpClient.Builder()
-                            .connectTimeout(15, TimeUnit.SECONDS)
-                            .readTimeout(15, TimeUnit.SECONDS)
-                            .build()
-                        val request = Request.Builder()
-                            .url(url)
-                            .header("User-Agent", "Mozilla/5.0")
-                            .build()
-                        val response = client.newCall(request).execute()
-                        if (response.isSuccessful) {
-                            response.body?.byteStream()?.use { input ->
-                                FileOutputStream(file).use { output ->
-                                    input.copyTo(output)
-                                }
-                            }
-                            if (file.length() == 0L) {
-                                file.delete()
-                                throw Exception("Downloaded file is empty")
-                            }
-                        } else {
-                            throw Exception("Network Error: ${response.code}")
-                        }
-                    }
-                    if (file.length() == 0L) {
+                    if (!file.exists() || file.length() == 0L) {
                         file.delete()
-                        throw Exception("Cached file is empty")
+                        try {
+                            val client = OkHttpClient.Builder()
+                                .connectTimeout(15, TimeUnit.SECONDS)
+                                .readTimeout(15, TimeUnit.SECONDS)
+                                .build()
+                            val request = Request.Builder()
+                                .url(url)
+                                .header("User-Agent", "Mozilla/5.0")
+                                .build()
+                            val response = client.newCall(request).execute()
+                            if (response.isSuccessful) {
+                                response.body?.byteStream()?.use { input ->
+                                    FileOutputStream(file).use { output ->
+                                        input.copyTo(output)
+                                    }
+                                }
+                                if (file.length() == 0L) {
+                                    file.delete()
+                                    throw Exception("Downloaded file is empty")
+                                }
+                            } else {
+                                throw Exception("Network Error: ${response.code}")
+                            }
+                        } catch (e: Exception) {
+                            file.delete()
+                            throw e
+                        }
                     }
                     file
                 } else {
@@ -184,16 +186,13 @@ class ChatAudioPlayer(private val context: Context) {
                                 .build()
                         )
                         
-                        var fis: FileInputStream? = null
                         if (cachedFile.exists()) {
-                            fis = FileInputStream(cachedFile)
-                            setDataSource(fis.fd)
+                            setDataSource(cachedFile.absolutePath)
                         } else {
                             setDataSource(url)
                         }
 
                         setOnPreparedListener { mp ->
-                            try { fis?.close() } catch (e: Exception) {}
                             if (isReleased) return@setOnPreparedListener
                             
                             isPrepared = true
@@ -217,7 +216,6 @@ class ChatAudioPlayer(private val context: Context) {
                         }
                         
                         setOnErrorListener { _, what, extra ->
-                            try { fis?.close() } catch (e: Exception) {}
                             if (!isReleased) {
                                 _isPreparing.value = false
                                 Handler(Looper.getMainLooper()).post {
@@ -231,7 +229,6 @@ class ChatAudioPlayer(private val context: Context) {
                         try {
                             prepareAsync()
                         } catch (e: Exception) {
-                            try { fis?.close() } catch (ex: Exception) {}
                             _isPreparing.value = false
                             _currentUrl.value = null
                             e.printStackTrace()

@@ -33,6 +33,7 @@ const UserSchema = new mongoose.Schema({
     superWalletBalance: { type: Number, default: 0 },
     totalEarnings: { type: Number, default: 0 },
     experience: { type: Number, default: 0 },
+    orderCount: { type: Number, default: 1000 },
     isVerified: { type: Boolean, default: false },
     isDocumentVerified: { type: Boolean, default: false },
     documentStatus: { type: String, default: 'none' },

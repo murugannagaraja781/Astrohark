@@ -88,24 +88,30 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
 
             console.log(`[CallHandler][request-session] from=${fromUserId}, to=${toUserId}, type=${type}`);
 
-            const toUser = await User.findOne({ userId: toUserId });
             const fromUser = await User.findOne({ userId: fromUserId });
+            const toUser = await User.findOne({ userId: toUserId });
 
             if (!toUser) {
                 console.warn(`[CallHandler][request-session] target user ${toUserId} not found`);
                 return typeof cb === 'function' && cb({ ok: false, error: 'User not found' });
             }
 
-            if (fromUser && fromUser.role === 'client' && (fromUser.walletBalance || 0) <= 0) {
-                console.warn(`[CallHandler][request-session] Insufficient balance for ${fromUserId}`);
-                return typeof cb === 'function' && cb({ ok: false, error: 'Insufficient Main Balance.' });
+            const clientUser = fromUser?.role === 'astrologer' ? toUser : fromUser;
+            const astroUser = fromUser?.role === 'astrologer' ? fromUser : toUser;
+
+            if (clientUser && clientUser.role !== 'astrologer') {
+                const requiredMinBalance = clientUser.isNewUser ? 24 : (astroUser?.price || 15);
+                if ((clientUser.walletBalance || 0) < requiredMinBalance) {
+                    console.warn(`[CallHandler][request-session] Insufficient balance for client ${clientUser.userId}. Balance: ${clientUser.walletBalance}, Required: ${requiredMinBalance}`);
+                    return typeof cb === 'function' && cb({ ok: false, error: `Insufficient balance. Minimum ₹${requiredMinBalance} required.` });
+                }
             }
 
             // Enrich and save birthData/intakeDetails
             let enrichedBirthData = null;
             if (birthData) {
                 enrichedBirthData = enrichBirthData(birthData);
-                if (fromUser && fromUser.role === 'client') {
+                if (fromUser && fromUser.role !== 'astrologer') {
                     fromUser.name = birthData.name || fromUser.name;
                     fromUser.birthDetails = {
                         dob: `${birthData.year}-${String(birthData.month).padStart(2, '0')}-${String(birthData.day).padStart(2, '0')}`,
@@ -151,13 +157,16 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             }
 
             const sessionId = crypto.randomUUID();
-            let clientId = null;
-            let astrologerId = null;
-
-            if (fromUser?.role === 'client') clientId = fromUserId;
-            if (fromUser?.role === 'astrologer') astrologerId = fromUserId;
-            if (toUser?.role === 'client') clientId = toUserId;
-            if (toUser?.role === 'astrologer') astrologerId = toUserId;
+            if (fromUser?.role === 'astrologer') {
+                astrologerId = fromUserId;
+                clientId = toUserId;
+            } else if (toUser?.role === 'astrologer') {
+                astrologerId = toUserId;
+                clientId = fromUserId;
+            } else {
+                clientId = fromUserId;
+                astrologerId = toUserId;
+            }
 
             await Session.create({
                 sessionId, fromUserId, toUserId, type, startTime: Date.now(),
@@ -226,23 +235,6 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     // AUTO-OFFLINE LOGIC: Modified as per USER REQUEST (Astrologer stays online)
                     const astro = await User.findOne({ userId: toUserId });
                     if (astro && astro.role === 'astrologer') {
-                        /*
-                        astro.isOnline = false;
-                        astro.isChatOnline = false;
-                        astro.isAudioOnline = false;
-                        astro.isVideoOnline = false;
-                        astro.isAvailable = false;
-                        await astro.save();
-                        
-                        if (broadcastAstroUpdate) broadcastAstroUpdate();
-
-                        // Notify Super Admin
-                        io.to('superadmin').emit('admin-notification', {
-                            text: `Missed Call Alert: ${astro.name} marked OFFLINE due to no response.`,
-                            type: 'missed_call'
-                        });
-                        */
-
                         // Log to file
                         const fs = require('fs');
                         const path = require('path');
@@ -457,9 +449,20 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 // Notify both
                 const client = await User.findOne({ userId: session.clientId });
                 const astro = await User.findOne({ userId: session.astrologerId });
+
+                // Store new user promo info on active session
+                if (activeSession) {
+                    activeSession.isNewUser = client?.isNewUser || false;
+                }
+
+                if (client && client.isNewUser) {
+                    client.isNewUser = false;
+                    await client.save().catch(err => console.error("Error setting isNewUser to false:", err));
+                }
+
                 const clientBalance = client?.walletBalance || 0;
                 const ratePerMinute = astro?.price || 10;
-                const availableMinutes = Math.floor(clientBalance / ratePerMinute);
+                const availableMinutes = client?.isNewUser ? 5 : Math.floor(clientBalance / ratePerMinute);
 
                 io.to(session.clientId).emit('billing-started', { startTime: billingStart, clientBalance, availableMinutes });
                 io.to(session.astrologerId).emit('billing-started', { startTime: billingStart, clientBalance, ratePerMinute, availableMinutes });

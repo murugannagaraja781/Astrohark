@@ -1,5 +1,7 @@
 package com.astrohark.app.data.model
 
+import com.google.gson.annotations.SerializedName
+
 /**
  * Astrologer data model
  * Represents an astrologer in the system with their online status and pricing
@@ -19,6 +21,7 @@ data class Astrologer(
     val isVerified: Boolean = false,
     val walletBalance: Double = 0.0,
     val rating: Double = 5.0,
-    val orders: Int = 0,
-    val isBusy: Boolean = false
+    @SerializedName("orderCount") val orders: Int = 0,
+    val isBusy: Boolean = false,
+    val profession: String = ""
 )

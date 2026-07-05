@@ -3,8 +3,8 @@ const { formatImageUrl } = require('../utils/formatImage');
 
 async function getFormattedAstrologers(SERVER_URL) {
     try {
-        const astros = await User.find({ role: 'astrologer', approvalStatus: 'approved' })
-            .select('userId name phone skills price isOnline isChatOnline isAudioOnline isVideoOnline experience isVerified image walletBalance totalEarnings isBusy languages orderCount isDocumentVerified')
+        const astros = await User.find({ role: 'astrologer', approvalStatus: 'approved', isBanned: { $ne: true } })
+            .select('userId name phone skills price isOnline isChatOnline isAudioOnline isVideoOnline experience isVerified image walletBalance totalEarnings isBusy languages orderCount isDocumentVerified profession')
             .lean();
 
         return astros.map(a => ({
@@ -21,8 +21,10 @@ async function getFormattedAstrologers(SERVER_URL) {
             isBusy: a.isBusy || false,
             image: formatImageUrl(a.image, a.name, SERVER_URL),
             languages: a.languages || ['Tamil', 'English'],
-            orderCount: a.orderCount || 0,
-            isDocumentVerified: a.isDocumentVerified || false
+            orders: a.orderCount !== undefined ? a.orderCount : 1000,
+            orderCount: a.orderCount !== undefined ? a.orderCount : 1000,
+            isDocumentVerified: a.isDocumentVerified || false,
+            profession: a.profession || ''
         }));
     } catch (e) {
         console.error('Error fetching formatted astros:', e);
@@ -48,7 +50,7 @@ async function broadcastSingleAstroUpdate(io, userId, SERVER_URL) {
     if (!io) return;
     try {
         const a = await User.findOne({ userId })
-            .select('userId name phone skills price isOnline isChatOnline isAudioOnline isVideoOnline experience isVerified image walletBalance totalEarnings isBusy languages orderCount isDocumentVerified')
+            .select('userId name phone skills price isOnline isChatOnline isAudioOnline isVideoOnline experience isVerified image walletBalance totalEarnings isBusy languages orderCount isDocumentVerified profession')
             .lean();
         if (!a) return;
 
@@ -66,8 +68,10 @@ async function broadcastSingleAstroUpdate(io, userId, SERVER_URL) {
             isBusy: a.isBusy || false,
             image: formatImageUrl(a.image, a.name, SERVER_URL),
             languages: a.languages || ['Tamil', 'English'],
-            orderCount: a.orderCount || 0,
-            isDocumentVerified: a.isDocumentVerified || false
+            orders: a.orderCount !== undefined ? a.orderCount : 1000,
+            orderCount: a.orderCount !== undefined ? a.orderCount : 1000,
+            isDocumentVerified: a.isDocumentVerified || false,
+            profession: a.profession || ''
         };
 
         io.emit('astrologer-single-update', formatted);

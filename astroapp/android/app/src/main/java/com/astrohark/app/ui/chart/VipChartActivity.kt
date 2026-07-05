@@ -261,7 +261,7 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
                         0 -> ChartsTab(chartState!!, birthData)
                         1 -> PlanetsTab(chartState!!)
                         2 -> DashaListTab(chartState!!.dasha)
-                        3 -> IndicatorsTab(chartState!!)
+                        3 -> IndicatorsTab(birthData)
                         4 -> PanchangaTab(chartState!!)
                         5 -> ConnectionsTab(chartState!!)
                     }
@@ -280,10 +280,12 @@ fun ChartsTab(data: ChartData, birthData: JSONObject) {
         SouthIndianGridEnhanced(
             planets = data.planets,
             houses = null,
+            cusps = data.houses.cusps,
             ascSign = data.houses.ascendantDetails.signName,
             title = "ராசி",
             isBhava = false,
-            showDegree = false
+            showDegree = false,
+            showCusps = true
         )
 
         Spacer(Modifier.height(32.dp))
@@ -294,10 +296,12 @@ fun ChartsTab(data: ChartData, birthData: JSONObject) {
             SouthIndianGridEnhanced(
                 planets = data.navamsa.planets,
                 houses = null,
+                cusps = null,
                 ascSign = data.navamsa.planets.find { it.name.equals("Ascendant", ignoreCase = true) }?.signName ?: "",
                 title = "நவாம்சம்",
                 isBhava = false,
-                showDegree = false
+                showDegree = false,
+                showCusps = false
             )
             Spacer(Modifier.height(32.dp))
         }
@@ -307,10 +311,12 @@ fun ChartsTab(data: ChartData, birthData: JSONObject) {
         SouthIndianGridEnhanced(
             planets = data.planets,
             houses = data.houses.details,
+            cusps = data.houses.cusps,
             ascSign = data.houses.ascendantDetails.signName,
             title = "பாவகம்",
             isBhava = true,
-            showDegree = true
+            showDegree = true,
+            showCusps = true
         )
 
         Spacer(Modifier.height(40.dp))
@@ -321,10 +327,12 @@ fun ChartsTab(data: ChartData, birthData: JSONObject) {
 fun SouthIndianGridEnhanced(
     planets: List<Planet>,
     houses: List<HouseDetail>? = null,
+    cusps: List<Double>? = null,
     ascSign: String = "",
     title: String = "",
     isBhava: Boolean = false,
-    showDegree: Boolean = true
+    showDegree: Boolean = true,
+    showCusps: Boolean = false
 ) {
     val signNames = listOf("Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces")
     val gridMap = listOf(11, 0, 1, 2, 10, -1, -1, 3, 9, -1, -1, 4, 8, 7, 6, 5)
@@ -408,20 +416,22 @@ fun SouthIndianGridEnhanced(
                                     verticalArrangement = Arrangement.Center,
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    // Top section (House Num + Degree for Bhava)
-                                    if (isBhava && houses != null) {
-                                        // Find which house falls in this sign. A sign could have 0, 1, or 2 houses. We'll find the first one.
-                                        val houseIndex = houses.indexOfFirst { it.signName == signEn }
-                                        if (houseIndex != -1) {
-                                            val h = houses[houseIndex]
-                                            val hDeg = h.degreeFormatted ?: ""
-                                            val topText = hDeg
-                                            if (topText.isNotEmpty()) {
+                                    // House Cusps (PANNU) in this sign
+                                    if (showCusps && cusps != null && cusps.size >= 12) {
+                                        for (i in 0 until 12) {
+                                            val cuspLon = cusps[i]
+                                            val cuspSignIdx = (((cuspLon % 360 + 360) % 360) / 30).toInt()
+                                            if (signNames[cuspSignIdx] == signEn) {
+                                                val houseNum = i + 1
+                                                val degInSign = cuspLon % 30
+                                                val deg = degInSign.toInt()
+                                                val min = ((degInSign - deg) * 60).toInt()
+                                                val formattedCusp = String.format("%d %02d°%02d'", houseNum, deg, min)
                                                 Text(
-                                                    text = topText,
-                                                    fontSize = 11.sp,
+                                                    text = formattedCusp,
+                                                    fontSize = 10.sp,
                                                     fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFF0A1172)
+                                                    color = Color(0xFF8B0000) // Dark Red for house cusps
                                                 )
                                             }
                                         }
@@ -712,97 +722,61 @@ fun getKPKBHouseConnections(houseIndex: Int, data: ChartData): String {
 }
 
 @Composable
-fun IndicatorsTab(data: ChartData) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
-        Text("கிரக குறி காட்டிகள்", fontWeight = FontWeight.Bold, color = Color(0xFF5D1212), fontSize = 16.sp)
-        Spacer(Modifier.height(8.dp))
+fun IndicatorsTab(birthData: JSONObject) {
+    var isLoading by remember { mutableStateOf(true) }
+    var kpData by remember { mutableStateOf<JSONObject?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
-        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFE0D5C9))) {
-            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFFF9F0E6)).padding(8.dp)) {
-                listOf("கிரகம்", "நட்சத்திரம்\nபாதம்", "நட்சத்திர\nஅதிபதி", "பாவ\nதொடர்பு").forEach { head ->
-                    Text(
-                        text = head,
-                        modifier = Modifier.weight(1f),
-                        color = Color(0xFF5D1212),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
+    LaunchedEffect(birthData) {
+        scope.launch {
+            try {
+                isLoading = true
+                val payload = com.google.gson.JsonObject().apply {
+                    addProperty("date", String.format("%04d-%02d-%02d", birthData.optInt("year"), birthData.optInt("month"), birthData.optInt("day")))
+                    addProperty("time", String.format("%02d:%02d", birthData.optInt("hour"), birthData.optInt("minute")))
+                    addProperty("lat", birthData.optDouble("latitude"))
+                    addProperty("lon", birthData.optDouble("longitude"))
                 }
-            }
-            val displayPlanets = listOf("Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu", "Mandi")
-            data.planets.filter { it.name in displayPlanets }.forEachIndexed { index, planet ->
-                val planetTa = planetTamil[planet.name] ?: planet.name
-                val planetHouse = planet.house
-                val nak = "${planet.nakshatra} ${planet.nakshatraPada}"
                 
-                val starLordEn = planet.starLord ?: ""
-                val starLordTa = planetTamil[starLordEn] ?: starLordEn
-                val starLordPlanet = data.planets.find { it.name.equals(starLordEn, ignoreCase = true) }
-                val starLordHouse = starLordPlanet?.house?.toString() ?: ""
-                
-                val col1 = "$planetTa $planetHouse"
-                val col3 = if (starLordTa.isNotEmpty()) "$starLordTa $starLordHouse ல்" else "-"
-                
-                val connection = getKPKBPlanetConnections(planet.name, data)
+                val response = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    com.astrohark.app.data.api.ApiClient.api.getKpChart(payload)
+                }
 
-                HorizontalDivider(color = Color(0xFFE0D5C9))
-                Row(modifier = Modifier.fillMaxWidth().background(if (index % 2 == 0) Color.White else Color(0xFFFAF6F2)).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(col1, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    Text(nak, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Center)
-                    Text(col3, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    Text(connection, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
+                if (response.isSuccessful && response.body() != null) {
+                    val rawJson = response.body().toString()
+                    val jsonObj = JSONObject(rawJson)
+                    if (jsonObj.optBoolean("success")) {
+                        kpData = jsonObj.optJSONObject("data")
+                    } else {
+                        error = "Failed to generate KP Chart."
+                    }
+                } else {
+                    error = "Server Error: ${response.code()}"
                 }
+            } catch (e: Exception) {
+                error = e.localizedMessage
+            } finally {
+                isLoading = false
             }
         }
+    }
 
-        Spacer(Modifier.height(24.dp))
-        Text("பாவக குறி காட்டிகள்", fontWeight = FontWeight.Bold, color = Color(0xFF5D1212), fontSize = 16.sp)
-        Spacer(Modifier.height(8.dp))
-
-        Column(modifier = Modifier.fillMaxWidth().border(1.dp, Color(0xFFE0D5C9))) {
-            Row(modifier = Modifier.fillMaxWidth().background(Color(0xFFF9F0E6)).padding(8.dp)) {
-                listOf("பாவ\nஆரம்ப\nமுனை", "நட்சத்திர\nபாதம்", "உப\nஅதிபதி", "நின்ற\nநட்சத்திர\nஅதிபதி", "பாவ\nதொடர்பு").forEach { head ->
-                    Text(
-                        text = head,
-                        modifier = Modifier.weight(1f),
-                        color = Color(0xFF5D1212),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                }
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp).verticalScroll(rememberScrollState())) {
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxWidth().height(250.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFF8B0000))
             }
-            data.houses.details.forEachIndexed { index, house ->
-                val bhavaNum = index + 1
-                val nakshatra = "${house.nakshatra ?: ""} ${house.nakshatraPada ?: ""}"
-                
-                // 1. Cuspal Sub-Lord of the requested Bhava
-                val subLordEn = house.subLord ?: ""
-                val subLordTa = planetTamil[subLordEn] ?: subLordEn
-                val subLordPlanet = data.planets.find { it.name.equals(subLordEn, ignoreCase = true) }
-                val subLordHouse = subLordPlanet?.house?.toString() ?: ""
-                
-                // 2. Star-Lord of that Sub-Lord
-                val starLordEn = subLordPlanet?.starLord ?: ""
-                val starLordTa = planetAbbrTamil[starLordEn] ?: planetTamil[starLordEn] ?: starLordEn
-                val starLordPlanet = data.planets.find { it.name.equals(starLordEn, ignoreCase = true) }
-                val starLordHouse = starLordPlanet?.house?.toString() ?: ""
-
-                val col3 = if (subLordTa.isNotEmpty()) "$subLordTa $subLordHouse" else "-"
-                val col4 = if (starLordTa.isNotEmpty()) "$starLordTa $starLordHouse" else "-"
-                
-                val connection = getKPKBHouseConnections(index, data)
-                
-                HorizontalDivider(color = Color(0xFFE0D5C9))
-                Row(modifier = Modifier.fillMaxWidth().background(if (index % 2 == 0) Color.White else Color(0xFFFAF6F2)).padding(vertical = 10.dp, horizontal = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(bhavaNum.toString(), color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    Text(nakshatra, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Center)
-                    Text(col3, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    Text(col4, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                    Text(connection, color = Color.DarkGray, fontSize = 12.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center)
-                }
+        } else if (error != null) {
+            Box(modifier = Modifier.fillMaxWidth().height(250.dp), contentAlignment = Alignment.Center) {
+                Text(text = "Error: $error", color = Color.Red)
             }
+        } else if (kpData != null) {
+            com.astrohark.app.ui.chat.DynamicKpRasiKadam(kpData!!)
+            Spacer(modifier = Modifier.height(16.dp))
+            com.astrohark.app.ui.chat.PlanetIndicatorsTable(kpData!!)
+            Spacer(modifier = Modifier.height(16.dp))
+            com.astrohark.app.ui.chat.BhavaIndicatorsTable(kpData!!)
         }
     }
 }

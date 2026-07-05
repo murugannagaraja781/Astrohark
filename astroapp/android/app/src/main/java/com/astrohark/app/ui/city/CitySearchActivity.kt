@@ -77,44 +77,83 @@ fun CSCScreen(viewModel: CityViewModel, onFinalSelect: (LocationItem) -> Unit) {
             )
         }
 
+        var showCountryDialog by remember { mutableStateOf(false) }
+        var showStateDialog by remember { mutableStateOf(false) }
+
         Column(modifier = Modifier.padding(16.dp)) {
-            // STEP 1: Country Selection (Horizontal if few, but let's keep it vertical and simple)
+            // STEP 1: Country Selection
             Text("Country", style = MaterialTheme.typography.titleSmall)
             LocationPickerField(
                 value = uiState.selectedCountry?.name ?: "Select Country",
-                onClick = { /* Could open country list, but it defaults to India as per ViewModel */ }
+                onClick = { showCountryDialog = true }
             )
+
+            if (showCountryDialog) {
+                AlertDialog(
+                    onDismissRequest = { showCountryDialog = false },
+                    title = { Text("Select Country") },
+                    text = {
+                        LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
+                            items(uiState.countries) { country ->
+                                ListItem(
+                                    headlineContent = { Text(country.name) },
+                                    modifier = Modifier.clickable {
+                                        viewModel.onCountrySelected(country)
+                                        showCountryDialog = false
+                                    }
+                                )
+                                Divider()
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { showCountryDialog = false }) {
+                            Text("Close")
+                        }
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             // STEP 2: State Selection
             if (uiState.selectedCountry != null) {
                 Text("Select State", style = MaterialTheme.typography.titleSmall)
-                Text(
-                    text = uiState.selectedState?.name ?: "Select State Below",
-                    color = MaterialTheme.colorScheme.primary,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(vertical = 4.dp)
+                LocationPickerField(
+                    value = uiState.selectedState?.name ?: "Select State",
+                    onClick = { showStateDialog = true }
                 )
 
-                if (uiState.isLoading && uiState.states.isEmpty()) {
-                   LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                }
-
-                // Show states if not selected or change state
-                if (uiState.selectedState == null) {
-                    LazyColumn(modifier = Modifier.heightIn(max = 200.dp).background(Color.Gray.copy(alpha=0.05f))) {
-                        items(uiState.states) { state ->
-                            ListItem(
-                                headlineContent = { Text(state.name) },
-                                modifier = Modifier.clickable { viewModel.onStateSelected(state) }
-                            )
+                if (showStateDialog) {
+                    AlertDialog(
+                        onDismissRequest = { showStateDialog = false },
+                        title = { Text("Select State") },
+                        text = {
+                            if (uiState.states.isEmpty() && uiState.isLoading) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            } else {
+                                LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
+                                    items(uiState.states) { state ->
+                                        ListItem(
+                                            headlineContent = { Text(state.name) },
+                                            modifier = Modifier.clickable {
+                                                viewModel.onStateSelected(state)
+                                                showStateDialog = false
+                                            }
+                                        )
+                                        Divider()
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { showStateDialog = false }) {
+                                Text("Close")
+                            }
                         }
-                    }
-                } else {
-                    TextButton(onClick = { viewModel.onCountrySelected(uiState.selectedCountry!!) }) {
-                        Text("Change State")
-                    }
+                    )
                 }
             }
 

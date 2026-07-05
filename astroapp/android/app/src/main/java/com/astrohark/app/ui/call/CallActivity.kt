@@ -111,6 +111,7 @@ class CallActivity : ComponentActivity() {
     private var isEditingIntake by mutableStateOf(false) // Track when edit form is open
     private var isReady by mutableStateOf(false) 
     private var remainingTime by mutableStateOf("") // Available time from wallet
+    private var ratePerMinute by mutableStateOf(10.0)
     private var isRecordingState by mutableStateOf(false)
     private var mediaRecorder: MediaRecorder? = null
     private var audioFile: File? = null
@@ -305,6 +306,31 @@ class CallActivity : ComponentActivity() {
             session = tokenManager.getUserSession()
             val role = session?.role
 
+            if (role == "astrologer" && partnerId != null && clientBirthData == null) {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    try {
+                        val client = okhttp3.OkHttpClient()
+                        val bdReq = okhttp3.Request.Builder()
+                            .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${partnerId}/birthdata")
+                            .build()
+                        val bdResp = client.newCall(bdReq).execute()
+                        if (bdResp.isSuccessful) {
+                            val bdJson = JSONObject(bdResp.body?.string() ?: "{}")
+                            if (bdJson.optBoolean("success")) {
+                                val bData = bdJson.optJSONObject("birthData")
+                                if (bData != null) {
+                                    runOnUiThread {
+                                        clientBirthData = bData
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to fetch client birth data on startup", e)
+                    }
+                }
+            }
+
             // Set Content
             setContent {
                 CosmicAppTheme {
@@ -386,11 +412,10 @@ class CallActivity : ComponentActivity() {
 
             // Start Remaining Time Countdown
             if (true) {
-                val clientIdToFetch = if (role == "astrologer") partnerId else session?.userId
                 lifecycleScope.launch {
                     while (isActive) {
                         delay(1000)
-                        if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                        if (isBillingActive && remainingTime.isNotEmpty() && remainingTime != "00:00") {
                             val parts = remainingTime.split(":")
                             if (parts.size == 2) {
                                 val mins = parts[0].toIntOrNull() ?: 0
@@ -410,20 +435,37 @@ class CallActivity : ComponentActivity() {
                 // Fetch wallet and calculate initial remaining time
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
+                        val myRole = tokenManager.getUserSession()?.role ?: "client"
+                        val clientIdToFetch = if (myRole == "astrologer") partnerId else tokenManager.getUserSession()?.userId
+                        val astroIdToFetch = if (myRole == "astrologer") tokenManager.getUserSession()?.userId else partnerId
+
                         val client = okhttp3.OkHttpClient()
-                        val request = okhttp3.Request.Builder()
+                        
+                        // Fetch client wallet balance
+                        val clientReq = okhttp3.Request.Builder()
                             .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${clientIdToFetch}")
                             .build()
-                        val response = client.newCall(request).execute()
-                        if (response.isSuccessful) {
-                            val json = JSONObject(response.body?.string() ?: "{}")
-                            val walletBalance = json.optDouble("walletBalance", 0.0)
-                            val ratePerMin = 10.0
-                            val totalMinutes = (walletBalance / ratePerMin).toInt()
+                        val clientResp = client.newCall(clientReq).execute()
+                        
+                        // Fetch astrologer price
+                        val astroReq = okhttp3.Request.Builder()
+                            .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${astroIdToFetch}")
+                            .build()
+                        val astroResp = client.newCall(astroReq).execute()
+                        
+                        if (clientResp.isSuccessful && astroResp.isSuccessful) {
+                            val clientJson = JSONObject(clientResp.body?.string() ?: "{}")
+                            val astroJson = JSONObject(astroResp.body?.string() ?: "{}")
+                            
+                            val walletBalance = clientJson.optDouble("walletBalance", 0.0)
+                            val ratePerMin = astroJson.optDouble("price", 10.0)
+                            ratePerMinute = ratePerMin
+                            
+                            val totalMinutes = if (ratePerMin > 0) (walletBalance / ratePerMin).toInt() else 0
                             remainingTime = String.format("%02d:%02d", totalMinutes, 0)
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Failed to fetch wallet balance", e)
+                        Log.e(TAG, "Failed to fetch wallet balance or astro price", e)
                     }
                 }
                 
@@ -1077,6 +1119,8 @@ class CallActivity : ComponentActivity() {
             runOnUiThread {
                 Log.d(TAG, "Billing started event received. Initiator: $isInitiator")
                 isBillingActive = true
+                ratePerMinute = info.ratePerMinute
+                remainingTime = String.format("%02d:00", info.availableMinutes)
                 // Offer is now created in startCallLimit() immediately, not here.
                 // If offer hasn't been created yet (edge case), create it now as fallback
                 if (isInitiator && ::peerConnection.isInitialized && peerConnection.localDescription == null) {
@@ -1085,6 +1129,16 @@ class CallActivity : ComponentActivity() {
                         createOffer()
                     }, 500)
                 }
+            }
+        }
+
+        SocketManager.onWalletUpdate { data ->
+            runOnUiThread {
+                try {
+                    val balance = data.optDouble("balance", 0.0)
+                    val totalMinutes = if (ratePerMinute > 0) (balance / ratePerMinute).toInt() else 0
+                    remainingTime = String.format("%02d:%02d", totalMinutes, 0)
+                } catch (e: Exception) { e.printStackTrace() }
             }
         }
 
@@ -1300,6 +1354,7 @@ class CallActivity : ComponentActivity() {
         SocketManager.off("session-ended")
         SocketManager.off("billing-started")
         SocketManager.off("client-birth-chart")
+        SocketManager.off("wallet-update")
         SocketManager.getSocket()?.off(io.socket.client.Socket.EVENT_DISCONNECT)
         try {
             if (proximityWakeLock?.isHeld == true) proximityWakeLock?.release()
@@ -1485,8 +1540,7 @@ fun CallScreen(
 ) {
     val colors = com.astrohark.app.ui.theme.CosmicAppTheme.colors
     val context = LocalContext.current
-    var showKpChartDialog by remember { mutableStateOf(false) }
-    
+
     // Modern Summary Overlay
     if (summary != null) {
         ModernSummaryDialog(
@@ -1503,12 +1557,7 @@ fun CallScreen(
         Toast.makeText(context, "Call irugum pothu back button vela seiyathu. Mudika 'End Call' azhuthavum", Toast.LENGTH_LONG).show()
     }
 
-    if (showKpChartDialog && clientBirthData != null) {
-        KpChartDialog(
-            birthData = clientBirthData,
-            onDismiss = { showKpChartDialog = false }
-        )
-    }
+
 
     Box(
         modifier = Modifier
@@ -1685,18 +1734,6 @@ fun CallScreen(
                     if (role == "astrologer") {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             ControlBtnItem(onClick = onShowRasi, icon = R.drawable.ic_chart, label = "Chart", active = true)
-                            ControlBtnItem(
-                                onClick = {
-                                    if (clientBirthData != null) {
-                                        showKpChartDialog = true
-                                    } else {
-                                        Toast.makeText(context, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                icon = Icons.Default.GridView,
-                                label = "KP Chart",
-                                active = showKpChartDialog
-                            )
                             val hasPartner = clientBirthData?.has("partnerData") == true || clientBirthData?.has("partner") == true
                             ControlBtnItem(
                                 onClick = onShowMatch, 

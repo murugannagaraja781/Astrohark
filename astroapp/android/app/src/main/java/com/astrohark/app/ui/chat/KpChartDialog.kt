@@ -212,17 +212,15 @@ fun DynamicKpRasiKadam(kpData: JSONObject) {
         }
     }
 
-    // Fill only Cusp 1 (Lagnam) to keep chart simple and traditional
+    // Fill the 12 house cusps (bhavas) with Roman numerals
     for (i in 0 until housesArray.length()) {
         val h = housesArray.optJSONObject(i)
         if (h != null) {
             val bhava = h.optInt("bhava")
-            if (bhava == 1) {
-                val rasi = h.optString("rasi")
-                val lon = h.optDouble("longitude")
-                val label = "லக் ${formatKpDegree(lon)}"
-                gridItemsByRasi.getOrPut(rasi) { mutableListOf() }.add(Pair(label, Color.Black))
-            }
+            val rasi = h.optString("rasi")
+            val lon = h.optDouble("longitude")
+            val label = "$bhava ${formatKpDegree(lon)}"
+            gridItemsByRasi.getOrPut(rasi) { mutableListOf() }.add(Pair(label, Color(0xFF8B0000)))
         }
     }
 

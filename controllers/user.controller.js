@@ -51,3 +51,94 @@ exports.applyReferral = async (req, res) => {
         res.status(500).json({ ok: false, error: 'Server error' });
     }
 };
+
+exports.getBirthData = async (req, res) => {
+    try {
+        const user = await User.findOne({ userId: req.params.userId });
+        if (!user) {
+            return res.status(404).json({ success: false, error: 'User not found' });
+        }
+
+        const bd = user.birthDetails || {};
+        const id = user.intakeDetails || {};
+
+        let year = 0, month = 0, day = 0;
+        if (bd.dob) {
+            const parts = bd.dob.split('-');
+            if (parts.length === 3) {
+                year = parseInt(parts[0]) || 0;
+                month = parseInt(parts[1]) || 0;
+                day = parseInt(parts[2]) || 0;
+            }
+        }
+
+        let hour = 12, minute = 0;
+        if (bd.tob) {
+            const parts = bd.tob.split(':');
+            if (parts.length >= 2) {
+                hour = parseInt(parts[0]) || 0;
+                minute = parseInt(parts[1]) || 0;
+            }
+        }
+
+        let partnerData = undefined;
+        if (id.partner && id.partner.name) {
+            let pYear = 0, pMonth = 0, pDay = 0;
+            if (id.partner.dob) {
+                const parts = id.partner.dob.split('-');
+                if (parts.length === 3) {
+                    pYear = parseInt(parts[0]) || 0;
+                    pMonth = parseInt(parts[1]) || 0;
+                    pDay = parseInt(parts[2]) || 0;
+                }
+            }
+
+            let pHour = 12, pMinute = 0;
+            if (id.partner.tob) {
+                const parts = id.partner.tob.split(':');
+                if (parts.length >= 2) {
+                    pHour = parseInt(parts[0]) || 0;
+                    pMinute = parseInt(parts[1]) || 0;
+                }
+            }
+
+            partnerData = {
+                name: id.partner.name,
+                gender: id.gender === 'Male' ? 'Female' : 'Male',
+                day: pDay,
+                month: pMonth,
+                year: pYear,
+                hour: pHour,
+                minute: pMinute,
+                city: id.partner.pob || '',
+                latitude: bd.lat || 13.0827,
+                longitude: bd.lon || 80.2707,
+                timezone: 'Asia/Kolkata'
+            };
+        }
+
+        const birthData = {
+            name: user.name || 'User',
+            gender: id.gender || user.gender || 'Male',
+            day: day,
+            month: month,
+            year: year,
+            hour: hour,
+            minute: minute,
+            city: bd.pob || user.pob || '',
+            latitude: bd.lat || 13.0827,
+            longitude: bd.lon || 80.2707,
+            timezone: 'Asia/Kolkata',
+            isMatching: !!partnerData,
+            partnerData: partnerData
+        };
+
+        res.json({
+            success: true,
+            birthData: birthData
+        });
+    } catch (err) {
+        console.error('getBirthData error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+};

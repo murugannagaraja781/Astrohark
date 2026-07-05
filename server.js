@@ -528,6 +528,14 @@ const connectDB = async (retries = 5) => {
     console.log('✅ MongoDB Connected to:', MONGO_URI.split('@').pop().split('?')[0]);
     if (process.env.NODE_ENV !== 'test') {
       seedDatabase();
+      User.updateMany(
+        { role: 'astrologer', orderCount: { $exists: false } },
+        { $set: { orderCount: 1000 } }
+      ).then(res => {
+         if (res.modifiedCount > 0) {
+           console.log(`✅ Set default orderCount of 1000 for ${res.modifiedCount} astrologers.`);
+         }
+      }).catch(e => console.error('Migration error:', e));
     }
   } catch (err) {
     console.error('❌ MongoDB Connection Error:', err.message);
@@ -1652,6 +1660,7 @@ io.on('connection', (socket) => {
   socket.on('get-astrologers', async (cb) => {
     const formatted = await getFormattedAstrologers(SERVER_URL);
     if (typeof cb === 'function') cb({ astrologers: formatted });
+    socket.emit('astrologer-update', formatted);
   });
 
   // --- Feedback & Rate Limiting ---
@@ -2021,7 +2030,7 @@ io.on('connection', (socket) => {
     return 4; // Max slab 4+
   }
 
-  function tickSessions() {
+  async function tickSessions() {
     const now = Date.now();
     if (Math.floor(now / 1000) % 10 === 0) {
       console.log(`[Ticker] Active: ${activeSessions.size}`);
@@ -2049,6 +2058,30 @@ io.on('connection', (socket) => {
       // 2. Increment billable seconds as long as session is active.
       // Transient socket disconnects during the call shouldn't freeze the billing timer.
       session.elapsedBillableSeconds++;
+
+      // Enforce 5-minute limit for new users promo
+      if (session.isNewUser && session.elapsedBillableSeconds >= 300) {
+        console.log(`[Ticker] Ending session ${sessionId} - 5 minutes promo limit reached.`);
+        billingService.endSessionRecord(sessionId, () => serviceBroadcastAstroUpdate(io, SERVER_URL));
+        io.to(sessionId).emit('session-ended', { sessionId, reason: 'promo_limit_reached' });
+        continue;
+      }
+
+      // Check balance at minute boundaries (every 60 seconds)
+      if (session.elapsedBillableSeconds > 0 && session.elapsedBillableSeconds % 60 === 0) {
+        const client = await User.findOne({ userId: session.clientId });
+        const astro = await User.findOne({ userId: session.astrologerId });
+        if (client && astro) {
+          const minuteIndex = Math.floor(session.elapsedBillableSeconds / 60) + 1;
+          const rate = client.isNewUser ? (client.walletBalance / Math.max(1, 5 - minuteIndex + 1)) : (astro.price || 15);
+          if (client.walletBalance < rate) {
+            console.log(`[Ticker] Ending session ${sessionId} due to insufficient balance.`);
+            billingService.endSessionRecord(sessionId, () => serviceBroadcastAstroUpdate(io, SERVER_URL));
+            io.to(sessionId).emit('session-ended', { sessionId, reason: 'insufficient_balance' });
+            continue;
+          }
+        }
+      }
 
       // DEBUG LOGGING
       if (session.elapsedBillableSeconds % 30 === 0) {
@@ -2317,13 +2350,22 @@ io.on('connection', (socket) => {
   socket.on('admin-toggle-ban', async (data, cb) => {
     if (!await checkAdmin(socket.id)) return cb({ ok: false });
     try {
-      await User.updateOne({ userId: data.userId }, { isBanned: data.isBanned });
+      const updateData = { isBanned: data.isBanned };
+      if (data.isBanned) {
+        updateData.isOnline = false;
+        updateData.isAvailable = false;
+        updateData.isChatOnline = false;
+        updateData.isAudioOnline = false;
+        updateData.isVideoOnline = false;
+      }
+      await User.updateOne({ userId: data.userId }, { $set: updateData });
       cb({ ok: true });
       // If banned, disconnect socket?
       if (data.isBanned) {
         const s = userSockets.get(data.userId);
         if (s) io.to(s).emit('force-logout'); // Need to handle client side
       }
+      serviceBroadcastAstroUpdate(io, SERVER_URL);
     } catch (e) { cb({ ok: false }); }
   });
 
@@ -2977,6 +3019,15 @@ app.post('/api/call/initiate', async (req, res) => {
 
     if (!astro || !astro.isAvailable) {
       return res.json({ ok: false, error: 'Astrologer is Offline', code: 'OFFLINE' });
+    }
+
+    // Check caller's wallet balance
+    const caller = await User.findOne({ userId: callerId });
+    if (!caller) return res.json({ ok: false, error: 'Caller not found' });
+
+    const requiredMinBalance = caller.isNewUser ? 24 : (astro.price || 15);
+    if (caller.role !== 'astrologer' && (caller.walletBalance || 0) < requiredMinBalance) {
+      return res.json({ ok: false, error: `Insufficient balance. Minimum ₹${requiredMinBalance} required.`, code: 'LOW_BALANCE' });
     }
 
     // B. Create Call Request

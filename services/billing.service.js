@@ -31,7 +31,10 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
         if (!client) return;
 
         let pricePerMin = 10;
-        if (astro.price && astro.price > 0) {
+        if (client.isNewUser) {
+            const remainingMinutes = Math.max(1, 5 - (minuteIndex || 1) + 1);
+            pricePerMin = client.walletBalance / remainingMinutes;
+        } else if (astro.price && astro.price > 0) {
             pricePerMin = parseInt(astro.price);
         } else {
             if (session.type === 'audio') pricePerMin = 15;
@@ -149,6 +152,10 @@ async function endSessionRecord(sessionId, broadcastAstroUpdate) {
 
     if (s.clientId && billableSeconds > 0) {
         await User.updateOne({ userId: s.clientId }, { isNewUser: false });
+    }
+
+    if (s.astrologerId && billableSeconds > 0) {
+        await User.updateOne({ userId: s.astrologerId }, { $inc: { orderCount: 1 } });
     }
 
     if (s.pairMonthId) {

@@ -346,7 +346,9 @@ class HomeActivity : AppCompatActivity() {
             experience = json.optInt("experience", 0),
             isVerified = json.optBoolean("isVerified", false),
             walletBalance = json.optDouble("walletBalance", 0.0),
-            isBusy = json.optBoolean("isBusy", false)
+            orders = json.optInt("orderCount", json.optInt("orders", 1000)),
+            isBusy = json.optBoolean("isBusy", false),
+            profession = json.optString("profession", "")
         )
     }
 
@@ -470,24 +472,25 @@ class HomeActivity : AppCompatActivity() {
     }
 
     private fun startChat(astro: Astrologer) {
-        initiateSession(astro.userId, "chat", astro.name, astro.image)
+        initiateSession(astro, "chat")
     }
 
     private fun startCall(astro: Astrologer, type: String) {
-        initiateSession(astro.userId, type, astro.name, astro.image)
+        initiateSession(astro, type)
     }
 
-    private fun initiateSession(astrologerId: String, type: String, astroName: String, astroImage: String) {
-        if (_walletBalance.value <= 0.0) {
-            Toast.makeText(this, "Insufficient Main Balance. Please recharge to start.", Toast.LENGTH_LONG).show()
+    private fun initiateSession(astro: Astrologer, type: String) {
+        val requiredMin = if (_isNewUser.value) 24.0 else astro.price.toDouble()
+        if (_walletBalance.value < requiredMin) {
+            Toast.makeText(this, "Insufficient Balance. Minimum ₹${requiredMin.toInt()} required to start.", Toast.LENGTH_LONG).show()
             val intent = Intent(this, com.astrohark.app.ui.wallet.WalletActivity::class.java)
             startActivity(intent)
             return
         }
         val intent = Intent(this, com.astrohark.app.ui.intake.IntakeActivity::class.java).apply {
-            putExtra("partnerId", astrologerId)
-            putExtra("partnerName", astroName)
-            putExtra("partnerImage", astroImage)
+            putExtra("partnerId", astro.userId)
+            putExtra("partnerName", astro.name)
+            putExtra("partnerImage", astro.image)
             putExtra("type", type)
         }
         startActivity(intent)

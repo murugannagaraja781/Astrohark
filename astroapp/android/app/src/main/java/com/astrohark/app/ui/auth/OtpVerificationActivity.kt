@@ -158,8 +158,10 @@ fun OtpScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
+                val isTamil = java.util.Locale.getDefault().language == "ta"
                 Text(
-                    text = "Please enter the OTP code sent to your number",
+                    text = if (isTamil) "உங்கள் எண் $phone -க்கு அனுப்பப்பட்ட OTP குறியீட்டை உள்ளிடவும்"
+                           else "Please enter the OTP code sent to $phone",
                     style = MaterialTheme.typography.bodyMedium,
                     color = CosmicAppTheme.colors.textSecondary,
                     textAlign = TextAlign.Center,

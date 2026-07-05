@@ -227,7 +227,9 @@ class GuestDashboardActivity : AppCompatActivity() {
              image = json.optString("image", ""),
              experience = json.optInt("experience", 0),
              isVerified = json.optBoolean("isVerified", false),
-             walletBalance = json.optDouble("walletBalance", 0.0)
+             walletBalance = json.optDouble("walletBalance", 0.0),
+             orders = json.optInt("orderCount", json.optInt("orders", 1000)),
+             profession = json.optString("profession", "")
          )
     }
 

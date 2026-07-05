@@ -116,3 +116,25 @@ A clean rebuild was performed after adding the KP Chart dialog support to the as
 * **Size (APK):** 123,777,936 Bytes (~118.04 MB)
 * **Size (AAB):** 92,946,695 Bytes (~88.64 MB)
 * **Status:** Build and Packaging Successful
+
+---
+
+## [2026-07-03] - Debug Build (House Cusps Roman Numerals & Degrees)
+
+A rebuild was performed after implementing the rendering of all 12 Placidus house cusps (bhavas) with Roman numerals (`I` to `XII`) and formatted degrees (`DD°MM'`) in the South Indian astrology grids.
+
+* **Date & Time:** July 03, 2026 - 03:05 PM (IST)
+* **File Name:** `astrohark-debug.apk`, `astrohark-release.aab`
+* **File Path:** `releases/astrohark-debug.apk` and `releases/astrohark-release.aab`
+* **Status:** Build Successful
+
+---
+
+## [2026-07-04] - Debug Build (Real-Time Synchronized Call & Chat Timers)
+
+A rebuild was performed after implementing real-time synchronized call/chat remaining minutes countdown, using dynamic wallet balance and astrologer rate fetches, preventing time loss during connection, and dynamically updating on recharge events.
+
+* **Date & Time:** July 04, 2026 - 03:55 PM (IST)
+* **File Name:** `astrohark-debug.apk`
+* **File Path:** `releases/astrohark-debug.apk`
+* **Status:** Build Successful

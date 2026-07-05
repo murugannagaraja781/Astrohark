@@ -40,6 +40,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import androidx.lifecycle.lifecycleScope
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -77,6 +78,8 @@ class ChatActivity : ComponentActivity() {
     private var clientBirthData by mutableStateOf<JSONObject?>(null)
     private var sessionDuration by mutableStateOf("00:00")
     private var remainingTime by mutableStateOf("")
+    private var isBillingActive by mutableStateOf(false)
+    private var ratePerMinute by mutableStateOf(10.0)
     private var chatDurationSeconds = 0
     private var remainingSeconds = 0
     private var timerHandler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -88,7 +91,7 @@ class ChatActivity : ComponentActivity() {
             val seconds = chatDurationSeconds % 60
             sessionDuration = String.format("%02d:%02d", minutes, seconds)
 
-            if (remainingSeconds > 0) {
+            if (isBillingActive && remainingSeconds > 0) {
                 remainingSeconds--
                 val remMins = remainingSeconds / 60
                 val remSecs = remainingSeconds % 60
@@ -297,6 +300,73 @@ class ChatActivity : ComponentActivity() {
         if (sessionId != null) {
               viewModel.loadHistory(sessionId!!)
               viewModel.joinSessionSafe(sessionId!!)
+              
+              if (toUserId != null) {
+                  lifecycleScope.launch(Dispatchers.IO) {
+                      try {
+                          val userSession = TokenManager(this@ChatActivity).getUserSession()
+                          val myRole = userSession?.role ?: "client"
+                          val myUserId = userSession?.userId
+                          
+                          val clientIdToFetch = if (myRole == "astrologer") toUserId else myUserId
+                          val astroIdToFetch = if (myRole == "astrologer") myUserId else toUserId
+
+                          val client = okhttp3.OkHttpClient()
+                          
+                          // Fetch client wallet balance
+                          val clientReq = okhttp3.Request.Builder()
+                              .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${clientIdToFetch}")
+                              .build()
+                          val clientResp = client.newCall(clientReq).execute()
+                          
+                          // Fetch astrologer price
+                          val astroReq = okhttp3.Request.Builder()
+                              .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${astroIdToFetch}")
+                              .build()
+                          val astroResp = client.newCall(astroReq).execute()
+                          
+                          if (clientResp.isSuccessful && astroResp.isSuccessful) {
+                              val clientJson = JSONObject(clientResp.body?.string() ?: "{}")
+                              val astroJson = JSONObject(astroResp.body?.string() ?: "{}")
+                              
+                              val walletBalance = clientJson.optDouble("walletBalance", 0.0)
+                              val ratePerMin = astroJson.optDouble("price", 10.0)
+                              ratePerMinute = ratePerMin
+                              
+                              val totalMinutes = if (ratePerMin > 0) (walletBalance / ratePerMin).toInt() else 0
+                              runOnUiThread {
+                                  remainingSeconds = totalMinutes * 60
+                                  remainingTime = String.format("%02d:%02d", totalMinutes, 0)
+                              }
+
+                              // Fetch birthdata if it is currently null
+                              if (clientBirthData == null) {
+                                  try {
+                                      val bdReq = okhttp3.Request.Builder()
+                                          .url("${com.astrohark.app.utils.Constants.SERVER_URL}/api/user/${clientIdToFetch}/birthdata")
+                                          .build()
+                                      val bdResp = client.newCall(bdReq).execute()
+                                      if (bdResp.isSuccessful) {
+                                          val bdJson = JSONObject(bdResp.body?.string() ?: "{}")
+                                          if (bdJson.optBoolean("success")) {
+                                              val bData = bdJson.optJSONObject("birthData")
+                                              if (bData != null) {
+                                                  runOnUiThread {
+                                                      clientBirthData = bData
+                                                  }
+                                              }
+                                          }
+                                      }
+                                  } catch (e: Exception) {
+                                      android.util.Log.e("ChatActivity", "Failed to fetch client birthdata", e)
+                                  }
+                              }
+                          }
+                      } catch (e: Exception) {
+                          android.util.Log.e("ChatActivity", "Failed to fetch wallet balance or astro price", e)
+                      }
+                  }
+              }
         }
     }
 
@@ -330,6 +400,28 @@ class ChatActivity : ComponentActivity() {
                 android.util.Log.w("ChatActivity", "Balance reached 0. Ending session.")
                 Toast.makeText(this, "Balance Exhausted. Ending...", Toast.LENGTH_SHORT).show()
                 endChat()
+            }
+        }
+        viewModel.billingStarted.observe(this) { started ->
+            if (started) {
+                isBillingActive = true
+            }
+        }
+        viewModel.billingInfo.observe(this) { info ->
+            ratePerMinute = info.ratePerMinute
+            remainingSeconds = info.availableMinutes * 60
+            val remMins = remainingSeconds / 60
+            val remSecs = remainingSeconds % 60
+            remainingTime = String.format("%02d:%02d", remMins, remSecs)
+        }
+        SocketManager.onWalletUpdate { data ->
+            runOnUiThread {
+                try {
+                    val balance = data.optDouble("balance", 0.0)
+                    val totalMinutes = if (ratePerMinute > 0) (balance / ratePerMinute).toInt() else 0
+                    remainingSeconds = totalMinutes * 60
+                    remainingTime = String.format("%02d:%02d", totalMinutes, 0)
+                } catch (e: Exception) { e.printStackTrace() }
             }
         }
     }
@@ -412,6 +504,7 @@ class ChatActivity : ComponentActivity() {
         super.onDestroy()
         timerHandler.removeCallbacks(timerRunnable)
         viewModel.stopListeners()
+        SocketManager.off("wallet-update")
         audioPlayer.release()
     }
 }
@@ -449,7 +542,6 @@ fun ChatScreen(
     var isRecording by remember { mutableStateOf(false) }
     var recordingDuration by remember { mutableStateOf("00:00") }
     var recordingTimerJob: kotlinx.coroutines.Job? by remember { mutableStateOf(null) }
-    var showKpChartDialog by remember { mutableStateOf(false) }
 
     val recordPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -599,7 +691,6 @@ fun ChatScreen(
                     imagePickerLauncher.launch("image/*")
                 },
                 onViewChart = if (isAstrologer) onViewChart else null,
-                onViewKpChart = if (isAstrologer) { { showKpChartDialog = true } } else null,
                 clientBirthData = clientBirthData,
                 isRecording = isRecording,
                 recordingDuration = recordingDuration,
@@ -665,12 +756,7 @@ fun ChatScreen(
             )
         }
     ) { padding ->
-        if (showKpChartDialog && clientBirthData != null) {
-            KpChartDialog(
-                birthData = clientBirthData,
-                onDismiss = { showKpChartDialog = false }
-            )
-        }
+
 
         Box(
             modifier = Modifier
@@ -1094,19 +1180,7 @@ fun ChatInputBar(
                     modifier = Modifier.padding(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (onViewKpChart != null) {
-                        val isReady = clientBirthData != null
-                        IconButton(
-                            onClick = onViewKpChart,
-                            modifier = Modifier.size(40.dp).background(if(isReady) colors.accent.copy(alpha=0.1f) else Color.Transparent, CircleShape)
-                        ) {
-                            if (isReady) {
-                                Icon(Icons.Default.GridView, "KP Chart", tint = Color(0xFFE91E63))
-                            } else {
-                                Icon(Icons.Default.Refresh, "Pending", tint = Color.LightGray)
-                            }
-                        }
-                    }
+
 
                     if (onViewChart != null) {
                         val isReady = clientBirthData != null
@@ -1176,7 +1250,7 @@ fun ChatInputBar(
                             modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
                             shape = RoundedCornerShape(AstroDimens.RadiusLarge),
                             placeholder = { 
-                                Text("Type a message...", style = MaterialTheme.typography.bodyMedium, color = CosmicAppTheme.colors.textSecondary.copy(alpha = 0.5f)) 
+                                Text("Type a message...", style = MaterialTheme.typography.bodyMedium, color = Color.Gray) 
                             },
                             maxLines = 4,
                             colors = TextFieldDefaults.colors(
@@ -1184,9 +1258,9 @@ fun ChatInputBar(
                                 unfocusedContainerColor = Color.Transparent,
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent,
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                cursorColor = CosmicAppTheme.colors.accent
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                cursorColor = Color.Black
                             )
                         )
                     }

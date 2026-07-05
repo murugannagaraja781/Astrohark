@@ -711,8 +711,9 @@ fun HomeScreen(
     }
 
 
-    fun checkBalanceAndProceed(action: () -> Unit) {
-        if (!isGuest && walletBalance < 10) { // Skip check for guest (login handles it)
+    fun checkBalanceAndProceed(astro: Astrologer, action: () -> Unit) {
+        val requiredMin = if (isNewUser) 24.0 else astro.price.toDouble()
+        if (!isGuest && walletBalance < requiredMin) { // Skip check for guest (login handles it)
             showLowBalanceDialog = true
         } else {
             action()
@@ -855,7 +856,7 @@ fun HomeScreen(
                             }
 
                         )
-                        1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed { onCallClick(astro, type) } }, isTamil, searchQuery, { searchQuery = it }, selectedFilter, activeServiceView, onBack = { activeServiceView = null; selectedFilter = "All"; selectedTab = 0 })
+                        1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed(astro) { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed(astro) { onCallClick(astro, type) } }, isTamil, searchQuery, { searchQuery = it }, selectedFilter, activeServiceView, onBack = { activeServiceView = null; selectedFilter = "All"; selectedTab = 0 })
                         2 -> RitualsTab(rituals, isTamil)
                         3 -> ProfileTab(walletBalance, isTamil, onWalletClick, onDrawerItemClick, onLogoutClick)
                         4 -> ReferralTab(referralCode, shareLink, isTamil, isNewUser, onApplyReferral)
@@ -2044,6 +2045,8 @@ fun AstrologerCard(
                     putExtra("astro_skills", astro.skills.joinToString(", "))
                     putExtra("astro_image", astro.image)
                     putExtra("astro_price", astro.price)
+                    putExtra("astro_orders", astro.orders)
+                    putExtra("astro_profession", astro.profession)
                     putExtra("is_chat_online", astro.isChatOnline)
                     putExtra("is_audio_online", astro.isAudioOnline)
                     putExtra("is_video_online", astro.isVideoOnline)
@@ -2062,17 +2065,17 @@ fun AstrologerCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.width(86.dp)
                 ) {
-                    Box(modifier = Modifier.size(width = 72.dp, height = 60.dp)) {
+                    Box(modifier = Modifier.size(70.dp)) {
                         AsyncImage(
                             model = getImageUrl(astro.image),
                             contentDescription = astro.name,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(RoundedCornerShape(30.dp))
+                                .clip(androidx.compose.foundation.shape.CircleShape)
                                 .border(
                                     if (isPandit) 2.dp else 1.dp,
                                     if (isPandit) Color(0xFFFFD700) else Color(0xFFF0F0F0),
-                                    RoundedCornerShape(30.dp)
+                                    androidx.compose.foundation.shape.CircleShape
                                 ),
                             contentScale = ContentScale.Crop,
                             error = painterResource(id = com.astrohark.app.R.drawable.ic_person_placeholder)

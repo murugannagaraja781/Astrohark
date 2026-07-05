@@ -410,7 +410,6 @@ fun AstrologerDashboardScreen(
         "History" to Icons.Default.History,
         "Earnings" to Icons.Default.MonetizationOn,
         "Profile" to Icons.Default.Person,
-        "Settings" to androidx.compose.material.icons.Icons.Default.Settings,
         "Star" to Icons.Default.Star
     )
 

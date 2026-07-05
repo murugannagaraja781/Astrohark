@@ -38,6 +38,9 @@ import com.astrohark.app.R
 import com.astrohark.app.ui.theme.CosmicAppTheme
 import com.astrohark.app.ui.theme.AstroDimens
 import coil.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
+import android.widget.Toast
 
 class AstrologerProfileActivity : ComponentActivity() {
 
@@ -53,6 +56,8 @@ class AstrologerProfileActivity : ComponentActivity() {
         val isChatOnline = intent.getBooleanExtra("is_chat_online", false)
         val isAudioOnline = intent.getBooleanExtra("is_audio_online", false)
         val isVideoOnline = intent.getBooleanExtra("is_video_online", false)
+        val astroOrders = intent.getIntExtra("astro_orders", 1000)
+        val astroProfession = intent.getStringExtra("astro_profession") ?: ""
 
         setContent {
             CosmicAppTheme {
@@ -63,6 +68,8 @@ class AstrologerProfileActivity : ComponentActivity() {
                     skills = astroSkills,
                     image = astroImage,
                     price = astroPrice,
+                    orders = astroOrders,
+                    profession = astroProfession,
                     isChatOnline = isChatOnline,
                     isAudioOnline = isAudioOnline,
                     isVideoOnline = isVideoOnline,
@@ -91,6 +98,8 @@ fun AstrologerProfileScreen(
     skills: String,
     image: String,
     price: Int,
+    orders: Int,
+    profession: String,
     isChatOnline: Boolean,
     isAudioOnline: Boolean,
     isVideoOnline: Boolean,
@@ -111,7 +120,28 @@ fun AstrologerProfileScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {}) {
+                    val context = LocalContext.current
+                    IconButton(onClick = {
+                        try {
+                            val isTamil = java.util.Locale.getDefault().language == "ta"
+                            val shareMessage = if (isTamil) {
+                                "Astrohark செயலியில் உள்ள ஜோதிடர் $name என்பவரின் விவரங்களை உங்களுடன் பகிர்ந்து கொள்கிறேன். இவருடன் பேச அல்லது ஆலோசிக்க செயலியை பதிவிறக்கம் செய்ய: https://play.google.com/store/apps/details?id=com.astrohark.app"
+                            } else {
+                                "Check out Astrologer $name on Astrohark App! Consult with them here: https://play.google.com/store/apps/details?id=com.astrohark.app"
+                            }
+                            
+                            val sendIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, shareMessage)
+                                type = "text/plain"
+                            }
+                            
+                            val shareIntent = Intent.createChooser(sendIntent, if (isTamil) "வாட்ஸ்அப்பில் பகிரவும்" else "Share via")
+                            context.startActivity(shareIntent)
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }) {
                         Icon(Icons.Default.Share, "Share", tint = CosmicAppTheme.colors.accent)
                     }
                 },
@@ -193,6 +223,13 @@ fun AstrologerProfileScreen(
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top=4.dp)) {
                     Text("★★★★★", color = Color(0xFFFFC107), fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    val isTamil = java.util.Locale.getDefault().language == "ta"
+                    Text(
+                        text = "| $orders ${if (isTamil) "வாடிக்கையாளர்கள்" else "customers"}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = CosmicAppTheme.colors.textSecondary
+                    )
                 }
 
                 Text(
@@ -237,7 +274,6 @@ fun AstrologerProfileScreen(
                     StatItem(icon = Icons.Default.CheckCircle, value = "$exp Years")
                 }
 
-                // Bio Section
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
@@ -248,7 +284,8 @@ fun AstrologerProfileScreen(
                         Text("About Astrologer", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.accent)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "$name is highly experienced in $skills. Dedicated to providing accurate guidance and helping clients find clarity in life's complex situations.",
+                            text = if (profession.isNotEmpty()) profession
+                                   else "$name is highly experienced in $skills. Dedicated to providing accurate guidance and helping clients find clarity in life's complex situations.",
                             style = MaterialTheme.typography.bodySmall,
                             color = CosmicAppTheme.colors.textSecondary,
                             lineHeight = 18.sp

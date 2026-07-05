@@ -89,13 +89,13 @@ class ChatActivity : ComponentActivity() {
             chatDurationSeconds++
             val minutes = chatDurationSeconds / 60
             val seconds = chatDurationSeconds % 60
-            sessionDuration = String.format("%02d:%02d", minutes, seconds)
+            sessionDuration = String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds)
 
             if (isBillingActive && remainingSeconds > 0) {
                 remainingSeconds--
                 val remMins = remainingSeconds / 60
                 val remSecs = remainingSeconds % 60
-                remainingTime = String.format("%02d:%02d", remMins, remSecs)
+                remainingTime = String.format(java.util.Locale.US, "%02d:%02d", remMins, remSecs)
             } else if (remainingSeconds == 0 && remainingTime.isNotEmpty()) {
                 remainingTime = "00:00"
             }
@@ -336,7 +336,7 @@ class ChatActivity : ComponentActivity() {
                               val totalMinutes = if (ratePerMin > 0) (walletBalance / ratePerMin).toInt() else 0
                               runOnUiThread {
                                   remainingSeconds = totalMinutes * 60
-                                  remainingTime = String.format("%02d:%02d", totalMinutes, 0)
+                                  remainingTime = String.format(java.util.Locale.US, "%02d:%02d", totalMinutes, 0)
                               }
 
                               // Fetch birthdata if it is currently null
@@ -393,7 +393,7 @@ class ChatActivity : ComponentActivity() {
             remainingSeconds = (mins * 60)
             val remMins = remainingSeconds / 60
             val remSecs = remainingSeconds % 60
-            remainingTime = String.format("%02d:%02d", remMins, remSecs)
+            remainingTime = String.format(java.util.Locale.US, "%02d:%02d", remMins, remSecs)
 
             // Auto-end if balance hits 0
             if (mins <= 0 && isTimerStarted) {
@@ -412,7 +412,7 @@ class ChatActivity : ComponentActivity() {
             remainingSeconds = info.availableMinutes * 60
             val remMins = remainingSeconds / 60
             val remSecs = remainingSeconds % 60
-            remainingTime = String.format("%02d:%02d", remMins, remSecs)
+            remainingTime = String.format(java.util.Locale.US, "%02d:%02d", remMins, remSecs)
         }
         SocketManager.onWalletUpdate { data ->
             runOnUiThread {
@@ -420,7 +420,7 @@ class ChatActivity : ComponentActivity() {
                     val balance = data.optDouble("balance", 0.0)
                     val totalMinutes = if (ratePerMinute > 0) (balance / ratePerMinute).toInt() else 0
                     remainingSeconds = totalMinutes * 60
-                    remainingTime = String.format("%02d:%02d", totalMinutes, 0)
+                    remainingTime = String.format(java.util.Locale.US, "%02d:%02d", totalMinutes, 0)
                 } catch (e: Exception) { e.printStackTrace() }
             }
         }
@@ -704,7 +704,7 @@ fun ChatScreen(
                             while (isRecording) {
                                 delay(1000)
                                 seconds++
-                                recordingDuration = String.format("%02d:%02d", seconds / 60, seconds % 60)
+                                recordingDuration = String.format(java.util.Locale.US, "%02d:%02d", seconds / 60, seconds % 60)
                             }
                         }
                     } else {
@@ -736,7 +736,7 @@ fun ChatScreen(
                                             }
                                             delay(1000) // Increase delay to ensure file is completely written and unlocked by OS
                                             
-                                            val durStr = String.format("%02d:%02d", durationSec / 60, durationSec % 60)
+                                            val durStr = String.format(java.util.Locale.US, "%02d:%02d", durationSec / 60, durationSec % 60)
                                             viewModel.uploadFileAndSend(file, "audio", sessionId, toUserId, durStr)
                                     } catch (e: Exception) {
                                         withContext(Dispatchers.Main) {

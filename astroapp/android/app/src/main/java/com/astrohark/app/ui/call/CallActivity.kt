@@ -150,7 +150,7 @@ class CallActivity : ComponentActivity() {
             val secondsToFormat = if (statusText.isEmpty()) callDurationSeconds else connectingSeconds
             val minutes = secondsToFormat / 60
             val seconds = secondsToFormat % 60
-            return String.format("%02d:%02d", minutes, seconds)
+            return String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds)
         }
 
     private val editIntakeLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
@@ -422,7 +422,7 @@ class CallActivity : ComponentActivity() {
                                 val secs = parts[1].toIntOrNull() ?: 0
                                 val totalSecs = mins * 60 + secs - 1
                                 if (totalSecs > 0) {
-                                    remainingTime = String.format("%02d:%02d", totalSecs / 60, totalSecs % 60)
+                                    remainingTime = String.format(java.util.Locale.US, "%02d:%02d", totalSecs / 60, totalSecs % 60)
                                 } else {
                                     remainingTime = "00:00"
                                     endCall() // Auto-end
@@ -462,7 +462,7 @@ class CallActivity : ComponentActivity() {
                             ratePerMinute = ratePerMin
                             
                             val totalMinutes = if (ratePerMin > 0) (walletBalance / ratePerMin).toInt() else 0
-                            remainingTime = String.format("%02d:%02d", totalMinutes, 0)
+                            remainingTime = String.format(java.util.Locale.US, "%02d:%02d", totalMinutes, 0)
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to fetch wallet balance or astro price", e)
@@ -1120,7 +1120,7 @@ class CallActivity : ComponentActivity() {
                 Log.d(TAG, "Billing started event received. Initiator: $isInitiator")
                 isBillingActive = true
                 ratePerMinute = info.ratePerMinute
-                remainingTime = String.format("%02d:00", info.availableMinutes)
+                remainingTime = String.format(java.util.Locale.US, "%02d:00", info.availableMinutes)
                 // Offer is now created in startCallLimit() immediately, not here.
                 // If offer hasn't been created yet (edge case), create it now as fallback
                 if (isInitiator && ::peerConnection.isInitialized && peerConnection.localDescription == null) {
@@ -1137,7 +1137,7 @@ class CallActivity : ComponentActivity() {
                 try {
                     val balance = data.optDouble("balance", 0.0)
                     val totalMinutes = if (ratePerMinute > 0) (balance / ratePerMinute).toInt() else 0
-                    remainingTime = String.format("%02d:%02d", totalMinutes, 0)
+                    remainingTime = String.format(java.util.Locale.US, "%02d:%02d", totalMinutes, 0)
                 } catch (e: Exception) { e.printStackTrace() }
             }
         }

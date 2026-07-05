@@ -1101,9 +1101,8 @@ class CallActivity : ComponentActivity() {
             try {
                 val bData = data.optJSONObject("birthData")
                 if (bData != null) {
-                    clientBirthData = bData
-                    Log.d(TAG, "✓ Received updated birth details for session $sessionId")
                     runOnUiThread {
+                        clientBirthData = bData
                         val myRole = TokenManager(this@CallActivity).getUserSession()?.role
                         if (myRole == "client") {
                             Toast.makeText(this@CallActivity, "Astrologer updated your birth details", Toast.LENGTH_SHORT).show()
@@ -1111,6 +1110,7 @@ class CallActivity : ComponentActivity() {
                             Toast.makeText(this@CallActivity, "Client updated their birth details", Toast.LENGTH_SHORT).show()
                         }
                     }
+                    Log.d(TAG, "✓ Received updated birth details for session $sessionId")
                 }
             } catch (e: Exception) { e.printStackTrace() }
         }

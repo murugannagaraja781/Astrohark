@@ -314,14 +314,16 @@ fun IntakeScreen(
 
         // Listen for astrologer response
         SocketManager.onSessionAnswered { response ->
-            val accepted = response.optBoolean("accept") // Server emits 'accept', not 'ok'
-            val sId = response.optString("sessionId")
-            if (accepted && sId == waitingSessionId) {
-                isWaiting = false
-                onSessionConnected(sId, callType ?: "audio")
-            } else if (!accepted && response.has("accept")) {
-                isWaiting = false
-                onUnanswered()
+            scope.launch {
+                val accepted = response.optBoolean("accept") // Server emits 'accept', not 'ok'
+                val sId = response.optString("sessionId")
+                if (accepted && sId == waitingSessionId) {
+                    isWaiting = false
+                    onSessionConnected(sId, callType ?: "audio")
+                } else if (!accepted && response.has("accept")) {
+                    isWaiting = false
+                    onUnanswered()
+                }
             }
         }
     }

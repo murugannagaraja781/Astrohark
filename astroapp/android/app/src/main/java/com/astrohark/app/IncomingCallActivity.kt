@@ -240,16 +240,20 @@ class IncomingCallActivity : ComponentActivity() {
 
     private fun processIntent(intent: Intent?) {
         if (intent == null) return
-        callerId = intent.getStringExtra("callerId") ?: intent.getStringExtra("fromUserId") ?: "Unknown"
-        callerName = intent.getStringExtra("callerName") ?: intent.getStringExtra("userName") ?: callerId
+        callerId = intent.getStringExtra("callerId")?.takeIf { it.isNotBlank() }
+            ?: intent.getStringExtra("fromUserId")?.takeIf { it.isNotBlank() }
+            ?: "Unknown"
+        callerName = intent.getStringExtra("callerName")?.takeIf { it.isNotBlank() }
+            ?: intent.getStringExtra("userName")?.takeIf { it.isNotBlank() }
+            ?: callerId
         
         // Try multiple session ID keys for robustness
-        callId = intent.getStringExtra("sessionId") 
-            ?: intent.getStringExtra("callId") 
-            ?: intent.getStringExtra("id") 
+        callId = intent.getStringExtra("sessionId")?.takeIf { it.isNotBlank() }
+            ?: intent.getStringExtra("callId")?.takeIf { it.isNotBlank() }
+            ?: intent.getStringExtra("id")?.takeIf { it.isNotBlank() }
             ?: ""
             
-        callType = intent.getStringExtra("callType") ?: "audio"
+        callType = intent.getStringExtra("callType")?.takeIf { it.isNotBlank() } ?: "audio"
         birthData = intent.getStringExtra("birthData")
         Log.d(TAG, "Processing Call Intent: Name=$callerName, SessionId=$callId, Type=$callType")
         

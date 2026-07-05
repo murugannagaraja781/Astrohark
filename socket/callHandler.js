@@ -267,13 +267,28 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 socket.join(fromUserId);
             }
 
-            if (!fromUserId || !sessionId || !toUserId) {
-                console.warn(`[CallHandler][answer-session] missing data for session ${sessionId}. fromUserId=${fromUserId}`);
+            let resolvedToUserId = toUserId;
+            const s = activeSessions.get(sessionId);
+
+            // Auto-resolve partner target ID if missing
+            if (!resolvedToUserId && sessionId) {
+                if (s) {
+                    resolvedToUserId = (fromUserId === s.clientId) ? s.astrologerId : s.clientId;
+                } else {
+                    const dbSession = await Session.findOne({ sessionId });
+                    if (dbSession) {
+                        resolvedToUserId = (fromUserId === dbSession.clientId) ? dbSession.astrologerId : dbSession.clientId;
+                    }
+                }
+                console.log(`[CallHandler][answer-session] Resolved missing toUserId to: ${resolvedToUserId}`);
+            }
+
+            if (!fromUserId || !sessionId || !resolvedToUserId) {
+                console.warn(`[CallHandler][answer-session] missing data for session ${sessionId}. fromUserId=${fromUserId}, toUserId=${resolvedToUserId}`);
                 return typeof cb === 'function' && cb({ ok: false, error: 'Missing data' });
             }
 
             // Update status to prevent timeout cleanup
-            const s = activeSessions.get(sessionId);
             if (s) {
                 s.status = accept ? 'answered' : 'rejected';
                 if (!accept) {
@@ -284,7 +299,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             // Mark in DB as well
             Session.updateOne({ sessionId }, { status: accept ? 'answered' : 'rejected' }).catch(() => {});
 
-            io.to(toUserId).emit('session-answered', {
+            io.to(resolvedToUserId).emit('session-answered', {
                 sessionId, fromUserId, type, accept: !!accept
             });
 

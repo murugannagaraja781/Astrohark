@@ -33,12 +33,21 @@ async function sendFcmV1Push(fcmToken, data, notification, userId = null) {
                 body: notification.body,
                 image: notification.image || undefined
             } : undefined,
-            data: {
-                ...data,
-                title: notification ? notification.title : (data.title || ''),
-                body: notification ? notification.body : (data.body || ''),
-                image: notification?.image || data?.image || ''
-            },
+            data: (() => {
+                const rawData = {
+                    ...data,
+                    title: notification ? notification.title : (data.title || ''),
+                    body: notification ? notification.body : (data.body || ''),
+                    image: notification?.image || data?.image || ''
+                };
+                const fcmData = {};
+                for (const [key, val] of Object.entries(rawData)) {
+                    if (val !== undefined && val !== null) {
+                        fcmData[key] = String(val);
+                    }
+                }
+                return fcmData;
+            })(),
             android: {
                 priority: 'high',
                 ttl: '0s'

@@ -459,15 +459,23 @@ app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {
         // Rename original to temp
         fs.renameSync(originalPath, tempPath);
         
-        // Resize to max 800x800 and compress with 80% JPEG quality
-        await sharp(tempPath)
-          .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
-          .jpeg({ quality: 80 })
-          .toFile(originalPath);
-          
-        // Remove temp file
-        fs.unlinkSync(tempPath);
-        console.log(`[Compression] Image compressed successfully for astrologer ${userId}`);
+        try {
+          // Resize to max 800x800 and compress with 80% JPEG quality
+          await sharp(tempPath)
+            .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 80 })
+            .toFile(originalPath);
+            
+          // Remove temp file
+          fs.unlinkSync(tempPath);
+          console.log(`[Compression] Image compressed successfully for astrologer ${userId}`);
+        } catch (innerErr) {
+          // Restore original file
+          if (fs.existsSync(tempPath)) {
+            fs.renameSync(tempPath, originalPath);
+          }
+          throw innerErr;
+        }
       } catch (compressErr) {
         console.error(`[Compression] Error compressing image: ${compressErr.message}`);
       }

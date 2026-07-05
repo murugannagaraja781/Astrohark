@@ -257,7 +257,9 @@ class ChatActivity : ComponentActivity() {
             }
         } catch (e: Exception) {
             android.util.Log.e("ChatActivity", "CRITICAL SETUP ERROR", e)
-            Toast.makeText(this, "Session Setup Error: ${e.message}", Toast.LENGTH_LONG).show()
+            val stackStr = android.util.Log.getStackTraceString(e)
+            val shortStack = stackStr.split("\n").take(4).joinToString("\n")
+            Toast.makeText(this, "Session Setup Error:\n$shortStack", Toast.LENGTH_LONG).show()
             finish()
         }
     }

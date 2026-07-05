@@ -350,8 +350,8 @@ fun IntakeScreen(
             put("hour", hour24)
             put("minute", minute.toInt())
             put("city", cityName)
-            put("latitude", latitude ?: 0.0)
-            put("longitude", longitude ?: 0.0)
+            put("latitude", latitude ?: JSONObject.NULL)
+            put("longitude", longitude ?: JSONObject.NULL)
             put("timezone", timezoneId ?: "")
             put("isMatching", isMatchingLocal)
             if (isMatchingLocal) {
@@ -366,8 +366,8 @@ fun IntakeScreen(
                partner.put("hour", pHour24)
                partner.put("minute", pMinute.toInt())
                partner.put("city", pCityName)
-               partner.put("latitude", pLatitude ?: 0.0)
-               partner.put("longitude", pLongitude ?: 0.0)
+               partner.put("latitude", pLatitude ?: JSONObject.NULL)
+               partner.put("longitude", pLongitude ?: JSONObject.NULL)
                partner.put("timezone", pTimezoneId ?: "")
                put("partnerData", partner)
             }

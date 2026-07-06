@@ -2,24 +2,20 @@ package com.astrohark.app.ui.chat
 
 import android.content.Context
 import android.net.Uri
-import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.datasource.DefaultHttpDataSource
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import android.media.MediaPlayer
+import android.widget.Toast
+import android.media.AudioManager
+import android.os.Build
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
-import android.widget.Toast
-import android.media.AudioManager
-import android.os.Build
 
 class ChatAudioPlayer(private val context: Context) {
     companion object {
-        // Shared single instance of ExoPlayer globally
-        private var sharedExoPlayer: ExoPlayer? = null
+        // Shared single instance of MediaPlayer globally
+        private var sharedMediaPlayer: MediaPlayer? = null
         private var activePlayerInstance: ChatAudioPlayer? = null
     }
 
@@ -58,110 +54,32 @@ class ChatAudioPlayer(private val context: Context) {
     }
 
     init {
-        // Initialize ExoPlayer on the Main thread
-        initExoPlayer()
+        // Initialize MediaPlayer on the Main thread
+        initMediaPlayer()
     }
 
-    private fun initExoPlayer() {
+    private fun initMediaPlayer() {
         try {
-            if (sharedExoPlayer == null) {
-                // Configure DefaultHttpDataSource with Chrome User-Agent to bypass Cloudflare
-                val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                    .setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-                val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
-
-                val loadControl = androidx.media3.exoplayer.DefaultLoadControl.Builder()
-                    .setBufferDurationsMs(
-                        1000, // minBufferMs
-                        2500, // maxBufferMs
-                        400,  // bufferForPlaybackMs
-                        800   // bufferForPlaybackAfterRebufferMs
-                    )
-                    .build()
-
-                sharedExoPlayer = ExoPlayer.Builder(context.applicationContext)
-                    .setMediaSourceFactory(mediaSourceFactory)
-                    .setLoadControl(loadControl)
-                    .build()
+            if (sharedMediaPlayer == null) {
+                sharedMediaPlayer = MediaPlayer()
             }
-            
             if (activePlayerInstance != this) {
-                // Detach listener from the previous active instance (resetting its UI states)
-                activePlayerInstance?.detachPlayerListeners()
-                
-                // Attach listener for this instance
+                // Detach listener / stop previous active instance
+                activePlayerInstance?.stop()
                 activePlayerInstance = this
-                attachPlayerListeners()
             }
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("ChatAudioPlayer", "Failed to initialize ExoPlayer", e)
+            android.util.Log.e("ChatAudioPlayer", "Failed to initialize MediaPlayer", e)
         }
     }
 
-    private val playerListener = object : Player.Listener {
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            val isPlayingNow = sharedExoPlayer?.isPlaying ?: false
-            when (playbackState) {
-                Player.STATE_BUFFERING -> {
-                    _isPreparing.value = !isPlayingNow
-                }
-                Player.STATE_READY -> {
-                    _isPreparing.value = false
-                    _duration.value = (sharedExoPlayer?.duration ?: 0L).toFloat()
-                    _isPlaying.value = sharedExoPlayer?.playWhenReady ?: false
-                    if (sharedExoPlayer?.playWhenReady == true) {
-                        startProgressUpdate()
-                    }
-                }
-                Player.STATE_ENDED -> {
-                    _isPlaying.value = false
-                    _progress.value = 0f
-                    _currentUrl.value = null
-                    _currentMessageId.value = null
-                    stopProgressUpdate()
-                    abandonAudioFocus()
-                }
-                Player.STATE_IDLE -> {
-                    _isPlaying.value = false
-                    _isPreparing.value = false
-                }
-            }
+    private fun isMediaPlayerPlaying(): Boolean {
+        return try {
+            sharedMediaPlayer?.isPlaying ?: false
+        } catch (e: Exception) {
+            false
         }
-
-        override fun onIsPlayingChanged(isPlayingNow: Boolean) {
-            _isPlaying.value = isPlayingNow
-            if (isPlayingNow) {
-                _isPreparing.value = false
-                startProgressUpdate()
-            } else {
-                stopProgressUpdate()
-            }
-        }
-
-        override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-            _isPreparing.value = false
-            _isPlaying.value = false
-            stopProgressUpdate()
-            abandonAudioFocus()
-            Toast.makeText(context, "Audio playback error: ${error.message}", Toast.LENGTH_SHORT).show()
-            _currentUrl.value = null
-            _currentMessageId.value = null
-        }
-    }
-
-    private fun attachPlayerListeners() {
-        sharedExoPlayer?.addListener(playerListener)
-    }
-
-    private fun detachPlayerListeners() {
-        sharedExoPlayer?.removeListener(playerListener)
-        _isPlaying.value = false
-        _progress.value = 0f
-        _isPreparing.value = false
-        _currentUrl.value = null
-        _currentMessageId.value = null
-        stopProgressUpdate()
     }
 
     private fun requestAudioFocus(): Boolean {
@@ -208,7 +126,7 @@ class ChatAudioPlayer(private val context: Context) {
     }
 
     fun play(messageId: String, url: String, durationMs: Long = 0L) {
-        initExoPlayer()
+        initMediaPlayer()
         currentTrackDurationMs = durationMs
 
         if (_currentMessageId.value == messageId) {
@@ -219,10 +137,19 @@ class ChatAudioPlayer(private val context: Context) {
             if (_isPreparing.value) {
                 return
             }
-            if (_isPlaying.value) {
-                pause()
-            } else {
-                start()
+            try {
+                sharedMediaPlayer?.let { mp ->
+                    if (isMediaPlayerPlaying()) {
+                        pause()
+                    } else {
+                        requestAudioFocus()
+                        mp.start()
+                        _isPlaying.value = true
+                        startProgressUpdate()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
             return
         }
@@ -238,7 +165,7 @@ class ChatAudioPlayer(private val context: Context) {
             val cachedFile = File(context.cacheDir, cachedFileName)
             
             if (cachedFile.exists() && cachedFile.length() > 0) {
-                Toast.makeText(context, "Loading from local cache...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Loading from cache...", Toast.LENGTH_SHORT).show()
                 playLocalFile(messageId, cachedFile.absolutePath, durationMs)
             } else {
                 Toast.makeText(context, "Downloading audio...", Toast.LENGTH_SHORT).show()
@@ -257,23 +184,49 @@ class ChatAudioPlayer(private val context: Context) {
         _isPlaying.value = false
         _progress.value = 0f
 
-        val mediaUri = Uri.fromFile(File(localPath))
-        val mimeType = if (localPath.endsWith(".aac", ignoreCase = true)) "audio/aac" else "video/mp4"
-        android.util.Log.d("ChatAudioPlayer", "Playing local cached file: $localPath (MIME: $mimeType)")
-        
-        val mediaItem = MediaItem.Builder()
-            .setUri(mediaUri)
-            .setMimeType(mimeType)
-            .build()
+        try {
+            sharedMediaPlayer?.let { mp ->
+                mp.reset()
+                
+                mp.setOnCompletionListener {
+                    _isPlaying.value = false
+                    _progress.value = 0f
+                    _currentUrl.value = null
+                    _currentMessageId.value = null
+                    stopProgressUpdate()
+                    abandonAudioFocus()
+                }
 
-        sharedExoPlayer?.let { player ->
-            player.stop()
-            player.clearMediaItems()
-            player.setMediaItem(mediaItem)
-            player.prepare()
-            
-            requestAudioFocus()
-            player.playWhenReady = true
+                mp.setOnPreparedListener { preparedMp ->
+                    _isPreparing.value = false
+                    val trackDur = if (preparedMp.duration > 0) preparedMp.duration.toFloat() else durationMs.toFloat()
+                    _duration.value = trackDur
+                    preparedMp.start()
+                    _isPlaying.value = true
+                    startProgressUpdate()
+                }
+
+                mp.setOnErrorListener { _, what, extra ->
+                    android.util.Log.e("MediaPlayer", "Error occurred: what=$what, extra=$extra")
+                    _isPreparing.value = false
+                    _isPlaying.value = false
+                    _currentUrl.value = null
+                    _currentMessageId.value = null
+                    stopProgressUpdate()
+                    abandonAudioFocus()
+                    Toast.makeText(context, "Playback failed", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                
+                mp.setDataSource(localPath)
+                mp.prepareAsync()
+                requestAudioFocus()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            _isPreparing.value = false
+            _currentMessageId.value = null
+            Toast.makeText(context, "Failed to initialize playback", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -305,7 +258,6 @@ class ChatAudioPlayer(private val context: Context) {
                     
                     withContext(Dispatchers.Main) {
                         Toast.makeText(context, "Download complete: ${cachedFile.length()} bytes", Toast.LENGTH_SHORT).show()
-                        // Double check if message ID is still active before playing
                         if (_currentMessageId.value == messageId) {
                             playLocalFile(messageId, cachedFile.absolutePath, durationMs)
                         }
@@ -330,13 +282,19 @@ class ChatAudioPlayer(private val context: Context) {
         progressJob?.cancel()
         progressJob = coroutineScope.launch {
             while (isActive && _isPlaying.value) {
-                sharedExoPlayer?.let { player ->
-                    val current = player.currentPosition.toFloat()
-                    val dur = if (player.duration > 0) player.duration.toFloat() else currentTrackDurationMs.toFloat()
-                    if (dur > 0) {
-                        _progress.value = current / dur
-                        _duration.value = dur
+                try {
+                    sharedMediaPlayer?.let { mp ->
+                        if (isMediaPlayerPlaying()) {
+                            val current = mp.currentPosition.toFloat()
+                            val dur = if (mp.duration > 0) mp.duration.toFloat() else currentTrackDurationMs.toFloat()
+                            if (dur > 0) {
+                                _progress.value = current / dur
+                                _duration.value = dur
+                            }
+                        }
                     }
+                } catch (e: Exception) {
+                    e.printStackTrace()
                 }
                 delay(100)
             }
@@ -348,17 +306,27 @@ class ChatAudioPlayer(private val context: Context) {
     }
 
     fun start() {
-        sharedExoPlayer?.let { player ->
-            if (player.playbackState != Player.STATE_IDLE) {
+        try {
+            sharedMediaPlayer?.let { mp ->
                 requestAudioFocus()
-                player.playWhenReady = true
+                mp.start()
+                _isPlaying.value = true
+                startProgressUpdate()
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     fun pause() {
-        sharedExoPlayer?.let { player ->
-            player.playWhenReady = false
+        try {
+            sharedMediaPlayer?.let { mp ->
+                if (isMediaPlayerPlaying()) {
+                    mp.pause()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
         _isPlaying.value = false
         stopProgressUpdate()
@@ -369,9 +337,15 @@ class ChatAudioPlayer(private val context: Context) {
         abandonAudioFocus()
         downloadJob?.cancel()
         
-        sharedExoPlayer?.let { player ->
-            player.stop()
-            player.clearMediaItems()
+        try {
+            sharedMediaPlayer?.let { mp ->
+                if (isMediaPlayerPlaying()) {
+                    mp.stop()
+                }
+                mp.reset()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
 
         _isPreparing.value = false
@@ -382,20 +356,23 @@ class ChatAudioPlayer(private val context: Context) {
     }
 
     fun seekTo(progress: Float) {
-        sharedExoPlayer?.let { player ->
-            val dur = player.duration
-            if (dur > 0) {
-                val pos = (dur * progress).toLong()
-                player.seekTo(pos)
-                _progress.value = progress
+        try {
+            sharedMediaPlayer?.let { mp ->
+                val dur = mp.duration
+                if (dur > 0) {
+                    val pos = (dur * progress).toInt()
+                    mp.seekTo(pos)
+                    _progress.value = progress
+                }
             }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
     fun release() {
         if (activePlayerInstance == this) {
             stop()
-            detachPlayerListeners()
             activePlayerInstance = null
         }
         downloadJob?.cancel()

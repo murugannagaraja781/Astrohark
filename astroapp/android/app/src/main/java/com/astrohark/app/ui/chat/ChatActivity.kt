@@ -1074,6 +1074,7 @@ fun ChatBubble(msg: ChatMessage, amIAstrologer: Boolean, audioPlayer: ChatAudioP
                             }
 
                             AudioPlayerBubble(
+                                messageId = msg.id,
                                 audioUrl = fullAudioUrl,
                                 durationStr = duration,
                                 isMe = isMe,

@@ -33,6 +33,9 @@ class ChatAudioPlayer(private val context: Context) {
     private val _progress = MutableStateFlow(0f)
     val progress: StateFlow<Float> = _progress.asStateFlow()
 
+    private val _currentMessageId = MutableStateFlow<String?>(null)
+    val currentMessageId: StateFlow<String?> = _currentMessageId.asStateFlow()
+
     private val _currentUrl = MutableStateFlow<String?>(null)
     val currentUrl: StateFlow<String?> = _currentUrl.asStateFlow()
 
@@ -114,6 +117,7 @@ class ChatAudioPlayer(private val context: Context) {
                     _isPlaying.value = false
                     _progress.value = 0f
                     _currentUrl.value = null
+                    _currentMessageId.value = null
                     stopProgressUpdate()
                     abandonAudioFocus()
                 }
@@ -141,6 +145,7 @@ class ChatAudioPlayer(private val context: Context) {
             abandonAudioFocus()
             Toast.makeText(context, "Audio playback error: ${error.message}", Toast.LENGTH_SHORT).show()
             _currentUrl.value = null
+            _currentMessageId.value = null
         }
     }
 
@@ -154,6 +159,7 @@ class ChatAudioPlayer(private val context: Context) {
         _progress.value = 0f
         _isPreparing.value = false
         _currentUrl.value = null
+        _currentMessageId.value = null
         stopProgressUpdate()
     }
 
@@ -200,11 +206,15 @@ class ChatAudioPlayer(private val context: Context) {
         }
     }
 
-    fun play(url: String, durationMs: Long = 0L) {
+    fun play(messageId: String, url: String, durationMs: Long = 0L) {
         initExoPlayer()
         currentTrackDurationMs = durationMs
 
-        if (_currentUrl.value == url) {
+        if (_currentMessageId.value == messageId) {
+            // Update URL dynamically if local changed to remote URL
+            if (_currentUrl.value != url) {
+                _currentUrl.value = url
+            }
             if (_isPreparing.value) {
                 return
             }
@@ -219,6 +229,7 @@ class ChatAudioPlayer(private val context: Context) {
         stopProgressUpdate()
         abandonAudioFocus()
 
+        _currentMessageId.value = messageId
         _currentUrl.value = url
         _isPreparing.value = true
         _isPlaying.value = false
@@ -230,7 +241,7 @@ class ChatAudioPlayer(private val context: Context) {
             Uri.fromFile(File(url))
         }
         val mimeType = if (url.endsWith(".aac", ignoreCase = true)) "audio/aac" else "video/mp4"
-        android.util.Log.d("ChatAudioPlayer", "Playing audio URL: $url (MIME: $mimeType)")
+        android.util.Log.d("ChatAudioPlayer", "Playing audio message ID: $messageId, URL: $url (MIME: $mimeType)")
         val mediaItem = MediaItem.Builder()
             .setUri(mediaUri)
             .setMimeType(mimeType)
@@ -298,6 +309,7 @@ class ChatAudioPlayer(private val context: Context) {
         _isPlaying.value = false
         _progress.value = 0f
         _currentUrl.value = null
+        _currentMessageId.value = null
     }
 
     fun seekTo(progress: Float) {

@@ -16,9 +16,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audioPlayer: ChatAudioPlayer) {
+fun AudioPlayerBubble(messageId: String, audioUrl: String, durationStr: String, isMe: Boolean, audioPlayer: ChatAudioPlayer) {
     val isPlayingGlobal by audioPlayer.isPlaying.collectAsState()
-    val currentUrlGlobal by audioPlayer.currentUrl.collectAsState()
+    val currentMessageIdGlobal by audioPlayer.currentMessageId.collectAsState()
     val progressGlobal by audioPlayer.progress.collectAsState()
     val isPreparingGlobal by audioPlayer.isPreparing.collectAsState()
     val durationGlobal by audioPlayer.duration.collectAsState()
@@ -34,11 +34,11 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audi
         } catch (e: Exception) { 0L }
     }
 
-    val isThisPlaying = isPlayingGlobal && currentUrlGlobal == audioUrl
-    val isThisPreparing = isPreparingGlobal && currentUrlGlobal == audioUrl && !isThisPlaying
+    val isThisPlaying = isPlayingGlobal && currentMessageIdGlobal == messageId
+    val isThisPreparing = isPreparingGlobal && currentMessageIdGlobal == messageId && !isThisPlaying
     
-    val currentProgress = if (currentUrlGlobal == audioUrl) progressGlobal else 0f
-    val currentDuration = if (currentUrlGlobal == audioUrl) {
+    val currentProgress = if (currentMessageIdGlobal == messageId) progressGlobal else 0f
+    val currentDuration = if (currentMessageIdGlobal == messageId) {
         if (durationGlobal > 0f) durationGlobal else parsedDurationMs.toFloat()
     } else 0f
     
@@ -61,7 +61,7 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audi
                 .size(40.dp)
                 .clickable {
                     if (isThisPreparing) return@clickable
-                    audioPlayer.play(audioUrl, parsedDurationMs)
+                    audioPlayer.play(messageId, audioUrl, parsedDurationMs)
                 }
         ) {
             if (isThisPreparing) {
@@ -83,7 +83,7 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audi
             Slider(
                 value = currentProgress,
                 onValueChange = { newProgress -> 
-                    if (isThisPlaying || isThisPreparing || currentUrlGlobal == audioUrl) {
+                    if (isThisPlaying || isThisPreparing || currentMessageIdGlobal == messageId) {
                         audioPlayer.seekTo(newProgress)
                     }
                 },

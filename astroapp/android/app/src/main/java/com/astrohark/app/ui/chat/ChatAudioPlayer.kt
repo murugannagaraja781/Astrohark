@@ -238,8 +238,10 @@ class ChatAudioPlayer(private val context: Context) {
             val cachedFile = File(context.cacheDir, cachedFileName)
             
             if (cachedFile.exists() && cachedFile.length() > 0) {
+                Toast.makeText(context, "Loading from local cache...", Toast.LENGTH_SHORT).show()
                 playLocalFile(messageId, cachedFile.absolutePath, durationMs)
             } else {
+                Toast.makeText(context, "Downloading audio...", Toast.LENGTH_SHORT).show()
                 downloadAndPlay(messageId, url, durationMs)
             }
         } else {
@@ -302,6 +304,7 @@ class ChatAudioPlayer(private val context: Context) {
                     }
                     
                     withContext(Dispatchers.Main) {
+                        Toast.makeText(context, "Download complete: ${cachedFile.length()} bytes", Toast.LENGTH_SHORT).show()
                         // Double check if message ID is still active before playing
                         if (_currentMessageId.value == messageId) {
                             playLocalFile(messageId, cachedFile.absolutePath, durationMs)
@@ -316,7 +319,7 @@ class ChatAudioPlayer(private val context: Context) {
                     if (_currentMessageId.value == messageId) {
                         _isPreparing.value = false
                         _currentMessageId.value = null
-                        Toast.makeText(context, "Failed to download voice message", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Download failed: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
             }

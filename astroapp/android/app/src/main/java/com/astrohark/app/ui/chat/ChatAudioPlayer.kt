@@ -25,6 +25,7 @@ class ChatAudioPlayer(private val context: Context) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var progressJob: Job? = null
+    private var currentTrackDurationMs = 0L
 
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
@@ -198,8 +199,9 @@ class ChatAudioPlayer(private val context: Context) {
         }
     }
 
-    fun play(url: String) {
+    fun play(url: String, durationMs: Long = 0L) {
         initExoPlayer()
+        currentTrackDurationMs = durationMs
 
         if (_currentUrl.value == url) {
             if (_isPreparing.value) {
@@ -250,9 +252,10 @@ class ChatAudioPlayer(private val context: Context) {
             while (isActive && _isPlaying.value) {
                 sharedExoPlayer?.let { player ->
                     val current = player.currentPosition.toFloat()
-                    val dur = player.duration.toFloat()
+                    val dur = if (player.duration > 0) player.duration.toFloat() else currentTrackDurationMs.toFloat()
                     if (dur > 0) {
                         _progress.value = current / dur
+                        _duration.value = dur
                     }
                 }
                 delay(100)

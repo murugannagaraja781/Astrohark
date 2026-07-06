@@ -23,11 +23,24 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audi
     val isPreparingGlobal by audioPlayer.isPreparing.collectAsState()
     val durationGlobal by audioPlayer.duration.collectAsState()
 
+    val parsedDurationMs = androidx.compose.runtime.remember(durationStr) {
+        try {
+            val parts = durationStr.split(":")
+            if (parts.size == 2) {
+                val mins = parts[0].toLong()
+                val secs = parts[1].toLong()
+                (mins * 60 + secs) * 1000
+            } else 0L
+        } catch (e: Exception) { 0L }
+    }
+
     val isThisPlaying = isPlayingGlobal && currentUrlGlobal == audioUrl
     val isThisPreparing = isPreparingGlobal && currentUrlGlobal == audioUrl && !isThisPlaying
     
     val currentProgress = if (currentUrlGlobal == audioUrl) progressGlobal else 0f
-    val currentDuration = if (currentUrlGlobal == audioUrl) durationGlobal else 0f
+    val currentDuration = if (currentUrlGlobal == audioUrl) {
+        if (durationGlobal > 0f) durationGlobal else parsedDurationMs.toFloat()
+    } else 0f
     
     val currentPosition = currentProgress * currentDuration
 
@@ -48,7 +61,7 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audi
                 .size(40.dp)
                 .clickable {
                     if (isThisPreparing) return@clickable
-                    audioPlayer.play(audioUrl)
+                    audioPlayer.play(audioUrl, parsedDurationMs)
                 }
         ) {
             if (isThisPreparing) {

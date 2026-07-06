@@ -97,9 +97,10 @@ class ChatAudioPlayer(private val context: Context) {
 
     private val playerListener = object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
+            val isPlayingNow = sharedExoPlayer?.isPlaying ?: false
             when (playbackState) {
                 Player.STATE_BUFFERING -> {
-                    _isPreparing.value = true
+                    _isPreparing.value = !isPlayingNow
                 }
                 Player.STATE_READY -> {
                     _isPreparing.value = false

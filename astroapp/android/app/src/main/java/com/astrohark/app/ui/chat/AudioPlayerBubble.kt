@@ -24,7 +24,7 @@ fun AudioPlayerBubble(audioUrl: String, durationStr: String, isMe: Boolean, audi
     val durationGlobal by audioPlayer.duration.collectAsState()
 
     val isThisPlaying = isPlayingGlobal && currentUrlGlobal == audioUrl
-    val isThisPreparing = isPreparingGlobal && currentUrlGlobal == audioUrl
+    val isThisPreparing = isPreparingGlobal && currentUrlGlobal == audioUrl && !isThisPlaying
     
     val currentProgress = if (currentUrlGlobal == audioUrl) progressGlobal else 0f
     val currentDuration = if (currentUrlGlobal == audioUrl) durationGlobal else 0f

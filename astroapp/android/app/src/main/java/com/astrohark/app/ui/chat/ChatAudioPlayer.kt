@@ -125,6 +125,7 @@ class ChatAudioPlayer(private val context: Context) {
         override fun onIsPlayingChanged(isPlayingNow: Boolean) {
             _isPlaying.value = isPlayingNow
             if (isPlayingNow) {
+                _isPreparing.value = false
                 startProgressUpdate()
             } else {
                 stopProgressUpdate()

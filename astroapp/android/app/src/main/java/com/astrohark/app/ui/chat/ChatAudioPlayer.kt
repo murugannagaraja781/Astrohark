@@ -225,10 +225,11 @@ class ChatAudioPlayer(private val context: Context) {
         } else {
             Uri.fromFile(File(url))
         }
-        android.util.Log.d("ChatAudioPlayer", "Playing audio URL: $url (MIME: video/mp4)")
+        val mimeType = if (url.endsWith(".aac", ignoreCase = true)) "audio/aac" else "video/mp4"
+        android.util.Log.d("ChatAudioPlayer", "Playing audio URL: $url (MIME: $mimeType)")
         val mediaItem = MediaItem.Builder()
             .setUri(mediaUri)
-            .setMimeType("video/mp4")
+            .setMimeType(mimeType)
             .build()
 
         sharedExoPlayer?.let { player ->

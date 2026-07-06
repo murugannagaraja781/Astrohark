@@ -18,7 +18,7 @@ class VoiceRecorder(private val context: Context) {
         private set
 
     fun startRecording(): String? {
-        val fileName = "voice_${System.currentTimeMillis()}.mp4"
+        val fileName = "voice_${System.currentTimeMillis()}.aac"
         outputFile = "${context.cacheDir.absolutePath}/$fileName"
 
         recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -27,7 +27,7 @@ class VoiceRecorder(private val context: Context) {
             MediaRecorder()
         }.apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setOutputFormat(MediaRecorder.OutputFormat.AAC_ADTS)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
             setOutputFile(outputFile)
             try {

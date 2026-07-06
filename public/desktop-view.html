@@ -5552,7 +5552,12 @@
           // DO NOT initSession yet. Wait for 'session-answered'.
           console.log('[Session] Request sent, waiting for acceptance...', res.sessionId);
         } else {
-          cancelCalling('Request failed: ' + res.error);
+          cancelCalling(null);
+          if (res.error && (res.error.toLowerCase().includes('balance') || res.error.toLowerCase().includes('insufficient'))) {
+            document.getElementById('screen-recharge').classList.remove('hidden');
+          } else {
+            alert('Request failed: ' + res.error);
+          }
         }
       });
     };
@@ -6497,7 +6502,13 @@
           // Direct Request
           socket.emit('request-session', { toUserId: astroId, type: 'chat', birthData }, (res) => {
             if (res.ok) initSession(res.sessionId, astroId, 'chat', true, null);
-            else alert('Request failed: ' + res.error);
+            else {
+              if (res.error && (res.error.toLowerCase().includes('balance') || res.error.toLowerCase().includes('insufficient'))) {
+                document.getElementById('screen-recharge').classList.remove('hidden');
+              } else {
+                alert('Request failed: ' + res.error);
+              }
+            }
           });
           return;
         }
@@ -6658,7 +6669,11 @@
           if (res.ok) {
             initSession(res.sessionId, window.selectedAstroId, 'chat', true, null);
           } else {
-            alert('Request failed: ' + res.error);
+            if (res.error && (res.error.toLowerCase().includes('balance') || res.error.toLowerCase().includes('insufficient'))) {
+              document.getElementById('screen-recharge').classList.remove('hidden');
+            } else {
+              alert('Request failed: ' + res.error);
+            }
           }
         });
       }

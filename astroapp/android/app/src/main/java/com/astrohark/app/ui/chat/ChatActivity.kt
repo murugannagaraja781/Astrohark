@@ -784,11 +784,17 @@ fun ChatScreen(
             val summary by viewModel.sessionSummary.observeAsState()
             if (summary != null) {
                 ModernSummaryDialog(
-                    title = "Chat Summary",
+                    title = if (summary!!.reason == "insufficient_funds") "Low Balance" else "Chat Summary",
                     duration = summary!!.duration,
                     amount = if (isAstrologer) summary!!.earned else summary!!.deducted,
                     isAstrologer = isAstrologer,
-                    onDismiss = { onSessionFinished() }
+                    onDismiss = {
+                        if (summary!!.reason == "insufficient_funds") {
+                            val intent = android.content.Intent(context, com.astrohark.app.ui.wallet.WalletActivity::class.java)
+                            context.startActivity(intent)
+                        }
+                        onSessionFinished()
+                    }
                 )
             }
             

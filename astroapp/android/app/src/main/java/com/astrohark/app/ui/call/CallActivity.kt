@@ -359,7 +359,13 @@ class CallActivity : ComponentActivity() {
                         isReady = isWebRTCInitialized,
                         clientBirthData = clientBirthData,
                         summary = callSummary,
-                        onDismissSummary = { finish() },
+                        onDismissSummary = {
+                            if (callSummary?.reason == "insufficient_funds") {
+                                val intent = android.content.Intent(this@CallActivity, com.astrohark.app.ui.wallet.WalletActivity::class.java)
+                                startActivity(intent)
+                            }
+                            finish()
+                        },
                         onReview = { rating, comment -> submitReview(rating, comment) }
                     )
                 }

@@ -714,7 +714,7 @@ fun HomeScreen(
     fun checkBalanceAndProceed(astro: Astrologer, action: () -> Unit) {
         val requiredMin = if (isNewUser) 24.0 else astro.price.toDouble()
         if (!isGuest && walletBalance < requiredMin) { // Skip check for guest (login handles it)
-            showLowBalanceDialog = true
+            onWalletClick()
         } else {
             action()
         }

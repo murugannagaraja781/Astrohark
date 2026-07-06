@@ -25,6 +25,7 @@ class ChatAudioPlayer(private val context: Context) {
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private var progressJob: Job? = null
+    private var downloadJob: Job? = null
     private var currentTrackDurationMs = 0L
 
     private val _isPlaying = MutableStateFlow(false)
@@ -228,20 +229,36 @@ class ChatAudioPlayer(private val context: Context) {
 
         stopProgressUpdate()
         abandonAudioFocus()
+        downloadJob?.cancel()
 
+        // Check if the URL is a remote web URL
+        val isRemote = url.startsWith("http://", ignoreCase = true) || url.startsWith("https://", ignoreCase = true)
+        if (isRemote) {
+            val cachedFileName = "cached_" + url.substringAfterLast("/")
+            val cachedFile = File(context.cacheDir, cachedFileName)
+            
+            if (cachedFile.exists() && cachedFile.length() > 0) {
+                playLocalFile(messageId, cachedFile.absolutePath, durationMs)
+            } else {
+                downloadAndPlay(messageId, url, durationMs)
+            }
+        } else {
+            // It is already a local path, play it directly
+            playLocalFile(messageId, url, durationMs)
+        }
+    }
+
+    private fun playLocalFile(messageId: String, localPath: String, durationMs: Long) {
         _currentMessageId.value = messageId
-        _currentUrl.value = url
+        _currentUrl.value = localPath
         _isPreparing.value = true
         _isPlaying.value = false
         _progress.value = 0f
 
-        val mediaUri = if (url.startsWith("http") || url.startsWith("/")) {
-            Uri.parse(url)
-        } else {
-            Uri.fromFile(File(url))
-        }
-        val mimeType = if (url.endsWith(".aac", ignoreCase = true)) "audio/aac" else "video/mp4"
-        android.util.Log.d("ChatAudioPlayer", "Playing audio message ID: $messageId, URL: $url (MIME: $mimeType)")
+        val mediaUri = Uri.fromFile(File(localPath))
+        val mimeType = if (localPath.endsWith(".aac", ignoreCase = true)) "audio/aac" else "video/mp4"
+        android.util.Log.d("ChatAudioPlayer", "Playing local cached file: $localPath (MIME: $mimeType)")
+        
         val mediaItem = MediaItem.Builder()
             .setUri(mediaUri)
             .setMimeType(mimeType)
@@ -255,6 +272,54 @@ class ChatAudioPlayer(private val context: Context) {
             
             requestAudioFocus()
             player.playWhenReady = true
+        }
+    }
+
+    private fun downloadAndPlay(messageId: String, url: String, durationMs: Long) {
+        _currentMessageId.value = messageId
+        _currentUrl.value = url
+        _isPreparing.value = true
+        _isPlaying.value = false
+        _progress.value = 0f
+
+        val cachedFileName = "cached_" + url.substringAfterLast("/")
+        val cachedFile = File(context.cacheDir, cachedFileName)
+
+        downloadJob = coroutineScope.launch(Dispatchers.IO) {
+            try {
+                val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+                conn.connectTimeout = 15000
+                conn.readTimeout = 15000
+                conn.requestMethod = "GET"
+                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                
+                val responseCode = conn.responseCode
+                if (responseCode == java.net.HttpURLConnection.HTTP_OK) {
+                    conn.inputStream.use { input ->
+                        cachedFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    
+                    withContext(Dispatchers.Main) {
+                        // Double check if message ID is still active before playing
+                        if (_currentMessageId.value == messageId) {
+                            playLocalFile(messageId, cachedFile.absolutePath, durationMs)
+                        }
+                    }
+                } else {
+                    throw java.io.IOException("Server responded with HTTP $responseCode")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    if (_currentMessageId.value == messageId) {
+                        _isPreparing.value = false
+                        _currentMessageId.value = null
+                        Toast.makeText(context, "Failed to download voice message", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
         }
     }
 
@@ -299,6 +364,7 @@ class ChatAudioPlayer(private val context: Context) {
     fun stop() {
         stopProgressUpdate()
         abandonAudioFocus()
+        downloadJob?.cancel()
         
         sharedExoPlayer?.let { player ->
             player.stop()
@@ -329,6 +395,7 @@ class ChatAudioPlayer(private val context: Context) {
             detachPlayerListeners()
             activePlayerInstance = null
         }
+        downloadJob?.cancel()
         coroutineScope.cancel()
     }
 }

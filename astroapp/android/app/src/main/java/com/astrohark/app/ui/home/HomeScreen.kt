@@ -2050,6 +2050,7 @@ fun AstrologerCard(
                     putExtra("is_chat_online", astro.isChatOnline)
                     putExtra("is_audio_online", astro.isAudioOnline)
                     putExtra("is_video_online", astro.isVideoOnline)
+                    putExtra("astro_rating", astro.rating.toFloat())
                 }
                 context.startActivity(intent)
             }
@@ -2528,7 +2529,7 @@ fun HomeBottomBar(
             val isRemediesSelected = selectedTab == 2
             BottomNavItem(
                 label = if (isTamil) "பரிகாரம்" else "Remedies",
-                icon = Icons.Rounded.SelfImprovement,
+                icon = Icons.Rounded.Spa,
                 isSelected = isRemediesSelected,
                 modifier = Modifier.weight(1f)
             ) {
@@ -2559,13 +2560,13 @@ fun BottomNavItem(
             imageVector = icon,
             contentDescription = label,
             tint = contentColor,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(28.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
             text = label,
             color = contentColor,
-            fontSize = 10.sp,
+            fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

@@ -2,6 +2,12 @@
 <html lang="en">
 
 <head>
+  <script>
+    (function() {
+      const theme = localStorage.getItem('web_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Astrohark - Talk to Best Astrologers | Online Astrology Consultation</title>
@@ -1592,6 +1598,7 @@
       </a>
       <button id="staticLoginBtn" onclick="window.location.reload()" class="cosmic-btn"
         style="width:auto; padding:6px 15px; margin-top:0; font-size:0.85rem;">Login</button>
+      <i class="fas fa-sun" style="cursor: pointer; font-size: 1.2rem; margin-right: 8px;" id="themeToggleBtnStatic" onclick="toggleTheme()"></i>
       <button id="staticLogoutBtn" onclick="clearSession()"
         style="background:rgba(239, 68, 68, 0.1); color:#EF4444; border:1px solid rgba(239, 68, 68, 0.2); padding:6px 15px; border-radius:var(--radius-sm); cursor:pointer; font-weight:bold; font-size:0.85rem; display:none;">Logout</button>
       <script>
@@ -1911,6 +1918,8 @@
           <i id="walletSpinner" class="fas fa-sync-alt"
             style="display: none; font-size: 0.8rem; animation: spin 1s linear infinite;"></i>
         </span>
+        <i id="themeToggleBtn" class="fas fa-sun" style="cursor: pointer; font-size: 1.2rem; margin-right: 8px;"
+          onclick="toggleTheme()"></i>
         <i id="headerLogoutBtn" class="fas fa-sign-out-alt" style="cursor: pointer; font-size: 1.2rem;"
           onclick="clearSession()"></i>
       </div>
@@ -2567,6 +2576,7 @@
       </div>
       <div>
         <i class="fas fa-bell"></i>
+        <i class="fas fa-sun" style="cursor: pointer; font-size: 1.2rem; margin-left: 10px;" id="themeToggleBtnAstro" onclick="toggleTheme()"></i>
         <i class="fas fa-sign-out-alt" style="margin-left: 10px; cursor: pointer;" onclick="clearSession()"></i>
       </div>
     </div>
@@ -3727,6 +3737,43 @@
         return null;
       }
     }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const target = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', target);
+      localStorage.setItem('web_theme', target);
+
+      // Update toggle icon classes
+      const sunClass = 'fas fa-sun';
+      const moonClass = 'fas fa-moon';
+      const isLight = target === 'light';
+
+      const btnStatic = document.getElementById('themeToggleBtnStatic');
+      if (btnStatic) btnStatic.className = isLight ? moonClass : sunClass;
+
+      const btnClient = document.getElementById('themeToggleBtn');
+      if (btnClient) btnClient.className = isLight ? moonClass : sunClass;
+
+      const btnAstro = document.getElementById('themeToggleBtnAstro');
+      if (btnAstro) btnAstro.className = isLight ? moonClass : sunClass;
+    }
+
+    // Apply saved theme icons on startup
+    window.addEventListener('DOMContentLoaded', () => {
+      const theme = localStorage.getItem('web_theme') || 'dark';
+      const isLight = theme === 'light';
+      const targetClass = isLight ? 'fas fa-moon' : 'fas fa-sun';
+      
+      const btnStatic = document.getElementById('themeToggleBtnStatic');
+      if (btnStatic) btnStatic.className = targetClass;
+
+      const btnClient = document.getElementById('themeToggleBtn');
+      if (btnClient) btnClient.className = targetClass;
+
+      const btnAstro = document.getElementById('themeToggleBtnAstro');
+      if (btnAstro) btnAstro.className = targetClass;
+    });
 
     function clearSession() {
       localStorage.removeItem(SESSION_KEY);

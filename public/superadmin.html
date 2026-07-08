@@ -2,6 +2,12 @@
 <html lang="en">
 
 <head>
+    <script>
+        (function() {
+            const theme = localStorage.getItem('admin_theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Astrohark - Super Admin</title>
@@ -50,6 +56,7 @@
                     </div>
                 </div>
 
+                <i id="themeToggleBtnAdmin" class="fas fa-sun" style="cursor: pointer; font-size: 1.2rem; color: var(--primary); margin-right: 8px;" onclick="toggleTheme()"></i>
                 <button onclick="logout()" class="btn-admin"
                     style="background: none; border: none; color: #EF4444; min-width: auto; padding: 8px; font-size: 1.2rem; cursor:pointer;">
                     <i class="fas fa-power-off"></i>
@@ -2354,6 +2361,27 @@
         function setText(id, val) { const el = document.getElementById(id); if (el) el.innerText = val; }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
         function updateTime() { const timeEl = document.getElementById('footerTime'); if (timeEl) timeEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('admin_theme', target);
+            
+            const btn = document.getElementById('themeToggleBtnAdmin');
+            if (btn) {
+                btn.className = target === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+            }
+        }
+
+        // Apply saved theme icon
+        window.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('admin_theme') || 'dark';
+            const btn = document.getElementById('themeToggleBtnAdmin');
+            if (btn) {
+                btn.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+            }
+        });
 
         function logout() { localStorage.removeItem('astro_session'); location.href = '/'; }
 

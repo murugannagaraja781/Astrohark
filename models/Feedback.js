@@ -8,6 +8,8 @@ const feedbackSchema = new mongoose.Schema({
   rating: { type: Number, default: 5 },
   comment: { type: String, required: true },
   sessionType: { type: String }, // chat, call, video
+  astrologerReply: { type: String, default: null },
+  repliedAt: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now }
 });
 

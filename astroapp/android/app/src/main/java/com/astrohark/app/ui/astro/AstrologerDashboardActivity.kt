@@ -404,13 +404,17 @@ fun AstrologerDashboardScreen(
     var showWithdrawDialog by remember { mutableStateOf(false) }
     var withdrawAmount by remember { mutableStateOf("") }
     var withdrawalHistory by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    var showReviewsDialog by remember { mutableStateOf(false) }
+    var reviewsList by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    var replyingToId by remember { mutableStateOf<String?>(null) }
+    var replyText by remember { mutableStateOf("") }
     
     val actions = listOf(
         "Call" to Icons.Default.Call,
         "History" to Icons.Default.History,
         "Earnings" to Icons.Default.MonetizationOn,
         "Profile" to Icons.Default.Person,
-        "Star" to Icons.Default.Star
+        "Reviews" to Icons.Default.Star
     )
 
     fun refreshBalanceAndHistory() {
@@ -576,18 +580,24 @@ fun AstrologerDashboardScreen(
         )
     }
 
+    var isDarkTheme by remember { mutableStateOf(true) }
+
     val colors = object {
         val accent = Color(0xFFFF7A00) // Premium Vibrant Orange
-        val cardBg = Color(0xFF2E1500) // Deep Dark Orange/Brown
-        val cardStroke = Color.White.copy(alpha = 0.15f)
-        val textPrimary = Color.White
-        val textSecondary = Color(0xFFFFCCAA) // Light Peach
-        val headerGradient = Brush.verticalGradient(
-            colors = listOf(Color(0xFF5E2400), Color(0xFF2E1500))
-        )
-        val bgGradient = Brush.verticalGradient(
-            colors = listOf(Color(0xFF2E1500), Color(0xFF140700))
-        )
+        val cardBg = if (isDarkTheme) Color(0xFF2E1500) else Color(0xFFFFFFFF)
+        val cardStroke = if (isDarkTheme) Color.White.copy(alpha = 0.15f) else Color(0xFFE2E8F0)
+        val textPrimary = if (isDarkTheme) Color.White else Color(0xFF1D2939)
+        val textSecondary = if (isDarkTheme) Color(0xFFFFCCAA) else Color(0xFF667085)
+        val headerGradient = if (isDarkTheme) {
+            Brush.verticalGradient(colors = listOf(Color(0xFF5E2400), Color(0xFF2E1500)))
+        } else {
+            Brush.verticalGradient(colors = listOf(Color(0xFFFF7A00), Color(0xFFFF9E40)))
+        }
+        val bgGradient = if (isDarkTheme) {
+            Brush.verticalGradient(colors = listOf(Color(0xFF2E1500), Color(0xFF140700)))
+        } else {
+            Brush.verticalGradient(colors = listOf(Color(0xFFF9FAFB), Color(0xFFF3F4F6)))
+        }
     }
 
     Scaffold(
@@ -606,7 +616,7 @@ fun AstrologerDashboardScreen(
                         .clip(CircleShape)
                         .background(
                             Brush.radialGradient(
-                                colors = listOf(Color.White, colors.cardBg),
+                                colors = listOf(Color.White, if (isDarkTheme) Color(0xFF2E1500) else Color.White),
                                 center = Offset(20f, 20f)
                             )
                         )
@@ -684,6 +694,22 @@ fun AstrologerDashboardScreen(
                     )
                     // ID Removed as requested
                 }
+                // Theme Switcher Button
+                IconButton(
+                    onClick = { isDarkTheme = !isDarkTheme },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.1f))
+                        .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = if (isDarkTheme) Icons.Default.Star else Icons.Default.Star, // LightMode vs DarkMode alternative using standard icons or star
+                        contentDescription = "Switch Theme",
+                        tint = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 IconButton(
                     onClick = {},
                     modifier = Modifier
@@ -1058,7 +1084,31 @@ fun AstrologerDashboardScreen(
                                              "History" -> context.startActivity(Intent(context, com.astrohark.app.ui.astro.AstrologerHistoryActivity::class.java))
                                              "Earnings" -> Toast.makeText(context, "Fetching Data...", Toast.LENGTH_SHORT).show()
                                              "Settings" -> context.startActivity(Intent(context, com.astrohark.app.ui.settings.SettingsActivity::class.java))
-                                             "Star" -> Toast.makeText(context, "Astrologer Reviews coming soon", Toast.LENGTH_SHORT).show()
+                                             "Reviews" -> {
+                                                 val socket = SocketManager.getSocket()
+                                                 socket?.emit("get-my-reviews", org.json.JSONObject().apply {
+                                                     put("astrologerId", sessionId)
+                                                 }, io.socket.client.Ack { args ->
+                                                     try {
+                                                         val res = args[0] as org.json.JSONObject
+                                                         if (res.optBoolean("ok")) {
+                                                             val arr = res.optJSONArray("reviews") ?: org.json.JSONArray()
+                                                             val list = mutableListOf<JSONObject>()
+                                                             for (i in 0 until arr.length()) list.add(arr.getJSONObject(i))
+                                                             reviewsList = list
+                                                             showReviewsDialog = true
+                                                         } else {
+                                                             scope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                                                                 Toast.makeText(context, "No reviews yet", Toast.LENGTH_SHORT).show()
+                                                             }
+                                                         }
+                                                     } catch (e: Exception) {
+                                                         scope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                                                             Toast.makeText(context, "Error loading reviews", Toast.LENGTH_SHORT).show()
+                                                         }
+                                                     }
+                                                 })
+                                             }
                                          }
                                      }
                              ) {
@@ -1104,6 +1154,128 @@ fun AstrologerDashboardScreen(
             // Extra spacing for safe area
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+
+    if (showReviewsDialog) {
+        AlertDialog(
+            onDismissRequest = { showReviewsDialog = false; replyingToId = null; replyText = "" },
+            title = { Text("Customer Reviews", fontWeight = FontWeight.Bold, color = colors.accent) },
+            containerColor = colors.cardBg,
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    if (reviewsList.isEmpty()) {
+                        Text("No reviews yet", color = colors.textSecondary, modifier = Modifier.padding(16.dp))
+                    } else {
+                        reviewsList.forEach { review ->
+                            val fbId = review.optString("_id", "")
+                            val userName = review.optString("userName", "User")
+                            val rating = review.optInt("rating", 5)
+                            val comment = review.optString("comment", "")
+                            val existingReply = review.optString("astrologerReply", "")
+                            val hasReply = existingReply.isNotEmpty() && existingReply != "null"
+
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                colors = CardDefaults.cardColors(containerColor = colors.cardBg),
+                                border = BorderStroke(1.dp, colors.accent.copy(alpha = 0.2f)),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(userName, fontWeight = FontWeight.Bold, color = colors.textPrimary, fontSize = 14.sp)
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        Text("★".repeat(rating), color = Color(0xFFFFC107), fontSize = 14.sp)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(comment, color = colors.textSecondary, fontSize = 13.sp)
+
+                                    if (hasReply) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Row {
+                                            Box(modifier = Modifier.width(3.dp).height(40.dp).background(colors.accent, RoundedCornerShape(2.dp)))
+                                            Column(modifier = Modifier.padding(start = 8.dp)) {
+                                                Text("Your Reply:", fontWeight = FontWeight.Bold, color = colors.accent, fontSize = 12.sp)
+                                                Text(existingReply, color = colors.textPrimary, fontSize = 13.sp)
+                                            }
+                                        }
+                                    }
+
+                                    if (replyingToId == fbId) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        OutlinedTextField(
+                                            value = replyText,
+                                            onValueChange = { replyText = it },
+                                            placeholder = { Text("Write your reply...", color = colors.textSecondary) },
+                                            modifier = Modifier.fillMaxWidth(),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedBorderColor = colors.accent,
+                                                unfocusedBorderColor = colors.accent.copy(alpha = 0.3f),
+                                                focusedTextColor = colors.textPrimary,
+                                                unfocusedTextColor = colors.textPrimary
+                                            ),
+                                            maxLines = 3
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+                                            TextButton(onClick = { replyingToId = null; replyText = "" }) {
+                                                Text("Cancel", color = colors.textSecondary)
+                                            }
+                                            TextButton(onClick = {
+                                                if (replyText.isNotBlank()) {
+                                                    val socket = SocketManager.getSocket()
+                                                    socket?.emit("reply-to-feedback", org.json.JSONObject().apply {
+                                                        put("feedbackId", fbId)
+                                                        put("reply", replyText)
+                                                    }, io.socket.client.Ack { args ->
+                                                        scope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                                                            replyingToId = null
+                                                            replyText = ""
+                                                            // Refresh reviews list
+                                                            socket?.emit("get-my-reviews", org.json.JSONObject().apply {
+                                                                put("astrologerId", sessionId)
+                                                            }, io.socket.client.Ack { refreshArgs ->
+                                                                try {
+                                                                    val res2 = refreshArgs[0] as org.json.JSONObject
+                                                                    if (res2.optBoolean("ok")) {
+                                                                        val arr = res2.optJSONArray("reviews") ?: org.json.JSONArray()
+                                                                        val list = mutableListOf<JSONObject>()
+                                                                        for (i in 0 until arr.length()) list.add(arr.getJSONObject(i))
+                                                                        reviewsList = list
+                                                                    }
+                                                                } catch (_: Exception) {}
+                                                            })
+                                                        }
+                                                    })
+                                                }
+                                            }) {
+                                                Text("Send Reply", color = colors.accent, fontWeight = FontWeight.Bold)
+                                            }
+                                        }
+                                    } else if (!hasReply) {
+                                        TextButton(
+                                            onClick = { replyingToId = fbId; replyText = "" },
+                                            modifier = Modifier.align(Alignment.End)
+                                        ) {
+                                            Text("Reply", color = colors.accent, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showReviewsDialog = false; replyingToId = null; replyText = "" }) {
+                    Text("Close", color = colors.accent)
+                }
+            }
+        )
     }
 }
 

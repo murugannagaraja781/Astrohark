@@ -16,8 +16,8 @@ android {
         applicationId = "com.astrohark.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 20
-        versionName = "20.0"
+        versionCode = 23
+        versionName = "23.0"
 
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -133,7 +133,7 @@ dependencies {
     implementation("io.socket:socket.io-client:2.1.0")
 
     // WebRTC
-    implementation("io.getstream:stream-webrtc-android:1.2.2")
+    implementation("io.getstream:stream-webrtc-android:1.3.10")
 
     // PhonePe (Keep slightly older or check compatibility)
     implementation("phonepe.intentsdk.android.release:IntentSDK:5.3.0")

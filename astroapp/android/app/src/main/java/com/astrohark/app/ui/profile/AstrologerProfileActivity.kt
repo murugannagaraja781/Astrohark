@@ -18,9 +18,10 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.rounded.VideoCall
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,6 +42,7 @@ import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
 import android.content.Intent
 import android.widget.Toast
+import org.json.JSONObject
 
 class AstrologerProfileActivity : ComponentActivity() {
 
@@ -58,6 +60,8 @@ class AstrologerProfileActivity : ComponentActivity() {
         val isVideoOnline = intent.getBooleanExtra("is_video_online", false)
         val astroOrders = intent.getIntExtra("astro_orders", 1000)
         val astroProfession = intent.getStringExtra("astro_profession") ?: ""
+        val astroRating = intent.getFloatExtra("astro_rating", 4.9f)
+        val astroLanguages = intent.getStringExtra("astro_languages") ?: "Tamil, English"
 
         setContent {
             CosmicAppTheme {
@@ -70,6 +74,8 @@ class AstrologerProfileActivity : ComponentActivity() {
                     price = astroPrice,
                     orders = astroOrders,
                     profession = astroProfession,
+                    rating = astroRating,
+                    languages = astroLanguages,
                     isChatOnline = isChatOnline,
                     isAudioOnline = isAudioOnline,
                     isVideoOnline = isVideoOnline,
@@ -100,6 +106,8 @@ fun AstrologerProfileScreen(
     price: Int,
     orders: Int,
     profession: String,
+    rating: Float,
+    languages: String,
     isChatOnline: Boolean,
     isAudioOnline: Boolean,
     isVideoOnline: Boolean,
@@ -109,11 +117,33 @@ fun AstrologerProfileScreen(
     val scrollState = rememberScrollState()
     val peacockTeal = Color(0xFFE87A1E)
     val yellowAccent = Color(0xFFFFD54F)
+    val isTamil = java.util.Locale.getDefault().language == "ta"
+
+    var reviewsList by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
+    LaunchedEffect(id) {
+        val socket = com.astrohark.app.data.remote.SocketManager.getSocket()
+        if (socket == null) {
+            com.astrohark.app.data.remote.SocketManager.init()
+        }
+        com.astrohark.app.data.remote.SocketManager.getSocket()?.emit("get-my-reviews", JSONObject().apply {
+            put("astrologerId", id)
+        }, io.socket.client.Ack { args ->
+            try {
+                val res = args[0] as JSONObject
+                if (res.optBoolean("ok")) {
+                    val arr = res.optJSONArray("reviews") ?: org.json.JSONArray()
+                    val list = mutableListOf<JSONObject>()
+                    for (i in 0 until arr.length()) list.add(arr.getJSONObject(i))
+                    reviewsList = list
+                }
+            } catch (_: Exception) {}
+        })
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Profile", color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold) },
+                title = { Text(if (isTamil) "விவரக்குறிப்பு" else "Profile", color = CosmicAppTheme.colors.accent, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, "Back", tint = CosmicAppTheme.colors.accent)
@@ -123,7 +153,6 @@ fun AstrologerProfileScreen(
                     val context = LocalContext.current
                     IconButton(onClick = {
                         try {
-                            val isTamil = java.util.Locale.getDefault().language == "ta"
                             val shareMessage = if (isTamil) {
                                 "Astrohark செயலியில் உள்ள ஜோதிடர் $name என்பவரின் விவரங்களை உங்களுடன் பகிர்ந்து கொள்கிறேன். இவருடன் பேச அல்லது ஆலோசிக்க செயலியை பதிவிறக்கம் செய்ய: https://play.google.com/store/apps/details?id=com.astrohark.app"
                             } else {
@@ -222,23 +251,14 @@ fun AstrologerProfileScreen(
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top=4.dp)) {
-                    Text("★★★★★", color = Color(0xFFFFC107), fontSize = 16.sp)
+                    Text("★ %.1f".format(rating), color = Color(0xFFFFC107), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.width(8.dp))
-                    val isTamil = java.util.Locale.getDefault().language == "ta"
                     Text(
-                        text = "| $orders ${if (isTamil) "வாடிக்கையாளர்கள்" else "customers"}",
+                        text = "| $orders ${if (isTamil) "ஆர்டர்கள்" else "Orders"}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = CosmicAppTheme.colors.textSecondary
                     )
                 }
-
-                Text(
-                    text = skills,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = CosmicAppTheme.colors.textSecondary,
-                    modifier = Modifier.padding(top=6.dp),
-                    textAlign = TextAlign.Center
-                )
 
                 Surface(
                     shape = RoundedCornerShape(AstroDimens.RadiusSmall),
@@ -274,37 +294,16 @@ fun AstrologerProfileScreen(
                     StatItem(icon = Icons.Default.CheckCircle, value = "$exp Years")
                 }
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
-                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
-                    border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
-                ) {
-                    Column(modifier = Modifier.padding(AstroDimens.Medium)) {
-                        Text("About Astrologer", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.accent)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (profession.isNotEmpty()) profession
-                                   else "$name is highly experienced in $skills. Dedicated to providing accurate guidance and helping clients find clarity in life's complex situations.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = CosmicAppTheme.colors.textSecondary,
-                            lineHeight = 18.sp
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Actions
+                // Actions Button Row
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (isChatOnline) {
                         ActionButton(
                             icon = Icons.Default.Chat,
-                            label = "Chat",
+                            label = if (isTamil) "அரட்டை" else "Chat",
                             color = CosmicAppTheme.colors.accent,
                             isEnabled = true,
                             onClick = { onAction("chat") }
@@ -314,7 +313,7 @@ fun AstrologerProfileScreen(
                     if (isAudioOnline) {
                         ActionButton(
                             icon = Icons.Default.Call,
-                            label = "Call",
+                            label = if (isTamil) "அழைப்பு" else "Call",
                             color = CosmicAppTheme.colors.accent,
                             isEnabled = true,
                             onClick = { onAction("audio") }
@@ -324,7 +323,7 @@ fun AstrologerProfileScreen(
                     if (isVideoOnline) {
                         ActionButton(
                             icon = androidx.compose.material.icons.Icons.Rounded.VideoCall,
-                            label = "Video",
+                            label = if (isTamil) "நேரலை" else "Video",
                             color = CosmicAppTheme.colors.accent,
                             isEnabled = true,
                             onClick = { onAction("video") }
@@ -332,7 +331,132 @@ fun AstrologerProfileScreen(
                     }
                 }
 
-                // Reviews Section Placeholder removed
+                // About Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                    border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
+                ) {
+                    Column(modifier = Modifier.padding(AstroDimens.Medium)) {
+                        Text(if (isTamil) "ஜோதிடர் பற்றி" else "About Astrologer", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.accent)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (profession.isNotEmpty()) profession
+                                   else "$name is highly experienced in $skills. Dedicated to providing accurate guidance and helping clients find clarity in life's complex situations.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = CosmicAppTheme.colors.textPrimary,
+                            lineHeight = 20.sp
+                        )
+                    }
+                }
+
+                // Skills & Expertise Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                    border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
+                ) {
+                    Column(modifier = Modifier.padding(AstroDimens.Medium)) {
+                        Text(if (isTamil) "நிபுணத்துவம்" else "Expertise", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.accent)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            skills.split(",").forEach { skill ->
+                                Box(
+                                    modifier = Modifier
+                                        .background(CosmicAppTheme.colors.accent.copy(alpha = 0.1f), RoundedCornerShape(50.dp))
+                                        .border(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.3f), RoundedCornerShape(50.dp))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(skill.trim(), color = CosmicAppTheme.colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Languages Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                    border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
+                ) {
+                    Column(modifier = Modifier.padding(AstroDimens.Medium)) {
+                        Text(if (isTamil) "மொழிகள்" else "Languages", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.accent)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            languages.split(",").forEach { lang ->
+                                Box(
+                                    modifier = Modifier
+                                        .background(CosmicAppTheme.colors.accent.copy(alpha = 0.1f), RoundedCornerShape(50.dp))
+                                        .border(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.3f), RoundedCornerShape(50.dp))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(lang.trim(), color = CosmicAppTheme.colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Ratings & Reviews Card
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = CosmicAppTheme.colors.cardBg),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium),
+                    border = BorderStroke(1.dp, CosmicAppTheme.colors.cardStroke.copy(alpha = 0.2f))
+                ) {
+                    Column(modifier = Modifier.padding(AstroDimens.Medium)) {
+                        Text(if (isTamil) "மதிப்பீடுகள் மற்றும் மதிப்புரைகள்" else "Ratings & Reviews", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.accent)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (reviewsList.isEmpty()) {
+                            Text(
+                                if (isTamil) "மதிப்புரைகள் எதுவும் இல்லை" else "No reviews available yet.",
+                                color = CosmicAppTheme.colors.textSecondary,
+                                fontSize = 13.sp
+                            )
+                        } else {
+                            reviewsList.forEach { review ->
+                                val userName = review.optString("userName", "User")
+                                val r = review.optInt("rating", 5)
+                                val comment = review.optString("comment", "")
+                                val reply = review.optString("astrologerReply", "")
+
+                                Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(userName, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.textPrimary, fontSize = 13.sp)
+                                        Spacer(modifier = Modifier.weight(1f))
+                                        Text("★".repeat(r), color = Color(0xFFFFC107), fontSize = 12.sp)
+                                    }
+                                    Text(comment, color = CosmicAppTheme.colors.textSecondary, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+                                    
+                                    if (reply.isNotEmpty() && reply != "null") {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(top = 4.dp, start = 8.dp)
+                                                .background(CosmicAppTheme.colors.accent.copy(alpha = 0.05f), RoundedCornerShape(4.dp))
+                                                .padding(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "${if (isTamil) "ஜோதிடரின் பதில்" else "Reply"}: $reply",
+                                                color = CosmicAppTheme.colors.accent,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                    Divider(modifier = Modifier.padding(top = 8.dp), color = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.1f))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -364,3 +488,4 @@ fun ActionButton(icon: ImageVector, label: String, color: Color, isEnabled: Bool
         Text(text = label, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = finalColor)
     }
 }
+

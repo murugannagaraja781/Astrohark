@@ -161,6 +161,25 @@
 -keep class com.astrohark.app.model.** { *; }
 -keep class com.astrohark.app.network.** { *; }
 
+# ---- Chart data models (Gson deserialization) ----
+# These classes live in ui.chart and are deserialized via Gson reflection.
+# Without these rules, R8 obfuscates them and Gson fails with
+# "Abstract classes can't be instantiated".
+-keep class com.astrohark.app.ui.chart.ChartResponse { *; }
+-keep class com.astrohark.app.ui.chart.ChartData { *; }
+-keep class com.astrohark.app.ui.chart.Planet { *; }
+-keep class com.astrohark.app.ui.chart.HouseData { *; }
+-keep class com.astrohark.app.ui.chart.HouseDetail { *; }
+-keep class com.astrohark.app.ui.chart.Panchanga { *; }
+-keep class com.astrohark.app.ui.chart.PanchangaValue { *; }
+-keep class com.astrohark.app.ui.chart.DashaPeriod { *; }
+-keep class com.astrohark.app.ui.chart.Transit { *; }
+-keep class com.astrohark.app.ui.chart.TamilDate { *; }
+-keep class com.astrohark.app.ui.chart.NavamsaData { *; }
+-keep class com.astrohark.app.ui.chart.KPSignificators { *; }
+-keep class com.astrohark.app.ui.chart.KPPlanet { *; }
+-keep class com.astrohark.app.ui.chart.KPHouse { *; }
+
 # ---- Prevent R8 from removing used classes ----
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;

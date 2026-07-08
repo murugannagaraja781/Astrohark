@@ -22,6 +22,22 @@
    --sidebar-width: 250px;
  }
 
+ [data-theme="light"] {
+   --bg-dark: #FAF8F5;
+   --bg-card: #FFFFFF;
+   --bg-glass: rgba(0, 0, 0, 0.03);
+   --primary: #E87A1E;
+   --primary-glow: rgba(232, 122, 30, 0.1);
+   --accent: #E87A1E;
+   --gold: #FF7F00;
+   --gold-glow: rgba(255, 127, 0, 0.1);
+   --primary-yellow: #E87A1E;
+   --premium-yellow-glow: rgba(232, 122, 30, 0.2);
+   --text-main: #1C140E;
+   --text-muted: #6B5D50;
+   --border-soft: rgba(0, 0, 0, 0.08);
+ }
+
  /* Base Reset */
  * {
    box-sizing: border-box;

@@ -1725,6 +1725,40 @@ io.on('connection', (socket) => {
     }
   });
 
+  // --- Astrologer: Get My Reviews ---
+  socket.on('get-my-reviews', async (data, cb) => {
+    const userId = data.astrologerId || socketToUser.get(socket.id);
+    if (!userId) return cb({ ok: false, error: 'Not authenticated' });
+    try {
+      const reviews = await Feedback.find({ astrologerId: userId }).sort({ createdAt: -1 }).limit(50);
+      cb({ ok: true, reviews });
+    } catch (e) {
+      console.error('Get Reviews Error:', e);
+      cb({ ok: false, error: 'Failed to fetch reviews' });
+    }
+  });
+
+  // --- Astrologer: Reply to Feedback ---
+  socket.on('reply-to-feedback', async (data, cb) => {
+    const userId = socketToUser.get(socket.id);
+    if (!userId) return cb({ ok: false, error: 'Not authenticated' });
+    if (!data.feedbackId || !data.reply) return cb({ ok: false, error: 'Missing feedbackId or reply' });
+
+    try {
+      const feedback = await Feedback.findById(data.feedbackId);
+      if (!feedback) return cb({ ok: false, error: 'Feedback not found' });
+      if (feedback.astrologerId !== userId) return cb({ ok: false, error: 'Not authorized' });
+
+      feedback.astrologerReply = data.reply;
+      feedback.repliedAt = new Date();
+      await feedback.save();
+      cb({ ok: true, feedback });
+    } catch (e) {
+      console.error('Reply Error:', e);
+      cb({ ok: false, error: 'Failed to save reply' });
+    }
+  });
+
   // --- Toggle Status (Astrologer Only) ---
   socket.on('toggle-status', async (data) => {
     const userId = data.userId || socketToUser.get(socket.id);

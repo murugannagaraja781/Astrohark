@@ -138,3 +138,15 @@ A rebuild was performed after implementing real-time synchronized call/chat rema
 * **File Name:** `astrohark-debug.apk`
 * **File Path:** `releases/astrohark-debug.apk`
 * **Status:** Build Successful
+
+---
+
+## [2026-07-07] - Release Build v21.0 (16 KB Page Alignment Support)
+
+A clean rebuild was performed to support 16 KB page size alignment for Android 15+. `useLegacyPackaging = false` was configured in `build.gradle.kts`, and `io.getstream:stream-webrtc-android` was upgraded from `1.2.2` to `1.3.10` to ensure the precompiled native libraries are 16 KB aligned. Alignment was verified via `zipalign -c -P 16` and `objdump -p`. App version code was bumped to `21` and version name to `"21.0"`.
+
+* **Date & Time:** July 07, 2026 - 09:50 AM (IST)
+* **File Name:** `astrohark-debug.apk`, `astrohark-release.aab`
+* **File Path:** `releases/astrohark-debug.apk` and `releases/astrohark-release.aab`
+* **Status:** Build and Packaging Successful
+

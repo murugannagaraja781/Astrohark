@@ -1130,6 +1130,9 @@
                     class="fas fa-microchip" style="color:#10B981;"></i><span>Workflow</span></div>
             <div class="admin-nav-item" onclick="navAdmin('history', event)"><i
                     class="fas fa-history" style="color:#F59E0B;"></i><span>History</span></div>
+            <div class="admin-nav-item" onclick="toggleTheme()" id="themeToggleBtnAdminSidebar" style="color: var(--primary);">
+                <i id="themeToggleIconAdminSidebar" class="fas fa-sun"></i><span>Toggle Theme</span>
+            </div>
             <div class="admin-nav-item" onclick="logout()"
                 style="margin-top: auto; color: #EF4444; border-top: 1px solid #eee;">
                 <i class="fas fa-sign-out-alt"></i><span>Logout</span>
@@ -2373,10 +2376,13 @@
                 document.documentElement.setAttribute('data-theme', target);
                 localStorage.setItem('admin_theme', target);
                 
+                const targetClass = target === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+                
                 const btn = document.getElementById('themeToggleBtnAdmin');
-                if (btn) {
-                    btn.className = target === 'light' ? 'fas fa-moon' : 'fas fa-sun';
-                }
+                if (btn) btn.className = targetClass;
+                
+                const iconSidebar = document.getElementById('themeToggleIconAdminSidebar');
+                if (iconSidebar) iconSidebar.className = targetClass;
             } catch (e) {
                 console.error(e);
             }
@@ -2385,10 +2391,14 @@
         // Apply saved theme icon immediately (DOMContentLoaded has already fired)
         try {
             const theme = localStorage.getItem('admin_theme') || 'dark';
+            const isLight = theme === 'light';
+            const targetClass = isLight ? 'fas fa-moon' : 'fas fa-sun';
+            
             const btn = document.getElementById('themeToggleBtnAdmin');
-            if (btn) {
-                btn.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
-            }
+            if (btn) btn.className = targetClass;
+            
+            const iconSidebar = document.getElementById('themeToggleIconAdminSidebar');
+            if (iconSidebar) iconSidebar.className = targetClass;
         } catch (e) {}
 
         function logout() { localStorage.removeItem('astro_session'); location.href = '/'; }

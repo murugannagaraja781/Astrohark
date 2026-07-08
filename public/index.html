@@ -4,8 +4,12 @@
 <head>
   <script>
     (function() {
-      const theme = localStorage.getItem('web_theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', theme);
+      try {
+        const theme = localStorage.getItem('web_theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+      }
     })();
   </script>
   <meta charset="UTF-8" />
@@ -3739,28 +3743,32 @@
     }
 
     function toggleTheme() {
-      const current = document.documentElement.getAttribute('data-theme') || 'dark';
-      const target = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', target);
-      localStorage.setItem('web_theme', target);
+      try {
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        const target = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', target);
+        localStorage.setItem('web_theme', target);
 
-      // Update toggle icon classes
-      const sunClass = 'fas fa-sun';
-      const moonClass = 'fas fa-moon';
-      const isLight = target === 'light';
+        // Update toggle icon classes
+        const sunClass = 'fas fa-sun';
+        const moonClass = 'fas fa-moon';
+        const isLight = target === 'light';
 
-      const btnStatic = document.getElementById('themeToggleBtnStatic');
-      if (btnStatic) btnStatic.className = isLight ? moonClass : sunClass;
+        const btnStatic = document.getElementById('themeToggleBtnStatic');
+        if (btnStatic) btnStatic.className = isLight ? moonClass : sunClass;
 
-      const btnClient = document.getElementById('themeToggleBtn');
-      if (btnClient) btnClient.className = isLight ? moonClass : sunClass;
+        const btnClient = document.getElementById('themeToggleBtn');
+        if (btnClient) btnClient.className = isLight ? moonClass : sunClass;
 
-      const btnAstro = document.getElementById('themeToggleBtnAstro');
-      if (btnAstro) btnAstro.className = isLight ? moonClass : sunClass;
+        const btnAstro = document.getElementById('themeToggleBtnAstro');
+        if (btnAstro) btnAstro.className = isLight ? moonClass : sunClass;
+      } catch (e) {
+        console.error(e);
+      }
     }
 
-    // Apply saved theme icons on startup
-    window.addEventListener('DOMContentLoaded', () => {
+    // Apply saved theme icons immediately (DOMContentLoaded has already fired)
+    try {
       const theme = localStorage.getItem('web_theme') || 'dark';
       const isLight = theme === 'light';
       const targetClass = isLight ? 'fas fa-moon' : 'fas fa-sun';
@@ -3773,7 +3781,7 @@
 
       const btnAstro = document.getElementById('themeToggleBtnAstro');
       if (btnAstro) btnAstro.className = targetClass;
-    });
+    } catch (e) {}
 
     function clearSession() {
       localStorage.removeItem(SESSION_KEY);

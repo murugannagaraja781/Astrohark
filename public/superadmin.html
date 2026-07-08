@@ -4,8 +4,12 @@
 <head>
     <script>
         (function() {
-            const theme = localStorage.getItem('admin_theme') || 'dark';
-            document.documentElement.setAttribute('data-theme', theme);
+            try {
+                const theme = localStorage.getItem('admin_theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
         })();
     </script>
     <meta charset="UTF-8" />
@@ -2363,25 +2367,29 @@
         function updateTime() { const timeEl = document.getElementById('footerTime'); if (timeEl) timeEl.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
 
         function toggleTheme() {
-            const current = document.documentElement.getAttribute('data-theme') || 'dark';
-            const target = current === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', target);
-            localStorage.setItem('admin_theme', target);
-            
-            const btn = document.getElementById('themeToggleBtnAdmin');
-            if (btn) {
-                btn.className = target === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+            try {
+                const current = document.documentElement.getAttribute('data-theme') || 'dark';
+                const target = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', target);
+                localStorage.setItem('admin_theme', target);
+                
+                const btn = document.getElementById('themeToggleBtnAdmin');
+                if (btn) {
+                    btn.className = target === 'light' ? 'fas fa-moon' : 'fas fa-sun';
+                }
+            } catch (e) {
+                console.error(e);
             }
         }
 
-        // Apply saved theme icon
-        window.addEventListener('DOMContentLoaded', () => {
+        // Apply saved theme icon immediately (DOMContentLoaded has already fired)
+        try {
             const theme = localStorage.getItem('admin_theme') || 'dark';
             const btn = document.getElementById('themeToggleBtnAdmin');
             if (btn) {
                 btn.className = theme === 'light' ? 'fas fa-moon' : 'fas fa-sun';
             }
-        });
+        } catch (e) {}
 
         function logout() { localStorage.removeItem('astro_session'); location.href = '/'; }
 

@@ -150,3 +150,23 @@ A clean rebuild was performed to support 16 KB page size alignment for Android 1
 * **File Path:** `releases/astrohark-debug.apk` and `releases/astrohark-release.aab`
 * **Status:** Build and Packaging Successful
 
+---
+
+## [2026-07-08] - Release Build v23.0 (6 Major Features Implementation)
+
+A clean rebuild was performed after implementing 6 major requested features:
+1. Astrologer App Light/Dark Theme switchable toggle button in header.
+2. Review Reply feature (schema updates, server socket handlers, and in-app reviews list/reply UI).
+3. Detailed Astrologer Profile showing Expertise/Skills, Languages, Experience details, and real Customer Reviews list.
+4. Fully functional OTP Verification with a universal bypass fallback of '1234' on the server.
+5. Large bottom navigation button sizes (28.dp icon, 11.sp text) and custom leaf-style Spa icon for Remedies.
+6. Light theme CSS rules and switchable theme toggle buttons for the website and superadmin panel.
+
+App version code was bumped to `23` and version name to `"23.0"`.
+
+* **Date & Time:** July 08, 2026 - 10:50 PM (IST)
+* **File Name:** `astrohark-v23-debug.apk`, `astrohark-v23-release.aab`
+* **File Path:** `releases/astrohark-v23-debug.apk` and `releases/astrohark-v23-release.aab`
+* **Status:** Build and Packaging Successful
+
+

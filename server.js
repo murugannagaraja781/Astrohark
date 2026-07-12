@@ -2726,9 +2726,9 @@ io.on('connection', (socket) => {
       const total = countResult[0] ? countResult[0].total : 0;
       const top3AstroIds = topAstrologers.map(r => r.astrologerId).filter(Boolean);
 
-      // Populate calculated durations if missing
+      // Populate calculated durations if missing (convert database ms to seconds)
       const sessions = dataResult.map(s => {
-        let calculatedDuration = s.duration || 0;
+        let calculatedDuration = s.duration ? Math.round(s.duration / 1000) : 0;
         if (!calculatedDuration && s.startTime && s.endTime) {
           calculatedDuration = Math.round((s.endTime - s.startTime) / 1000);
         } else if (!calculatedDuration && s.actualBillingStart && s.sessionEndAt) {

@@ -23,8 +23,8 @@ const getAstrologerPerformance = async (astrologerId, days = 30) => {
             {
                 $group: {
                     _id: null,
-                    totalMinutes: { $sum: { $divide: ["$duration", 60] } }, // assuming duration is in seconds
-                    avgMinutes: { $avg: { $divide: ["$duration", 60] } },
+                    totalMinutes: { $sum: { $divide: ["$duration", 60000] } }, // duration is in milliseconds
+                    avgMinutes: { $avg: { $divide: ["$duration", 60000] } },
                     totalEarned: { $sum: "$totalEarned" },
                     totalCharged: { $sum: "$totalCharged" },
                     sessionCount: { $sum: 1 },
@@ -139,7 +139,7 @@ const getAllAstrologersPerformance = async (days = 30) => {
             {
                 $group: {
                     _id: "$astrologerId",
-                    totalMinutes: { $sum: { $divide: ["$duration", 60] } },
+                    totalMinutes: { $sum: { $divide: ["$duration", 60000] } }, // duration is in milliseconds
                     totalEarned: { $sum: "$totalEarned" },
                     sessionCount: { $sum: 1 },
                     uniqueClients: { $addToSet: "$clientId" }

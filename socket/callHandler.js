@@ -258,7 +258,25 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
         try {
             const { sessionId, toUserId, type, accept } = data || {};
             let fromUserId = socketToUser.get(socket.id) || (data && data.fromUserId);
-            
+            let resolvedToUserId = toUserId;
+            const s = activeSessions.get(sessionId);
+
+            // Auto-resolve fromUserId if missing
+            if (!fromUserId && sessionId) {
+                let sessionDoc = s;
+                if (!sessionDoc) {
+                    sessionDoc = await Session.findOne({ sessionId });
+                }
+                if (sessionDoc) {
+                    const cId = sessionDoc.clientId || sessionDoc.fromUserId;
+                    const aId = sessionDoc.astrologerId || sessionDoc.toUserId;
+                    if (resolvedToUserId) {
+                        fromUserId = (resolvedToUserId === cId) ? aId : cId;
+                        console.log(`[CallHandler][answer-session] Resolved missing fromUserId to: ${fromUserId} using resolvedToUserId: ${resolvedToUserId}`);
+                    }
+                }
+            }
+
             // Self-registration for signaling robustness
             if (!socketToUser.has(socket.id) && fromUserId) {
                 console.log(`[CallHandler][answer-session] Auto-registering socket ${socket.id} for user ${fromUserId}`);
@@ -266,9 +284,6 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 userSockets.set(fromUserId, socket.id);
                 socket.join(fromUserId);
             }
-
-            let resolvedToUserId = toUserId;
-            const s = activeSessions.get(sessionId);
 
             // Auto-resolve partner target ID if missing
             if (!resolvedToUserId && sessionId) {

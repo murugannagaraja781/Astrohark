@@ -1,6 +1,7 @@
 // server.js
 require('dotenv').config(); // Load environment variables from .env file
 // Force update timestamp: 2026-03-11 (OTP Fix)
+// server
 const https = require('https');
 const express = require('express');
 const http = require('http');
@@ -54,7 +55,7 @@ const { sendFcmV1Push } = require('./services/push.service');
 const callHandler = require('./socket/callHandler');
 const billingService = require('./services/billing.service');
 const presenceService = require('./services/presence.service');
-const { admin, callApp, fcmAuth } = require('./config/firebase'); 
+const { admin, callApp, fcmAuth } = require('./config/firebase');
 
 // Mobile Token Store (Legacy if not used)
 let mobileTokenStore = new Map();
@@ -92,7 +93,7 @@ const DEFAULT_ICE_SERVERS = [
 app.get('/api/webrtc-config', (req, res) => {
   try {
     let iceServers = [];
-    
+
     // 1. Build from individual .env variables if present
     if (process.env.STUN_SERVER || process.env.TURN_SERVER) {
       if (process.env.STUN_SERVER) {
@@ -106,7 +107,7 @@ app.get('/api/webrtc-config', (req, res) => {
         const turnUrl = `turn:${process.env.TURN_SERVER}:${process.env.TURN_PORT || 3478}`;
         const turnUser = process.env.TURN_USERNAME;
         const turnPass = process.env.TURN_PASSWORD;
-        
+
         // Add both UDP and TCP transport
         iceServers.push({
           urls: `${turnUrl}?transport=udp`,
@@ -173,20 +174,20 @@ let SERVER_URL = process.env.SERVER_URL || '';
 // Temporary Test Route (will remove after testing)
 app.get('/api/test-link', async (req, res) => {
   try {
-     const user = await User.findOne({ userId: { $exists: true } });
-     if (!user) return res.send("No users in database to test with.");
-     
-     const response = await fetch(`${SERVER_URL || 'http://localhost:3000'}/api/payment/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.userId, amount: 100 })
-     });
-     const data = await response.json();
-     if (data.token) {
-        res.send(`Test Link: ${SERVER_URL || 'http://localhost:3000'}/payment.html?token=${data.token}`);
-     } else {
-        res.json(data);
-     }
+    const user = await User.findOne({ userId: { $exists: true } });
+    if (!user) return res.send("No users in database to test with.");
+
+    const response = await fetch(`${SERVER_URL || 'http://localhost:3000'}/api/payment/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.userId, amount: 100 })
+    });
+    const data = await response.json();
+    if (data.token) {
+      res.send(`Test Link: ${SERVER_URL || 'http://localhost:3000'}/payment.html?token=${data.token}`);
+    } else {
+      res.json(data);
+    }
   } catch (e) { res.status(500).send(e.message); }
 });
 
@@ -436,7 +437,7 @@ app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {
     // Robust check for userId in body or query
     const userId = req.body.userId || req.query.userId;
     console.log(`[Upload] Profile pic request for: ${userId}, file: ${req.file?.filename}`);
-    
+
     if (!userId || !req.file) {
       console.warn('[Upload] Failed: Missing userId or image');
       return res.status(400).json({ ok: false, error: 'Missing userId or image' });
@@ -462,17 +463,17 @@ app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {
         const originalPath = req.file.path;
         console.log(`[Compression] Compressing profile image for astrologer ${userId}: ${originalPath}`);
         const tempPath = originalPath + '.tmp';
-        
+
         // Rename original to temp
         fs.renameSync(originalPath, tempPath);
-        
+
         try {
           // Resize to max 800x800 and compress with 80% JPEG quality
           await sharp(tempPath)
             .resize({ width: 800, height: 800, fit: 'inside', withoutEnlargement: true })
             .jpeg({ quality: 80 })
             .toFile(originalPath);
-            
+
           // Remove temp file
           fs.unlinkSync(tempPath);
           console.log(`[Compression] Image compressed successfully for astrologer ${userId}`);
@@ -489,7 +490,7 @@ app.post('/api/user/profile-pic', upload.single('image'), async (req, res) => {
     }
 
     const imageUrl = 'uploads/' + req.file.filename;
-    
+
     // Save image path to the database
     user.image = imageUrl;
     await user.save();
@@ -547,9 +548,9 @@ const connectDB = async (retries = 5) => {
         { role: 'astrologer', orderCount: { $exists: false } },
         { $set: { orderCount: 1000 } }
       ).then(res => {
-         if (res.modifiedCount > 0) {
-           console.log(`✅ Set default orderCount of 1000 for ${res.modifiedCount} astrologers.`);
-         }
+        if (res.modifiedCount > 0) {
+          console.log(`✅ Set default orderCount of 1000 for ${res.modifiedCount} astrologers.`);
+        }
       }).catch(e => console.error('Migration error:', e));
     }
   } catch (err) {
@@ -1003,62 +1004,62 @@ app.post('/api/admin/services/update', upload.single('serviceIcon'), async (req,
 
 // --- Ritual APIs ---
 app.get('/api/rituals', async (req, res) => {
-    try {
-        const rituals = await Ritual.find({ isActive: true }).sort({ order: 1 });
-        const formatted = rituals.map(r => ({
-            ...r.toObject(),
-            imageUrl: formatImageUrl(r.imageUrl, r.title)
-        }));
-        res.json({ ok: true, data: formatted });
-    } catch (err) {
-        res.status(500).json({ ok: false, error: err.message });
-    }
+  try {
+    const rituals = await Ritual.find({ isActive: true }).sort({ order: 1 });
+    const formatted = rituals.map(r => ({
+      ...r.toObject(),
+      imageUrl: formatImageUrl(r.imageUrl, r.title)
+    }));
+    res.json({ ok: true, data: formatted });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 app.get('/api/admin/rituals', async (req, res) => {
-    try {
-        const rituals = await Ritual.find().sort({ order: 1 });
-        res.json({ ok: true, rituals });
-    } catch (err) {
-        res.status(500).json({ ok: false, error: err.message });
-    }
+  try {
+    const rituals = await Ritual.find().sort({ order: 1 });
+    res.json({ ok: true, rituals });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 app.post('/api/admin/rituals', upload.single('ritualImage'), async (req, res) => {
-    try {
-        const { id, title, title_ta, subtitle, subtitle_ta, description, description_ta, price, order, isActive, imageUrl } = req.body;
-        let finalImageUrl = imageUrl;
-        if (req.file) {
-            finalImageUrl = 'uploads/' + req.file.filename;
-        }
-
-        const data = {
-            title, title_ta, subtitle, subtitle_ta, description, description_ta,
-            price: parseFloat(price || 0),
-            order: parseInt(order || 0),
-            isActive: isActive === 'true' || isActive === true,
-            imageUrl: finalImageUrl
-        };
-
-        if (id && id !== 'undefined' && id !== 'null') {
-            const ritual = await Ritual.findByIdAndUpdate(id, data, { returnDocument: 'after' });
-            res.json({ ok: true, ritual });
-        } else {
-            const ritual = await Ritual.create(data);
-            res.json({ ok: true, ritual });
-        }
-    } catch (err) {
-        res.status(500).json({ ok: false, error: err.message });
+  try {
+    const { id, title, title_ta, subtitle, subtitle_ta, description, description_ta, price, order, isActive, imageUrl } = req.body;
+    let finalImageUrl = imageUrl;
+    if (req.file) {
+      finalImageUrl = 'uploads/' + req.file.filename;
     }
+
+    const data = {
+      title, title_ta, subtitle, subtitle_ta, description, description_ta,
+      price: parseFloat(price || 0),
+      order: parseInt(order || 0),
+      isActive: isActive === 'true' || isActive === true,
+      imageUrl: finalImageUrl
+    };
+
+    if (id && id !== 'undefined' && id !== 'null') {
+      const ritual = await Ritual.findByIdAndUpdate(id, data, { returnDocument: 'after' });
+      res.json({ ok: true, ritual });
+    } else {
+      const ritual = await Ritual.create(data);
+      res.json({ ok: true, ritual });
+    }
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 app.delete('/api/admin/rituals/:id', async (req, res) => {
-    try {
-        await Ritual.findByIdAndDelete(req.params.id);
-        res.json({ ok: true });
-    } catch (err) {
-        res.status(500).json({ ok: false, error: err.message });
-    }
+  try {
+    await Ritual.findByIdAndDelete(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
 });
 
 // Home Dashboard Data (App) 
@@ -1066,11 +1067,11 @@ app.get('/api/admin/system/status', async (req, res) => {
   try {
     const { fcmAuth } = require('./config/firebase');
     const dbConnected = mongoose.connection.readyState === 1;
-    
+
     // Check Socket.io Health
     const socketOk = !!io;
     const activeSockets = io ? io.engine.clientsCount : 0;
-    
+
     // Check FCM Health
     const fcmOk = !!fcmAuth;
 
@@ -2313,7 +2314,7 @@ io.on('connection', (socket) => {
       if (updates.bankDetails) user.bankDetails = updates.bankDetails;
       if (updates.upiId) user.upiId = updates.upiId;
       if (updates.upiNumber) user.upiNumber = updates.upiNumber;
-      
+
       if (typeof updates.isVerified === 'boolean') user.isVerified = updates.isVerified;
       if (updates.documentStatus) {
         user.documentStatus = updates.documentStatus;
@@ -2359,7 +2360,7 @@ io.on('connection', (socket) => {
         const user = await User.findOne({ userId: data.userId });
         const formattedUser = user.toObject ? user.toObject() : user;
         formattedUser.image = formatImageUrl(formattedUser.image, formattedUser.name);
-        
+
         io.to(sId).emit('role-updated', { role: data.role, user: formattedUser });
         io.to(sId).emit('app-notification', { text: `Your role has been updated to ${data.role}!` });
         if (data.role === 'astrologer') io.to(sId).emit('wallet-update', { balance: 0 });
@@ -2463,9 +2464,9 @@ io.on('connection', (socket) => {
     if (!await checkAdmin(socket.id)) return cb({ ok: false, error: 'Unauthorized' });
     try {
       const { name, phone, email, image, price, experience, skills, profession, aadharNumber, panNumber, bankDetails, upiId } = data;
-      
+
       if (!name || !phone) return cb({ ok: false, error: 'Missing name or phone' });
-      
+
       const normalizePhone = (p) => {
         if (!p) return p;
         const clean = p.replace(/\D/g, '');
@@ -2508,7 +2509,7 @@ io.on('connection', (socket) => {
 
       // Broadcast update to all clients
       await broadcastAstroUpdate();
-      
+
       cb({ ok: true, userId });
     } catch (e) {
       console.error('[Admin] Create Astrologer Error:', e);
@@ -2519,7 +2520,7 @@ io.on('connection', (socket) => {
   // Phase 10: Ledger Stats
   socket.on('admin-get-ledger-stats', async (data, cb) => {
     if (!await checkAdmin(socket.id)) return cb({ ok: false });
-    let fullLedger = []; 
+    let fullLedger = [];
     try {
       // Get billing stats (Usage based)
       const billingStats = await BillingLedger.aggregate([
@@ -2661,8 +2662,8 @@ io.on('connection', (socket) => {
           totalCharged: 1,
           actualBillingStart: 1,
           sessionEndAt: 1,
-          clientName: { $ifNull: [ { $arrayElemAt: ['$clientDoc.name', 0] }, 'Unknown Client' ] },
-          astrologerName: { $ifNull: [ { $arrayElemAt: ['$astroDoc.name', 0] }, 'Unknown Astrologer' ] }
+          clientName: { $ifNull: [{ $arrayElemAt: ['$clientDoc.name', 0] }, 'Unknown Client'] },
+          astrologerName: { $ifNull: [{ $arrayElemAt: ['$astroDoc.name', 0] }, 'Unknown Astrologer'] }
         }
       });
 
@@ -2680,7 +2681,7 @@ io.on('connection', (socket) => {
 
       // Calculate totals, matching records, and top astrologers in parallel using Mongo aggregation
       const totalCountPipeline = [...pipeline, { $count: 'total' }];
-      
+
       const dataPipeline = [
         ...pipeline,
         { $sort: { startTime: -1, sessionEndAt: -1 } },
@@ -2710,7 +2711,7 @@ io.on('connection', (socket) => {
         {
           $project: {
             astrologerId: '$_id',
-            name: { $ifNull: [ { $arrayElemAt: ['$userDoc.name', 0] }, 'Unknown Astrologer' ] },
+            name: { $ifNull: [{ $arrayElemAt: ['$userDoc.name', 0] }, 'Unknown Astrologer'] },
             sessions: 1,
             duration: '$durationSum'
           }
@@ -2740,7 +2741,7 @@ io.on('connection', (socket) => {
       // Fetch astrologer total sessions count to decide Active badges on the client
       const astroIds = sessions.map(s => s.astrologerId || s.toUserId).filter(Boolean);
       const astroSessionCounts = await Session.aggregate([
-        { $match: { status: 'ended', $or: [ { astrologerId: { $in: astroIds } }, { toUserId: { $in: astroIds } } ] } },
+        { $match: { status: 'ended', $or: [{ astrologerId: { $in: astroIds } }, { toUserId: { $in: astroIds } }] } },
         {
           $group: {
             _id: { $ifNull: ['$astrologerId', '$toUserId'] },
@@ -3447,8 +3448,8 @@ app.post('/api/phonepe/callback', async (req, res) => {
   try {
     const { response } = req.body;
     if (!response) {
-       console.error('[PhonePe Callback] No response field in body');
-       return res.status(400).send('No response');
+      console.error('[PhonePe Callback] No response field in body');
+      return res.status(400).send('No response');
     }
 
     // Decode Base64 Response
@@ -3461,69 +3462,69 @@ app.post('/api/phonepe/callback', async (req, res) => {
     const code = decoded.code;
 
     if (transactionId) {
-       const payment = await Payment.findOne({ transactionId });
-       if (!payment) {
-          console.error(`[PhonePe Callback] Payment record not found for TXN: ${transactionId}`);
-          return res.status(200).send('TXN NOT FOUND'); // Still 200 to acknowledge callback
-       }
+      const payment = await Payment.findOne({ transactionId });
+      if (!payment) {
+        console.error(`[PhonePe Callback] Payment record not found for TXN: ${transactionId}`);
+        return res.status(200).send('TXN NOT FOUND'); // Still 200 to acknowledge callback
+      }
 
-       if (success && code === "PAYMENT_SUCCESS") {
-          if (payment.status !== 'success') {
-             payment.status = 'success';
-             payment.providerRefId = decoded.data?.providerReferenceId || '';
-             await payment.save();
+      if (success && code === "PAYMENT_SUCCESS") {
+        if (payment.status !== 'success') {
+          payment.status = 'success';
+          payment.providerRefId = decoded.data?.providerReferenceId || '';
+          await payment.save();
 
-             // Credit Wallet
-             const user = await User.findOne({ userId: payment.userId });
-             if (user) {
-                user.walletBalance = (user.walletBalance || 0) + parseFloat(payment.baseAmount || payment.amount || 0);
-                await user.save();
-                console.log(`[PhonePe CALLBACK CREDITED] ${user.name} +₹${payment.baseAmount || payment.amount}`);
-                
-                // Referral Logic hook (same as Razorpay)
-                if (user.referredBy) {
-                  const successCount = await Payment.countDocuments({ 
-                      userId: user.userId, 
-                      status: 'success'
+          // Credit Wallet
+          const user = await User.findOne({ userId: payment.userId });
+          if (user) {
+            user.walletBalance = (user.walletBalance || 0) + parseFloat(payment.baseAmount || payment.amount || 0);
+            await user.save();
+            console.log(`[PhonePe CALLBACK CREDITED] ${user.name} +₹${payment.baseAmount || payment.amount}`);
+
+            // Referral Logic hook (same as Razorpay)
+            if (user.referredBy) {
+              const successCount = await Payment.countDocuments({
+                userId: user.userId,
+                status: 'success'
+              });
+              if (successCount === 1) {
+                const referrer = await User.findOne({ userId: user.referredBy });
+                if (referrer) {
+                  referrer.walletBalance = (referrer.walletBalance || 0) + 81;
+                  referrer.totalEarnings = (referrer.totalEarnings || 0) + 81;
+                  referrer.referralCount = (referrer.referralCount || 0) + 1;
+                  await referrer.save();
+
+                  await Payment.create({
+                    transactionId: `REF_${crypto.randomBytes(8).toString('hex')}`,
+                    userId: referrer.userId,
+                    amount: 81,
+                    baseAmount: 81,
+                    gstAmount: 0,
+                    status: 'success',
+                    reason: 'referral'
                   });
-                  if (successCount === 1) {
-                      const referrer = await User.findOne({ userId: user.referredBy });
-                      if (referrer) {
-                          referrer.walletBalance = (referrer.walletBalance || 0) + 81;
-                          referrer.totalEarnings = (referrer.totalEarnings || 0) + 81;
-                          referrer.referralCount = (referrer.referralCount || 0) + 1;
-                          await referrer.save();
-
-                          await Payment.create({
-                              transactionId: `REF_${crypto.randomBytes(8).toString('hex')}`,
-                              userId: referrer.userId,
-                              amount: 81,
-                              baseAmount: 81,
-                              gstAmount: 0,
-                              status: 'success',
-                              reason: 'referral'
-                          });
-                      }
-                  }
                 }
+              }
+            }
 
-                // WebSocket Update
-                const io = req.app.get('io');
-                const { userSockets } = require('./services/socketStore');
-                if (userSockets.has(user.userId)) {
-                   io.to(userSockets.get(user.userId)).emit('wallet-update', {
-                      balance: user.walletBalance,
-                      superBalance: user.superWalletBalance
-                   });
-                }
-             }
+            // WebSocket Update
+            const io = req.app.get('io');
+            const { userSockets } = require('./services/socketStore');
+            if (userSockets.has(user.userId)) {
+              io.to(userSockets.get(user.userId)).emit('wallet-update', {
+                balance: user.walletBalance,
+                superBalance: user.superWalletBalance
+              });
+            }
           }
-       } else {
-          if (payment.status === 'pending') {
-             payment.status = 'failed';
-             await payment.save();
-          }
-       }
+        }
+      } else {
+        if (payment.status === 'pending') {
+          payment.status = 'failed';
+          await payment.save();
+        }
+      }
     }
 
     // Acknowledge PhonePe that we received the callback

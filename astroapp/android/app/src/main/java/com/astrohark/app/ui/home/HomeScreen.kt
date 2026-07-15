@@ -622,24 +622,17 @@ fun HomeScreen(
                  }
             },
             text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // Rules
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                        Surface(shape = CircleShape, color = CosmicAppTheme.colors.accent, modifier = Modifier.size(24.dp)) {
-                            Box(contentAlignment = Alignment.Center) { Text("1", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(if(isTamil) "உங்கள் Referral Code-ஐ நண்பர்களுக்கு பகிருங்கள். அவர்கள் இணையும் போது ₹$referralSignupBonus பெறுவார்கள்!" else "Share your referral code with friends. They get ₹$referralSignupBonus on signup!", fontSize = 14.sp)
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                        Surface(shape = CircleShape, color = CosmicAppTheme.colors.accent, modifier = Modifier.size(24.dp)) {
-                            Box(contentAlignment = Alignment.Center) { Text("2", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(if(isTamil) "உங்கள் நண்பர் முதல் ரீசார்ஜ் செய்தவுடன் உங்களுக்கு ₹$referrerRechargeBonus போனஸ் கிடைக்கும்!" else "Get ₹$referrerRechargeBonus bonus when they make their first recharge!", fontSize = 14.sp)
-                    }
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = referralTextState,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = CosmicAppTheme.colors.textPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // My Code Box
                     Surface(
@@ -665,9 +658,9 @@ fun HomeScreen(
                     Button(
                         onClick = {
                             // Share via WhatsApp
-                            val msg = if (isTamil)
-                                "Astrohark செயலியில் இணையுங்கள்! நீங்கள் இணைய என் Referral Code: ${referralCode ?: ""} -ஐ பயன்படுத்தினால் ₹$referralSignupBonus போனஸ் கிடைக்கும். முதல் ரீசார்ஜ் செய்ய மறந்துவிடாதீர்கள்! $shareLink"
-                                else "Join Astrohark! Use my Referral Code: ${referralCode ?: ""} and get ₹$referralSignupBonus bonus on signup. Don't forget to make your first recharge! $shareLink"
+                            val msg = "${referralTextState}\n\n" +
+                                    (if (isTamil) "என் Referral Code: ${referralCode ?: ""}" else "Use my Referral Code: ${referralCode ?: ""}") +
+                                    "\n\n$shareLink"
                             val intent = Intent(Intent.ACTION_VIEW).apply {
                                 data = Uri.parse("https://api.whatsapp.com/send?text=${Uri.encode(msg)}")
                             }
@@ -867,7 +860,7 @@ fun HomeScreen(
                         1 -> ConsultTab(filteredAstros, { astro -> checkBalanceAndProceed(astro) { onChatClick(astro) } }, { astro, type -> checkBalanceAndProceed(astro) { onCallClick(astro, type) } }, isTamil, searchQuery, { searchQuery = it }, selectedFilter, activeServiceView, onBack = { activeServiceView = null; selectedFilter = "All"; selectedTab = 0 })
                         2 -> RitualsTab(rituals, isTamil)
                         3 -> ProfileTab(walletBalance, isTamil, onWalletClick, onDrawerItemClick, onLogoutClick)
-                        4 -> ReferralTab(referralCode, shareLink, isTamil, isNewUser, onApplyReferral, referralSignupBonus, referrerRechargeBonus)
+                        4 -> ReferralTab(referralCode, shareLink, isTamil, isNewUser, onApplyReferral, referralSignupBonus, referrerRechargeBonus, referralTextState)
                     }
 
                 }
@@ -1553,7 +1546,8 @@ fun LazyListScope.ReferralTab(
     isNewUser: Boolean,
     onApplyReferral: (String) -> Unit,
     referralSignupBonus: Int,
-    referrerRechargeBonus: Int
+    referrerRechargeBonus: Int,
+    referralText: String
 ) {
     item {
         ReferralScreen(
@@ -1563,7 +1557,8 @@ fun LazyListScope.ReferralTab(
             isNewUser = isNewUser,
             onApplyReferral = onApplyReferral,
             referralSignupBonus = referralSignupBonus,
-            referrerRechargeBonus = referrerRechargeBonus
+            referrerRechargeBonus = referrerRechargeBonus,
+            referralText = referralText
         )
     }
 }
@@ -3333,7 +3328,8 @@ fun ReferralScreen(
     isNewUser: Boolean,
     onApplyReferral: (String) -> Unit,
     referralSignupBonus: Int,
-    referrerRechargeBonus: Int
+    referrerRechargeBonus: Int,
+    referralText: String
 ) {
     val context = LocalContext.current
     var referralInput by remember { mutableStateOf("") }
@@ -3359,11 +3355,21 @@ fun ReferralScreen(
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
         )
 
-        // Referral Steps
+        // Referral Text
         AstroCard(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                ReferStepRow("1", if(isTamil) "உங்கள் Referral Code-ஐ நண்பர்களுக்கு பகிருங்கள். அவர்கள் இணையும் போது ₹$referralSignupBonus பெறுவார்கள்!" else "Share your referral code with friends. They get ₹$referralSignupBonus on signup!", isTamil)
-                ReferStepRow("2", if(isTamil) "உங்கள் நண்பர் முதல் ரீசார்ஜ் செய்தவுடன் உங்களுக்கு ₹$referrerRechargeBonus போனஸ் கிடைக்கும்!" else "Get ₹$referrerRechargeBonus bonus when they make their first recharge!", isTamil)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = referralText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = CosmicAppTheme.colors.textPrimary,
+                    textAlign = TextAlign.Center
+                )
             }
         }
 
@@ -3413,9 +3419,9 @@ fun ReferralScreen(
 
         Button(
             onClick = {
-                val msg = if (isTamil)
-                    "Astrohark செயலியில் இணையுங்கள்! நீங்கள் இணைய என் Referral Code: ${referralCode ?: ""} -ஐ பயன்படுத்தினால் ₹$referralSignupBonus போனஸ் கிடைக்கும். $shareLink"
-                    else "Join Astrohark! Use my Referral Code: ${referralCode ?: ""} and get ₹$referralSignupBonus bonus on signup. $shareLink"
+                val msg = "${referralText}\n\n" +
+                        (if (isTamil) "என் Referral Code: ${referralCode ?: ""}" else "Use my Referral Code: ${referralCode ?: ""}") +
+                        "\n\n$shareLink"
                 val intent = Intent(Intent.ACTION_VIEW).apply {
                     data = Uri.parse("https://api.whatsapp.com/send?text=${Uri.encode(msg)}")
                 }

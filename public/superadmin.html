@@ -2555,6 +2555,30 @@
                                 </div>
                             `;
                         }
+                        if (key === 'NEW_USER_SIGNUP_BONUS') {
+                            return `
+                                <div>
+                                    <label class="app-label" style="font-size:0.75rem; color:var(--primary);">${key.replace(/_/g, ' ')} (New User Welcome Bonus in ₹)</label>
+                                    <input type="number" class="app-input env-input" data-key="${key}" value="${res.config[key]}" placeholder="${key}">
+                                </div>
+                            `;
+                        }
+                        if (key === 'REFERRAL_SIGNUP_BONUS') {
+                            return `
+                                <div>
+                                    <label class="app-label" style="font-size:0.75rem; color:var(--primary);">${key.replace(/_/g, ' ')} (Total Bonus for Referee in ₹)</label>
+                                    <input type="number" class="app-input env-input" data-key="${key}" value="${res.config[key]}" placeholder="${key}">
+                                </div>
+                            `;
+                        }
+                        if (key === 'REFERRER_RECHARGE_BONUS') {
+                            return `
+                                <div>
+                                    <label class="app-label" style="font-size:0.75rem; color:var(--primary);">${key.replace(/_/g, ' ')} (Reward for Referrer on First Recharge in ₹)</label>
+                                    <input type="number" class="app-input env-input" data-key="${key}" value="${res.config[key]}" placeholder="${key}">
+                                </div>
+                            `;
+                        }
                         return `
                             <div>
                                 <label class="app-label" style="font-size:0.75rem; color:var(--primary);">${key.replace(/_/g, ' ')}</label>

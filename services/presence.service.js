@@ -7,7 +7,7 @@ const {
     sessionDisconnectTimeouts,
     SESSION_GRACE_PERIOD
 } = require('./socketStore');
-const { broadcastAstroUpdate, broadcastSingleAstroUpdate } = require('./astrologer.service');
+const { broadcastAstroUpdate, broadcastSingleAstroUpdate, sendOnlineNotification } = require('./astrologer.service');
 // billingService removed to break circular dependency. Required inside handleDisconnect if needed.
 
 const Session = require('../models/Session');
@@ -47,6 +47,7 @@ class PresenceService {
                 user.lastSeen = new Date();
                 await user.save();
                 broadcastAstroUpdate(io, process.env.SERVER_URL);
+                sendOnlineNotification(user, io);
                 console.log(`[Presence] Astrologer ${user.name} (${userId}) connected and verified ONLINE.`);
             } else if (user.role === 'client') {
                 user.isOnline = true;
@@ -136,6 +137,9 @@ class PresenceService {
                 await user.save();
                 
                 broadcastAstroUpdate(io, process.env.SERVER_URL);
+                if (isOnline) {
+                    sendOnlineNotification(user, io);
+                }
                 console.log(`[Presence] ${user.name} manually set status to: ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
                 return { ok: true, user };
             }

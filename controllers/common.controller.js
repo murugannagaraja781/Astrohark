@@ -51,6 +51,9 @@ exports.cityTimezone = async (req, res) => {
     }
 };
 const GlobalSettings = require('../models/GlobalSettings');
+const User = require('../models/User');
+const Feedback = require('../models/Feedback');
+const { broadcastAstroUpdate } = require('../services/astrologer.service');
 
 exports.getAppConfig = async (req, res) => {
     try {
@@ -63,11 +66,78 @@ exports.getAppConfig = async (req, res) => {
                 showBanner: process.env.SHOW_BANNER === 'true',
                 appBackgroundColor: process.env.APP_BG_COLOR || "#FEF9F3",
                 referralText: process.env.REFERRAL_TEXT || "Refer Your Friend & Earn Upto ₹5000",
-                shareBannerUrl: process.env.SHARE_BANNER_URL || ""
+                shareBannerUrl: process.env.SHARE_BANNER_URL || "",
+                initialWalletBalance: parseInt(process.env.NEW_USER_SIGNUP_BONUS) || 0,
+                referralSignupBonus: parseInt(process.env.REFERRAL_SIGNUP_BONUS) || 188,
+                referrerRechargeBonus: parseInt(process.env.REFERRER_RECHARGE_BONUS) || 81
             }
         });
     } catch (error) {
         res.json({ ok: false, error: 'Failed to fetch config' });
+    }
+};
+
+exports.submitReview = async (req, res) => {
+    try {
+        const { sessionId, clientId, astrologerId, rating, comment } = req.body;
+        if (!clientId || !astrologerId || !rating || !comment) {
+            return res.status(400).json({ ok: false, error: 'Mandatory fields missing' });
+        }
+
+        const client = await User.findOne({ userId: clientId });
+        const astrologer = await User.findOne({ userId: astrologerId });
+
+        if (!client) return res.status(404).json({ ok: false, error: 'Client not found' });
+        if (!astrologer) return res.status(404).json({ ok: false, error: 'Astrologer not found' });
+
+        let sessionType = 'call';
+        if (sessionId) {
+            const Session = require('../models/Session');
+            const sessionObj = await Session.findOne({ sessionId });
+            if (sessionObj) {
+                sessionType = sessionObj.type || 'call';
+            }
+        }
+
+        const fb = await Feedback.create({
+            userId: clientId,
+            userName: client.name || 'User',
+            astrologerId,
+            astrologerName: astrologer.name || 'Astrologer',
+            rating: parseInt(rating) || 5,
+            comment,
+            sessionType
+        });
+
+        // Recalculate average rating
+        const feedbacks = await Feedback.find({ astrologerId });
+        let avgRating = 5.0;
+        if (feedbacks.length > 0) {
+            const total = feedbacks.reduce((acc, f) => acc + (f.rating || 5), 0);
+            avgRating = parseFloat((total / feedbacks.length).toFixed(1));
+        } else {
+            avgRating = parseInt(rating) || 5.0;
+        }
+
+        astrologer.rating = avgRating;
+        await astrologer.save();
+
+        // Broadcast astrologer update
+        const io = req.app.get('io');
+        if (io) {
+            broadcastAstroUpdate(io, process.env.SERVER_URL);
+        }
+
+        // Send email notification (optional)
+        try {
+            const { sendFeedbackEmail } = require('../services/email.service');
+            sendFeedbackEmail(fb).catch(err => console.error("Email send failed:", err));
+        } catch (err) {}
+
+        res.json({ ok: true, feedback: fb });
+    } catch (error) {
+        console.error('Error submitting review REST API:', error);
+        res.status(500).json({ ok: false, error: 'Internal server error' });
     }
 };
 

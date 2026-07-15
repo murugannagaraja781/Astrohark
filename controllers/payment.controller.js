@@ -186,8 +186,9 @@ exports.callback = async (req, res) => {
                     if (successCount === 1) { // This is the first one (just set to success)
                         const referrer = await User.findOne({ userId: user.referredBy });
                         if (referrer) {
-                            referrer.walletBalance = (referrer.walletBalance || 0) + 81;
-                            referrer.totalEarnings = (referrer.totalEarnings || 0) + 81;
+                            const referrerBonus = parseInt(process.env.REFERRER_RECHARGE_BONUS) || 81;
+                            referrer.walletBalance = (referrer.walletBalance || 0) + referrerBonus;
+                            referrer.totalEarnings = (referrer.totalEarnings || 0) + referrerBonus;
                             referrer.referralCount = (referrer.referralCount || 0) + 1;
                             await referrer.save();
 
@@ -204,13 +205,13 @@ exports.callback = async (req, res) => {
                             await Payment.create({
                                 transactionId: `REF_${crypto.randomBytes(8).toString('hex')}`,
                                 userId: referrer.userId,
-                                amount: 81,
-                                baseAmount: 81,
+                                amount: referrerBonus,
+                                baseAmount: referrerBonus,
                                 gstAmount: 0,
                                 status: 'success',
                                 reason: 'referral'
                             });
-                            console.log(`[Referral Reward] Credited ₹81 to Referrer: ${referrer.name} for User: ${user.name}`);
+                            console.log(`[Referral Reward] Credited ₹${referrerBonus} to Referrer: ${referrer.name} for User: ${user.name}`);
                         }
                     }
                 }

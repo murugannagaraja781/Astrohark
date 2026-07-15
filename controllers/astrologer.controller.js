@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const { broadcastAstroUpdate } = require('../services/astrologer.service');
+const { broadcastAstroUpdate, sendOnlineNotification } = require('../services/astrologer.service');
 
 exports.register = async (req, res) => {
     try {
@@ -95,6 +95,10 @@ exports.toggleOnline = async (req, res) => {
 
         await User.updateOne({ userId }, update);
         broadcastAstroUpdate(io, SERVER_URL);
+        if (available) {
+            const updatedUser = await User.findOne({ userId });
+            if (updatedUser) sendOnlineNotification(updatedUser, io);
+        }
         res.json({ ok: true });
     } catch (e) {
         console.error(e);
@@ -124,6 +128,10 @@ exports.toggleService = async (req, res) => {
 
             await User.updateOne({ userId }, update);
             broadcastAstroUpdate(io, SERVER_URL);
+            if (update.isOnline) {
+                const updatedUser = await User.findOne({ userId });
+                if (updatedUser) sendOnlineNotification(updatedUser, io);
+            }
             res.json({ ok: true });
         } else {
             res.json({ ok: false, error: 'User not found' });

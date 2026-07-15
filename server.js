@@ -51,7 +51,7 @@ if (!global.fetch) {
 }
 
 // FCM v1 API and Firebase Admin consolidated in push.service.js and config/firebase.js
-const { sendFcmV1Push } = require('./services/push.service');
+const { sendFcmV1Push, sendFcmTopicPush } = require('./services/push.service');
 const callHandler = require('./socket/callHandler');
 const billingService = require('./services/billing.service');
 const presenceService = require('./services/presence.service');
@@ -231,7 +231,7 @@ function formatImageUrl(imgPath, name) {
   return imgPath;
 }
 
-const { getFormattedAstrologers, broadcastAstroUpdate: serviceBroadcastAstroUpdate } = require('./services/astrologer.service');
+const { getFormattedAstrologers, broadcastAstroUpdate: serviceBroadcastAstroUpdate, sendOnlineNotification } = require('./services/astrologer.service');
 
 async function broadcastAstroUpdate() {
   await serviceBroadcastAstroUpdate(io, SERVER_URL);
@@ -1782,6 +1782,9 @@ io.on('connection', (socket) => {
       user.lastSeen = new Date();
       await user.save();
       broadcastAstroUpdate();
+      if (user.isOnline) {
+        sendOnlineNotification(user, io);
+      }
       console.log(`[Presence] ${user.name} toggled ${data.type}: ${data.online}`);
     } catch (e) { console.error(e); }
   });
@@ -1808,6 +1811,9 @@ io.on('connection', (socket) => {
         await user.save();
 
         broadcastAstroUpdate();
+        if (user.isOnline) {
+          sendOnlineNotification(user, io);
+        }
         console.log(`[Service Status] ${user.name} updated ${data.service}: ${isEnabled}`);
       }
     } catch (e) { console.error('update-service-status error:', e); }
@@ -3492,16 +3498,17 @@ app.post('/api/phonepe/callback', async (req, res) => {
               if (successCount === 1) {
                 const referrer = await User.findOne({ userId: user.referredBy });
                 if (referrer) {
-                  referrer.walletBalance = (referrer.walletBalance || 0) + 81;
-                  referrer.totalEarnings = (referrer.totalEarnings || 0) + 81;
+                  const referrerBonus = parseInt(process.env.REFERRER_RECHARGE_BONUS) || 81;
+                  referrer.walletBalance = (referrer.walletBalance || 0) + referrerBonus;
+                  referrer.totalEarnings = (referrer.totalEarnings || 0) + referrerBonus;
                   referrer.referralCount = (referrer.referralCount || 0) + 1;
                   await referrer.save();
 
                   await Payment.create({
                     transactionId: `REF_${crypto.randomBytes(8).toString('hex')}`,
                     userId: referrer.userId,
-                    amount: 81,
-                    baseAmount: 81,
+                    amount: referrerBonus,
+                    baseAmount: referrerBonus,
                     gstAmount: 0,
                     status: 'success',
                     reason: 'referral'

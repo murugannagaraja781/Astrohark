@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.rounded.VideoCall
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -118,6 +120,11 @@ fun AstrologerProfileScreen(
     val peacockTeal = Color(0xFFE87A1E)
     val yellowAccent = Color(0xFFFFD54F)
     val isTamil = java.util.Locale.getDefault().language == "ta"
+    val context = LocalContext.current
+    val sharedPrefs = context.getSharedPreferences("astro_subscriptions", android.content.Context.MODE_PRIVATE)
+    var isSubscribed by remember {
+        mutableStateOf(sharedPrefs.getStringSet("subscribed_list", emptySet())?.contains(id) == true)
+    }
 
     var reviewsList by remember { mutableStateOf<List<JSONObject>>(emptyList()) }
     LaunchedEffect(id) {
@@ -398,6 +405,57 @@ fun AstrologerProfileScreen(
                                 }
                             }
                         }
+                    }
+                }
+
+                // Subscribe/Follow Button
+                val btnText = if (isSubscribed) {
+                    if (isTamil) "தொடர்கிறது (Subscribed)" else "Subscribed"
+                } else {
+                    if (isTamil) "$name-ஐ தொடரவும்" else "Subscribe to $name"
+                }
+
+                Button(
+                    onClick = {
+                        val currentSet = sharedPrefs.getStringSet("subscribed_list", emptySet()) ?: emptySet()
+                        val newSet = currentSet.toMutableSet()
+                        if (isSubscribed) {
+                            com.google.firebase.messaging.FirebaseMessaging.getInstance().unsubscribeFromTopic("astrologer_$id")
+                            newSet.remove(id)
+                            isSubscribed = false
+                            Toast.makeText(context, if (isTamil) "தொடர்வது நிறுத்தப்பட்டது" else "Unsubscribed from $name", Toast.LENGTH_SHORT).show()
+                        } else {
+                            com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("astrologer_$id")
+                            newSet.add(id)
+                            isSubscribed = true
+                            Toast.makeText(context, if (isTamil) "தொடரப்பட்டது! ஜோதிடர் ஆன்லைனுக்கு வரும்போது உங்களுக்கு அறிவிக்கப்படும்" else "Subscribed! You will be notified when $name goes online.", Toast.LENGTH_SHORT).show()
+                        }
+                        sharedPrefs.edit().putStringSet("subscribed_list", newSet).apply()
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 6.dp)
+                        .height(50.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = if (isSubscribed) Color.Gray else Color(0xFFE87A1E)),
+                    shape = RoundedCornerShape(AstroDimens.RadiusMedium)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (isSubscribed) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = btnText,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 16.sp
+                        )
                     }
                 }
 

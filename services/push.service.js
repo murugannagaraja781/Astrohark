@@ -109,5 +109,68 @@ async function sendFcmV1Push(fcmToken, data, notification, userId = null) {
     }
 }
 
-module.exports = { sendFcmV1Push };
+async function sendFcmTopicPush(topic, data, notification) {
+    if (!fcmAuth) {
+        console.warn('[FCM v1] Not initialized - skipping topic push');
+        return { success: false, error: 'FCM not initialized' };
+    }
+    try {
+        const accessToken = await fcmAuth.getAccessToken();
+        const messagePayload = {
+            topic: topic,
+            notification: notification ? {
+                title: notification.title,
+                body: notification.body,
+                image: notification.image || undefined
+            } : undefined,
+            data: (() => {
+                const rawData = {
+                    ...data,
+                    title: notification ? notification.title : (data.title || ''),
+                    body: notification ? notification.body : (data.body || ''),
+                    image: notification?.image || data?.image || ''
+                };
+                const fcmData = {};
+                for (const [key, val] of Object.entries(rawData)) {
+                    if (val !== undefined && val !== null) {
+                        fcmData[key] = String(val);
+                    }
+                }
+                return fcmData;
+            })(),
+            android: {
+                priority: 'high',
+                ttl: '0s'
+            }
+        };
+
+        const message = { message: messagePayload };
+
+        const response = await fetch(
+            `https://fcm.googleapis.com/v1/projects/${FCM_PROJECT_ID}/messages:send`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken.token || accessToken}`
+                },
+                body: JSON.stringify(message)
+            }
+        );
+
+        const result = await response.json();
+        if (response.ok) {
+            console.log(`[FCM v1] Topic push sent successfully to ${topic}:`, result.name);
+            return { success: true, messageId: result.name };
+        } else {
+            console.error('[FCM v1] Topic push failed:', result.error?.message || JSON.stringify(result));
+            return { success: false, error: result.error?.message };
+        }
+    } catch (err) {
+        console.error('[FCM v1] Topic send error:', err.message);
+        return { success: false, error: err.message };
+    }
+}
+
+module.exports = { sendFcmV1Push, sendFcmTopicPush };
 

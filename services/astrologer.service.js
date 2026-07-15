@@ -81,4 +81,43 @@ async function broadcastSingleAstroUpdate(io, userId, SERVER_URL) {
     }
 }
 
-module.exports = { getFormattedAstrologers, broadcastAstroUpdate, broadcastSingleAstroUpdate };
+const { sendFcmTopicPush } = require('./push.service');
+
+async function sendOnlineNotification(user, io) {
+    if (!user || user.role !== 'astrologer') return;
+    
+    // We only trigger when astrologer is online and available
+    if (!user.isOnline && !user.isAvailable) return;
+
+    try {
+        const now = new Date();
+        const lastSent = user.lastOnlineNotification;
+        // 10 minutes cooldown (600,000 ms)
+        if (lastSent && (now - new Date(lastSent) < 600000)) {
+            console.log(`[Notification] Cooldown active for ${user.name} (${user.userId}). Skipping.`);
+            return;
+        }
+
+        user.lastOnlineNotification = now;
+        await User.updateOne({ userId: user.userId }, { lastOnlineNotification: now });
+
+        const topicName = `astrologer_${user.userId}`;
+        const notification = {
+            title: `✨ Astrohark`,
+            body: `${user.name} is now ONLINE / ஆன்லைனில் உள்ளார்! 🔮`
+        };
+        const data = {
+            type: 'ASTRO_ONLINE',
+            astrologerId: user.userId
+        };
+
+        console.log(`[Notification] Sending online push for ${user.name} to topic ${topicName}`);
+        sendFcmTopicPush(topicName, data, notification).catch(err => {
+            console.error('[Notification] Error calling sendFcmTopicPush:', err);
+        });
+    } catch (e) {
+        console.error('[Notification] Error triggering online notification:', e);
+    }
+}
+
+module.exports = { getFormattedAstrologers, broadcastAstroUpdate, broadcastSingleAstroUpdate, sendOnlineNotification };

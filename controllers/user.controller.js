@@ -40,12 +40,14 @@ exports.applyReferral = async (req, res) => {
         if (!referrer) return res.json({ ok: false, error: 'Invalid referral code' });
         if (referrer.userId === userId) return res.json({ ok: false, error: 'Cannot refer yourself' });
 
-        // Rule 3: Add ₹80 difference payout (188 - 108)
-        user.walletBalance = (user.walletBalance || 0) + 80;
+        const referralSignupBonus = parseInt(process.env.REFERRAL_SIGNUP_BONUS) || 188;
+        const newUserSignupBonus = parseInt(process.env.NEW_USER_SIGNUP_BONUS) || 0;
+        const refereeBonus = referralSignupBonus - newUserSignupBonus;
+        user.walletBalance = (user.walletBalance || 0) + refereeBonus;
         user.referredBy = referrer.userId;
         await user.save();
 
-        res.json({ ok: true, message: 'Referral code applied! ₹80 bonus added.', walletBalance: user.walletBalance });
+        res.json({ ok: true, message: `Referral code applied! ₹${refereeBonus} bonus added.`, walletBalance: user.walletBalance });
     } catch (e) {
         console.error(e);
         res.status(500).json({ ok: false, error: 'Server error' });

@@ -1229,8 +1229,9 @@ fun LiveAstroActionSheet(
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Black),
                         color = Color.Black
                     )
+                    val displaySkill = astro.skills.firstOrNull { !it.equals("Vedic", ignoreCase = true) && !it.equals("Stargazing", ignoreCase = true) } ?: "Tarot"
                     Text(
-                        text = "${astro.skills.firstOrNull() ?: "Vedic"} • ${astro.experience} ${if(isTamil) "வருடம்" else "Yrs"}",
+                        text = "$displaySkill • ${astro.experience} ${if(isTamil) "வருடம்" else "Yrs"}",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
@@ -2167,17 +2168,32 @@ fun AstrologerCard(
 
                     Spacer(modifier = Modifier.height(2.dp))
 
+                    // Languages
+                    val languagesText = if (astro.languages.isNotEmpty()) astro.languages.joinToString(", ") else "Tamil, English"
+                    Text(
+                        text = languagesText,
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                        color = Color.Gray,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
                     // Experience
                     Text(
                         text = "${Localization.get("exp", isTamil)} ${astro.experience} ${Localization.get("years", isTamil)}",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
-                        color = Color.Gray
+                        color = Color.Gray,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     Spacer(modifier = Modifier.height(2.dp))
 
                     // Skills list (joined by commas)
-                    val skillsText = if (astro.skills.isNotEmpty()) astro.skills.joinToString(", ") else "Vedic"
+                    val filteredSkills = astro.skills.filter { !it.equals("Vedic", ignoreCase = true) && !it.equals("Stargazing", ignoreCase = true) }
+                    val skillsText = if (filteredSkills.isNotEmpty()) filteredSkills.joinToString(", ") else "Tarot"
                     Text(
                         text = skillsText,
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
@@ -2236,9 +2252,9 @@ fun AstrologerCard(
                         "chat" -> {
                             AstrologerActionButton(
                                 text = Localization.get("chat", isTamil),
-                                icon = Icons.Rounded.Chat,
+                                icon = painterResource(id = R.drawable.ic_chat_custom),
                                 active = (astro.isChatOnline && !astro.isBusy),
-                                borderColor = Color(0xFF2196F3), // Blue border
+                                borderColor = Color(0xFF3B82F6), // Blue border
                                 onClick = { onChatClick(astro) },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2246,9 +2262,9 @@ fun AstrologerCard(
                         "call" -> {
                             AstrologerActionButton(
                                 text = Localization.get("call", isTamil),
-                                icon = Icons.Rounded.Call,
+                                icon = painterResource(id = R.drawable.ic_call_custom),
                                 active = (astro.isAudioOnline && !astro.isBusy),
-                                borderColor = Color(0xFF4CAF50), // Green border
+                                borderColor = Color(0xFF10B981), // Green border
                                 onClick = { onCallClick(astro, "call") },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2256,9 +2272,9 @@ fun AstrologerCard(
                         "video" -> {
                             AstrologerActionButton(
                                 text = Localization.get("video", isTamil),
-                                icon = Icons.Rounded.VideoCall,
+                                icon = painterResource(id = R.drawable.ic_video_custom),
                                 active = (astro.isVideoOnline && !astro.isBusy),
-                                borderColor = Color(0xFFD32F2F), // Keep Red border
+                                borderColor = Color(0xFFEF4444), // Red border
                                 onClick = { onCallClick(astro, "video") },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2745,7 +2761,7 @@ fun InfoRow(icon: ImageVector, text: String) {
 @Composable
 fun AstrologerActionButton(
     text: String,
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.painter.Painter,
     active: Boolean,
     borderColor: Color,
     onClick: () -> Unit,

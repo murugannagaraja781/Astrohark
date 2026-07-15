@@ -2309,6 +2309,7 @@ io.on('connection', (socket) => {
       if (updates.astrologyExperience !== undefined) user.astrologyExperience = updates.astrologyExperience;
       if (updates.profession) user.profession = updates.profession;
       if (updates.skills) user.skills = updates.skills;
+      if (updates.languages) user.languages = updates.languages;
       if (updates.aadharNumber) user.aadharNumber = updates.aadharNumber;
       if (updates.panNumber) user.panNumber = updates.panNumber;
       if (updates.bankDetails) user.bankDetails = updates.bankDetails;
@@ -2463,7 +2464,7 @@ io.on('connection', (socket) => {
   socket.on('admin-create-astrologer', async (data, cb) => {
     if (!await checkAdmin(socket.id)) return cb({ ok: false, error: 'Unauthorized' });
     try {
-      const { name, phone, email, image, price, experience, skills, profession, aadharNumber, panNumber, bankDetails, upiId } = data;
+      const { name, phone, email, image, price, experience, skills, profession, aadharNumber, panNumber, bankDetails, upiId, languages } = data;
 
       if (!name || !phone) return cb({ ok: false, error: 'Missing name or phone' });
 
@@ -2490,6 +2491,7 @@ io.on('connection', (socket) => {
         experience: parseInt(experience) || 0,
         astrologyExperience: String(experience || 0),
         skills: Array.isArray(skills) ? skills : [],
+        languages: Array.isArray(languages) ? languages : ['Tamil', 'English'],
         profession,
         aadharNumber,
         panNumber,

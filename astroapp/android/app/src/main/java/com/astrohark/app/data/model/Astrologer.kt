@@ -23,5 +23,6 @@ data class Astrologer(
     val rating: Double = 5.0,
     @SerializedName("orderCount") val orders: Int = 0,
     val isBusy: Boolean = false,
+    val languages: List<String> = listOf("Tamil", "English"),
     val profession: String = ""
 )

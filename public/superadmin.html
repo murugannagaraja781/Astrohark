@@ -348,9 +348,15 @@
                             <input type="text" id="addAstroSkills" class="app-input" placeholder="Vedic, Tarot, Numerology">
                         </div>
                     </div>
-                    <div>
-                        <label class="app-label">Short Bio / Profession</label>
-                        <input type="text" id="addAstroProfession" class="app-input" placeholder="Expert Vedic Astrologer & Vastu Consultant">
+                    <div class="grid-2" style="margin-top:15px;">
+                        <div>
+                            <label class="app-label">Languages (comma separated)</label>
+                            <input type="text" id="addAstroLanguages" class="app-input" placeholder="Tamil, English" value="Tamil, English">
+                        </div>
+                        <div>
+                            <label class="app-label">Short Bio / Profession</label>
+                            <input type="text" id="addAstroProfession" class="app-input" placeholder="Expert Vedic Astrologer & Vastu Consultant">
+                        </div>
                     </div>
 
                     <h4 style="margin-top:25px; color:var(--primary); border-top:1px solid var(--border-soft); padding-top:20px;"><i class="fas fa-university"></i> Bank & Identity (Optional)</h4>
@@ -1031,6 +1037,11 @@
                     <div style="margin-top:15px;">
                         <label class="app-label">Skills (comma separated)</label>
                         <input type="text" id="editSkills" class="app-input">
+                    </div>
+
+                    <div style="margin-top:15px;">
+                        <label class="app-label">Languages (comma separated)</label>
+                        <input type="text" id="editLanguages" class="app-input" placeholder="e.g. Tamil, English">
                     </div>
 
                     <div class="grid-2" style="margin-top:15px;">
@@ -1876,6 +1887,7 @@
                 document.getElementById('editExp').value = u.experience || u.astrologyExperience || 0;
                 document.getElementById('editProfession').value = u.profession || '';
                 document.getElementById('editSkills').value = Array.isArray(u.skills) ? u.skills.join(', ') : (u.skills || '');
+                document.getElementById('editLanguages').value = Array.isArray(u.languages) ? u.languages.join(', ') : (u.languages || 'Tamil, English');
                 document.getElementById('editDocStatus').value = u.documentStatus || 'none';
                 document.getElementById('editIsVerified').checked = !!u.isVerified;
                 
@@ -1911,6 +1923,7 @@
                 updates.astrologyExperience = updates.experience;
                 updates.profession = document.getElementById('editProfession').value;
                 updates.skills = document.getElementById('editSkills').value.split(',').map(s => s.trim()).filter(s => s);
+                updates.languages = document.getElementById('editLanguages').value.split(',').map(s => s.trim()).filter(s => s);
                 updates.documentStatus = document.getElementById('editDocStatus').value;
                 updates.isVerified = document.getElementById('editIsVerified').checked;
                 
@@ -2119,6 +2132,7 @@
             const price = parseInt(document.getElementById('addAstroPrice').value) || 0;
             const experience = parseInt(document.getElementById('addAstroExp').value) || 0;
             const skills = document.getElementById('addAstroSkills').value.split(',').map(s => s.trim()).filter(s => s);
+            const languages = document.getElementById('addAstroLanguages').value.split(',').map(s => s.trim()).filter(s => s);
             const profession = document.getElementById('addAstroProfession').value.trim();
             const aadhar = document.getElementById('addAstroAadhar').value.trim();
             const pan = document.getElementById('addAstroPan').value.trim();
@@ -2138,7 +2152,8 @@
 
             const payload = {
                 name, phone, email, image, price, experience, skills, profession,
-                aadharNumber: aadhar, panNumber: pan, bankDetails: bank, upiId: upi
+                aadharNumber: aadhar, panNumber: pan, bankDetails: bank, upiId: upi,
+                languages
             };
 
             socket.emit('admin-create-astrologer', payload, (res) => {
@@ -2150,8 +2165,12 @@
                 if (res.ok) {
                     alert('Astrologer Created Successfully! They can now log in using their phone number.');
                     // Clear form
-                    ['addAstroName', 'addAstroPhone', 'addAstroEmail', 'addAstroImage', 'addAstroProfession', 'addAstroAadhar', 'addAstroPan', 'addAstroBank', 'addAstroUpi'].forEach(id => {
-                        document.getElementById(id).value = '';
+                    ['addAstroName', 'addAstroPhone', 'addAstroEmail', 'addAstroImage', 'addAstroProfession', 'addAstroAadhar', 'addAstroPan', 'addAstroBank', 'addAstroUpi', 'addAstroLanguages'].forEach(id => {
+                        if (id === 'addAstroLanguages') {
+                            document.getElementById(id).value = 'Tamil, English';
+                        } else {
+                            document.getElementById(id).value = '';
+                        }
                     });
                     navAdmin('payouts'); // Go to astro list
                     fetchAllUsers();

@@ -28,6 +28,7 @@ const UserSchema = new mongoose.Schema({
     isVideoOnline: { type: Boolean, default: false },
     isBanned: { type: Boolean, default: false },
     skills: [String],
+    languages: { type: [String], default: ['Tamil', 'English'] },
     price: { type: Number, default: 20 },
     walletBalance: { type: Number, default: 108 },
     superWalletBalance: { type: Number, default: 0 },

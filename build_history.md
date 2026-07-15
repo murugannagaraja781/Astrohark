@@ -169,4 +169,22 @@ App version code was bumped to `23` and version name to `"23.0"`.
 * **File Path:** `releases/astrohark-v23-debug.apk` and `releases/astrohark-v23-release.aab`
 * **Status:** Build and Packaging Successful
 
+---
+
+## [2026-07-14] - Release Build v24.0 (Language Layout & Skill Filters)
+
+A clean rebuild was performed after implementing layout adjustments and skill filters:
+1. Combined the languages display with the Experience (Exp) display on a single line (`Languages • Exp: X Years`) on both the mobile web view (`index.html`) and the Jetpack Compose card layout (`HomeScreen.kt`).
+2. Removed duplicate languages display next to the astrologer's name in the name row.
+3. Filtered out "Vedic" and "Stargazing" from the displayed skills list on all card views and sub-sheets, default-falling back to "Tarot".
+4. Fixed call answering socket reconnection bugs by auto-resolving missing `fromUserId` from user session IDs and socket maps.
+5. Standardized Mongoose aggregations inside the backend performance service to divide milliseconds by 60000 (instead of 60) to prevent 1000x inflated session durations.
+
+App version code was bumped to `24` and version name to `"24.0"`.
+
+* **Date & Time:** July 14, 2026 - 11:00 AM (IST)
+* **File Name:** `astrohark-v24-debug.apk`, `astrohark-v24-release.aab`
+* **File Path:** `releases/astrohark-v24-debug.apk` and `releases/astrohark-v24-release.aab`
+* **Status:** Build and Packaging Successful
+
 

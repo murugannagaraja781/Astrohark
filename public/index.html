@@ -395,57 +395,58 @@
 
     .cta-btn {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
-      padding: 8px;
-      border-radius: 10px;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 6px;
       border: 1px solid #E5E7EB;
-      background: #F9FAFB;
+      background: transparent;
       color: var(--text-muted);
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       font-weight: 600;
       cursor: not-allowed;
       transition: 0.2s;
     }
 
     .cta-btn i {
-      font-size: 1rem;
-      margin-bottom: 2px;
+      font-size: 0.95rem;
+      margin-bottom: 0;
     }
 
     /* Active Button Styles */
     .cta-btn.active-chat {
-      background: #EFF6FF;
-      border-color: #BFDBFE;
-      color: #2563EB;
+      background: transparent;
+      border-color: #3B82F6;
+      color: #3B82F6;
       cursor: pointer;
     }
 
     .cta-btn.active-chat:hover {
-      background: #DBEAFE;
+      background: rgba(59, 130, 246, 0.1);
     }
 
     .cta-btn.active-audio {
-      background: #F3F4F6;
-      border-color: #D1D5DB;
-      color: #FF7F00;
+      background: transparent;
+      border-color: #10B981;
+      color: #10B981;
       cursor: pointer;
     }
 
     .cta-btn.active-audio:hover {
-      background: #E5E7EB;
+      background: rgba(16, 185, 129, 0.1);
     }
 
     .cta-btn.active-video {
-      background: rgba(var(--primary-rgb), 0.1);
-      border-color: var(--primary);
-      color: var(--primary);
+      background: transparent;
+      border-color: #EF4444;
+      color: #EF4444;
       cursor: pointer;
     }
 
     .cta-btn.active-video:hover {
-      background: rgba(var(--primary-rgb), 0.2);
+      background: rgba(239, 68, 68, 0.1);
     }
 
     .astro-dash-header {
@@ -4911,6 +4912,11 @@
 
         const orderCount = a.orderCount || 0;
         const isVerified = a.isVerified;
+        const languages = a.languages || ['Tamil', 'English'];
+        const skillsText = (a.skills && a.skills.length > 0 ? a.skills : ['Tarot', 'Prashana'])
+          .filter(s => s.toLowerCase() !== 'vedic' && s.toLowerCase() !== 'stargazing')
+          .slice(0, 2)
+          .join(', ');
 
         div.innerHTML = `
           <div class="card-top-row">
@@ -4925,7 +4931,8 @@
                     ${a.name}
                     ${isVerified ? '<i class="fas fa-check-circle" style="color:var(--primary); font-size:0.85rem; margin-left:4px;"></i>' : ''}
                   </div>
-                  <div style="font-size:0.75rem; color:#A58B74; margin-bottom:2px;">${a.skills ? a.skills.slice(0, 2).join(', ') : 'Vedic, Prashana'}</div>
+                  <div style="font-size:0.75rem; color:#A58B74; margin-bottom:2px;">${skillsText}</div>
+                  <div style="font-size:0.75rem; color:#A58B74; margin-bottom:2px;">${languages.slice(0, 2).join(', ')}</div>
                   <div style="font-size:0.75rem; color:#A58B74;">Exp: ${a.experience || 0} Years</div>
                   <div class="rating-row" style="margin-top:4px;">
                       <span class="star-rating" style="background:transparent; color:#FFD700; border:none; padding:0; font-weight:700;">★ 4.5</span>
@@ -4935,30 +4942,27 @@
               <div class="price-tag" style="background:transparent; color:var(--primary); border:none; font-weight:700; font-size:1.1rem; padding:0;">₹${a.price}<span style="font-size:0.6rem; color:#A58B74; font-weight:normal;">/min</span></div>
           </div>
 
-           <div class="card-actions" style="border-top: 1px solid #332115; padding-top:10px;">
+           <div class="card-actions" style="border-top: 1px solid #332115; padding-top:10px; display: flex; gap: 8px;">
               ${(specificService === null || specificService === 'chat') ? (
                 a.isChatOnline ? `
-                 <div class="cta-btn active-chat"
-                      style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
+                 <div class="cta-btn active-chat" style="flex:1;"
                       onclick="event.stopPropagation(); checkGuestAction('chat', '${a.userId}')">
-                      Chat
+                      <i class="far fa-comments"></i> Chat
                  </div>
-                ` : (specificService === 'chat' ? `<div class="cta-btn disabled" style="background: transparent; border: 1px solid #444; color: #666; border-radius: 6px; flex:1; pointer-events:none;">Chat</div>` : '')
+                ` : (specificService === 'chat' ? `<div class="cta-btn disabled" style="background: transparent; border: 1px solid #444; color: #666; border-radius: 6px; flex:1; pointer-events:none; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:6px; font-size:0.8rem;"><i class="far fa-comments"></i> Chat</div>` : '')
               ) : ''}
               
               ${(specificService === null || specificService === 'call') && a.isAudioOnline ? `
-                <div class="cta-btn active-audio"
-                     style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
+                <div class="cta-btn active-audio" style="flex:1;"
                      onclick="event.stopPropagation(); checkGuestAction('call', '${a.userId}')">
-                     Call
+                     <i class="fas fa-phone-alt"></i> Call
                 </div>
               ` : ''}
 
               ${(specificService === null || specificService === 'video') && a.isVideoOnline ? `
-                <div class="cta-btn active-video"
-                     style="background: transparent; border: 1px solid var(--primary); color: var(--primary); border-radius: 6px; flex:1;"
+                <div class="cta-btn active-video" style="flex:1;"
                      onclick="event.stopPropagation(); checkGuestAction('video', '${a.userId}')">
-                     Video
+                     <i class="fas fa-video"></i> Call
                 </div>
               ` : ''}
            </div>

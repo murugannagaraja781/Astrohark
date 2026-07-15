@@ -300,8 +300,8 @@ fun CustomTextField(
             unfocusedBorderColor = CosmicAppTheme.colors.cardStroke.copy(alpha = 0.5f),
             focusedLabelColor = CosmicAppTheme.colors.accent,
             cursorColor = CosmicAppTheme.colors.accent,
-            focusedTextColor = Color.White,
-            unfocusedTextColor = Color.White
+            focusedTextColor = CosmicAppTheme.colors.textPrimary,
+            unfocusedTextColor = CosmicAppTheme.colors.textPrimary
         ),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = singleLine,

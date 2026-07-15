@@ -5125,7 +5125,7 @@
         const orderCount = a.orderCount || Math.floor(Math.random() * 500) + 100;
         const languages = a.languages || ['Tamil', 'English'];
         const isVerified = a.isVerified;
-        const skills = a.skills || ['Vedic', 'Prashana'];
+        const skills = (a.skills || ['Tarot', 'Prashana']).filter(s => s.toLowerCase() !== 'vedic' && s.toLowerCase() !== 'stargazing');
         // Format skills as pills
         const skillsHtml = skills.slice(0, 3).map(s => `<span class="skill-pill">${s}</span>`).join('');
 
@@ -5166,21 +5166,21 @@
                  ${(state.selectedService === 'all' || state.selectedService === 'chat') ? `
                  <button class="btn-premium-chat ${a.isChatOnline ? '' : 'disabled'}"
                       onclick="event.stopPropagation(); checkGuestAction('chat', '${a.userId}')">
-                     Chat
+                     <i class="far fa-comments"></i> Chat
                  </button>
                  ` : ''}
 
                  ${((state.selectedService === 'all' || state.selectedService === 'call') && a.isAudioOnline) ? `
                  <button class="btn-premium-call"
                       onclick="event.stopPropagation(); checkGuestAction('call', '${a.userId}')">
-                     Call
+                     <i class="fas fa-phone-alt"></i> Call
                  </button>
                  ` : ''}
 
                  ${((state.selectedService === 'all' || state.selectedService === 'video') && a.isVideoOnline) ? `
                  <button class="btn-premium-video"
                       onclick="event.stopPropagation(); checkGuestAction('video', '${a.userId}')">
-                     Video
+                     <i class="fas fa-video"></i> Call
                  </button>
                  ` : ''}
               </div>
@@ -9527,6 +9527,61 @@
       gap: 8px;
       transition: all 0.2s;
       font-size: 0.9rem;
+    }
+
+    .btn-premium-call,
+    .btn-premium-chat,
+    .btn-premium-video {
+      background: transparent;
+      padding: 6px 12px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      height: 34px;
+      width: 100px;
+    }
+
+    .btn-premium-chat {
+      border: 1px solid #3B82F6;
+      color: #3B82F6;
+    }
+    .btn-premium-chat:hover {
+      background: rgba(59, 130, 246, 0.1);
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+    }
+
+    .btn-premium-call {
+      border: 1px solid #10B981;
+      color: #10B981;
+    }
+    .btn-premium-call:hover {
+      background: rgba(16, 185, 129, 0.1);
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-premium-video {
+      border: 1px solid #EF4444;
+      color: #EF4444;
+    }
+    .btn-premium-video:hover {
+      background: rgba(239, 68, 68, 0.1);
+      box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-premium-call.disabled,
+    .btn-premium-chat.disabled,
+    .btn-premium-video.disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      filter: grayscale(1);
+      border-color: #666;
+      color: #666;
     }
 
     .action-btn-glass:not(:last-child) {

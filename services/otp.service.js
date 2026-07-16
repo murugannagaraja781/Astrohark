@@ -14,8 +14,8 @@ function sendSMS(phoneNumber, otp) {
     // Format phone number. Clean all non-digits.
     const cleanPhone = phoneNumber.replace(/\D/g, '');
     
-    // Slice the last 10 digits to get domestic 10-digit number.
-    const mobile = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
+    // Ensure 91 prefix is present for Indian mobile numbers
+    const mobile = (cleanPhone.length === 10) ? `91${cleanPhone}` : cleanPhone;
     
     // Construct the message matching the registered DLT template exactly.
     const message = `${otp} is your OTP for verification on Astrohark app. Valid for 10 mins. Please do not share this OTP with anyone`;

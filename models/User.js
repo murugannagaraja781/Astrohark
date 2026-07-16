@@ -64,7 +64,7 @@ const UserSchema = new mongoose.Schema({
     referralCount: { type: Number, default: 0 },
     isNewUser: { type: Boolean, default: true },
     lastOnlineNotification: { type: Date, default: null }
-});
+}, { versionKey: false });
 
 // Added Optimization Indexes
 UserSchema.index({ role: 1 });

@@ -1,31 +1,44 @@
 const https = require('https');
 
-function sendMsg91(phoneNumber, otp) {
+/**
+ * Sends OTP using PING4SMS API.
+ * @param {string} phoneNumber Recipient's phone number.
+ * @param {string} otp The OTP code.
+ */
+function sendSMS(phoneNumber, otp) {
+    const apiKey = process.env.PING4SMS_API_KEY || '22fe6258e5c2a5caa90b7bea6a55798c';
+    const sender = process.env.PING4SMS_SENDER_ID || 'ASTRO7';
+    const route = process.env.PING4SMS_ROUTE || '2';
+    const templateId = process.env.PING4SMS_TEMPLATE_ID || '1407178289966726304';
+
+    // Format phone number. Clean all non-digits.
     const cleanPhone = phoneNumber.replace(/\D/g, '');
-    const mobile = (cleanPhone.length === 10) ? `91${cleanPhone}` : cleanPhone;
-    const authKey = process.env.MSG91_AUTH_KEY;
-    const templateId = process.env.MSG91_TEMPLATE_ID;
-
-    const path = `/api/v5/otp?otp_expiry=5&template_id=${templateId}&mobile=${mobile}&authkey=${authKey}&realTimeResponse=1&otp=${otp}`;
-
-    const options = {
-        method: 'POST',
-        hostname: 'control.msg91.com',
-        path: path,
-        headers: {
-            'content-type': 'application/json'
-        }
-    };
-
-    const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => data += chunk);
-        res.on('end', () => console.log('MSG91 Result:', data));
+    
+    // Slice the last 10 digits to get domestic 10-digit number.
+    const mobile = cleanPhone.length >= 10 ? cleanPhone.slice(-10) : cleanPhone;
+    
+    // Construct the message matching the registered DLT template exactly.
+    const message = `${otp} is your OTP for verification on Astrohark app. Valid for 10 mins. Please do not share this OTP with anyone`;
+    
+    const params = new URLSearchParams({
+        key: apiKey,
+        route: route,
+        sender: sender,
+        number: mobile,
+        sms: message,
+        templateid: templateId
     });
 
-    req.on('error', (e) => console.error('MSG91 Error:', e));
-    req.write('{}');
-    req.end();
+    const url = `https://site.ping4sms.com/api/smsapi?${params.toString()}`;
+
+    https.get(url, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => console.log('PING4SMS Result:', data));
+    }).on('error', (e) => console.error('PING4SMS Error:', e));
 }
 
-module.exports = { sendMsg91 };
+module.exports = {
+    sendSMS,
+    sendMsg91: sendSMS // Keep for compatibility
+};

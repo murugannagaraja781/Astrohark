@@ -332,6 +332,21 @@ class HomeActivity : AppCompatActivity() {
             }
         }
 
+        val languagesArr = json.optJSONArray("languages")
+        val languages = mutableListOf<String>()
+        if (languagesArr != null) {
+            for (i in 0 until languagesArr.length()) {
+                languages.add(languagesArr.getString(i))
+            }
+        } else {
+            val langStr = json.optString("languages", "")
+            if (langStr.isNotEmpty()) {
+                languages.addAll(langStr.split(",").map { it.trim() })
+            } else {
+                languages.addAll(listOf("Tamil", "English"))
+            }
+        }
+
         return Astrologer(
             userId = json.optString("userId", ""),
             name = json.optString("name", "Astrologer"),
@@ -348,6 +363,7 @@ class HomeActivity : AppCompatActivity() {
             walletBalance = json.optDouble("walletBalance", 0.0),
             orders = json.optInt("orderCount", json.optInt("orders", 1000)),
             isBusy = json.optBoolean("isBusy", false),
+            languages = languages,
             profession = json.optString("profession", "")
         )
     }

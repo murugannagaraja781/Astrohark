@@ -201,37 +201,53 @@ class GuestDashboardActivity : AppCompatActivity() {
 
     // Helper to parse consistent with HomeActivity/ClientDashboard
     private fun parseAstrologer(json: JSONObject): Astrologer {
-         val skillsArr = json.optJSONArray("skills")
-         val skills = mutableListOf<String>()
-         if (skillsArr != null) {
-             for (i in 0 until skillsArr.length()) {
-                 skills.add(skillsArr.getString(i))
-             }
-         }
+          val skillsArr = json.optJSONArray("skills")
+          val skills = mutableListOf<String>()
+          if (skillsArr != null) {
+              for (i in 0 until skillsArr.length()) {
+                  skills.add(skillsArr.getString(i))
+              }
+          }
 
-         // Map "charges" to "price" if needed, assuming API structure is consistent
-         // Guest logic used "charges", Home logic uses "price".
-         // I'll check if "price" exists, fallback to "charges"
-         val price = if (json.has("price")) json.getInt("price") else json.optInt("charges", 15)
+          val languagesArr = json.optJSONArray("languages")
+          val languages = mutableListOf<String>()
+          if (languagesArr != null) {
+              for (i in 0 until languagesArr.length()) {
+                  languages.add(languagesArr.getString(i))
+              }
+          } else {
+              val langStr = json.optString("languages", "")
+              if (langStr.isNotEmpty()) {
+                  languages.addAll(langStr.split(",").map { it.trim() })
+              } else {
+                  languages.addAll(listOf("Tamil", "English"))
+              }
+          }
 
-         return Astrologer(
-             userId = json.optString("userId", ""),
-             name = json.optString("name", "Astrologer"),
-             phone = json.optString("phone", ""),
-             skills = skills,
-             price = price,
-             isOnline = json.optBoolean("isOnline", false),
-             isChatOnline = json.optBoolean("isChatOnline", false),
-             isAudioOnline = json.optBoolean("isAudioOnline", false),
-             isVideoOnline = json.optBoolean("isVideoOnline", false),
-             image = json.optString("image", ""),
-             experience = json.optInt("experience", 0),
-             isVerified = json.optBoolean("isVerified", false),
-             walletBalance = json.optDouble("walletBalance", 0.0),
-             orders = json.optInt("orderCount", json.optInt("orders", 1000)),
-             profession = json.optString("profession", "")
-         )
-    }
+          // Map "charges" to "price" if needed, assuming API structure is consistent
+          // Guest logic used "charges", Home logic uses "price".
+          // I'll check if "price" exists, fallback to "charges"
+          val price = if (json.has("price")) json.getInt("price") else json.optInt("charges", 15)
+
+          return Astrologer(
+              userId = json.optString("userId", ""),
+              name = json.optString("name", "Astrologer"),
+              phone = json.optString("phone", ""),
+              skills = skills,
+              price = price,
+              isOnline = json.optBoolean("isOnline", false),
+              isChatOnline = json.optBoolean("isChatOnline", false),
+              isAudioOnline = json.optBoolean("isAudioOnline", false),
+              isVideoOnline = json.optBoolean("isVideoOnline", false),
+              image = json.optString("image", ""),
+              experience = json.optInt("experience", 0),
+              isVerified = json.optBoolean("isVerified", false),
+              walletBalance = json.optDouble("walletBalance", 0.0),
+              orders = json.optInt("orderCount", json.optInt("orders", 1000)),
+              languages = languages,
+              profession = json.optString("profession", "")
+          )
+     }
 
     private fun handleServiceClick(serviceName: String) {
         when (serviceName.replace("\n", " ")) {

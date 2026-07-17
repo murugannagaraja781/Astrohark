@@ -3083,7 +3083,7 @@ app.post('/api/call/initiate', async (req, res) => {
     const caller = await User.findOne({ userId: callerId });
     if (!caller) return res.json({ ok: false, error: 'Caller not found' });
 
-    const requiredMinBalance = caller.isNewUser ? 24 : (astro.price || 15);
+    const requiredMinBalance = caller.isNewUser ? 5 : (astro.price || 15);
     if (caller.role !== 'astrologer' && (caller.walletBalance || 0) < requiredMinBalance) {
       return res.json({ ok: false, error: `Insufficient balance. Minimum ₹${requiredMinBalance} required.`, code: 'LOW_BALANCE' });
     }

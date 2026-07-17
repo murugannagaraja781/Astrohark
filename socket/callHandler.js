@@ -100,7 +100,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             const astroUser = fromUser?.role === 'astrologer' ? fromUser : toUser;
 
             if (clientUser && clientUser.role !== 'astrologer') {
-                const requiredMinBalance = clientUser.isNewUser ? 24 : (astroUser?.price || 15);
+                const requiredMinBalance = clientUser.isNewUser ? 5 : (astroUser?.price || 15);
                 if ((clientUser.walletBalance || 0) < requiredMinBalance) {
                     console.warn(`[CallHandler][request-session] Insufficient balance for client ${clientUser.userId}. Balance: ${clientUser.walletBalance}, Required: ${requiredMinBalance}`);
                     return typeof cb === 'function' && cb({ ok: false, error: `Insufficient balance. Minimum ₹${requiredMinBalance} required.` });

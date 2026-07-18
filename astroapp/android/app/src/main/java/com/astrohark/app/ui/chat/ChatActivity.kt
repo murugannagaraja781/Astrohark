@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.*
@@ -535,6 +536,11 @@ fun ChatScreen(
     remainingTime: String,
     clientBirthData: JSONObject? = null
 ) {
+    // Disable physical back button press and swipe back gesture
+    BackHandler(enabled = true) {
+        // Do nothing to prevent exiting the chat screen
+    }
+
     val messages by viewModel.history.observeAsState(emptyList())
     val isTyping by viewModel.typingStatus.observeAsState(false)
     val listState = rememberLazyListState()
@@ -625,15 +631,7 @@ fun ChatScreen(
                          }
                     }
                 },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = CosmicAppTheme.colors.accent
-                        )
-                    }
-                },
+                navigationIcon = {},
                 actions = {
                     Text(
                         text = sessionDuration,

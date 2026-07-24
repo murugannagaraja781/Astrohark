@@ -178,10 +178,87 @@ function getNextLord(currentLord) {
     return DASHA_SEQUENCE[(idx + 1) % 9].lord;
 }
 
+function calculateExactDasaBukthiBalance(moonLongitude) {
+    const nakSpan = 360 / 27; // 13.333333333333334 degrees (13°20')
+    const normLon = (moonLongitude % 360 + 360) % 360;
+    const nakIndex = Math.floor(normLon / nakSpan);
+    const dashaIndex = nakIndex % 9;
+
+    const currentDashaLord = DASHA_SEQUENCE[dashaIndex];
+    const lonInNak = normLon % nakSpan;
+    const elapsedPercent = lonInNak / nakSpan;
+    const remainingPercent = 1 - elapsedPercent;
+
+    // 1. Dasa Balance calculation
+    const totalDashaYears = currentDashaLord.years;
+    const remainingDashaYearsFloat = totalDashaYears * remainingPercent;
+
+    const dYears = Math.floor(remainingDashaYearsFloat);
+    const dRemMonthsFloat = (remainingDashaYearsFloat - dYears) * 12;
+    const dMonths = Math.floor(dRemMonthsFloat);
+    const dRemDaysFloat = (dRemMonthsFloat - dMonths) * 30;
+    const dDays = Math.round(dRemDaysFloat);
+
+    let finalDYears = dYears;
+    let finalDMonths = dMonths;
+    let finalDDays = dDays;
+    if (finalDDays >= 30) { finalDDays -= 30; finalDMonths += 1; }
+    if (finalDMonths >= 12) { finalDMonths -= 12; finalDYears += 1; }
+
+    // 2. Bhukti Balance calculation
+    let accumulatedPercent = 0;
+    let currentBhuktiLord = currentDashaLord;
+    let bhuktiRemainingYearsFloat = 0;
+
+    for (let i = 0; i < 9; i++) {
+        const bIdx = (dashaIndex + i) % 9;
+        const bLord = DASHA_SEQUENCE[bIdx];
+        const bhuktiFraction = bLord.years / 120;
+        const bhuktiYears = (bLord.years / 120) * totalDashaYears;
+
+        if (elapsedPercent < (accumulatedPercent + bhuktiFraction)) {
+            currentBhuktiLord = bLord;
+            const elapsedInBhuktiPercent = (elapsedPercent - accumulatedPercent) / bhuktiFraction;
+            const remainingInBhuktiPercent = 1 - elapsedInBhuktiPercent;
+            bhuktiRemainingYearsFloat = bhuktiYears * remainingInBhuktiPercent;
+            break;
+        }
+        accumulatedPercent += bhuktiFraction;
+    }
+
+    const bYears = Math.floor(bhuktiRemainingYearsFloat);
+    const bRemMonthsFloat = (bhuktiRemainingYearsFloat - bYears) * 12;
+    const bMonths = Math.floor(bRemMonthsFloat);
+    const bRemDaysFloat = (bRemMonthsFloat - bMonths) * 30;
+    const bDays = Math.round(bRemDaysFloat);
+
+    let finalBYears = bYears;
+    let finalBMonths = bMonths;
+    let finalBDays = bDays;
+    if (finalBDays >= 30) { finalBDays -= 30; finalBMonths += 1; }
+    if (finalBMonths >= 12) { finalBMonths -= 12; finalBYears += 1; }
+
+    return {
+        dasaBalance: {
+            lord: currentDashaLord.lord,
+            years: finalDYears,
+            months: finalDMonths,
+            days: finalDDays
+        },
+        bukthiBalance: {
+            lord: currentBhuktiLord.lord,
+            years: finalBYears,
+            months: finalBMonths,
+            days: finalBDays
+        }
+    };
+}
+
 module.exports = {
     getVimshottariDasha,
     getSubPeriods,
     getCurrentDasha,
     getFullDashaBreakdown,
-    checkDashaSandhi
+    checkDashaSandhi,
+    calculateExactDasaBukthiBalance
 };

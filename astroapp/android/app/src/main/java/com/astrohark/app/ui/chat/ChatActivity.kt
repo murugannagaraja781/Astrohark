@@ -383,19 +383,17 @@ class ChatActivity : ComponentActivity() {
     private fun setupObservers() {
         viewModel.sessionSummary.observe(this) { summary ->
             timerHandler.removeCallbacks(timerRunnable)
-            // Show summary or just finish
-            Toast.makeText(this, "Chat Completed. Duration: ${summary.duration}s", Toast.LENGTH_LONG).show()
-            finishSessionAndNavigate()
+            android.util.Log.d("ChatActivity", "sessionSummary received: ${summary?.duration}s. Displaying review dialog.")
         }
         viewModel.sessionEnded.observe(this) { ended ->
             if (ended) {
                 android.util.Log.d("ChatActivity", "sessionEnded observed. Summary: ${viewModel.sessionSummary.value}")
-                // If summary is null, we can finish immediately.
-                // If it's not null, sessionSummary observer will handle it.
-                if (viewModel.sessionSummary.value == null) {
-                    Toast.makeText(this, "Chat Ended", Toast.LENGTH_SHORT).show()
-                    finishSessionAndNavigate()
-                }
+                timerHandler.postDelayed({
+                    if (viewModel.sessionSummary.value == null && !isFinishing && !isDestroyed) {
+                        Toast.makeText(this, "Chat Ended", Toast.LENGTH_SHORT).show()
+                        finishSessionAndNavigate()
+                    }
+                }, 3000)
             }
         }
         viewModel.availableMinutes.observe(this) { mins ->

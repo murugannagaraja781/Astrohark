@@ -403,8 +403,9 @@ class ChatActivity : ComponentActivity() {
             val remSecs = remainingSeconds % 60
             remainingTime = String.format(java.util.Locale.US, "%02d:%02d", remMins, remSecs)
 
-            // Auto-end if balance hits 0
-            if (mins <= 0 && isTimerStarted) {
+            if (mins == 1 && isTimerStarted) {
+                Toast.makeText(this, "⚠️ Low Balance Alert! 1 minute remaining.", Toast.LENGTH_LONG).show()
+            } else if (mins <= 0 && isTimerStarted) {
                 android.util.Log.w("ChatActivity", "Balance reached 0. Ending session.")
                 Toast.makeText(this, "Balance Exhausted. Ending...", Toast.LENGTH_SHORT).show()
                 endChat()

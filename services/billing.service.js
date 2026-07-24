@@ -123,6 +123,17 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
 
                 io.to(client.userId).emit('wallet-update', { balance: newClientBal });
                 io.to(astro.userId).emit('wallet-update', { balance: newAstroBal });
+
+                if (newClientBal <= 1) {
+                    console.log(`[Billing] Client ${client.userId} balance reached <= ₹1 (${newClientBal}). Auto-ending session ${sessionId}...`);
+                    const s = activeSessions.get(sessionId);
+                    if (s) {
+                        s.endReason = 'insufficient_funds';
+                    }
+                    setTimeout(() => {
+                        endSessionRecord(sessionId, true);
+                    }, 500);
+                }
             }
         }
     } catch (e) {

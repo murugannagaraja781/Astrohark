@@ -1150,6 +1150,9 @@ class CallActivity : ComponentActivity() {
             runOnUiThread {
                 try {
                     val balance = data.optDouble("balance", 0.0)
+                    if (balance > 0 && balance <= 5.0 && tokenManager.getUserSession()?.role == "client") {
+                        Toast.makeText(this, "⚠️ Low Balance Alert (₹${String.format(java.util.Locale.US, "%.2f", balance)}). Please recharge soon!", Toast.LENGTH_SHORT).show()
+                    }
                     val totalMinutes = if (ratePerMinute > 0) (balance / ratePerMinute).toInt() else 0
                     remainingTime = String.format(java.util.Locale.US, "%02d:%02d", totalMinutes, 0)
                 } catch (e: Exception) { e.printStackTrace() }

@@ -33,12 +33,9 @@ router.post('/generate-chart', async (req, res) => {
         const [day, month, year] = dob.split('/').map(Number);
         const [hours, minutes] = time.split(':').map(Number);
 
-        // Create Date object
-        const birthDate = new Date(year, month - 1, day, hours, minutes);
-
-        // Calculate birth chart
+        // Calculate birth chart using IST timezone (Asia/Kolkata default)
         const chartData = calculateBirthChart(
-            birthDate,
+            { year, month, day, hour: hours, minute: minutes },
             parseFloat(latitude),
             parseFloat(longitude),
             timezone || 'Asia/Kolkata'

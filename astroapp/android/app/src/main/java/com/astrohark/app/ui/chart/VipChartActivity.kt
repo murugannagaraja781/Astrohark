@@ -774,6 +774,8 @@ fun IndicatorsTab(birthData: JSONObject) {
         } else if (kpData != null) {
             com.astrohark.app.ui.chat.DynamicKpRasiKadam(kpData!!)
             Spacer(modifier = Modifier.height(16.dp))
+            com.astrohark.app.ui.chat.DasaBukthiBalanceTable(kpData!!)
+            Spacer(modifier = Modifier.height(16.dp))
             com.astrohark.app.ui.chat.PlanetIndicatorsTable(kpData!!)
             Spacer(modifier = Modifier.height(16.dp))
             com.astrohark.app.ui.chat.BhavaIndicatorsTable(kpData!!)

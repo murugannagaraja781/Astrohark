@@ -8,12 +8,7 @@ const { broadcastAstroUpdate } = require('./astrologer.service');
 // presenceService removed to break circular dependency. Required inside endSessionRecord.
 
 
-let SLAB_RATES = {
-    1: 0.30,
-    2: 0.35,
-    3: 0.40,
-    4: 0.50
-};
+// Removed SLAB_RATES
 
 // Global io instance will be set from server.js or socketHandler
 let io;
@@ -33,9 +28,9 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
         let pricePerMin = 10;
         if (client.isNewUser) {
             const remainingMinutes = Math.max(1, 5 - (minuteIndex || 1) + 1);
-            pricePerMin = client.walletBalance / remainingMinutes;
-        } else if (astro.price && astro.price > 0) {
-            pricePerMin = parseInt(astro.price);
+            pricePerMin = client.walletBalance > 0 ? (client.walletBalance / remainingMinutes) : 5;
+        } else if (astro.price && parseFloat(astro.price) > 0) {
+            pricePerMin = parseFloat(astro.price);
         } else {
             if (session.type === 'audio') pricePerMin = 15;
             if (session.type === 'video') pricePerMin = 20;
@@ -43,43 +38,36 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
 
         console.log(`[Billing] Session ${sessionId} | Type: ${session.type} | Price: ${pricePerMin}/min | Minute: ${minuteIndex}`);
 
-        let amountToCharge = 0;
-        let astroShare = 0;
-        let adminShare = 0;
+        const activeSess = activeSessions.get(sessionId);
+
+        let amountToCharge = pricePerMin;
+        let astroShare = amountToCharge * 0.50; // 50% for Astrologer
+        let adminShare = amountToCharge - astroShare; // 50% for Admin
         let reason = '';
 
         if (type === 'first_60_full') {
-            amountToCharge = pricePerMin;
-            adminShare = amountToCharge;
-            astroShare = 0;
             reason = 'first_60';
         } else if (type === 'early_exit') {
-            amountToCharge = pricePerMin;
-            adminShare = amountToCharge;
-            astroShare = 0;
             reason = 'first_60_min_charge';
-        } else if (type === 'slab') {
-            const activeSess = activeSessions.get(sessionId);
-            const currentSlab = activeSess?.currentSlab || 3;
-            const rate = SLAB_RATES[currentSlab] || 0.30;
-
-            amountToCharge = pricePerMin;
-            astroShare = amountToCharge * rate;
-            adminShare = amountToCharge - astroShare;
-            reason = `slab_${currentSlab}`;
+        } else if (type === 'slab' || type === 'ongoing') {
+            reason = 'ongoing_minute';
         } else if (type === 'fraction') {
-            amountToCharge = pricePerMin;
-            adminShare = amountToCharge;
-            astroShare = 0;
             reason = 'fraction_roundup';
         } else {
             return;
         }
 
         const totalToDeduct = amountToCharge;
-        if (client.walletBalance >= totalToDeduct) {
-            let mainDeduct = totalToDeduct * 0.7;
-            let superDeduct = totalToDeduct * 0.3;
+        if (client.walletBalance > 0) {
+            let actualDeduct = Math.min(client.walletBalance, totalToDeduct);
+            if (actualDeduct < totalToDeduct) {
+                // Adjust pro-rated astro share if balance is lower than min price
+                astroShare = actualDeduct * 0.50;
+                adminShare = actualDeduct - astroShare;
+            }
+
+            let mainDeduct = actualDeduct * 0.7;
+            let superDeduct = actualDeduct * 0.3;
 
             if (client.superWalletBalance > 0) {
                 if (client.superWalletBalance >= superDeduct) {
@@ -90,16 +78,24 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
                     mainDeduct += (superDeduct - availableSuper);
                 }
             } else {
-                mainDeduct = totalToDeduct;
+                mainDeduct = actualDeduct;
             }
 
-            client.walletBalance -= mainDeduct;
-            await client.save();
+            // Atomic update to client balance
+            const updatedClient = await User.findOneAndUpdate(
+                { userId: client.userId },
+                { $inc: { walletBalance: -mainDeduct, superWalletBalance: -superDeduct } },
+                { new: true }
+            );
 
+            // Atomic update to astrologer balance & earnings
+            let updatedAstro = astro;
             if (astroShare > 0) {
-                astro.walletBalance += astroShare;
-                astro.totalEarnings = (astro.totalEarnings || 0) + astroShare;
-                await astro.save();
+                updatedAstro = await User.findOneAndUpdate(
+                    { userId: astro.userId },
+                    { $inc: { walletBalance: astroShare, totalEarnings: astroShare } },
+                    { new: true }
+                );
             }
 
             // --- Record in BillingLedger ---
@@ -107,7 +103,7 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
                 billingId: crypto.randomUUID(),
                 sessionId,
                 minuteIndex,
-                chargedToClient: amountToCharge,
+                chargedToClient: actualDeduct,
                 creditedToAstrologer: astroShare,
                 adminAmount: adminShare,
                 reason
@@ -116,17 +112,17 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
             // Update running totals in activeSession map
             const s = activeSessions.get(sessionId);
             if (s) {
-                s.totalDeducted = (s.totalDeducted || 0) + totalToDeduct;
+                s.totalDeducted = (s.totalDeducted || 0) + actualDeduct;
                 s.totalEarned = (s.totalEarned || 0) + astroShare;
             }
 
-            // Notify Wallets
+            // Notify Wallets in real time
             if (io) {
-                const s1 = Array.from(activeSessions.values()).find(x => x.sessionId === sessionId)?.clientSocketId;
-                // Fallback to room-based or map-based if needed.
-                // For simplicity, we just broadcast or use a common room.
-                io.to(client.userId).emit('wallet-update', { balance: client.walletBalance });
-                io.to(astro.userId).emit('wallet-update', { balance: astro.walletBalance });
+                const newClientBal = updatedClient ? updatedClient.walletBalance : 0;
+                const newAstroBal = updatedAstro ? updatedAstro.walletBalance : astro.walletBalance;
+
+                io.to(client.userId).emit('wallet-update', { balance: newClientBal });
+                io.to(astro.userId).emit('wallet-update', { balance: newAstroBal });
             }
         }
     } catch (e) {
@@ -174,7 +170,7 @@ async function endSessionRecord(sessionId, broadcastAstroUpdate) {
         if (totalMinutes > lastBilled) {
             for (let i = lastBilled + 1; i <= totalMinutes; i++) {
                 const isFraction = (i === totalMinutes && (billableSeconds % 60) !== 0);
-                const billingType = isFraction ? 'fraction' : 'slab';
+                const billingType = isFraction ? 'fraction' : 'ongoing';
                 await processBillingCharge(sessionId, 60, i, billingType);
             }
         }

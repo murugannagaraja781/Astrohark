@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { swissEph } = require('../../utils/rasiEng/swisseph');
+const { getFullDashaBreakdown } = require('../../utils/rasiEng/dashaCalculations');
+const { DateTime } = require('luxon');
 
 // Vimshottari Lords order
 const LORDS_SEQUENCE = ['Ketu', 'Venus', 'Sun', 'Moon', 'Mars', 'Rahu', 'Jupiter', 'Saturn', 'Mercury'];
@@ -156,11 +158,41 @@ router.post(['/', '/kp-chart'], (req, res) => {
             }
         });
 
+        const dt = DateTime.fromObject({ year, month, day, hour, minute: min, second: sec });
+        let dasaBalance = null;
+        let bukthiBalance = null;
+        const moon = kpPlanets.find(p => p.name === 'Moon');
+        if (moon) {
+            const breakdown = getFullDashaBreakdown(moon.longitude, dt);
+            if (breakdown && breakdown.currentMahadasha) {
+                const mdEnd = DateTime.fromISO(breakdown.currentMahadasha.end);
+                const mdDiff = mdEnd.diff(dt, ['years', 'months', 'days']).toObject();
+                dasaBalance = {
+                    lord: breakdown.currentMahadasha.lord,
+                    years: Math.floor(mdDiff.years || 0),
+                    months: Math.floor(mdDiff.months || 0),
+                    days: Math.floor(mdDiff.days || 0)
+                };
+            }
+            if (breakdown && breakdown.currentBhukti) {
+                const bkEnd = DateTime.fromISO(breakdown.currentBhukti.end);
+                const bkDiff = bkEnd.diff(dt, ['years', 'months', 'days']).toObject();
+                bukthiBalance = {
+                    lord: breakdown.currentBhukti.lord,
+                    years: Math.floor(bkDiff.years || 0),
+                    months: Math.floor(bkDiff.months || 0),
+                    days: Math.floor(bkDiff.days || 0)
+                };
+            }
+        }
+
         res.json({
             success: true,
             data: {
                 planets: kpPlanets,
-                houses: kpHouses
+                houses: kpHouses,
+                dasaBalance: dasaBalance,
+                bukthiBalance: bukthiBalance
             }
         });
         

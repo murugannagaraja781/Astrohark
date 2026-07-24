@@ -142,6 +142,7 @@ fun KpChartDialog(
                             .verticalScroll(rememberScrollState())
                     ) {
                         DynamicKpRasiKadam(kpData!!)
+                        DasaBukthiBalanceTable(kpData!!)
                         PlanetIndicatorsTable(kpData!!)
                         BhavaIndicatorsTable(kpData!!)
                     }
@@ -386,6 +387,46 @@ fun PlanetIndicatorsTable(kpData: JSONObject) {
                     Text(nakshatraPada, Modifier.weight(1f), fontSize = 12.sp)
                     Text(slName, Modifier.weight(1f), fontSize = 12.sp)
                     Text(connection, Modifier.weight(1f), fontSize = 12.sp, color = Color.Red, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DasaBukthiBalanceTable(kpData: JSONObject) {
+    val dasa = kpData.optJSONObject("dasaBalance")
+    val bukthi = kpData.optJSONObject("bukthiBalance")
+    
+    if (dasa == null || bukthi == null) return
+
+    val planetTamilNames = mapOf(
+        "Sun" to "சூரியன்", "Moon" to "சந்திரன்", "Mars" to "செவ்வாய்",
+        "Mercury" to "புதன்", "Jupiter" to "குரு", "Venus" to "சுக்கிரன்",
+        "Saturn" to "சனி", "Rahu" to "ராகு", "Ketu" to "கேது"
+    )
+
+    val dLord = planetTamilNames[dasa.optString("lord")] ?: dasa.optString("lord")
+    val bLord = planetTamilNames[bukthi.optString("lord")] ?: bukthi.optString("lord")
+    
+    val dStr = "$dLord - ${dasa.optInt("years")}வ ${dasa.optInt("months")}மா ${dasa.optInt("days")}நா"
+    val bStr = "$bLord - ${bukthi.optInt("years")}வ ${bukthi.optInt("months")}மா ${bukthi.optInt("days")}நா"
+
+    Column(Modifier.fillMaxWidth().padding(top = 16.dp)) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF2FCDA)),
+            shape = RoundedCornerShape(4.dp),
+            border = androidx.compose.foundation.BorderStroke(0.5.dp, Color.Gray)
+        ) {
+            Column {
+                Row(Modifier.fillMaxWidth().border(0.5.dp, Color.Gray).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("ஜனன தசா இருப்பு", Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF000080))
+                    Text(dStr, Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8B0000))
+                }
+                Row(Modifier.fillMaxWidth().border(0.5.dp, Color.Gray).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("ஜனன புக்தி இருப்பு", Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF000080))
+                    Text(bStr, Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8B0000))
                 }
             }
         }

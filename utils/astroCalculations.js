@@ -10,9 +10,34 @@ const { getNavamsaSign } = require('./rasiEng/calculations');
 /**
  * Main function to calculate all birth chart data
  */
-function calculateBirthChart(date, lat, lng, timezone = 'Asia/Kolkata') {
-    // 1. Convert local time to GMT/UTC Julian Day
-    const dt = DateTime.fromJSDate(date).setZone(timezone);
+function calculateBirthChart(dateInput, lat, lng, timezone = 'Asia/Kolkata') {
+    // 1. Convert local time to GMT/UTC Julian Day in target timezone (IST default: Asia/Kolkata)
+    const tz = timezone || 'Asia/Kolkata';
+    let dt;
+    if (typeof dateInput === 'string') {
+        dt = DateTime.fromISO(dateInput, { zone: tz });
+    } else if (dateInput instanceof Date) {
+        dt = DateTime.fromObject({
+            year: dateInput.getFullYear(),
+            month: dateInput.getMonth() + 1,
+            day: dateInput.getDate(),
+            hour: dateInput.getHours(),
+            minute: dateInput.getMinutes(),
+            second: dateInput.getSeconds()
+        }, { zone: tz });
+    } else if (dateInput && typeof dateInput === 'object') {
+        dt = DateTime.fromObject({
+            year: dateInput.year,
+            month: dateInput.month,
+            day: dateInput.day,
+            hour: dateInput.hour || 0,
+            minute: dateInput.minute || 0,
+            second: dateInput.second || 0
+        }, { zone: tz });
+    } else {
+        dt = DateTime.now().setZone(tz);
+    }
+
     const utcDt = dt.toUTC();
 
     const jd = swissEph.julday(

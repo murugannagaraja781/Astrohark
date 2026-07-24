@@ -2259,9 +2259,9 @@ fun AstrologerCard(
                         "chat" -> {
                             AstrologerActionButton(
                                 text = Localization.get("chat", isTamil),
-                                icon = painterResource(id = R.drawable.ic_chat_custom),
+                                icon = Icons.Rounded.Chat,
                                 active = (astro.isChatOnline && !astro.isBusy),
-                                borderColor = Color(0xFF3B82F6), // Blue border
+                                borderColor = Color(0xFF2196F3), // Blue border
                                 onClick = { onChatClick(astro) },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2269,9 +2269,9 @@ fun AstrologerCard(
                         "call" -> {
                             AstrologerActionButton(
                                 text = Localization.get("call", isTamil),
-                                icon = painterResource(id = R.drawable.ic_call_custom),
+                                icon = Icons.Rounded.Call,
                                 active = (astro.isAudioOnline && !astro.isBusy),
-                                borderColor = Color(0xFF10B981), // Green border
+                                borderColor = Color(0xFF4CAF50), // Green border
                                 onClick = { onCallClick(astro, "call") },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2279,9 +2279,9 @@ fun AstrologerCard(
                         "video" -> {
                             AstrologerActionButton(
                                 text = Localization.get("video", isTamil),
-                                icon = painterResource(id = R.drawable.ic_video_custom),
+                                icon = Icons.Rounded.VideoCall,
                                 active = (astro.isVideoOnline && !astro.isBusy),
-                                borderColor = Color(0xFFEF4444), // Red border
+                                borderColor = Color(0xFFD32F2F), // Keep Red border
                                 onClick = { onCallClick(astro, "video") },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -2583,7 +2583,7 @@ fun BottomNavItem(
             imageVector = icon,
             contentDescription = label,
             tint = contentColor,
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
@@ -2768,7 +2768,7 @@ fun InfoRow(icon: ImageVector, text: String) {
 @Composable
 fun AstrologerActionButton(
     text: String,
-    icon: androidx.compose.ui.graphics.painter.Painter,
+    icon: ImageVector,
     active: Boolean,
     borderColor: Color,
     onClick: () -> Unit,

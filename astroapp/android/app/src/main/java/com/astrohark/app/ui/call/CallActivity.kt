@@ -364,6 +364,14 @@ class CallActivity : ComponentActivity() {
                                 val intent = android.content.Intent(this@CallActivity, com.astrohark.app.ui.wallet.WalletActivity::class.java)
                                 startActivity(intent)
                             }
+                            val isAstro = tokenManager.getUserSession()?.role == "astrologer"
+                            val navIntent = if (isAstro) {
+                                android.content.Intent(this@CallActivity, com.astrohark.app.ui.astro.AstrologerDashboardActivity::class.java)
+                            } else {
+                                android.content.Intent(this@CallActivity, com.astrohark.app.MainActivity::class.java)
+                            }
+                            navIntent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            startActivity(navIntent)
                             finish()
                         },
                         onReview = { rating, comment -> submitReview(rating, comment) }
@@ -1309,7 +1317,21 @@ class CallActivity : ComponentActivity() {
         // Send BOTH signals to ensure termination regardless of call state (ringing vs ongoing)
         SocketManager.endSession(sessionId)
         SocketManager.cancelCall(sessionId, partnerId)
-        finish()
+        // Wait for session-ended socket summary to display ModernSummaryDialog before navigating.
+        // Fallback timeout in case socket response is delayed:
+        timerHandler.postDelayed({
+            if (callSummary == null && !isFinishing && !isDestroyed) {
+                val isAstro = tokenManager.getUserSession()?.role == "astrologer"
+                val navIntent = if (isAstro) {
+                    android.content.Intent(this, com.astrohark.app.ui.astro.AstrologerDashboardActivity::class.java)
+                } else {
+                    android.content.Intent(this, com.astrohark.app.MainActivity::class.java)
+                }
+                navIntent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(navIntent)
+                finish()
+            }
+        }, 3000)
     }
 
     private fun submitReview(rating: Int, comment: String) {

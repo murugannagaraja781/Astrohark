@@ -85,7 +85,7 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
             const updatedClient = await User.findOneAndUpdate(
                 { userId: client.userId },
                 { $inc: { walletBalance: -mainDeduct, superWalletBalance: -superDeduct } },
-                { new: true }
+                { returnDocument: 'after' }
             );
 
             // Atomic update to astrologer balance & earnings
@@ -94,7 +94,7 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
                 updatedAstro = await User.findOneAndUpdate(
                     { userId: astro.userId },
                     { $inc: { walletBalance: astroShare, totalEarnings: astroShare } },
-                    { new: true }
+                    { returnDocument: 'after' }
                 );
             }
 

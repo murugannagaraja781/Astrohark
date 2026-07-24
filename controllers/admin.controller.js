@@ -98,7 +98,7 @@ exports.getPendingAstrologers = async (req, res) => {
 exports.approveAstrologer = async (req, res) => {
     try {
         const { userId, status } = req.body; // status: 'approved' or 'rejected'
-        const user = await User.findOneAndUpdate({ userId }, { approvalStatus: status }, { new: true });
+        const user = await User.findOneAndUpdate({ userId }, { approvalStatus: status }, { returnDocument: 'after' });
         if (!user) return res.json({ ok: false, error: 'User not found' });
         res.json({ ok: true, status: user.approvalStatus });
     } catch (e) {

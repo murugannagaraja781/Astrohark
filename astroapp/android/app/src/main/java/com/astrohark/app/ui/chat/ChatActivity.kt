@@ -205,6 +205,7 @@ class ChatActivity : ComponentActivity() {
                              }
                          },
                         onSessionFinished = { finishSessionAndNavigate() },
+                        onSubmitReview = { rating, comment -> submitReview(rating, comment) },
                         isAstrologer = role == "astrologer",
                         toUserId = toUserId,
                         sessionId = sessionId,
@@ -558,6 +559,7 @@ fun ChatScreen(
     onEditIntake: () -> Unit,
     onViewChart: () -> Unit,
     onSessionFinished: () -> Unit,
+    onSubmitReview: ((Int, String) -> Unit)? = null,
     isAstrologer: Boolean,
     toUserId: String?,
     sessionId: String?,
@@ -821,7 +823,7 @@ fun ChatScreen(
                         }
                         onSessionFinished()
                     },
-                    onSubmitReview = { rating, comment -> submitReview(rating, comment) }
+                    onSubmitReview = onSubmitReview
                 )
             }
             

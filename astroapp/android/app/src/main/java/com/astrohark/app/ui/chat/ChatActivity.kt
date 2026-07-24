@@ -463,6 +463,34 @@ class ChatActivity : ComponentActivity() {
         }
     }
 
+    private fun submitReview(rating: Int, comment: String) {
+        val myUserId = TokenManager(this).getUserSession()?.userId ?: return
+        val sId = sessionId ?: return
+        val aId = toUserId ?: return
+
+        lifecycleScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            try {
+                val json = com.google.gson.JsonObject().apply {
+                    addProperty("sessionId", sId)
+                    addProperty("clientId", myUserId)
+                    addProperty("astrologerId", aId)
+                    addProperty("rating", rating)
+                    addProperty("comment", comment)
+                }
+                val response = com.astrohark.app.data.api.ApiClient.api.submitReview(json)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(this@ChatActivity, "Feedback submitted. Thank you!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        android.util.Log.e("ChatActivity", "Review submission failed: ${response.code()}")
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ChatActivity", "Error submitting review", e)
+            }
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         // Re-synchronize on resume to catch any messages missed during multitasking
@@ -792,7 +820,8 @@ fun ChatScreen(
                             context.startActivity(intent)
                         }
                         onSessionFinished()
-                    }
+                    },
+                    onSubmitReview = { rating, comment -> submitReview(rating, comment) }
                 )
             }
             

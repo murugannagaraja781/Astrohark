@@ -421,11 +421,11 @@ fun DasaBukthiBalanceTable(kpData: JSONObject) {
         ) {
             Column {
                 Row(Modifier.fillMaxWidth().border(0.5.dp, Color.Gray).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("ஜனன தசா இருப்பு", Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF000080))
+                    Text("ஜனன கால தசா இருப்பு", Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF000080))
                     Text(dStr, Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8B0000))
                 }
                 Row(Modifier.fillMaxWidth().border(0.5.dp, Color.Gray).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("ஜனன புக்தி இருப்பு", Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF000080))
+                    Text("ஜனன கால புக்தி இருப்பு", Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF000080))
                     Text(bStr, Modifier.weight(1f), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8B0000))
                 }
             }

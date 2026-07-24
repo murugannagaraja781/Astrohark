@@ -47,6 +47,7 @@ class VoiceRecorder(private val context: Context) {
     fun stopRecording(): Long {
         if (!isRecording) return 0L
         val duration = System.currentTimeMillis() - startTime
+        var success = true
         try {
             recorder?.apply {
                 stop()
@@ -54,9 +55,18 @@ class VoiceRecorder(private val context: Context) {
             }
         } catch (e: Exception) {
             Log.e("VoiceRecorder", "stop() failed", e)
+            success = false
         }
         recorder = null
         isRecording = false
+
+        if (!success) {
+            val file = File(outputFile)
+            if (file.exists()) {
+                file.delete()
+            }
+            return 0L
+        }
         return duration
     }
 

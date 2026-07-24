@@ -49,8 +49,8 @@ router.post('/full', async (req, res) => {
         // PARALLEL CALCULATION: Run all independent tasks simultaneously
         const [houses, panchanga, muhurtas, tamilDateData] = await Promise.all([
             getHouseCusps(jd, lat, lng, 'Placidus', ayanamsa),
-            getPanchanga(jd, lat, lng, ayanamsa),
-            getMuhurtas(jd, lat, lng),
+            getPanchanga(jd, lat, lng, ayanamsa, timezone),
+            getMuhurtas(jd, lat, lng, timezone),
             getTamilDate(dt, ayanamsa)
         ]);
 

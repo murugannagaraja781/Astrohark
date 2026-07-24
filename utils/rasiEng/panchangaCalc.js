@@ -27,7 +27,7 @@ const VARAS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
 /**
  * Calculate Panchanga for a given Julian Day
  */
-function getPanchanga(jd, lat, lng, ayanamsaName = 'Lahiri') {
+function getPanchanga(jd, lat, lng, ayanamsaName = 'Lahiri', timezoneOffset = 5.5) {
     // Get Sun and Moon positions
     const sun = swissEph.calcPlanetSidereal(jd, 0, ayanamsaName);
     const moon = swissEph.calcPlanetSidereal(jd, 1, ayanamsaName);
@@ -63,8 +63,11 @@ function getPanchanga(jd, lat, lng, ayanamsaName = 'Lahiri') {
     const sunsetInfo = swissEph.revjul(sunsetJd);
 
     const formatTime = (h) => {
-        const hours = Math.floor(h);
-        const minutes = Math.floor((h - hours) * 60);
+        let localH = h + timezoneOffset;
+        if (localH >= 24) localH -= 24;
+        if (localH < 0) localH += 24;
+        const hours = Math.floor(localH);
+        const minutes = Math.floor((localH - hours) * 60);
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     };
 
@@ -105,7 +108,7 @@ function getPanchanga(jd, lat, lng, ayanamsaName = 'Lahiri') {
 /**
  * Get Rahukalam, Yamagandam, Gulikai for the day
  */
-function getMuhurtas(jd, lat, lng) {
+function getMuhurtas(jd, lat, lng, timezoneOffset = 5.5) {
     const sunriseJd = swissEph.getSunrise(jd, lat, lng);
     const sunsetJd = swissEph.getSunset(jd, lat, lng);
 
@@ -125,8 +128,11 @@ function getMuhurtas(jd, lat, lng) {
 
     const formatJdTime = (jdVal) => {
         const info = swissEph.revjul(jdVal);
-        const hours = Math.floor(info.hour);
-        const minutes = Math.floor((info.hour - hours) * 60);
+        let localH = info.hour + timezoneOffset;
+        if (localH >= 24) localH -= 24;
+        if (localH < 0) localH += 24;
+        const hours = Math.floor(localH);
+        const minutes = Math.floor((localH - hours) * 60);
         return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     };
 

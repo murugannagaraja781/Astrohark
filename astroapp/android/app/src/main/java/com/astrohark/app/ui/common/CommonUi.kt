@@ -33,7 +33,13 @@ fun ModernSummaryDialog(
     var comment by remember { mutableStateOf("") }
     var isSubmitted by remember { mutableStateOf(false) }
 
-    Dialog(onDismissRequest = { if (isSubmitted || isAstrologer) onDismiss() }) {
+    Dialog(
+        onDismissRequest = { if (isSubmitted || isAstrologer) onDismiss() },
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnBackPress = isAstrologer || isSubmitted,
+            dismissOnClickOutside = isAstrologer || isSubmitted
+        )
+    ) {
         Card(
             shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -141,14 +147,14 @@ fun ModernSummaryDialog(
                 
                 Spacer(Modifier.height(32.dp))
                 
-                val buttonText = if (!isAstrologer && !isSubmitted) "SUBMIT REVIEW & EXIT" else "DONE"
+                val buttonText = if (!isAstrologer && !isSubmitted) "SUBMIT REVIEW" else "DONE"
                 
                 Button(
                     onClick = {
                         if (!isAstrologer && !isSubmitted && onSubmitReview != null) {
                             onSubmitReview(rating, comment)
                             isSubmitted = true
-                            // Optionally dismiss after a small delay or keep "DONE"
+                            onDismiss()
                         } else {
                             onDismiss()
                         }

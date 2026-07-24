@@ -28,8 +28,8 @@ router.post('/', (req, res) => {
         const utc = dt.toUTC();
         const jd = swissEph.julday(utc.year, utc.month, utc.day, utc.hour + utc.minute / 60 + utc.second / 3600);
 
-        const panchanga = getPanchanga(jd, lat, lng, ayanamsa);
-        const muhurtas = getMuhurtas(jd, lat, lng);
+        const panchanga = getPanchanga(jd, lat, lng, ayanamsa, timezone);
+        const muhurtas = getMuhurtas(jd, lat, lng, timezone);
 
         res.json({
             success: true,

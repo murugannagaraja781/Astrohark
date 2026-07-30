@@ -387,9 +387,9 @@
                 </div>
             </div>
 
-            <!-- Tab 5: Withdrawals -->
+            <!-- Tab 5: Withdrawals / Astrologer Payment Request -->
             <div id="admin-sect-withdrawals" class="admin-tab-section">
-                <h2 style="margin-bottom:20px;"><i class="fas fa-money-bill-transfer"></i> Withdrawal Requests</h2>
+                <h2 style="margin-bottom:20px;"><i class="fas fa-hand-holding-usd"></i> Astrologer Payment Request</h2>
                 <div class="filter-tabs" style="margin-bottom:15px;">
                     <button class="c-tab active" onclick="filterWithdrawals('all', this)">All</button>
                     <button class="c-tab" onclick="filterWithdrawals('pending', this)">Pending</button>
@@ -1109,6 +1109,8 @@
                     class="fas fa-medal" style="color:#FFD700;"></i><span>Performance</span></div>
             <div class="admin-nav-item" onclick="navAdmin('payouts', event)"><i
                     class="fas fa-user-astronaut"></i><span>Astros <small id="nav-count-astros" style="color:#EF4444; font-weight:bold;"></small></span></div>
+            <div class="admin-nav-item" onclick="navAdmin('withdrawals', event)"><i
+                    class="fas fa-hand-holding-usd" style="color:#10B981;"></i><span>Astrologer Payment Request <small id="nav-count-withdrawals" style="color:#EF4444; font-weight:bold;"></small></span></div>
             <div class="admin-nav-item" onclick="navAdmin('pending', event)"><i
                     class="fas fa-user-clock"></i><span>Pending <small id="nav-count-pending" style="color:#EF4444; font-weight:bold;"></small></span></div>
             <div class="admin-nav-item" onclick="navAdmin('users', event)"><i
@@ -1861,8 +1863,11 @@
         let fullWithdrawalsCache = [];
         window.loadAllWithdrawals = () => {
             socket.emit('get-withdrawals', {}, (res) => {
-                if (res.ok) {
+                if (res && res.ok) {
                     fullWithdrawalsCache = res.list || [];
+                    const pendingCount = fullWithdrawalsCache.filter(w => w.status === 'pending').length;
+                    const countElem = document.getElementById('nav-count-withdrawals');
+                    if (countElem) countElem.innerText = pendingCount > 0 ? `(${pendingCount})` : '';
                     renderWithdrawals(fullWithdrawalsCache);
                 }
             });
@@ -2028,8 +2033,10 @@
                 const listContainer = document.getElementById('adminWithdrawalsList');
                 if (!listContainer) return;
 
-                if (res.ok && res.list) {
+                if (res && res.ok && res.list) {
                     const pending = res.list.filter(x => x.status === 'pending');
+                    const countElem = document.getElementById('nav-count-withdrawals');
+                    if (countElem) countElem.innerText = pending.length > 0 ? `(${pending.length})` : '';
                     if (pending.length > 0) {
                         sect.style.display = 'block';
                         listContainer.innerHTML = pending.map(w => `

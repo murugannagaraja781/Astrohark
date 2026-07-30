@@ -1161,6 +1161,7 @@ class CallActivity : ComponentActivity() {
 
         SocketManager.onSessionEndedWithSummary { reason, deducted, earned, duration ->
             runOnUiThread {
+                closeCallMediaStreams()
                 timerHandler.removeCallbacks(timerRunnable)
                 isBillingActive = false
                 val amount = if (tokenManager.getUserSession()?.role == "astrologer") earned else deducted
@@ -1315,7 +1316,49 @@ class CallActivity : ComponentActivity() {
         SocketManager.emitSignal(payload)
     }
 
+    private fun closeCallMediaStreams() {
+        try {
+            Log.d(TAG, "closeCallMediaStreams: Disconnecting audio & video WebRTC connection")
+            localAudioTrack?.setEnabled(false)
+            localVideoTrack?.setEnabled(false)
+            
+            if (::localView.isInitialized) {
+                try { localView.clearImage() } catch (e: Exception) {}
+            }
+            if (::remoteView.isInitialized) {
+                try { remoteView.clearImage() } catch (e: Exception) {}
+            }
+            
+            if (isRecordingState) {
+                try { stopRecording() } catch (e: Exception) { e.printStackTrace() }
+            }
+
+            if (videoCapturer != null) {
+                try {
+                    videoCapturer?.stopCapture()
+                    videoCapturer?.dispose()
+                    videoCapturer = null
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error disposing videoCapturer", e)
+                }
+            }
+
+            if (::peerConnection.isInitialized) {
+                try {
+                    peerConnection.close()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error closing peerConnection", e)
+                }
+            }
+
+            stopBackgroundService()
+        } catch (e: Throwable) {
+            Log.e(TAG, "Error in closeCallMediaStreams", e)
+        }
+    }
+
     private fun endCall() {
+        closeCallMediaStreams()
         stopBackgroundService()
         // Send BOTH signals to ensure termination regardless of call state (ringing vs ongoing)
         SocketManager.endSession(sessionId)

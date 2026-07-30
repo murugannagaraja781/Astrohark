@@ -2942,7 +2942,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('get-withdrawals', async (cb) => {
+  socket.on('get-withdrawals', async (data, cb) => {
+    let callback = typeof cb === 'function' ? cb : (typeof data === 'function' ? data : null);
     try {
       const list = await Withdrawal.find().sort({ requestedAt: -1 }).limit(50);
       const enriched = [];
@@ -2953,28 +2954,29 @@ io.on('connection', (socket) => {
           astroName: u ? u.name : 'Unknown',
           bankingDetails: u ? {
             bankName: 'Details Below',
-            accountNumber: u.bankDetails || 'N/A', // Mapping free-text bank details here
-            accountHolderName: u.realName || u.name,
+            accountNumber: u?.bankDetails || 'N/A',
+            accountHolderName: u?.realName || u?.name || 'N/A',
             ifscCode: '-',
-            upiId: `${u.upiId || ''} ${u.upiNumber ? '(' + u.upiNumber + ')' : ''}`
+            upiId: `${u?.upiId || ''} ${u?.upiNumber ? '(' + u.upiNumber + ')' : ''}`.trim() || 'N/A'
           } : null
         });
       }
-      if (typeof cb === 'function') cb({ ok: true, list: enriched });
+      if (typeof callback === 'function') callback({ ok: true, list: enriched });
     } catch (e) {
       console.error(e);
-      if (typeof cb === 'function') cb({ ok: false, list: [] });
+      if (typeof callback === 'function') callback({ ok: false, list: [] });
     }
   });
 
-  socket.on('get-my-withdrawals', async (cb) => {
+  socket.on('get-my-withdrawals', async (data, cb) => {
+    let callback = typeof cb === 'function' ? cb : (typeof data === 'function' ? data : null);
     const userId = socketToUser.get(socket.id);
-    if (!userId) return;
+    if (!userId) return callback ? callback({ ok: false, error: 'User not logged in' }) : null;
     try {
       const list = await Withdrawal.find({ astroId: userId }).sort({ requestedAt: -1 }).limit(10);
-      if (typeof cb === 'function') cb({ ok: true, list });
+      if (typeof callback === 'function') callback({ ok: true, list });
     } catch (e) {
-      if (typeof cb === 'function') cb({ ok: false });
+      if (typeof callback === 'function') callback({ ok: false });
     }
   });
 

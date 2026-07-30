@@ -26,7 +26,8 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
         if (!client) return;
 
         let pricePerMin = 10;
-        if (client.isNewUser) {
+        const isNewUserPromo = activeSess?.isNewUser || client.isNewUser;
+        if (isNewUserPromo) {
             const remainingMinutes = Math.max(1, 5 - (minuteIndex || 1) + 1);
             pricePerMin = client.walletBalance > 0 ? (client.walletBalance / remainingMinutes) : 5;
         } else if (astro.price && parseFloat(astro.price) > 0) {

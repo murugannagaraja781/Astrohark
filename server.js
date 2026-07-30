@@ -2129,8 +2129,9 @@ io.on('connection', (socket) => {
         const astro = await User.findOne({ userId: session.astrologerId });
         if (client && astro) {
           const minuteIndex = Math.floor(session.elapsedBillableSeconds / 60) + 1;
-          const rate = client.isNewUser ? (client.walletBalance / Math.max(1, 5 - minuteIndex + 1)) : (astro.price || 15);
-          if (client.walletBalance < rate) {
+          const isNewUser = session.isNewUser || client.isNewUser;
+          const rate = isNewUser ? (client.walletBalance / Math.max(1, 5 - minuteIndex + 1)) : (astro.price || 15);
+          if (!isNewUser && client.walletBalance < rate) {
             console.log(`[Ticker] Ending session ${sessionId} due to insufficient balance.`);
             billingService.endSessionRecord(sessionId, () => serviceBroadcastAstroUpdate(io, SERVER_URL));
             io.to(sessionId).emit('session-ended', { sessionId, reason: 'insufficient_balance' });

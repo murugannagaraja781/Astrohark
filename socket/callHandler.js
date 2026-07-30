@@ -524,18 +524,14 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                 const astro = await User.findOne({ userId: aId });
 
                 // Store new user promo info on active session
+                const isNewUserPromo = activeSession?.isNewUser || client?.isNewUser || false;
                 if (activeSession) {
-                    activeSession.isNewUser = client?.isNewUser || false;
-                }
-
-                if (client && client.isNewUser) {
-                    client.isNewUser = false;
-                    await client.save().catch(err => console.error("Error setting isNewUser to false:", err));
+                    activeSession.isNewUser = isNewUserPromo;
                 }
 
                 const clientBalance = client?.walletBalance || 0;
                 const ratePerMinute = astro?.price || 10;
-                const availableMinutes = client?.isNewUser ? 5 : Math.floor(clientBalance / Math.max(1, ratePerMinute));
+                const availableMinutes = isNewUserPromo ? 5 : Math.floor(clientBalance / Math.max(1, ratePerMinute));
 
                 io.to(cId).emit('billing-started', { startTime: billingStart, clientBalance, availableMinutes });
                 io.to(aId).emit('billing-started', { startTime: billingStart, clientBalance, ratePerMinute, availableMinutes });

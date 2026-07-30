@@ -2074,8 +2074,9 @@ io.on('connection', (socket) => {
 
 
   // --- Phase 2: Session Timer Engine ---
-  if (global.tickInterval) clearInterval(global.tickInterval);
-  global.tickInterval = setInterval(tickSessions, 1000);
+  if (!global.tickInterval) {
+    global.tickInterval = setInterval(tickSessions, 1000);
+  }
 
   // Phase 4 Helper
   function getSlabBySeconds(seconds) {

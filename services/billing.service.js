@@ -25,6 +25,8 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
         const client = await User.findOne({ userId: session.clientId });
         if (!client) return;
 
+        const activeSess = activeSessions.get(sessionId);
+
         let pricePerMin = 10;
         const isNewUserPromo = activeSess?.isNewUser || client.isNewUser;
         if (isNewUserPromo) {
@@ -38,8 +40,6 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
         }
 
         console.log(`[Billing] Session ${sessionId} | Type: ${session.type} | Price: ${pricePerMin}/min | Minute: ${minuteIndex}`);
-
-        const activeSess = activeSessions.get(sessionId);
 
         let amountToCharge = pricePerMin;
         let astroShare = amountToCharge * 0.50; // 50% for Astrologer

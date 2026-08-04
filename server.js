@@ -2116,6 +2116,18 @@ io.on('connection', (socket) => {
       // Transient socket disconnects during the call shouldn't freeze the billing timer.
       session.elapsedBillableSeconds++;
 
+      // Sync timer to both client and astrologer in real-time
+      if (io) {
+        const syncData = {
+          sessionId,
+          elapsedSeconds: session.elapsedBillableSeconds,
+          remainingSeconds: session.isNewUser ? Math.max(0, 300 - session.elapsedBillableSeconds) : null
+        };
+        io.to(sessionId).emit('session-timer-sync', syncData);
+        if (session.clientId) io.to(session.clientId).emit('session-timer-sync', syncData);
+        if (session.astrologerId) io.to(session.astrologerId).emit('session-timer-sync', syncData);
+      }
+
       // Enforce 5-minute limit for new users promo
       if (session.isNewUser && session.elapsedBillableSeconds >= 300) {
         console.log(`[Ticker] Ending session ${sessionId} - 5 minutes promo limit reached.`);

@@ -11,11 +11,11 @@ plugins {
 
 android {
     namespace = "com.astrohark.app"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "com.astrohark.app"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 26
         versionName = "26.0"
 

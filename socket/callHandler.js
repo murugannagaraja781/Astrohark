@@ -440,6 +440,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
             }
 
             console.log(`[CallHandler][session-connect] User ${userId} joined session ${sessionId}`);
+            socket.join(sessionId);
 
             const session = await Session.findOne({ sessionId });
             if (!session) return;
@@ -549,7 +550,7 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
     // --- End Session (Call Termination) ---
     socket.on('end-session', async (data) => {
         try {
-            const { sessionId } = data || {};
+            const { sessionId, duration, clientDuration, astrologerDuration } = data || {};
             if (sessionId) {
                 // Guard: Only terminate if session still exists (prevents duplicate termination)
                 const s = activeSessions.get(sessionId);
@@ -557,10 +558,18 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     console.log(`[CallHandler][end-session] Session ${sessionId} already terminated, ignoring.`);
                     return;
                 }
+                const socketUserId = socketToUser.get(socket.id);
+                if (socketUserId && s.clientId === socketUserId && (clientDuration || duration)) {
+                    s.reportedClientDuration = clientDuration || duration;
+                } else if (socketUserId && s.astrologerId === socketUserId && (astrologerDuration || duration)) {
+                    s.reportedAstrologerDuration = astrologerDuration || duration;
+                } else if (duration) {
+                    s.reportedDuration = duration;
+                }
                 console.log(`[CallHandler][end-session] terminating session ${sessionId}`);
                 billingService.endSessionRecord(sessionId, () => {
                     if (broadcastAstroUpdate) broadcastAstroUpdate();
-                });
+                }, duration);
             }
         } catch (err) {
             logError('end-session', err);

@@ -1146,6 +1146,14 @@ class CallActivity : ComponentActivity() {
             }
         }
 
+        SocketManager.onSessionTimerSync { info ->
+            runOnUiThread {
+                if (info.sessionId == sessionId) {
+                    callDurationSeconds = info.elapsedSeconds
+                }
+            }
+        }
+
         SocketManager.onWalletUpdate { data ->
             runOnUiThread {
                 try {
@@ -1361,7 +1369,7 @@ class CallActivity : ComponentActivity() {
         closeCallMediaStreams()
         stopBackgroundService()
         // Send BOTH signals to ensure termination regardless of call state (ringing vs ongoing)
-        SocketManager.endSession(sessionId)
+        SocketManager.endSession(sessionId, callDurationSeconds)
         SocketManager.cancelCall(sessionId, partnerId)
         // Wait for session-ended socket summary to display ModernSummaryDialog before navigating.
         // Fallback timeout in case socket response is delayed:

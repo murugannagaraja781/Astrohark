@@ -130,11 +130,22 @@ module.exports = (io, SERVER_URL) => {
         });
 
         socket.on('end-session', async (data) => {
-            const { sessionId } = data || {};
+            const { sessionId, duration, clientDuration, astrologerDuration } = data || {};
             if (sessionId) {
                 // Guard: Only terminate if session still exists
-                if (!activeSessions.has(sessionId)) return;
-                endSessionRecord(sessionId, () => broadcastAstroUpdate(io, SERVER_URL));
+                const s = activeSessions.get(sessionId);
+                if (!s) return;
+
+                const socketUserId = socketToUser.get(socket.id);
+                if (socketUserId && s.clientId === socketUserId && (clientDuration || duration)) {
+                    s.reportedClientDuration = clientDuration || duration;
+                } else if (socketUserId && s.astrologerId === socketUserId && (astrologerDuration || duration)) {
+                    s.reportedAstrologerDuration = astrologerDuration || duration;
+                } else if (duration) {
+                    s.reportedDuration = duration;
+                }
+
+                endSessionRecord(sessionId, () => broadcastAstroUpdate(io, SERVER_URL), duration);
             }
         });
 

@@ -142,13 +142,32 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
     }
 }
 
-async function endSessionRecord(sessionId, broadcastAstroUpdate) {
+async function endSessionRecord(sessionId, broadcastAstroUpdate, extraReportedDuration) {
     const s = activeSessions.get(sessionId);
     if (!s) return;
 
     const endTime = Date.now();
-    const billableSeconds = s.elapsedBillableSeconds || 0;
-    console.log(`[Billing][endSessionRecord] sessionId=${sessionId}, billableSeconds=${billableSeconds}`);
+    const serverTickerSeconds = s.elapsedBillableSeconds || 0;
+    const clientWallClockSeconds = s.clientConnectedAt ? Math.ceil((endTime - s.clientConnectedAt) / 1000) : 0;
+    const astroWallClockSeconds = s.astrologerConnectedAt ? Math.ceil((endTime - s.astrologerConnectedAt) / 1000) : 0;
+    const reportedClientDuration = s.reportedClientDuration || 0;
+    const reportedAstrologerDuration = s.reportedAstrologerDuration || 0;
+    const reportedDuration = s.reportedDuration || extraReportedDuration || 0;
+
+    const candidates = [
+        serverTickerSeconds,
+        clientWallClockSeconds,
+        astroWallClockSeconds,
+        reportedClientDuration,
+        reportedAstrologerDuration,
+        reportedDuration
+    ].filter(sec => typeof sec === 'number' && sec > 0);
+
+    // MINIMUM / LOWER DURATION POLICY: Per user correction ("Yaarodu seconds vanthu kammiya irukko, avangaladhu thaan billing ku eduthukkanum"),
+    // take whichever valid timer is lower between client, astrologer, and server.
+    const billableSeconds = candidates.length > 0 ? Math.min(...candidates) : 0;
+
+    console.log(`[Billing][endSessionRecord] sessionId=${sessionId} | Candidate durations: server=${serverTickerSeconds}s, clientWall=${clientWallClockSeconds}s, astroWall=${astroWallClockSeconds}s, clientReported=${reportedClientDuration}s, astroReported=${reportedAstrologerDuration}s | Chosen MIN billableSeconds=${billableSeconds}s`);
 
     await Session.updateOne({ sessionId }, {
         endTime,

@@ -6006,10 +6006,23 @@
       }
     });
 
+    socket.on('session-timer-sync', (data) => {
+      if (data && typeof data.elapsedSeconds === 'number') {
+        timerSec = data.elapsedSeconds;
+        updateTimerDisplay();
+      }
+    });
+
     // End Session
     document.getElementById('btnEnd').onclick = () => {
       if (state.session) {
-        socket.emit('end-session', { sessionId: state.session.id, toUserId: state.session.partnerId });
+        socket.emit('end-session', { 
+          sessionId: state.session.id, 
+          toUserId: state.session.partnerId,
+          duration: timerSec,
+          clientDuration: timerSec,
+          astrologerDuration: timerSec
+        });
       }
       endLocal();
     };

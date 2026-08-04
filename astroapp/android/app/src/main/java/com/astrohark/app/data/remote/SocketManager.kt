@@ -211,10 +211,15 @@ object SocketManager {
         }
     }
 
-    fun endSession(sessionId: String?) {
+    fun endSession(sessionId: String?, durationSeconds: Int? = null) {
         val payload = JSONObject()
         if (sessionId != null) {
             payload.put("sessionId", sessionId)
+        }
+        if (durationSeconds != null && durationSeconds > 0) {
+            payload.put("duration", durationSeconds)
+            payload.put("clientDuration", durationSeconds)
+            payload.put("astrologerDuration", durationSeconds)
         }
         socket?.emit("end-session", payload)
     }
@@ -311,6 +316,25 @@ object SocketManager {
                 val availableMinutes = data?.optInt("availableMinutes", 0) ?: 0
                 Log.d(TAG, "Billing started. Available: $availableMinutes mins, Balance: ₹$clientBalance")
                 listener(BillingInfo(startTime, clientBalance, ratePerMinute, availableMinutes))
+            }
+        }
+    }
+
+    data class SessionTimerSyncInfo(
+        val sessionId: String,
+        val elapsedSeconds: Int,
+        val remainingSeconds: Int?
+    )
+
+    fun onSessionTimerSync(listener: (SessionTimerSyncInfo) -> Unit) {
+        socket?.off("session-timer-sync")
+        socket?.on("session-timer-sync") { args ->
+            if (args != null && args.isNotEmpty()) {
+                val data = args[0] as? JSONObject
+                val sessionId = data?.optString("sessionId") ?: ""
+                val elapsed = data?.optInt("elapsedSeconds", 0) ?: 0
+                val remaining = if (data?.has("remainingSeconds") == true && !data.isNull("remainingSeconds")) data.optInt("remainingSeconds") else null
+                listener(SessionTimerSyncInfo(sessionId, elapsed, remaining))
             }
         }
     }

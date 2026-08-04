@@ -505,19 +505,29 @@ module.exports = (io, socket, SERVER_URL, broadcastAstroUpdate) => {
                     activeSession.totalDeducted = 0;
                     activeSession.totalEarned = 0;
                     
-                    // Init Slab for Pair
+                    // Init Slab for Pair (Atomic Upsert to prevent E11000 race condition)
                     const currentMonth = new Date().toISOString().slice(0, 7);
                     const pairId = `${cId}_${aId}`;
-                    let pairRec = await PairMonth.findOne({ pairId, yearMonth: currentMonth });
-                    if (!pairRec) {
-                        pairRec = await PairMonth.create({
-                            pairId, clientId: cId, astrologerId: aId,
-                            yearMonth: currentMonth, currentSlab: 3
-                        });
+                    let pairRec;
+                    try {
+                        pairRec = await PairMonth.findOneAndUpdate(
+                            { pairId, yearMonth: currentMonth },
+                            {
+                                $setOnInsert: {
+                                    pairId, clientId: cId, astrologerId: aId,
+                                    yearMonth: currentMonth, currentSlab: 3, slabLockedAt: 0
+                                }
+                            },
+                            { upsert: true, returnDocument: 'after' }
+                        );
+                    } catch (err) {
+                        pairRec = await PairMonth.findOne({ pairId, yearMonth: currentMonth });
                     }
-                    activeSession.pairMonthId = pairRec._id;
-                    activeSession.currentSlab = pairRec.currentSlab;
-                    activeSession.initialPairSeconds = pairRec.slabLockedAt || 0;
+                    if (pairRec) {
+                        activeSession.pairMonthId = pairRec._id;
+                        activeSession.currentSlab = pairRec.currentSlab || 3;
+                        activeSession.initialPairSeconds = pairRec.slabLockedAt || 0;
+                    }
                 }
 
                 // Notify both

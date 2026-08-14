@@ -7,6 +7,7 @@ const PaymentSchema = new mongoose.Schema({
     amount: Number,
     baseAmount: Number,
     gstAmount: Number,
+    gstRate: { type: Number, default: 0.18 },
     withGst: { type: Boolean, default: false },
     status: { type: String, enum: ['pending', 'success', 'failed'], default: 'pending' },
     createdAt: { type: Date, default: Date.now },

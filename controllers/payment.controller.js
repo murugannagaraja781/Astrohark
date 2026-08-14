@@ -5,6 +5,8 @@ const Payment = require('../models/Payment');
 const { paymentTokens, userSockets } = require('../services/socketStore');
 const razorpayConfig = require('../config/razorpay');
 
+const GST_RATE = 0.18;
+
 const razorpay = new Razorpay({
     key_id: razorpayConfig.KEY_ID,
     key_secret: razorpayConfig.KEY_SECRET,
@@ -12,25 +14,37 @@ const razorpay = new Razorpay({
 
 exports.createToken = async (req, res) => {
     try {
-        const { userId, amount, couponCode } = req.body;
+        const { userId, amount, couponCode, promoCode, isApp } = req.body;
+        const finalCoupon = couponCode || promoCode || "";
         if (!userId || !amount) return res.json({ ok: false, error: 'Missing userId or amount' });
         if (amount < 1) return res.json({ ok: false, error: 'Minimum amount is ₹1' });
 
         const user = await User.findOne({ userId });
         if (!user) return res.json({ ok: false, error: 'User not found' });
 
-        const baseAmount = parseFloat(amount);
-        const gstAmount = baseAmount * 0.18;
-        const totalAmount = baseAmount + gstAmount;
+        const incomingAmount = parseFloat(amount);
+        let baseAmount = 0, gstAmount = 0, totalAmount = 0;
+
+        if (isApp === true || isApp === 'true') {
+            // Live App flow: amount passed is already totalAmount (includes 18% GST)
+            totalAmount = incomingAmount;
+            baseAmount = Math.round((totalAmount / 1.18) * 100) / 100;
+            gstAmount = Math.round((totalAmount - baseAmount) * 100) / 100;
+        } else {
+            // Web flow: amount passed is baseAmount
+            baseAmount = incomingAmount;
+            gstAmount = Math.round(baseAmount * GST_RATE * 100) / 100;
+            totalAmount = Math.round((baseAmount + gstAmount) * 100) / 100;
+        }
         const token = crypto.randomBytes(32).toString('hex');
 
         paymentTokens.set(token, {
-            userId, baseAmount, gstAmount, amount: totalAmount,
-            couponCode: couponCode || "", createdAt: Date.now(),
+            userId, baseAmount, gstAmount, gstRate: GST_RATE, amount: totalAmount,
+            couponCode: finalCoupon, createdAt: Date.now(),
             used: false, userName: user.name, userPhone: user.phone
         });
 
-        console.log(`Payment Token Created: ${token.substring(0, 8)}... for ${user.name} amount ₹${amount}`);
+        console.log(`Payment Token Created: ${token.substring(0, 8)}... for ${user.name} amount ₹${amount} (isApp: ${isApp})`);
         res.json({ ok: true, token });
     } catch (e) {
         console.error(e);
@@ -78,24 +92,69 @@ exports.validateCoupon = async (req, res) => {
 
 exports.createPayment = async (req, res) => {
     try {
-        let { userId, amount, isApp, token, isSuperWallet, offerPercentage, couponCode } = req.body;
-        let baseAmount = 0, gstAmount = 0, couponBonus = 0;
+        let { userId, amount, isApp, token, isSuperWallet, offerPercentage, couponCode, promoCode, transactionId, orderId } = req.body;
+        let baseAmount = 0, gstAmount = 0, couponBonus = 0, gstRate = GST_RATE;
+        const finalCoupon = couponCode || promoCode || "";
+
+        // Check if retrying an existing transaction ID
+        const searchId = transactionId || orderId;
+        if (searchId) {
+            const existingPayment = await Payment.findOne({ transactionId: searchId, status: 'pending' });
+            if (existingPayment) {
+                console.log(`[Payment Retry] Reusing existing order ${existingPayment.transactionId} with amount ₹${existingPayment.amount}`);
+                return res.json({
+                    ok: true,
+                    orderId: existingPayment.transactionId,
+                    amount: Math.round(existingPayment.amount * 100),
+                    key: razorpayConfig.KEY_ID
+                });
+            }
+        }
 
         if (token) {
             const tokenData = paymentTokens.get(token);
-            if (!tokenData || (Date.now() - tokenData.createdAt > 600000) || tokenData.used) {
+            if (!tokenData || (Date.now() - tokenData.createdAt > 600000)) {
                 return res.json({ ok: false, error: 'Invalid token' });
             }
-            tokenData.used = true;
+            if (tokenData.used) {
+                // If token is already used, check if there's a pending payment created for it
+                if (tokenData.transactionId) {
+                    const existingPayment = await Payment.findOne({ transactionId: tokenData.transactionId, status: 'pending' });
+                    if (existingPayment) {
+                        console.log(`[Payment Retry] Reusing existing token-based order ${existingPayment.transactionId} with amount ₹${existingPayment.amount}`);
+                        return res.json({
+                            ok: true,
+                            orderId: existingPayment.transactionId,
+                            amount: Math.round(existingPayment.amount * 100),
+                            key: razorpayConfig.KEY_ID
+                        });
+                    }
+                }
+                return res.json({ ok: false, error: 'Token already used' });
+            }
+
             userId = tokenData.userId;
             amount = tokenData.amount;
             baseAmount = tokenData.baseAmount || amount;
             gstAmount = tokenData.gstAmount || 0;
-            couponCode = tokenData.couponCode || couponCode;
+            gstRate = tokenData.gstRate || GST_RATE;
+            couponCode = tokenData.couponCode || finalCoupon;
+
+            tokenData.used = true;
         } else {
-            baseAmount = parseFloat(amount);
-            gstAmount = baseAmount * 0.18;
-            amount = baseAmount + gstAmount;
+            const incomingAmount = parseFloat(amount);
+            if (isApp === true || isApp === 'true') {
+                // Live App flow: amount passed is already totalAmount (includes 18% GST)
+                amount = incomingAmount;
+                baseAmount = Math.round((amount / 1.18) * 100) / 100;
+                gstAmount = Math.round((amount - baseAmount) * 100) / 100;
+            } else {
+                // Web flow: amount passed is baseAmount
+                baseAmount = incomingAmount;
+                gstAmount = Math.round(baseAmount * GST_RATE * 100) / 100;
+                amount = Math.round((baseAmount + gstAmount) * 100) / 100;
+            }
+            couponCode = finalCoupon;
         }
 
         if (!amount || !userId) return res.json({ ok: false, error: 'Missing data' });
@@ -113,15 +172,23 @@ exports.createPayment = async (req, res) => {
         }
 
         const order = await razorpay.orders.create({
-            amount: Math.round(amount * 100), // Razorpay expects paisa
+            amount: Math.round(amount * 100), // Razorpay expects paise
             currency: "INR",
             receipt: "rcpt_" + Date.now(),
         });
 
+        // Save transactionId back to token if token is present to allow retries
+        if (token) {
+            const tokenData = paymentTokens.get(token);
+            if (tokenData) {
+                tokenData.transactionId = order.id;
+            }
+        }
+
         await Payment.create({
             transactionId: order.id,
             merchantTransactionId: order.id,
-            userId, amount, baseAmount, gstAmount, status: 'pending',
+            userId, amount, baseAmount, gstAmount, gstRate, status: 'pending',
             withGst: true, isApp: !!isApp, isSuperWallet: !!isSuperWallet || !!couponBonus,
             offerPercentage: parseFloat(offerPercentage || 0),
             couponCode: couponCode || null, couponBonus

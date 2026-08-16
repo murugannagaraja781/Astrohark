@@ -226,11 +226,20 @@ class PaymentActivity : AppCompatActivity(), PaymentResultWithDataListener {
 
     private fun showError(message: String) {
         runOnUiThread {
-            AlertDialog.Builder(this)
-                .setTitle("Payment Error")
-                .setMessage(message)
-                .setPositiveButton("OK") { _, _ -> finish() }
-                .show()
+            if (!isFinishing && !isDestroyed) {
+                try {
+                    AlertDialog.Builder(this)
+                        .setTitle("Payment Error")
+                        .setMessage(message)
+                        .setPositiveButton("OK") { _, _ -> finish() }
+                        .show()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error displaying alert dialog: ${e.message}")
+                    finish()
+                }
+            } else {
+                finish()
+            }
         }
     }
 

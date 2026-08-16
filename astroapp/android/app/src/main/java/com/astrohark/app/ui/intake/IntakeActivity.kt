@@ -330,6 +330,10 @@ fun IntakeScreen(
 
     var isMatchingLocal by remember { mutableStateOf(isMatching) }
 
+    fun safeInt(value: String?, default: Int = 0): Int {
+        return value?.trim()?.toIntOrNull() ?: default
+    }
+
     fun submit() {
         if (name.isBlank() || cityName.isBlank() || day.isBlank() || month.isBlank() || year.isBlank() || hour.isBlank() || minute.isBlank()) {
             Toast.makeText(context, "Please fill required fields", Toast.LENGTH_SHORT).show()
@@ -339,16 +343,17 @@ fun IntakeScreen(
             Toast.makeText(context, "Please fill all partner details", Toast.LENGTH_SHORT).show()
             return
         }
-        val hour24 = if (amPm == "PM" && hour.toInt() < 12) hour.toInt() + 12 else if (amPm == "AM" && hour.toInt() == 12) 0 else hour.toInt()
+        val h = safeInt(hour, 12)
+        val hour24 = if (amPm == "PM" && h < 12) h + 12 else if (amPm == "AM" && h == 12) 0 else h
         
         val payload = JSONObject().apply {
             put("name", name)
             put("gender", gender)
-            put("day", day.toInt())
-            put("month", month.toInt())
-            put("year", year.toInt())
+            put("day", safeInt(day, 1))
+            put("month", safeInt(month, 1))
+            put("year", safeInt(year, 2000))
             put("hour", hour24)
-            put("minute", minute.toInt())
+            put("minute", safeInt(minute, 0))
             put("city", cityName)
             put("latitude", latitude ?: JSONObject.NULL)
             put("longitude", longitude ?: JSONObject.NULL)
@@ -356,15 +361,16 @@ fun IntakeScreen(
             put("isMatching", isMatchingLocal)
             if (isMatchingLocal) {
                val partner = JSONObject()
-               val pHour24 = if (pAmPm == "PM" && pHour.toInt() < 12) pHour.toInt() + 12 else if (pAmPm == "AM" && pHour.toInt() == 12) 0 else pHour.toInt()
+               val ph = safeInt(pHour, 12)
+               val pHour24 = if (pAmPm == "PM" && ph < 12) ph + 12 else if (pAmPm == "AM" && ph == 12) 0 else ph
                
                partner.put("name", pName)
                partner.put("gender", pGender)
-               partner.put("day", pDay.toInt())
-               partner.put("month", pMonth.toInt())
-               partner.put("year", pYear.toInt())
+               partner.put("day", safeInt(pDay, 1))
+               partner.put("month", safeInt(pMonth, 1))
+               partner.put("year", safeInt(pYear, 2000))
                partner.put("hour", pHour24)
-               partner.put("minute", pMinute.toInt())
+               partner.put("minute", safeInt(pMinute, 0))
                partner.put("city", pCityName)
                partner.put("latitude", pLatitude ?: JSONObject.NULL)
                partner.put("longitude", pLongitude ?: JSONObject.NULL)

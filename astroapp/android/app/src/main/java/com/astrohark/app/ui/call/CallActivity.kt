@@ -622,23 +622,31 @@ class CallActivity : ComponentActivity() {
     }
 
     private fun startBackgroundService() {
-        val serviceIntent = android.content.Intent(this, com.astrohark.app.CallForegroundService::class.java).apply {
-            action = "ACTION_START_CALL"
-            putExtra("partnerName", partnerName)
-            putExtra("callType", callType)
-        }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent)
-        } else {
-            startService(serviceIntent)
+        try {
+            val serviceIntent = android.content.Intent(this, com.astrohark.app.CallForegroundService::class.java).apply {
+                action = "ACTION_START_CALL"
+                putExtra("partnerName", partnerName)
+                putExtra("callType", callType)
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to start CallForegroundService: ${e.message}")
         }
     }
 
     private fun stopBackgroundService() {
-        val serviceIntent = android.content.Intent(this, com.astrohark.app.CallForegroundService::class.java).apply {
-            action = "ACTION_STOP_SERVICE"
+        try {
+            val serviceIntent = android.content.Intent(this, com.astrohark.app.CallForegroundService::class.java).apply {
+                action = "ACTION_STOP_SERVICE"
+            }
+            startService(serviceIntent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to stop CallForegroundService: ${e.message}")
         }
-        startService(serviceIntent)
     }
 
     /**

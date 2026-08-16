@@ -141,36 +141,44 @@ class MainActivity : AppCompatActivity() {
         // Only check if user is NOT logged in and we don't already have a pending referral
         if (tokenManager.isLoggedIn() || tokenManager.getPendingReferral() != null) return
 
-        val referrerClient = InstallReferrerClient.newBuilder(this).build()
-        referrerClient.startConnection(object : InstallReferrerStateListener {
-            override fun onInstallReferrerSetupFinished(responseCode: Int) {
-                when (responseCode) {
-                    InstallReferrerClient.InstallReferrerResponse.OK -> {
-                        try {
-                            val response: ReferrerDetails = referrerClient.installReferrer
-                            val referrerUrl = response.installReferrer
-                            Log.d(TAG, "Install Referrer URL: $referrerUrl")
-                            
-                            // Example: utm_source=google-play&utm_medium=organic&referrer=MYCODE
-                            if (referrerUrl != null && referrerUrl.contains("referrer=")) {
-                                val code = referrerUrl.split("referrer=").lastOrNull()?.split("&")?.firstOrNull()
-                                if (!code.isNullOrBlank()) {
-                                    Log.d(TAG, "Captured install referral code: $code")
-                                    tokenManager.savePendingReferral(code)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val referrerClient = InstallReferrerClient.newBuilder(this@MainActivity).build()
+                referrerClient.startConnection(object : InstallReferrerStateListener {
+                    override fun onInstallReferrerSetupFinished(responseCode: Int) {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            when (responseCode) {
+                                InstallReferrerClient.InstallReferrerResponse.OK -> {
+                                    try {
+                                        val response: ReferrerDetails = referrerClient.installReferrer
+                                        val referrerUrl = response.installReferrer
+                                        Log.d(TAG, "Install Referrer URL: $referrerUrl")
+                                        
+                                        // Example: utm_source=google-play&utm_medium=organic&referrer=MYCODE
+                                        if (referrerUrl != null && referrerUrl.contains("referrer=")) {
+                                            val code = referrerUrl.split("referrer=").lastOrNull()?.split("&")?.firstOrNull()
+                                            if (!code.isNullOrBlank()) {
+                                                Log.d(TAG, "Captured install referral code: $code")
+                                                tokenManager.savePendingReferral(code)
+                                            }
+                                        }
+                                        referrerClient.endConnection()
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error reading referrer details", e)
+                                    }
                                 }
+                                else -> Log.d(TAG, "InstallReferrer setup finished with code: $responseCode")
                             }
-                            referrerClient.endConnection()
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error reading referrer details", e)
                         }
                     }
-                    else -> Log.d(TAG, "InstallReferrer setup finished with code: $responseCode")
-                }
+                    override fun onInstallReferrerServiceDisconnected() {
+                        // Try again later if needed
+                    }
+                })
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to initialize InstallReferrerClient: ${e.message}")
             }
-            override fun onInstallReferrerServiceDisconnected() {
-                // Try again later if needed
-            }
-        })
+        }
     }
 
     private fun proceedToNextScreen() {

@@ -295,11 +295,62 @@ exports.updateSmtpConfig = async (req, res) => {
                     val = `"${val}"`;
                 }
                 updatedLines.push(`${k}=${val}`);
-            }
-        });
-
         fs.writeFileSync(envPath, updatedLines.join('\n'), 'utf8');
         res.json({ ok: true });
+    } catch (e) {
+        res.json({ ok: false, error: e.message });
+    }
+};
+
+exports.updateUserRole = async (req, res) => {
+    try {
+        const { userId, role, phone } = req.body;
+        let query = {};
+        if (userId) {
+            query.userId = userId;
+        } else if (phone) {
+            const cleanPhone = phone.replace(/[^0-9]/g, '').slice(-10);
+            query = {
+                $or: [
+                    { phone: cleanPhone },
+                    { phone: '91' + cleanPhone },
+                    { phone: '+91' + cleanPhone },
+                    { phone: new RegExp(cleanPhone + '$') }
+                ]
+            };
+        } else {
+            return res.json({ ok: false, error: 'User ID or Phone Number is required' });
+        }
+
+        const validRoles = ['client', 'astrologer', 'superadmin'];
+        if (!validRoles.includes(role)) {
+            return res.json({ ok: false, error: `Invalid role. Must be one of: ${validRoles.join(', ')}` });
+        }
+
+        const user = await User.findOne(query);
+        if (!user) return res.json({ ok: false, error: 'User not found' });
+
+        user.role = role;
+        if (role === 'astrologer') {
+            user.approvalStatus = 'approved';
+            user.isDocumentVerified = true;
+            user.isVerified = true;
+            user.price = user.price || 15;
+            user.ratePerMinute = user.ratePerMinute || 15;
+        }
+        await user.save();
+
+        console.log(`[Admin] Converted user ${user.name} (${user.phone}) to ${role.toUpperCase()}`);
+        res.json({
+            ok: true,
+            msg: `User ${user.name} (${user.phone}) successfully converted to ${role.toUpperCase()}`,
+            user: {
+                userId: user.userId,
+                name: user.name,
+                phone: user.phone,
+                role: user.role
+            }
+        });
     } catch (e) {
         res.json({ ok: false, error: e.message });
     }

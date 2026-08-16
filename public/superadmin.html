@@ -242,12 +242,38 @@
 
             <!-- Tab 3: Payouts/Astrologers -->
             <div id="admin-sect-payouts" class="admin-tab-section">
-                <h2 style="margin-bottom:20px;"><i class="fas fa-user-astronaut"></i> Astrologer Management</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom:20px;">
+                    <h2 style="margin:0;"><i class="fas fa-user-astronaut"></i> Astrologer Management</h2>
+                    <span id="adminAstroCount" style="background:rgba(245,158,11,0.15); color:#FBBF24; padding:6px 14px; border-radius:20px; font-weight:700; font-size:0.85rem; border:1px solid rgba(245,158,11,0.3);">0 Astrologers</span>
+                </div>
                 
-                <!-- (Sections moved to Home for 100% visibility) -->
+                <!-- Quick Role Converter for Astrologers -->
+                <div class="admin-card" style="margin-bottom:20px; background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(79,70,229,0.08)); border:1px solid rgba(245,158,11,0.25);">
+                    <h4 style="margin-top:0; color:#FBBF24; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-bolt"></i> ⚡ Quick User Role Converter (Client ↔ Astrologer ↔ Super Admin)
+                    </h4>
+                    <p style="color:var(--text-dim); font-size:0.85rem; margin-top:0; margin-bottom:12px;">Enter phone number (e.g. 6382379565) or User ID to instantly promote or switch any user's role.</p>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                        <input type="text" id="quickConvertInputAstro" placeholder="Enter Phone (e.g. 6382379565) or User ID..." class="app-input" style="flex:2; min-width:220px; margin:0;">
+                        <select id="quickConvertRoleAstro" style="flex:1; min-width:140px; padding:10px 14px; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:8px; font-weight:600; outline:none; cursor:pointer;">
+                            <option value="astrologer">🔮 ASTROLOGER</option>
+                            <option value="client">👤 CLIENT</option>
+                            <option value="superadmin">👑 SUPER ADMIN</option>
+                        </select>
+                        <button onclick="quickConvertRole('quickConvertInputAstro', 'quickConvertRoleAstro')" class="btn-admin" style="background:linear-gradient(135deg, #F59E0B, #D97706); color:#fff; font-weight:700; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;">
+                            <i class="fas fa-sync-alt"></i> Convert Role
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Astrologer Search Box -->
+                <div style="margin-bottom:20px;">
+                    <input type="text" id="adminAstroSearch" oninput="searchAdminAstros()"
+                        placeholder="🔍 Search astrologers by name, phone (+91...), or ID..." class="app-input" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); padding:12px 16px; border-radius:10px;">
+                </div>
 
                 <div id="adminAstroList"
-                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
                     <div class="loader"></div>
                 </div>
             </div>
@@ -297,10 +323,33 @@
 
             <!-- Tab Users: Client Management -->
             <div id="admin-sect-users" class="admin-tab-section">
-                <h2 style="margin-bottom:20px;"><i class="fas fa-users"></i> Client Management</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom:20px;">
+                    <h2 style="margin:0;"><i class="fas fa-users"></i> All Users & Client Management</h2>
+                    <span id="adminClientCount" style="background:rgba(59,130,246,0.15); color:#60A5FA; padding:6px 14px; border-radius:20px; font-weight:700; font-size:0.85rem; border:1px solid rgba(59,130,246,0.3);">0 Users</span>
+                </div>
+
+                <!-- Quick Role Converter for Users -->
+                <div class="admin-card" style="margin-bottom:20px; background:linear-gradient(135deg, rgba(59,130,246,0.08), rgba(245,158,11,0.08)); border:1px solid rgba(59,130,246,0.25);">
+                    <h4 style="margin-top:0; color:#60A5FA; display:flex; align-items:center; gap:8px;">
+                        <i class="fas fa-bolt"></i> ⚡ Quick Convert Role (Convert Any User to Astrologer / Admin)
+                    </h4>
+                    <p style="color:var(--text-dim); font-size:0.85rem; margin-top:0; margin-bottom:12px;">Type any user's mobile number or ID, choose the desired role, and convert instantly.</p>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                        <input type="text" id="quickConvertInputClient" placeholder="Enter Phone (e.g. 6382379565) or User ID..." class="app-input" style="flex:2; min-width:220px; margin:0;">
+                        <select id="quickConvertRoleClient" style="flex:1; min-width:140px; padding:10px 14px; background:rgba(0,0,0,0.6); color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:8px; font-weight:600; outline:none; cursor:pointer;">
+                            <option value="astrologer">🔮 ASTROLOGER</option>
+                            <option value="client">👤 CLIENT</option>
+                            <option value="superadmin">👑 SUPER ADMIN</option>
+                        </select>
+                        <button onclick="quickConvertRole('quickConvertInputClient', 'quickConvertRoleClient')" class="btn-admin" style="background:linear-gradient(135deg, #3B82F6, #1D4ED8); color:#fff; font-weight:700; padding:10px 20px; border-radius:8px; border:none; cursor:pointer;">
+                            <i class="fas fa-sync-alt"></i> Convert Role
+                        </button>
+                    </div>
+                </div>
+
                 <div style="margin-bottom:20px;">
                     <input type="text" id="adminUserSearch" oninput="searchAdminUsers()"
-                        placeholder="Search clients by name or phone..." class="app-input">
+                        placeholder="🔍 Search all users by name, phone (+91...), role, or ID..." class="app-input" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); padding:12px 16px; border-radius:10px;">
                 </div>
                 <div id="adminClientList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap:15px;">
                     <div class="loader"></div>
@@ -1306,39 +1355,83 @@
         function renderUsers() {
             const clientList = document.getElementById('adminClientList');
             const astroList = document.getElementById('adminAstroList');
+            const astroCount = document.getElementById('adminAstroCount');
+            const clientCount = document.getElementById('adminClientCount');
 
             const astros = adminUsersCache.filter(u => u.role === 'astrologer');
-            const clients = adminUsersCache.filter(u => u.role !== 'superadmin');
+            const allUsers = adminUsersCache;
 
-            astroList.innerHTML = astros.map(u => renderUserCard(u)).join('');
-            clientList.innerHTML = clients.map(u => renderUserCard(u)).join('');
+            if (astroCount) astroCount.textContent = `${astros.length} Astrologers`;
+            if (clientCount) clientCount.textContent = `${allUsers.length} Users`;
+
+            if (astroList) {
+                if (astros.length === 0) {
+                    astroList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 30px;">No Astrologers found. Use the Quick Converter above to add one.</div>';
+                } else {
+                    astroList.innerHTML = astros.map(u => renderUserCard(u)).join('');
+                }
+            }
+
+            if (clientList) {
+                if (allUsers.length === 0) {
+                    clientList.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 30px;">No Users found.</div>';
+                } else {
+                    clientList.innerHTML = allUsers.map(u => renderUserCard(u)).join('');
+                }
+            }
         }
 
         function renderUserCard(u) {
             const isAstro = u.role === 'astrologer';
+            const isSuperAdmin = u.role === 'superadmin';
+            
+            let roleBadge = '<span style="background: rgba(59, 130, 246, 0.15); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.3); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px;">CLIENT</span>';
+            if (isAstro) {
+                roleBadge = '<span style="background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px;">🔮 ASTROLOGER</span>';
+            } else if (isSuperAdmin) {
+                roleBadge = '<span style="background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 12px;">👑 SUPER ADMIN</span>';
+            }
+
             return `
-        <div class="admin-user-card">
+        <div class="admin-user-card" style="border: 1px solid ${isAstro ? 'rgba(245, 158, 11, 0.35)' : isSuperAdmin ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255,255,255,0.08)'}; background: ${isAstro ? 'rgba(245, 158, 11, 0.03)' : isSuperAdmin ? 'rgba(239, 68, 68, 0.03)' : 'var(--card-bg)'};">
           <div class="admin-user-header" style="align-items: center; gap: 12px; display: flex;">
-            <img src="${u.image || 'https://ui-avatars.com/api/?name=' + u.name + '&background=random'}"
-                 style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #eee;">
-            <div style="flex: 1;">
-              <div class="admin-user-name">${u.name} ${u.isVerified ? '<i class="fas fa-check-circle" style="color:#3B82F6;"></i>' : ''}</div>
-              <div style="font-size:0.8rem; color:#6B7280;">${u.phone} | ID: ${u.userId.slice(0, 6)}</div>
+            <img src="${u.image || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(u.name || 'User') + '&background=random'}"
+                 style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid ${isAstro ? '#F59E0B' : '#eee'}; flex-shrink: 0;">
+            <div style="flex: 1; min-width: 0;">
+              <div class="admin-user-name" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                <span>${u.name || 'Unnamed'}</span> 
+                ${u.isVerified ? '<i class="fas fa-check-circle" style="color:#3B82F6;" title="Verified"></i>' : ''}
+                ${roleBadge}
+              </div>
+              <div style="font-size:0.8rem; color:#9CA3AF; margin-top: 3px;">
+                <i class="fas fa-phone-alt" style="font-size:0.7rem; color:#38BDF8;"></i> <strong style="color:#fff;">${u.phone || 'N/A'}</strong> | ID: <span style="font-family:monospace; opacity:0.8;">${(u.userId || '').slice(0, 8)}...</span>
+              </div>
             </div>
-            <div style="text-align:right;">
-              <div style="font-weight:700; color:#059669;">₹${u.walletBalance || 0}</div>
-              <select onchange="changeUserRole('${u.userId}', this.value)" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; font-size: 0.75rem; padding: 2px 4px; margin-top: 5px; outline: none; cursor: pointer;">
-                  <option value="client" ${u.role === 'client' ? 'selected' : ''}>CLIENT</option>
-                  <option value="astrologer" ${u.role === 'astrologer' ? 'selected' : ''}>ASTROLOGER</option>
-                  <option value="superadmin" ${u.role === 'superadmin' ? 'selected' : ''}>SUPER ADMIN</option>
-              </select>
+            <div style="text-align:right; flex-shrink: 0;">
+              <div style="font-weight:700; color:#10B981; font-size: 0.95rem;">₹${u.walletBalance || 0}</div>
+              <div style="margin-top: 4px;">
+                <select onchange="changeUserRole('${u.userId}', this.value)" style="background: #1e293b; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 0.72rem; padding: 4px 6px; outline: none; cursor: pointer; font-weight: 600;">
+                    <option value="client" ${u.role === 'client' ? 'selected' : ''}>👤 Client</option>
+                    <option value="astrologer" ${u.role === 'astrologer' ? 'selected' : ''}>🔮 Astrologer</option>
+                    <option value="superadmin" ${u.role === 'superadmin' ? 'selected' : ''}>👑 Super Admin</option>
+                </select>
+              </div>
             </div>
           </div>
-          <div class="admin-actions">
+
+          <!-- Quick Convert Role Action Buttons -->
+          <div style="display: flex; gap: 6px; margin: 10px 0 6px; flex-wrap: wrap; background: rgba(0,0,0,0.25); padding: 8px 10px; border-radius: 8px; align-items: center;">
+            <span style="font-size: 0.72rem; color: #94A3B8; margin-right: 4px;"><i class="fas fa-magic"></i> Convert:</span>
+            ${u.role !== 'astrologer' ? `<button onclick="changeUserRole('${u.userId}', 'astrologer')" style="background: rgba(245, 158, 11, 0.2); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 4px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer;"><i class="fas fa-user-astronaut"></i> Make Astrologer</button>` : ''}
+            ${u.role !== 'client' ? `<button onclick="changeUserRole('${u.userId}', 'client')" style="background: rgba(59, 130, 246, 0.2); color: #60A5FA; border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 4px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer;"><i class="fas fa-user"></i> Make Client</button>` : ''}
+            ${u.role !== 'superadmin' ? `<button onclick="changeUserRole('${u.userId}', 'superadmin')" style="background: rgba(239, 68, 68, 0.2); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 4px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer;"><i class="fas fa-crown"></i> Make Admin</button>` : ''}
+          </div>
+
+          <div class="admin-actions" style="margin-top: 8px;">
             ${isAstro ? `<button class="btn-admin" style="background: #4F46E5; color: white;" onclick="showPerformance('${u.userId}')"><i class="fas fa-chart-line"></i> Stats</button>` : ''}
             <button class="btn-admin btn-edit" style="background: var(--primary); color: #000;" onclick="editUser('${u.userId}')"><i class="fas fa-edit"></i> Edit</button>
             <button class="btn-admin btn-wallet" onclick="adminWallet('${u.userId}')"><i class="fas fa-plus"></i> Wallet</button>
-            <button class="btn-admin btn-block" onclick="toggleBan('${u.userId}', ${!u.isBanned})" style="background:${u.isBanned ? '#EF4444' : '#eee'}; color:${u.isBanned ? 'white' : '#666'};">
+            <button class="btn-admin btn-block" onclick="toggleBan('${u.userId}', ${!u.isBanned})" style="background:${u.isBanned ? '#EF4444' : '#334155'}; color:${u.isBanned ? 'white' : '#cbd5e1'};">
               <i class="fas fa-ban"></i> ${u.isBanned ? 'Unblock' : 'Block'}
             </button>
             <button class="btn-admin" style="background:#dc2626; color:white;" onclick="deleteUser('${u.userId}')"><i class="fas fa-trash"></i> Delete</button>
@@ -1590,11 +1683,98 @@
             }
         };
 
-        window.searchAdminUsers = () => {
-            const q = document.getElementById('adminUserSearch').value.toLowerCase();
-            const filtered = adminUsersCache.filter(u => u.name?.toLowerCase().includes(q) || u.phone?.includes(q));
-            document.getElementById('adminClientList').innerHTML = filtered.map(u => renderUserCard(u)).join('');
+        window.searchAdminAstros = () => {
+            const q = (document.getElementById('adminAstroSearch')?.value || '').toLowerCase().trim();
+            const astros = adminUsersCache.filter(u => u.role === 'astrologer');
+            const filtered = q ? astros.filter(u => 
+                (u.name && u.name.toLowerCase().includes(q)) || 
+                (u.phone && u.phone.includes(q)) || 
+                (u.userId && u.userId.toLowerCase().includes(q))
+            ) : astros;
+
+            const astroList = document.getElementById('adminAstroList');
+            if (astroList) {
+                if (filtered.length === 0) {
+                    astroList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 30px;">No astrologers match "${q}"</div>`;
+                } else {
+                    astroList.innerHTML = filtered.map(u => renderUserCard(u)).join('');
+                }
+            }
         };
+
+        window.searchAdminUsers = () => {
+            const q = (document.getElementById('adminUserSearch')?.value || '').toLowerCase().trim();
+            const filtered = q ? adminUsersCache.filter(u => 
+                (u.name && u.name.toLowerCase().includes(q)) || 
+                (u.phone && u.phone.includes(q)) || 
+                (u.role && u.role.toLowerCase().includes(q)) ||
+                (u.userId && u.userId.toLowerCase().includes(q))
+            ) : adminUsersCache;
+
+            const clientList = document.getElementById('adminClientList');
+            if (clientList) {
+                if (filtered.length === 0) {
+                    clientList.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 30px;">No users match "${q}"</div>`;
+                } else {
+                    clientList.innerHTML = filtered.map(u => renderUserCard(u)).join('');
+                }
+            }
+        };
+
+        window.quickConvertRole = async (inputId, roleSelectId) => {
+            const inputVal = (document.getElementById(inputId)?.value || '').trim();
+            const targetRole = document.getElementById(roleSelectId)?.value || 'astrologer';
+
+            if (!inputVal) {
+                alert('Please enter a phone number (e.g. 6382379565) or User ID');
+                return;
+            }
+
+            if (!confirm(`Convert user "${inputVal}" to ${targetRole.toUpperCase()}?`)) {
+                return;
+            }
+
+            // Find in cache first if possible
+            const cleanPhone = inputVal.replace(/[^0-9]/g, '').slice(-10);
+            const userInCache = adminUsersCache.find(u => 
+                u.userId === inputVal || 
+                (cleanPhone && u.phone && u.phone.includes(cleanPhone))
+            );
+
+            if (userInCache) {
+                socket.emit('admin-update-role', { userId: userInCache.userId, role: targetRole }, (res) => {
+                    if (res && res.ok) {
+                        alert(`✅ Success! "${userInCache.name}" (${userInCache.phone}) is now an ${targetRole.toUpperCase()}.`);
+                        if (document.getElementById(inputId)) document.getElementById(inputId).value = '';
+                        fetchAllUsers();
+                    } else {
+                        fallbackHttpRoleConvert(inputVal, targetRole, inputId);
+                    }
+                });
+            } else {
+                fallbackHttpRoleConvert(inputVal, targetRole, inputId);
+            }
+        };
+
+        async function fallbackHttpRoleConvert(inputVal, targetRole, inputId) {
+            try {
+                const res = await fetch('/api/admin/update-role', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: inputVal, userId: inputVal, role: targetRole })
+                }).then(r => r.json());
+
+                if (res && res.ok) {
+                    alert(`✅ ${res.msg || 'User role converted successfully!'}`);
+                    if (inputId && document.getElementById(inputId)) document.getElementById(inputId).value = '';
+                    fetchAllUsers();
+                } else {
+                    alert(`❌ Error: ${res?.error || 'User not found'}`);
+                }
+            } catch (err) {
+                alert(`❌ Request error: ${err.message}`);
+            }
+        }
 
         // Academy
         async function fetchAcademyVideos() {

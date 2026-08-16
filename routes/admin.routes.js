@@ -10,6 +10,7 @@ router.delete('/academy/videos/:id', adminController.deleteVideo);
 router.get('/deletion-requests', adminController.getDeletionRequests);
 router.post('/process-deletion', adminController.processDeletion);
 router.post('/update-balance', adminController.updateBalance);
+router.post('/update-role', adminController.updateUserRole);
 router.get('/astrologers/pending', adminController.getPendingAstrologers);
 router.post('/astrologers/approve', adminController.approveAstrologer);
 router.get('/astrologer-performance/:astrologerId', adminController.getAstrologerPerformance);

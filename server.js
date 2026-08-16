@@ -2366,12 +2366,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on('admin-update-role', async (data, cb) => {
-    if (!await checkAdmin(socket.id)) return cb({ ok: false });
+    if (!await checkAdmin(socket.id)) return cb({ ok: false, error: 'Unauthorized' });
     try {
       const updates = { role: data.role };
       if (data.role === 'astrologer') {
-        updates.walletBalance = 0;
-        updates.approvalStatus = 'approved'; // Automatically approve admin assigned roles
+        updates.approvalStatus = 'approved';
+        updates.isDocumentVerified = true;
+        updates.isVerified = true;
       }
       await User.updateOne({ userId: data.userId }, updates);
 
@@ -2384,11 +2385,11 @@ io.on('connection', (socket) => {
 
         io.to(sId).emit('role-updated', { role: data.role, user: formattedUser });
         io.to(sId).emit('app-notification', { text: `Your role has been updated to ${data.role}!` });
-        if (data.role === 'astrologer') io.to(sId).emit('wallet-update', { balance: 0 });
       }
 
+      serviceBroadcastAstroUpdate(io, SERVER_URL);
       cb({ ok: true });
-    } catch (e) { cb({ ok: false }); }
+    } catch (e) { cb({ ok: false, error: e.message }); }
   });
 
   socket.on('admin-delete-user', async (data, cb) => {

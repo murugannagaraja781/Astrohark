@@ -8,24 +8,15 @@ async function generateUniqueReferralCode(name) {
     const User = mongoose.models.User || require('../models/User');
 
     for (let attempts = 0; attempts < 15; attempts++) {
-        const randomNum = Math.floor(1000 + Math.random() * 9000);
-        const code = `${base}${randomNum}`;
+        const randomStr = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6 hex chars = 16.7M combinations
+        const code = `${base}${randomStr}`;
         const existing = await User.findOne({ referralCode: code }).select('_id').lean();
         if (!existing) {
             return code;
         }
     }
 
-    // Fallback with 6 random hex characters if numeric collisions persist
-    for (let attempts = 0; attempts < 10; attempts++) {
-        const code = `${base}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-        const existing = await User.findOne({ referralCode: code }).select('_id').lean();
-        if (!existing) {
-            return code;
-        }
-    }
-
-    return `REF${Date.now().toString(36).toUpperCase()}`;
+    return `REF${Date.now().toString(36).toUpperCase()}${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
 }
 
 module.exports = { generateUniqueReferralCode };

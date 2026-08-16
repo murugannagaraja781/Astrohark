@@ -151,13 +151,27 @@ exports.verifyOtp = async (req, res) => {
 
             const userId = crypto.randomUUID();
             const name = `User_${crypto.randomBytes(2).toString('hex')}`;
-            user = await User.create({
-                userId, phone, name, role: 'client',
-                walletBalance: initialBalance,
-                referredBy: referredBy,
-                referralCode: await generateUniqueReferralCode(name),
-                isNewUser: true
-            });
+            
+            let created = false;
+            for (let i = 0; i < 5 && !created; i++) {
+                try {
+                    const refCode = await generateUniqueReferralCode(name);
+                    user = await User.create({
+                        userId, phone, name, role: 'client',
+                        walletBalance: initialBalance,
+                        referredBy: referredBy,
+                        referralCode: refCode,
+                        isNewUser: true
+                    });
+                    created = true;
+                } catch (createErr) {
+                    if (createErr.code === 11000 && createErr.keyPattern?.referralCode) {
+                        console.warn(`[Auth] ReferralCode collision on attempt ${i + 1}, retrying...`);
+                        continue;
+                    }
+                    throw createErr;
+                }
+            }
         } else if (!user.referralCode) {
             user.referralCode = await generateUniqueReferralCode(user.name);
             await user.save();

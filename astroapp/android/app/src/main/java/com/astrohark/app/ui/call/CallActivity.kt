@@ -679,6 +679,10 @@ class CallActivity : ComponentActivity() {
      * Check ICE connection state and attempt restart if connection is unstable
      */
     private fun checkAndRestoreConnection() {
+        if (!::peerConnection.isInitialized) {
+            Log.w(TAG, "checkAndRestoreConnection: PeerConnection not initialized yet, skipping")
+            return
+        }
         try {
             val iceState = peerConnection.iceConnectionState()
             Log.d(TAG, "ICE Connection State after edit: $iceState")
@@ -1150,11 +1154,6 @@ class CallActivity : ComponentActivity() {
             runOnUiThread {
                 if (info.sessionId == sessionId) {
                     callDurationSeconds = info.elapsedSeconds
-                    // AUTO-CUT: End call if elapsed reaches 60s
-                    if (info.elapsedSeconds >= 60 && isBillingActive) {
-                        Log.d(TAG, "AUTO-CUT: 60 seconds reached, ending call on client")
-                        endCall()
-                    }
                 }
             }
         }
@@ -1329,7 +1328,11 @@ class CallActivity : ComponentActivity() {
         SocketManager.emitSignal(payload)
     }
 
+    private var isCleanedUp = false
+
     private fun closeCallMediaStreams() {
+        if (isCleanedUp) return
+        isCleanedUp = true
         try {
             Log.d(TAG, "closeCallMediaStreams: Disconnecting audio & video WebRTC connection")
             localAudioTrack?.setEnabled(false)
@@ -1363,6 +1366,11 @@ class CallActivity : ComponentActivity() {
                     Log.e(TAG, "Error closing peerConnection", e)
                 }
             }
+
+            try {
+                audioManager.mode = android.media.AudioManager.MODE_NORMAL
+                audioManager.isSpeakerphoneOn = false
+            } catch (e: Exception) {}
 
             stopBackgroundService()
         } catch (e: Throwable) {

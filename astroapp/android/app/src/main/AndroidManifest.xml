@@ -146,7 +146,8 @@
         <activity android:name=".ui.chat.FullScreenImageActivity" android:theme="@style/Theme.FCMCallApp" />
         <activity android:name=".ui.call.CallActivity"
             android:showWhenLocked="true"
-            android:turnScreenOn="true" />
+            android:turnScreenOn="true"
+            android:launchMode="singleTop" />
         <activity android:name=".ui.intake.IntakeActivity" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ui.chart.ChartDisplayActivity"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
@@ -184,9 +185,7 @@
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:excludeFromRecents="true"
-            android:noHistory="true"
-            android:launchMode="singleInstance"
-            android:taskAffinity=""
+            android:launchMode="singleTop"
             android:theme="@style/Theme.FCMCallApp.FullScreen" />
 
         <service

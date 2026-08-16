@@ -295,6 +295,9 @@ exports.updateSmtpConfig = async (req, res) => {
                     val = `"${val}"`;
                 }
                 updatedLines.push(`${k}=${val}`);
+            }
+        });
+
         fs.writeFileSync(envPath, updatedLines.join('\n'), 'utf8');
         res.json({ ok: true });
     } catch (e) {

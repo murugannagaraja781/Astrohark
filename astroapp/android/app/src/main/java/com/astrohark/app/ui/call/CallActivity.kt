@@ -1150,6 +1150,11 @@ class CallActivity : ComponentActivity() {
             runOnUiThread {
                 if (info.sessionId == sessionId) {
                     callDurationSeconds = info.elapsedSeconds
+                    // AUTO-CUT: End call if elapsed reaches 60s
+                    if (info.elapsedSeconds >= 60 && isBillingActive) {
+                        Log.d(TAG, "AUTO-CUT: 60 seconds reached, ending call on client")
+                        endCall()
+                    }
                 }
             }
         }

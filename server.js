@@ -2136,6 +2136,16 @@ io.on('connection', (socket) => {
         continue;
       }
 
+      // AUTO-CUT: End session at 60 seconds (Astrologer & Client)
+      if (session.elapsedBillableSeconds >= 60) {
+        console.log(`[Ticker] AUTO-CUT: Ending session ${sessionId} after 60 seconds.`);
+        billingService.endSessionRecord(sessionId, () => serviceBroadcastAstroUpdate(io, SERVER_URL), 60);
+        io.to(sessionId).emit('session-ended', { sessionId, reason: 'time_limit_60s' });
+        if (session.clientId) io.to(session.clientId).emit('session-ended', { sessionId, reason: 'time_limit_60s' });
+        if (session.astrologerId) io.to(session.astrologerId).emit('session-ended', { sessionId, reason: 'time_limit_60s' });
+        continue;
+      }
+
       // Check balance at minute boundaries (every 60 seconds)
       if (session.elapsedBillableSeconds > 0 && session.elapsedBillableSeconds % 60 === 0) {
         const client = await User.findOne({ userId: session.clientId });

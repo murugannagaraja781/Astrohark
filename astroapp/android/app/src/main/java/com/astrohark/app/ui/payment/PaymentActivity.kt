@@ -125,7 +125,7 @@ class PaymentActivity : AppCompatActivity(), PaymentResultWithDataListener {
                     val options = JSONObject().apply {
                         put("name", "AstroHark")
                         put("order_id", order.orderId)
-                        put("amount", (amount * 100).toInt()) // Razorpay expects paisa
+                        put("amount", order.amount ?: (amount * 1.18 * 100).toInt()) // Razorpay expects paisa (including 18% GST)
                         put("currency", "INR")
                         put("prefill.name", user.name)
                         put("prefill.contact", user.phone ?: "")

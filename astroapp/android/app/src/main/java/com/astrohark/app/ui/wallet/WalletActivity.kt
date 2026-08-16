@@ -535,9 +535,9 @@ fun WalletScreen(
                                         }
                                     }
                                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
-                                        val total = tc + (tc * 0.18).toInt()
+                                        val total = tc * 1.18
                                         Text("Total (incl. GST):", color = CosmicAppTheme.colors.accent, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                        Text("₹$total", color = CosmicAppTheme.colors.accent, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
+                                        Text("₹ ${"%,.2f".format(total)}", color = CosmicAppTheme.colors.accent, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Black)
                                     }
                                 }
                             }
@@ -546,8 +546,7 @@ fun WalletScreen(
                                 text = stringResource(R.string.invest_now),
                                 onClick = {
                                     val amt = amountInput.toIntOrNull() ?: 0
-                                    val pay = amt + (amt * 0.18).toInt()
-                                    if (pay >= 1) onAddMoney(pay, appliedCoupon)
+                                    if (amt >= 1) onAddMoney(amt, appliedCoupon)
                                 },
                                 modifier = Modifier.fillMaxWidth()
                             )

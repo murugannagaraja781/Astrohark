@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
+import android.content.Intent
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,7 +86,9 @@ fun HistoryScreen(userId: String, onBack: () -> Unit) {
                                     endTime = if (obj.has("sessionEndAt") && obj.optLong("sessionEndAt") > 0) obj.optLong("sessionEndAt") else obj.optLong("endTime", 0),
                                     duration = obj.optInt("duration", 0),
                                     amount = if (isAstro) obj.optDouble("totalEarned", 0.0) else obj.optDouble("totalCharged", 0.0),
-                                    isEarned = isAstro
+                                    isEarned = isAstro,
+                                    clientId = obj.optString("clientId").takeIf { it.isNotEmpty() } ?: obj.optString("fromUserId"),
+                                    astrologerId = obj.optString("astrologerId").takeIf { it.isNotEmpty() } ?: obj.optString("toUserId")
                                 )
                             )
                         }
@@ -163,12 +167,27 @@ fun HistoryCard(item: SessionHistoryItem) {
     val colors = CosmicAppTheme.colors
     val dateFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
     val startTimeStr = if (item.startTime > 0) dateFormat.format(Date(item.startTime)) else "N/A"
+    val context = LocalContext.current
 
     Card(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = colors.cardBg),
         elevation = CardDefaults.cardElevation(4.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (item.type == "chat") {
+                    Modifier.clickable {
+                        val intent = Intent(context, com.astrohark.app.ui.chat.ChatActivity::class.java).apply {
+                            putExtra("sessionId", item.id)
+                            putExtra("toUserId", if (item.isEarned) item.clientId else item.astrologerId)
+                            putExtra("toUserName", item.partnerName)
+                            putExtra("isHistoryMode", true)
+                        }
+                        context.startActivity(intent)
+                    }
+                } else Modifier
+            )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -225,6 +244,8 @@ data class SessionHistoryItem(
     val endTime: Long,
     val duration: Int,
     val amount: Double,
-    val isEarned: Boolean
+    val isEarned: Boolean,
+    val clientId: String?,
+    val astrologerId: String?
 )
 

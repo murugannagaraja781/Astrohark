@@ -71,6 +71,7 @@ class ChatActivity : ComponentActivity() {
 
     // Flag to ensure chart opening is performed only once per session
     private var chartOpened = false
+    private var isHistoryMode = false
 
     private val viewModel: ChatViewModel by viewModels()
     private lateinit var audioPlayer: ChatAudioPlayer
@@ -149,14 +150,18 @@ class ChatActivity : ComponentActivity() {
                 sessionId?.let { nm.cancel(it.hashCode()) }
                 nm.cancelAll()
                 // Stop CallForegroundService to stop ringtone and vibrate loops
-                stopService(Intent(this, com.astrohark.app.CallForegroundService::class.java))
+                if (!isHistoryMode) {
+                    stopService(Intent(this, com.astrohark.app.CallForegroundService::class.java))
+                }
             } catch (e: Exception) { e.printStackTrace() }
 
             val role = TokenManager(this).getUserSession()?.role
 
-            // --- GLOBAL STATE FIX: Mark chat as active to prevent incoming calls during session ---
-            com.astrohark.app.utils.CallState.isCallActive = true
-            com.astrohark.app.utils.CallState.currentSessionId = sessionId
+            if (!isHistoryMode) {
+                // --- GLOBAL STATE FIX: Mark chat as active to prevent incoming calls during session ---
+                com.astrohark.app.utils.CallState.isCallActive = true
+                com.astrohark.app.utils.CallState.currentSessionId = sessionId
+            }
             
             audioPlayer = ChatAudioPlayer(this)
             
@@ -204,40 +209,43 @@ class ChatActivity : ComponentActivity() {
                                  Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
                              }
                          },
-                        onSessionFinished = { finishSessionAndNavigate() },
-                        onSubmitReview = { rating, comment -> submitReview(rating, comment) },
-                        isAstrologer = role == "astrologer",
-                        toUserId = toUserId,
-                        sessionId = sessionId,
-                        remainingTime = remainingTime,
-                        clientBirthData = clientBirthData
+                         onSessionFinished = { finishSessionAndNavigate() },
+                         onSubmitReview = { rating, comment -> submitReview(rating, comment) },
+                         isAstrologer = role == "astrologer",
+                         toUserId = toUserId,
+                         sessionId = sessionId,
+                         remainingTime = remainingTime,
+                         clientBirthData = clientBirthData,
+                         isHistoryMode = isHistoryMode
                     )
                 }
             }
-            setupObservers()
-            isTimerStarted = true
-            timerHandler.post(timerRunnable)
+            if (!isHistoryMode) {
+                setupObservers()
+                isTimerStarted = true
+                timerHandler.post(timerRunnable)
 
-            if (role == "astrologer" && myUserId != null) {
-                com.astrohark.app.AstrologerStatusService.startService(this, myUserId)
-            }
+                if (role == "astrologer" && myUserId != null) {
+                    com.astrohark.app.AstrologerStatusService.startService(this, myUserId)
+                }
 
-            // --- STABILITY FIX: Immediate registration and answer emission ---
-            if (myUserId != null) {
-                SocketManager.registerUser(myUserId) {
-                    if (pendingAccept && !hasEmittedAnswer && sessionId != null && toUserId != null) {
-                        pendingAccept = false
-                        hasEmittedAnswer = true
-                        viewModel.acceptSession(sessionId!!, toUserId!!)
-                        android.util.Log.d("ChatActivity", "Immediate answer-session emitted for $sessionId")
-                    }
-                    if (role == "client" && clientBirthData != null && sessionId != null && toUserId != null) {
-                        SocketManager.getSocket()?.emit("client-birth-chart", JSONObject().apply {
-                            put("sessionId", sessionId)
-                            put("toUserId", toUserId)
-                            put("birthData", clientBirthData)
-                        })
-                        android.util.Log.d("ChatActivity", "Auto-emitted client-birth-chart for session $sessionId on creation")
+                // --- STABILITY FIX: Immediate registration and answer emission ---
+                if (myUserId != null) {
+                    SocketManager.registerUser(myUserId) {
+                        if (pendingAccept && !hasEmittedAnswer && sessionId != null && toUserId != null) {
+                            pendingAccept = false
+                            hasEmittedAnswer = true
+                            viewModel.acceptSession(sessionId!!, toUserId!!)
+                            android.util.Log.d("ChatActivity", "Immediate answer-session emitted for $sessionId")
+                        }
+                        if (role == "client" && clientBirthData != null && sessionId != null && toUserId != null) {
+                            SocketManager.getSocket()?.emit("client-birth-chart", JSONObject().apply {
+                                put("sessionId", sessionId)
+                                put("toUserId", toUserId)
+                                put("birthData", clientBirthData)
+                            })
+                            android.util.Log.d("ChatActivity", "Auto-emitted client-birth-chart for session $sessionId on creation")
+                        }
                     }
                 }
             }
@@ -279,6 +287,7 @@ class ChatActivity : ComponentActivity() {
     private var pendingAccept = false
 
     private fun handleIntent(intent: Intent?): Boolean {
+        isHistoryMode = intent?.getBooleanExtra("isHistoryMode", false) == true
         toUserId = intent?.getStringExtra("toUserId")
         sessionId = intent?.getStringExtra("sessionId")
         val birthDataStr = intent?.getStringExtra("birthData")
@@ -308,9 +317,10 @@ class ChatActivity : ComponentActivity() {
         }
         if (sessionId != null) {
               viewModel.loadHistory(sessionId!!)
-              viewModel.joinSessionSafe(sessionId!!)
-              
-              if (toUserId != null) {
+              if (!isHistoryMode) {
+                  viewModel.joinSessionSafe(sessionId!!)
+                  
+                  if (toUserId != null) {
                   lifecycleScope.launch(Dispatchers.IO) {
                       try {
                           val userSession = TokenManager(this@ChatActivity).getUserSession()
@@ -375,6 +385,7 @@ class ChatActivity : ComponentActivity() {
                           android.util.Log.e("ChatActivity", "Failed to fetch wallet balance or astro price", e)
                       }
                   }
+              }
               }
         }
         return true
@@ -563,10 +574,11 @@ fun ChatScreen(
     toUserId: String?,
     sessionId: String?,
     remainingTime: String,
-    clientBirthData: JSONObject? = null
+    clientBirthData: JSONObject? = null,
+    isHistoryMode: Boolean = false
 ) {
-    // Disable physical back button press and swipe back gesture
-    BackHandler(enabled = true) {
+    // Disable physical back button press and swipe back gesture in active chat mode
+    BackHandler(enabled = !isHistoryMode) {
         // Do nothing to prevent exiting the chat screen
     }
 
@@ -637,21 +649,21 @@ fun ChatScreen(
                             color = CosmicAppTheme.colors.accent,
                             maxLines = 1
                         )
-                         if (isTyping) {
+                         if (!isHistoryMode && isTyping) {
                              Text(
                                  text = "Typing...",
                                  style = MaterialTheme.typography.labelSmall,
                                  color = Color(0xFF00C853), // Green for typing
                                  fontWeight = FontWeight.Bold
                              )
-                         } else if (remainingTime.isNotEmpty() && remainingTime != "00:00") {
+                         } else if (!isHistoryMode && remainingTime.isNotEmpty() && remainingTime != "00:00") {
                               Text(
                                   text = "Time: $remainingTime",
                                   style = MaterialTheme.typography.labelSmall,
                                   color = Color.Black,
                                   fontWeight = FontWeight.Bold
                               )
-                         } else {
+                         } else if (!isHistoryMode) {
                               Text(
                                   text = "Online",
                                   style = MaterialTheme.typography.labelSmall,
@@ -660,28 +672,40 @@ fun ChatScreen(
                          }
                     }
                 },
-                navigationIcon = {},
-                actions = {
-                    Text(
-                        text = sessionDuration,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = if (isAstrologer) Color.Black else Color.Red,
-                        modifier = Modifier.padding(end = AstroDimens.Medium)
-                    )
-                    IconButton(onClick = onEditIntake) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = "Intake",
-                            tint = CosmicAppTheme.colors.accent
-                        )
+                navigationIcon = {
+                    if (isHistoryMode) {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Back",
+                                tint = CosmicAppTheme.colors.accent
+                            )
+                        }
                     }
-                    TextButton(onClick = onEndChat) {
+                },
+                actions = {
+                    if (!isHistoryMode) {
                         Text(
-                            text = "End",
-                            color = Color.Red,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold
+                            text = sessionDuration,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (isAstrologer) Color.Black else Color.Red,
+                            modifier = Modifier.padding(end = AstroDimens.Medium)
                         )
+                        IconButton(onClick = onEditIntake) {
+                            Icon(
+                                 imageVector = Icons.Default.Edit,
+                                 contentDescription = "Intake",
+                                 tint = CosmicAppTheme.colors.accent
+                            )
+                        }
+                        TextButton(onClick = onEndChat) {
+                            Text(
+                                text = "End",
+                                color = Color.Red,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -691,104 +715,106 @@ fun ChatScreen(
             )
         },
         bottomBar = {
-            ChatInputBar(
-                text = inputText,
-                replyingTo = replyingTo,
-                onTextChange = {
-                    inputText = it
-                    if (toUserId != null) viewModel.sendTyping(toUserId)
-                },
-                onCancelReply = { replyingTo = null },
-                onSend = {
-                    if (inputText.isNotBlank() && toUserId != null && sessionId != null) {
-                         var finalText = inputText
-                         if (replyingTo != null) {
-                             // Prepend Reply Quote
-                             val snippet = (replyingTo!!.text ?: "").take(50).replace("\n", " ")
-                             finalText = "> Replying to: $snippet\n$inputText"
-                         }
+            if (!isHistoryMode) {
+                ChatInputBar(
+                    text = inputText,
+                    replyingTo = replyingTo,
+                    onTextChange = {
+                        inputText = it
+                        if (toUserId != null) viewModel.sendTyping(toUserId)
+                    },
+                    onCancelReply = { replyingTo = null },
+                    onSend = {
+                        if (inputText.isNotBlank() && toUserId != null && sessionId != null) {
+                             var finalText = inputText
+                             if (replyingTo != null) {
+                                 // Prepend Reply Quote
+                                 val snippet = (replyingTo!!.text ?: "").take(50).replace("\n", " ")
+                                 finalText = "> Replying to: $snippet\n$inputText"
+                             }
 
-                         val payload = org.json.JSONObject().apply {
-                            put("toUserId", toUserId)
-                            put("sessionId", sessionId)
-                            put("messageId", java.util.UUID.randomUUID().toString())
-                            put("timestamp", System.currentTimeMillis())
-                            put("content", org.json.JSONObject().put("text", finalText))
-                         }
-                         viewModel.sendMessage(payload)
-                         com.astrohark.app.utils.SoundManager.playSentSound()
-                         inputText = ""
-                         replyingTo = null
-                         viewModel.sendStopTyping(toUserId)
-                    }
-                },
-                onAttachImage = {
-                    imagePickerLauncher.launch("image/*")
-                },
-                onViewChart = if (isAstrologer) onViewChart else null,
-                clientBirthData = clientBirthData,
-                isRecording = isRecording,
-                recordingDuration = recordingDuration,
-                onStartRecording = {
-                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                        voiceRecorder.startRecording()
-                        isRecording = true
-                        recordingDuration = "00:00"
-                        recordingTimerJob = coroutineScope.launch {
-                            var seconds = 0
-                            while (isRecording) {
-                                delay(1000)
-                                seconds++
-                                recordingDuration = String.format(java.util.Locale.US, "%02d:%02d", seconds / 60, seconds % 60)
-                            }
+                             val payload = org.json.JSONObject().apply {
+                                put("toUserId", toUserId)
+                                put("sessionId", sessionId)
+                                put("messageId", java.util.UUID.randomUUID().toString())
+                                put("timestamp", System.currentTimeMillis())
+                                put("content", org.json.JSONObject().put("text", finalText))
+                             }
+                             viewModel.sendMessage(payload)
+                             com.astrohark.app.utils.SoundManager.playSentSound()
+                             inputText = ""
+                             replyingTo = null
+                             viewModel.sendStopTyping(toUserId)
                         }
-                    } else {
-                        recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    }
-                },
-                onStopRecording = {
-                    if (isRecording) {
-                        isRecording = false
-                        recordingTimerJob?.cancel()
-                        val durationMs = voiceRecorder.stopRecording()
-                        val durationSec = (durationMs / 1000).toInt()
-                        
-                        if (durationMs > 1000) {
-                            val audioPath = voiceRecorder.currentOutputFile
-                            val file = File(audioPath)
-                            if (file.exists() && toUserId != null && sessionId != null) {
-                                coroutineScope.launch {
-                                    try {
-                                            if (file.length() == 0L) {
-                                                withContext(Dispatchers.Main) {
-                                                    android.widget.Toast.makeText(context, "Error: Audio file is empty. Try recording again.", android.widget.Toast.LENGTH_LONG).show()
-                                                }
-                                                return@launch
-                                            }
-                                            
-                                            withContext(Dispatchers.Main) {
-                                                android.widget.Toast.makeText(context, "Sending voice message...", android.widget.Toast.LENGTH_SHORT).show()
-                                            }
-                                            delay(1000) // Increase delay to ensure file is completely written and unlocked by OS
-                                            
-                                            val durStr = String.format(java.util.Locale.US, "%02d:%02d", durationSec / 60, durationSec % 60)
-                                            viewModel.uploadFileAndSend(file, "audio", sessionId, toUserId, durStr)
-                                    } catch (e: Exception) {
-                                        withContext(Dispatchers.Main) {
-                                            android.widget.Toast.makeText(context, "Failed to send: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
-                                        }
-                                        e.printStackTrace()
-                                    }
+                    },
+                    onAttachImage = {
+                        imagePickerLauncher.launch("image/*")
+                    },
+                    onViewChart = if (isAstrologer) onViewChart else null,
+                    clientBirthData = clientBirthData,
+                    isRecording = isRecording,
+                    recordingDuration = recordingDuration,
+                    onStartRecording = {
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                            voiceRecorder.startRecording()
+                            isRecording = true
+                            recordingDuration = "00:00"
+                            recordingTimerJob = coroutineScope.launch {
+                                var seconds = 0
+                                while (isRecording) {
+                                    delay(1000)
+                                    seconds++
+                                    recordingDuration = String.format(java.util.Locale.US, "%02d:%02d", seconds / 60, seconds % 60)
                                 }
                             }
                         } else {
-                            // Too short, delete
-                            val audioPath = voiceRecorder.currentOutputFile
-                            File(audioPath).delete()
+                            recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    },
+                    onStopRecording = {
+                        if (isRecording) {
+                            isRecording = false
+                            recordingTimerJob?.cancel()
+                            val durationMs = voiceRecorder.stopRecording()
+                            val durationSec = (durationMs / 1000).toInt()
+                            
+                            if (durationMs > 1000) {
+                                val audioPath = voiceRecorder.currentOutputFile
+                                val file = File(audioPath)
+                                if (file.exists() && toUserId != null && sessionId != null) {
+                                    coroutineScope.launch {
+                                        try {
+                                                if (file.length() == 0L) {
+                                                    withContext(Dispatchers.Main) {
+                                                        android.widget.Toast.makeText(context, "Error: Audio file is empty. Try recording again.", android.widget.Toast.LENGTH_LONG).show()
+                                                    }
+                                                    return@launch
+                                                }
+                                                
+                                                withContext(Dispatchers.Main) {
+                                                    android.widget.Toast.makeText(context, "Sending voice message...", android.widget.Toast.LENGTH_SHORT).show()
+                                                }
+                                                delay(1000) // Increase delay to ensure file is completely written and unlocked by OS
+                                                
+                                                val durStr = String.format(java.util.Locale.US, "%02d:%02d", durationSec / 60, durationSec % 60)
+                                                viewModel.uploadFileAndSend(file, "audio", sessionId, toUserId, durStr)
+                                        } catch (e: Exception) {
+                                            withContext(Dispatchers.Main) {
+                                                android.widget.Toast.makeText(context, "Failed to send: ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+                                            }
+                                            e.printStackTrace()
+                                        }
+                                    }
+                                }
+                            } else {
+                                // Too short, delete
+                                val audioPath = voiceRecorder.currentOutputFile
+                                File(audioPath).delete()
+                            }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     ) { padding ->
 
@@ -809,7 +835,7 @@ fun ChatScreen(
 
             // Modern Summary Overlay
             val summary by viewModel.sessionSummary.observeAsState()
-            if (summary != null) {
+            if (!isHistoryMode && summary != null) {
                 ModernSummaryDialog(
                     title = if (summary!!.reason == "insufficient_funds") "Low Balance" else "Chat Summary",
                     duration = summary!!.duration,

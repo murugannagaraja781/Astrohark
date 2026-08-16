@@ -98,13 +98,13 @@ async function runTests() {
         results.push({ name: 'Web Flow (Base ₹1000)', success, details: `Base: ${paymentDoc?.baseAmount}, GST: ${paymentDoc?.gstAmount}, Total: ${paymentDoc?.amount}` });
     }
 
-    // Test Case 3: App Flow (Total ₹118) -> Should charge ₹118 (Base ₹100)
-    console.log('\n--- Running Test Case 3: App Flow (Total ₹118) ---');
+    // Test Case 3: App Flow (Base ₹100) -> Should charge ₹118
+    console.log('\n--- Running Test Case 3: App Flow (Base ₹100) ---');
     {
         const req = {
             body: {
                 userId: 'test-gst-user',
-                amount: 118,
+                amount: 100,
                 isApp: true
             }
         };
@@ -118,16 +118,16 @@ async function runTests() {
                         paymentDoc.baseAmount === 100 && 
                         paymentDoc.gstAmount === 18 && 
                         paymentDoc.amount === 118;
-        results.push({ name: 'App Flow (Total ₹118)', success, details: `Base: ${paymentDoc?.baseAmount}, GST: ${paymentDoc?.gstAmount}, Total: ${paymentDoc?.amount}` });
+        results.push({ name: 'App Flow (Base ₹100)', success, details: `Base: ${paymentDoc?.baseAmount}, GST: ${paymentDoc?.gstAmount}, Total: ${paymentDoc?.amount}` });
     }
 
-    // Test Case 4: App Flow (Total ₹1180) -> Should charge ₹1180 (Base ₹1000)
-    console.log('\n--- Running Test Case 4: App Flow (Total ₹1180) ---');
+    // Test Case 4: App Flow (Base ₹1000) -> Should charge ₹1180
+    console.log('\n--- Running Test Case 4: App Flow (Base ₹1000) ---');
     {
         const req = {
             body: {
                 userId: 'test-gst-user',
-                amount: 1180,
+                amount: 1000,
                 isApp: true
             }
         };
@@ -141,7 +141,7 @@ async function runTests() {
                         paymentDoc.baseAmount === 1000 && 
                         paymentDoc.gstAmount === 180 && 
                         paymentDoc.amount === 1180;
-        results.push({ name: 'App Flow (Total ₹1180)', success, details: `Base: ${paymentDoc?.baseAmount}, GST: ${paymentDoc?.gstAmount}, Total: ${paymentDoc?.amount}` });
+        results.push({ name: 'App Flow (Base ₹1000)', success, details: `Base: ${paymentDoc?.baseAmount}, GST: ${paymentDoc?.gstAmount}, Total: ${paymentDoc?.amount}` });
     }
 
     // Test Case 5: Token Web Flow (Base ₹10000) -> Should charge ₹11800 (Base ₹10000)

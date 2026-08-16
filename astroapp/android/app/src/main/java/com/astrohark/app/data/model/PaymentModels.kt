@@ -16,7 +16,8 @@ data class PaymentInitiateResponse(
     val key: String?,
     val paymentUrl: String?,
     val error: String?,
-    val useWebFlow: Boolean?
+    val useWebFlow: Boolean?,
+    val amount: Int? = null
 )
 
 data class PhonePeSignResponse(

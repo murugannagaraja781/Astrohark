@@ -25,17 +25,10 @@ exports.createToken = async (req, res) => {
         const incomingAmount = parseFloat(amount);
         let baseAmount = 0, gstAmount = 0, totalAmount = 0;
 
-        if (isApp === true || isApp === 'true') {
-            // Live App flow: amount passed is already totalAmount (includes 18% GST)
-            totalAmount = incomingAmount;
-            baseAmount = Math.round((totalAmount / 1.18) * 100) / 100;
-            gstAmount = Math.round((totalAmount - baseAmount) * 100) / 100;
-        } else {
-            // Web flow: amount passed is baseAmount
-            baseAmount = incomingAmount;
-            gstAmount = Math.round(baseAmount * GST_RATE * 100) / 100;
-            totalAmount = Math.round((baseAmount + gstAmount) * 100) / 100;
-        }
+        // Treat amount passed as baseAmount for both Web and App flows
+        baseAmount = incomingAmount;
+        gstAmount = Math.round(baseAmount * GST_RATE * 100) / 100;
+        totalAmount = Math.round((baseAmount + gstAmount) * 100) / 100;
         const token = crypto.randomBytes(32).toString('hex');
 
         paymentTokens.set(token, {
@@ -143,17 +136,10 @@ exports.createPayment = async (req, res) => {
             tokenData.used = true;
         } else {
             const incomingAmount = parseFloat(amount);
-            if (isApp === true || isApp === 'true') {
-                // Live App flow: amount passed is already totalAmount (includes 18% GST)
-                amount = incomingAmount;
-                baseAmount = Math.round((amount / 1.18) * 100) / 100;
-                gstAmount = Math.round((amount - baseAmount) * 100) / 100;
-            } else {
-                // Web flow: amount passed is baseAmount
-                baseAmount = incomingAmount;
-                gstAmount = Math.round(baseAmount * GST_RATE * 100) / 100;
-                amount = Math.round((baseAmount + gstAmount) * 100) / 100;
-            }
+            // Treat amount passed as baseAmount for both Web and App flows
+            baseAmount = incomingAmount;
+            gstAmount = Math.round(baseAmount * GST_RATE * 100) / 100;
+            amount = Math.round((baseAmount + gstAmount) * 100) / 100;
             couponCode = finalCoupon;
         }
 

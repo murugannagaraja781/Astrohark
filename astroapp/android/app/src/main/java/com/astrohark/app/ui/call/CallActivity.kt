@@ -1368,8 +1368,9 @@ class CallActivity : ComponentActivity() {
             }
 
             try {
-                audioManager.mode = android.media.AudioManager.MODE_NORMAL
-                audioManager.isSpeakerphoneOn = false
+                val audioManager = getSystemService(android.content.Context.AUDIO_SERVICE) as? android.media.AudioManager
+                audioManager?.mode = android.media.AudioManager.MODE_NORMAL
+                audioManager?.isSpeakerphoneOn = false
             } catch (e: Exception) {}
 
             stopBackgroundService()

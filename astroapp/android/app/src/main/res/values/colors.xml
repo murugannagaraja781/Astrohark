@@ -5,6 +5,10 @@
     <!-- Based on Logo: Yellow (#F5C518) + Orange (#FF7F00) -->
     <!-- ============================================ -->
 
+    <!-- Launcher and Splash Brand Colors -->
+    <color name="ic_launcher_background">#F9DF19</color>
+    <color name="splash_bg">#F9DF19</color>
+
     <!-- Background Colors -->
     <color name="royal_midnight_blue">#140F0A</color>
     <color name="brand_bg_soft">#140F0A</color>

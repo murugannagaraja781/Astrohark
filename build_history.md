@@ -187,4 +187,20 @@ App version code was bumped to `24` and version name to `"24.0"`.
 * **File Path:** `releases/astrohark-v24-debug.apk` and `releases/astrohark-v24-release.aab`
 * **Status:** Build and Packaging Successful
 
+---
+
+## [2026-09-05] - Release Build v29.0 (Brand New App Icon, Splash Screen & 16 KB Page Alignment)
+
+A release build was performed with the newly branded App Icon and Splash Screen logo:
+1. **New App Icon**: Integrated yellow planetary emblem with full Android adaptive icon support (`mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml`) and all standard density mipmaps (`mdpi` to `xxxhdpi`).
+2. **New Splash Screen**: Integrated the official Astrohark emblem, title, and "Decode Your Destiny" tagline on a seamless `#F9DF19` yellow background with an elegant dark progress indicator and light status bar icons.
+3. **16 KB Page Alignment**: Fully verified for Android 15 and Google Play requirements. ELF segment alignment checked (`p_align = 0x4000`) and uncompressed zip alignment verified via `zipalign -c -p -v 4` (all `.so` files 16 KB aligned).
+4. App version code was bumped to `29` and version name to `"29.0"`.
+
+* **Date & Time:** September 05, 2026 - 02:50 PM (IST)
+* **File Name:** `astrohark-v29-release.aab`, `astrohark-v29-release.apk`, `astrohark-v29-debug.apk`
+* **File Path:** `releases/astrohark-v29-release.aab` and `releases/astrohark-v29-release.apk`
+* **Status:** Build, Signing, and Packaging Successful
+
+
 

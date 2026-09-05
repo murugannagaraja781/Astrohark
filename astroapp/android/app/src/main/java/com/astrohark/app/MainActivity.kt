@@ -6,30 +6,35 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.app.Activity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.astrohark.app.data.api.ApiService
 import com.astrohark.app.data.local.TokenManager
 import com.astrohark.app.ui.home.HomeActivity
@@ -207,33 +212,43 @@ class MainActivity : AppCompatActivity() {
 
 @Composable
 fun SplashScreen() {
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = Color(0xFFF9DF19).toArgb()
+            window.navigationBarColor = Color(0xFFF9DF19).toArgb()
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = true
+            controller.isAppearanceLightNavigationBars = true
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(Color(0xFFF9DF19)),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
             Image(
-                painter = painterResource(id = R.drawable.app_logo),
-                contentDescription = "App Logo",
-                modifier = Modifier.size(180.dp),
+                painter = painterResource(id = R.drawable.app_splash_logo),
+                contentDescription = "Astrohark Logo",
+                modifier = Modifier
+                    .fillMaxWidth(0.82f)
+                    .wrapContentHeight(),
                 contentScale = ContentScale.Fit
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Astrohark",
-                fontSize = 32.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFFF7F00)
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
             CircularProgressIndicator(
-                color = Color(0xFFFF7F00)
+                modifier = Modifier.size(36.dp),
+                color = Color(0xFF140F0A),
+                strokeWidth = 3.dp
             )
         }
     }

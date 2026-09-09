@@ -8,6 +8,8 @@
         <item name="android:navigationBarColor">@color/splash_bg</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        <item name="android:windowSplashScreenBackground" tools:targetApi="s">@color/splash_bg</item>
+        <item name="android:windowSplashScreenAnimatedIcon" tools:targetApi="s">@drawable/app_splash_logo</item>
     </style>
 
     <!-- Base application theme (Light Premium) -->

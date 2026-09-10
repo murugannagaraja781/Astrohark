@@ -773,8 +773,29 @@ app.get('/api/astrology/history/:userId', async (req, res) => {
         User.findOne({ userId: cId }).select('name').lean(),
         User.findOne({ userId: aId }).select('name').lean()
       ]);
+
+      let totalEarned = s.totalEarned || 0;
+      let totalCharged = s.totalCharged || 0;
+
+      // Fallback: If totalEarned was 0 due to previous order-of-operations bug, recover from BillingLedger
+      if (!totalEarned || totalEarned === 0) {
+        try {
+          const ledgers = await BillingLedger.find({ sessionId: s.sessionId }).lean();
+          if (ledgers && ledgers.length > 0) {
+            totalEarned = ledgers.reduce((sum, l) => sum + (l.creditedToAstrologer || 0), 0);
+            totalCharged = ledgers.reduce((sum, l) => sum + (l.chargedToClient || 0), 0);
+            // Self-repair the session document in MongoDB
+            Session.updateOne({ sessionId: s.sessionId }, { totalEarned, totalCharged }).catch(() => {});
+          }
+        } catch (e) {
+          console.error('[History API] BillingLedger fallback error for', s.sessionId, e);
+        }
+      }
+
       return {
         ...s,
+        totalEarned,
+        totalCharged,
         clientName: client ? client.name : 'Unknown Client',
         astrologerName: astro ? astro.name : 'Unknown Astrologer'
       };

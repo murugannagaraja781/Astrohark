@@ -198,10 +198,24 @@ class CallActivity : ComponentActivity() {
                      })
                      val matchIntent = android.content.Intent(this, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
                      matchIntent.putExtra("birthData", newData.toString())
-                     startActivity(matchIntent)
+                     isEditingIntake = true
+                     matchDisplayLauncher.launch(matchIntent)
                  } catch (e: Exception) { e.printStackTrace() }
              }
         }
+        checkAndRestoreConnection()
+    }
+
+    private val matchDisplayLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) {
+        timerHandler.postDelayed({ isEditingIntake = false }, 3000)
+        ensureSocketConnected()
+        checkAndRestoreConnection()
+    }
+
+    private val vipChartLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) {
+        timerHandler.postDelayed({ isEditingIntake = false }, 3000)
+        ensureSocketConnected()
+        checkAndRestoreConnection()
     }
 
     // Logic internal state
@@ -439,7 +453,7 @@ class CallActivity : ComponentActivity() {
                                     remainingTime = String.format(java.util.Locale.US, "%02d:%02d", totalSecs / 60, totalSecs % 60)
                                 } else {
                                     remainingTime = "00:00"
-                                    endCall() // Auto-end
+                                    // Authoritative session termination on balance expiry is managed by the backend server via session-ended
                                 }
                             }
                         }
@@ -471,12 +485,24 @@ class CallActivity : ComponentActivity() {
                             val clientJson = JSONObject(clientResp.body?.string() ?: "{}")
                             val astroJson = JSONObject(astroResp.body?.string() ?: "{}")
                             
+                            val isNewUser = clientJson.optBoolean("isNewUser", false)
                             val walletBalance = clientJson.optDouble("walletBalance", 0.0)
                             val ratePerMin = astroJson.optDouble("price", 10.0)
                             ratePerMinute = ratePerMin
                             
-                            val totalMinutes = if (ratePerMin > 0) (walletBalance / ratePerMin).toInt() else 0
-                            remainingTime = String.format(java.util.Locale.US, "%02d:%02d", totalMinutes, 0)
+                            runOnUiThread {
+                                if (isNewUser) {
+                                    // New user promo (5 minutes)
+                                    if (remainingTime.isEmpty() || remainingTime == "00:00") {
+                                        remainingTime = "05:00"
+                                    }
+                                } else {
+                                    val totalMinutes = if (ratePerMin > 0) (walletBalance / ratePerMin).toInt() else 0
+                                    if (totalMinutes > 0 && (remainingTime.isEmpty() || remainingTime == "00:00")) {
+                                        remainingTime = String.format(java.util.Locale.US, "%02d:%02d", totalMinutes, 0)
+                                    }
+                                }
+                            }
                         }
                     } catch (e: Exception) {
                         Log.e(TAG, "Failed to fetch wallet balance or astro price", e)
@@ -551,10 +577,48 @@ class CallActivity : ComponentActivity() {
         Toast.makeText(this, if (newSpeaker) "Speaker ON" else "Speaker OFF", Toast.LENGTH_SHORT).show()
     }
 
+    private fun setupVoipAudio() {
+        try {
+            val audioManager = getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+            audioManager.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
+            audioManager.isMicrophoneMute = false
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val playbackAttributes = android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build()
+                val focusRequest = android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN)
+                    .setAudioAttributes(playbackAttributes)
+                    .setAcceptsDelayedFocusGain(true)
+                    .setOnAudioFocusChangeListener { /* handle focus changes */ }
+                    .build()
+                audioManager.requestAudioFocus(focusRequest)
+            } else {
+                @Suppress("DEPRECATION")
+                audioManager.requestAudioFocus(null, android.media.AudioManager.STREAM_VOICE_CALL, android.media.AudioManager.AUDIOFOCUS_GAIN)
+            }
+
+            // Always route to speaker for video calls; for astrologer consultations default to speaker ON so sound is loud and clear on first call
+            val myRole = tokenManager.getUserSession()?.role
+            val shouldEnableSpeaker = if (callType == "video") true else (myRole == "astrologer" || isSpeakerOnState)
+            isSpeakerOnState = shouldEnableSpeaker
+            audioManager.isSpeakerphoneOn = shouldEnableSpeaker
+            Log.d(TAG, "VoIP Audio initialized: mode=MODE_IN_COMMUNICATION, speaker=$shouldEnableSpeaker")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing VoIP audio", e)
+        }
+    }
+
     private fun setSpeakerphoneOn(on: Boolean) {
-        val audioManager = getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
-        audioManager.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
-        audioManager.isSpeakerphoneOn = on
+        try {
+            val audioManager = getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+            audioManager.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
+            audioManager.isSpeakerphoneOn = on
+            Log.d(TAG, "Speakerphone set to: $on")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting speakerphone", e)
+        }
     }
 
     private fun openEditIntake() {
@@ -883,9 +947,12 @@ class CallActivity : ComponentActivity() {
         // This breaks the deadlock where billing waited for ICE which waited for offer which waited for billing
         val connectPayload = JSONObject().apply {
             put("sessionId", sessionId)
+            put("userId", myUserId)
+            put("fromUserId", myUserId)
+            put("role", session?.role ?: "client")
         }
         SocketManager.emitReliable("session-connect", connectPayload)
-        Log.d(TAG, "✓ Emitted session-connect immediately for $sessionId")
+        Log.d(TAG, "✓ Emitted session-connect immediately for $sessionId with userId $myUserId")
 
         if (isInitiator) {
             statusText = "Calling..."
@@ -965,9 +1032,10 @@ class CallActivity : ComponentActivity() {
             localView.setMirror(true)
             localView.setZOrderMediaOverlay(true)
             localView.setScalingType(org.webrtc.RendererCommon.ScalingType.SCALE_ASPECT_FILL)
-        } else {
-             setSpeakerphoneOn(false) // Audio call default
         }
+
+        // Initialize VoIP audio focus and routing properly for both audio & video calls
+        setupVoipAudio()
 
         val audioConstraints = MediaConstraints().apply {
             mandatory.add(MediaConstraints.KeyValuePair("googEchoCancellation", "true"))
@@ -1021,24 +1089,30 @@ class CallActivity : ComponentActivity() {
                                 callDurationSeconds = 0 // Start at 0
                                 statusText = "" // Hide status
                             }
-                            // Auto-start recording for astrologers
-                            val myRole = TokenManager(this@CallActivity).getUserSession()?.role
-                            if (myRole == "astrologer" && !isRecordingState) {
-                                startRecording()
-                            }
+                            Log.d(TAG, "✓ ICE Connected successfully")
                         }
                         PeerConnection.IceConnectionState.DISCONNECTED -> {
+                            Log.w(TAG, "ICE Connection Disconnected - attempting reconnect...")
+                            statusText = "Reconnecting..."
                             if (!isEditingIntake) {
-                                Toast.makeText(this@CallActivity, "Connection Unstable", Toast.LENGTH_SHORT).show()
+                                restartIce()
                             }
                         }
                         PeerConnection.IceConnectionState.FAILED -> {
+                            Log.w(TAG, "ICE Connection Failed - attempting restart with grace period")
+                            statusText = "Reconnecting..."
                             if (!isEditingIntake) {
-                                Toast.makeText(this@CallActivity, "Connection Failed", Toast.LENGTH_SHORT).show()
-                                endCall()
-                            } else {
-                                Log.d(TAG, "ICE Failed while editing intake - ignoring to allow reconnect")
-                                statusText = "Reconnecting..."
+                                restartIce()
+                                // 20-second grace period for ICE reconnect before terminating
+                                timerHandler.postDelayed({
+                                    if (::peerConnection.isInitialized &&
+                                        peerConnection.iceConnectionState() == PeerConnection.IceConnectionState.FAILED &&
+                                        !isEditingIntake && !isFinishing && !isDestroyed) {
+                                        Log.e(TAG, "ICE reconnection failed after grace period. Ending call.")
+                                        Toast.makeText(this@CallActivity, "Connection Failed", Toast.LENGTH_SHORT).show()
+                                        endCall()
+                                    }
+                                }, 20000)
                             }
                         }
                         else -> {}
@@ -1069,11 +1143,21 @@ class CallActivity : ComponentActivity() {
             override fun onIceCandidatesRemoved(p0: Array<out IceCandidate>?) {}
 
             override fun onAddStream(stream: MediaStream?) {
-                if (stream != null && stream.videoTracks.isNotEmpty() && callType == "video") {
-                    val remoteVideoTrack = stream.videoTracks[0]
-                    runOnUiThread {
-                        remoteVideoTrack.setEnabled(true)
-                        remoteVideoTrack.addSink(remoteView)
+                if (stream != null) {
+                    if (stream.videoTracks.isNotEmpty() && callType == "video") {
+                        val remoteVideoTrack = stream.videoTracks[0]
+                        runOnUiThread {
+                            remoteVideoTrack.setEnabled(true)
+                            remoteVideoTrack.addSink(remoteView)
+                        }
+                    }
+                    if (stream.audioTracks.isNotEmpty()) {
+                        val remoteAudioTrack = stream.audioTracks[0]
+                        runOnUiThread {
+                            remoteAudioTrack.setEnabled(true)
+                            remoteAudioTrack.setVolume(1.0)
+                            Log.d(TAG, "✓ Remote Stream AudioTrack enabled with volume 1.0")
+                        }
                     }
                 }
             }
@@ -1084,6 +1168,12 @@ class CallActivity : ComponentActivity() {
                     runOnUiThread {
                         track.setEnabled(true)
                         track.addSink(remoteView)
+                    }
+                } else if (track is AudioTrack) {
+                    runOnUiThread {
+                        track.setEnabled(true)
+                        track.setVolume(1.0)
+                        Log.d(TAG, "✓ Remote Transceiver AudioTrack enabled with volume 1.0")
                     }
                 }
             }
@@ -1511,9 +1601,10 @@ class CallActivity : ComponentActivity() {
 
     private fun showRasiChart() {
         if (clientBirthData != null) {
+            isEditingIntake = true
             val intent = android.content.Intent(this, com.astrohark.app.ui.chart.VipChartActivity::class.java)
             intent.putExtra("birthData", clientBirthData.toString())
-            startActivity(intent)
+            vipChartLauncher.launch(intent)
         } else {
             Toast.makeText(this, "Waiting for Client Data...", Toast.LENGTH_SHORT).show()
         }
@@ -1524,9 +1615,10 @@ class CallActivity : ComponentActivity() {
         
         if (hasPartner) {
             // Show result directly
+            isEditingIntake = true
             val matchIntent = android.content.Intent(this, com.astrohark.app.ui.chart.MatchDisplayActivity::class.java)
             matchIntent.putExtra("birthData", clientBirthData.toString())
-            startActivity(matchIntent)
+            matchDisplayLauncher.launch(matchIntent)
         } else {
             // Open form to fill
             isEditingIntake = true

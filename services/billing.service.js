@@ -115,7 +115,16 @@ async function processBillingCharge(sessionId, durationSeconds, minuteIndex, typ
             if (s) {
                 s.totalDeducted = (s.totalDeducted || 0) + actualDeduct;
                 s.totalEarned = (s.totalEarned || 0) + astroShare;
+                s.lastBilledMinute = minuteIndex;
             }
+
+            // Sync to MongoDB Session document immediately
+            await Session.updateOne(
+                { sessionId },
+                { 
+                    $inc: { totalEarned: astroShare, totalCharged: actualDeduct }
+                }
+            ).catch(e => console.error('[Billing] Session update error in processBillingCharge:', e));
 
             // Notify Wallets in real time
             if (io) {
@@ -169,8 +178,28 @@ async function endSessionRecord(sessionId, broadcastAstroUpdate, extraReportedDu
 
     console.log(`[Billing][endSessionRecord] sessionId=${sessionId} | Candidate durations: server=${serverTickerSeconds}s, clientWall=${clientWallClockSeconds}s, astroWall=${astroWallClockSeconds}s, clientReported=${reportedClientDuration}s, astroReported=${reportedAstrologerDuration}s | Chosen MIN billableSeconds=${billableSeconds}s`);
 
+    // Process any remaining billable charges FIRST before finalizing the Session in DB
+    if (billableSeconds > 0 && billableSeconds <= 60) {
+        if (!s.lastBilledMinute || s.lastBilledMinute < 1) {
+            await processBillingCharge(sessionId, billableSeconds, 1, 'early_exit');
+        }
+    } else if (billableSeconds > 60) {
+        const lastBilled = s.lastBilledMinute || 1;
+        const totalMinutes = Math.ceil(billableSeconds / 60);
+
+        if (totalMinutes > lastBilled) {
+            for (let i = lastBilled + 1; i <= totalMinutes; i++) {
+                const isFraction = (i === totalMinutes && (billableSeconds % 60) !== 0);
+                const billingType = isFraction ? 'fraction' : 'ongoing';
+                await processBillingCharge(sessionId, 60, i, billingType);
+            }
+        }
+    }
+
+    // Now finalize Session document in MongoDB with complete totalEarned and totalCharged
     await Session.updateOne({ sessionId }, {
         endTime,
+        sessionEndAt: endTime,
         duration: billableSeconds * 1000,
         totalEarned: s.totalEarned || 0,
         totalCharged: s.totalDeducted || 0,
@@ -190,21 +219,6 @@ async function endSessionRecord(sessionId, broadcastAstroUpdate, extraReportedDu
             { _id: s.pairMonthId },
             { $inc: { slabLockedAt: billableSeconds } }
         );
-    }
-
-    if (billableSeconds > 0 && billableSeconds <= 60) {
-        await processBillingCharge(sessionId, billableSeconds, 1, 'early_exit');
-    } else if (billableSeconds > 60) {
-        const lastBilled = s.lastBilledMinute || 1;
-        const totalMinutes = Math.ceil(billableSeconds / 60);
-
-        if (totalMinutes > lastBilled) {
-            for (let i = lastBilled + 1; i <= totalMinutes; i++) {
-                const isFraction = (i === totalMinutes && (billableSeconds % 60) !== 0);
-                const billingType = isFraction ? 'fraction' : 'ongoing';
-                await processBillingCharge(sessionId, 60, i, billingType);
-            }
-        }
     }
 
     activeSessions.delete(sessionId);

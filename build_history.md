@@ -219,5 +219,21 @@ A release build was performed with major call/chat stability improvements, Kunda
 * **File Path:** `releases/astrohark-v30-release.aab` and `releases/astrohark-v30-release.apk`
 * **Status:** Build, Keystore Signing (v1-v4), 16 KB Alignment Verified & Packaging Successful
 
+---
+
+## [2026-09-10] - Release Build v31.0 (Version Bump to 31, Call & Chat Stability, 16 KB Page Support)
+
+A release build was performed with version code bumped to `31` and version name to `"31.0"`:
+1. Version code bumped from `30` to `31` (`versionName = "31.0"`).
+2. Contains all recent call/chat stability fixes, Kundali crash fix (`VipChartActivity`), WebRTC audio enhancements, and billing history sync.
+3. 16 KB page size alignment verified for Android 15 and Google Play requirements.
+4. Production release keystore signed (v1, v2, v3, v4).
+
+* **Date & Time:** September 10, 2026 - 06:55 PM (IST)
+* **File Name:** `astrohark-v31-release.aab`, `astrohark-v31-release.apk`
+* **File Path:** `releases/astrohark-v31-release.aab` and `releases/astrohark-v31-release.apk`
+* **Status:** Build, Keystore Signing (v1-v4), 16 KB Alignment Verified & Packaging Successful
+
+
 
 

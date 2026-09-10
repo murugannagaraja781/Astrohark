@@ -149,19 +149,19 @@
             android:launchMode="singleTop" />
         <activity android:name=".ui.intake.IntakeActivity" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ui.chart.ChartDisplayActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:theme="@style/Theme.FCMCallApp"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
 
         <activity android:name=".ui.chart.VipChartActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:theme="@style/Theme.FCMCallApp"
             android:screenOrientation="portrait"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
             android:windowSoftInputMode="adjustResize" />
 
         <activity android:name=".ui.chart.MatchDisplayActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:theme="@style/Theme.FCMCallApp"
             android:screenOrientation="portrait"/>
 
         <activity android:name=".ui.city.CitySearchActivity"

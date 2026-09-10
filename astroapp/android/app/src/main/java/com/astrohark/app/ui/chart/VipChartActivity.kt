@@ -153,7 +153,12 @@ class VipChartActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val birthDataStr = intent.getStringExtra("birthData") ?: "{}"
-        val birthData = JSONObject(birthDataStr)
+        val birthData = try {
+            JSONObject(birthDataStr)
+        } catch (e: Exception) {
+            android.util.Log.e("VipChartActivity", "Error parsing birthData JSON", e)
+            JSONObject()
+        }
 
         setContent {
             CosmicAppTheme {
@@ -181,6 +186,8 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
                 } else {
                     errorMessage = result.second ?: "Unknown error occurred while fetching chart"
                 }
+            } catch (e: Exception) {
+                errorMessage = e.message ?: "Failed to load chart"
             } finally {
                 isLoading = false
             }
@@ -193,7 +200,7 @@ fun VipChartScreen(birthData: JSONObject, onBack: () -> Unit) {
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
-                            painter = painterResource(id = R.mipmap.ic_launcher),
+                            painter = painterResource(id = R.drawable.app_logo),
                             contentDescription = "App Logo",
                             modifier = Modifier.size(36.dp)
                         )
@@ -281,7 +288,7 @@ fun ChartsTab(data: ChartData, birthData: JSONObject) {
             planets = data.planets,
             houses = null,
             cusps = data.houses.cusps,
-            ascSign = data.houses.ascendantDetails.signName,
+            ascSign = data.houses.ascendantDetails?.signName ?: "",
             title = "ராசி",
             isBhava = false,
             showDegree = false,
@@ -312,7 +319,7 @@ fun ChartsTab(data: ChartData, birthData: JSONObject) {
             planets = data.planets,
             houses = data.houses.details,
             cusps = data.houses.cusps,
-            ascSign = data.houses.ascendantDetails.signName,
+            ascSign = data.houses.ascendantDetails?.signName ?: "",
             title = "பாவகம்",
             isBhava = true,
             showDegree = true,
@@ -978,12 +985,46 @@ fun ConnectionsTab(data: ChartData) {
 
 private suspend fun fetchFullChart(birthData: JSONObject): Pair<ChartData?, String?> = withContext(Dispatchers.IO) {
     try {
+        var year = birthData.optInt("year", 0)
+        var month = birthData.optInt("month", 0)
+        var day = birthData.optInt("day", 0)
+
+        if (year == 0 && birthData.has("dob")) {
+            val dobParts = birthData.optString("dob", "").split("-")
+            if (dobParts.size == 3) {
+                year = dobParts[0].toIntOrNull() ?: 0
+                month = dobParts[1].toIntOrNull() ?: 0
+                day = dobParts[2].toIntOrNull() ?: 0
+            }
+        }
+
+        var hour = birthData.optInt("hour", -1)
+        var minute = birthData.optInt("minute", -1)
+
+        if ((hour == -1 || minute == -1) && birthData.has("tob")) {
+            val tobParts = birthData.optString("tob", "").split(":")
+            if (tobParts.size >= 2) {
+                hour = tobParts[0].toIntOrNull() ?: 12
+                minute = tobParts[1].toIntOrNull() ?: 0
+            }
+        }
+        if (hour == -1) hour = 12
+        if (minute == -1) minute = 0
+
+        val lat = if (birthData.has("latitude")) birthData.optDouble("latitude", 13.0827)
+                  else birthData.optDouble("lat", 13.0827)
+        val lng = if (birthData.has("longitude")) birthData.optDouble("longitude", 80.2707)
+                  else if (birthData.has("lon")) birthData.optDouble("lon", 80.2707)
+                  else birthData.optDouble("lng", 80.2707)
+
+        val tz = birthData.optDouble("timezone", 5.5).let { if (it.isNaN()) 5.5 else it }
+
         val payload = com.google.gson.JsonObject().apply {
-            addProperty("date", String.format("%04d-%02d-%02d", birthData.optInt("year"), birthData.optInt("month"), birthData.optInt("day")))
-            addProperty("time", String.format("%02d:%02d", birthData.optInt("hour"), birthData.optInt("minute")))
-            addProperty("lat", birthData.optDouble("latitude"))
-            addProperty("lng", birthData.optDouble("longitude"))
-            addProperty("timezone", birthData.optDouble("timezone", 5.5))
+            addProperty("date", String.format(java.util.Locale.US, "%04d-%02d-%02d", year, month, day))
+            addProperty("time", String.format(java.util.Locale.US, "%02d:%02d", hour, minute))
+            addProperty("lat", lat)
+            addProperty("lng", lng)
+            addProperty("timezone", tz)
         }
 
         val response = com.astrohark.app.data.api.ApiClient.api.getRasiEngBirthChart(payload)

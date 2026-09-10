@@ -202,5 +202,22 @@ A release build was performed with the newly branded App Icon and Splash Screen 
 * **File Path:** `releases/astrohark-v29-release.aab` and `releases/astrohark-v29-release.apk`
 * **Status:** Build, Signing, and Packaging Successful
 
+---
+
+## [2026-09-10] - Release Build v30.0 (Call & Chat Stability, Kundali Crash Fix, 16 KB Page Support)
+
+A release build was performed with major call/chat stability improvements, Kundali crash fix, and verified 16 KB page size support:
+1. **Kundali Crash Fix**: Resolved `IllegalArgumentException` in `VipChartActivity` caused by attempting to load adaptive icons via `painterResource(id = R.mipmap.ic_launcher)`. Replaced with `R.drawable.app_logo`, added robust `JSONObject` error handling, and unified activity theme to `Theme.FCMCallApp`.
+2. **First Call & Auto-Cut Stability**: Removed rogue client-side countdown terminations, added promo trial protection, 20s ICE restart grace period, and enriched `session-connect` payloads.
+3. **First Call Audio Fix**: Eliminated mic hijacking from premature `MediaRecorder` startup, integrated `setupVoipAudio()` with `AUDIOFOCUS_GAIN` and `MODE_IN_COMMUNICATION`, and maximized remote `AudioTrack` playback volume.
+4. **Billing History Realtime Sync**: Synchronized real-time MongoDB `$inc` updates on session charges and added ledger aggregation fallback for history view.
+5. **16 KB Page Alignment**: Fully verified for Android 15 and Google Play. All precompiled `.so` native libraries (`libjingle_peerconnection_so.so` for `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`) are verified with ELF segment alignment (`p_align = 2**14 = 0x4000 = 16384 bytes`), and `useLegacyPackaging = false` ensures uncompressed page-aligned storage.
+6. App version code bumped to `30` and version name to `"30.0"`.
+
+* **Date & Time:** September 10, 2026 - 04:50 PM (IST)
+* **File Name:** `astrohark-v30-release.aab`, `astrohark-v30-release.apk`
+* **File Path:** `releases/astrohark-v30-release.aab` and `releases/astrohark-v30-release.apk`
+* **Status:** Build, Keystore Signing (v1-v4), 16 KB Alignment Verified & Packaging Successful
+
 
 

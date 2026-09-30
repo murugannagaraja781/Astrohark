@@ -92,8 +92,8 @@ async function sendOnlineNotification(user, io) {
     try {
         const now = new Date();
         const lastSent = user.lastOnlineNotification;
-        // 10 minutes cooldown (600,000 ms)
-        if (lastSent && (now - new Date(lastSent) < 600000)) {
+        // 1 minute cooldown (60,000 ms) to avoid spam while allowing fast testing
+        if (lastSent && (now - new Date(lastSent) < 60000)) {
             console.log(`[Notification] Cooldown active for ${user.name} (${user.userId}). Skipping.`);
             return;
         }

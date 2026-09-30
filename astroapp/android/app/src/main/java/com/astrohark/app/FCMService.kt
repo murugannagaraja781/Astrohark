@@ -214,7 +214,7 @@ class FCMService : FirebaseMessagingService() {
                     val body = data["body"] ?: "$astroName is now ONLINE 🟢 / ஆன்லைனில் உள்ளார்! 🔮"
                     val astroId = data["astrologerId"] ?: ""
                     val imageUrl = data["image"] ?: data["imageUrl"]
-                    showAstroOnlineNotification(title, body, astroId, imageUrl)
+                    showAstroOnlineNotification(title, body, astroId, imageUrl, astroName)
                 }
                 else -> {
                     // Handle generic data messages or unknown types by showing a simple notification
@@ -235,7 +235,7 @@ class FCMService : FirebaseMessagingService() {
         }
     }
 
-    private fun showAstroOnlineNotification(title: String, body: String, astroId: String, imageUrl: String?) {
+    private fun showAstroOnlineNotification(title: String, body: String, astroId: String, imageUrl: String?, astroName: String) {
         val intent = if (astroId.isNotBlank()) {
             Intent(this, com.astrohark.app.ui.profile.AstrologerProfileActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -295,22 +295,48 @@ class FCMService : FirebaseMessagingService() {
             else -> "${Constants.SERVER_URL}/$imageUrl"
         }
 
-        if (!fullUrl.isNullOrBlank()) {
-            serviceScope.launch(Dispatchers.IO) {
-                try {
+        serviceScope.launch(Dispatchers.IO) {
+            try {
+                var avatarBitmap: Bitmap? = null
+                if (!fullUrl.isNullOrBlank()) {
                     val downloaded = downloadBitmap(fullUrl)
                     if (downloaded != null) {
-                        val circular = getCircularBitmap(downloaded)
-                        builder.setLargeIcon(circular)
+                        avatarBitmap = getCircularBitmap(downloaded)
                     }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to load notification large icon: ${e.message}")
                 }
-                notificationManager.notify(notificationId, builder.build())
+                if (avatarBitmap == null) {
+                    avatarBitmap = createInitialAvatar(astroName)
+                }
+                builder.setLargeIcon(avatarBitmap)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to load notification large icon: ${e.message}")
+                builder.setLargeIcon(createInitialAvatar(astroName))
             }
-        } else {
             notificationManager.notify(notificationId, builder.build())
         }
+    }
+
+    private fun createInitialAvatar(name: String): Bitmap {
+        val size = 256
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.parseColor("#FF7F00")
+        }
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+
+        val textPaint = Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.WHITE
+            textSize = 100f
+            textAlign = Paint.Align.CENTER
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+        }
+        val initial = (name.trim().firstOrNull()?.uppercaseChar() ?: 'A').toString()
+        val yPos = (size / 2f) - ((textPaint.descent() + textPaint.ascent()) / 2f)
+        canvas.drawText(initial, size / 2f, yPos, textPaint)
+        return bitmap
     }
 
     private fun downloadBitmap(imageUrl: String): Bitmap? {

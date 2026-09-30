@@ -102,13 +102,28 @@ async function sendOnlineNotification(user, io) {
         await User.updateOne({ userId: user.userId }, { lastOnlineNotification: now });
 
         const topicName = `astrologer_${user.userId}`;
+        const titleText = `✨ Astrohark`;
+        const bodyText = `${user.name} is now ONLINE 🟢 / ஆன்லைனில் உள்ளார்! 🔮`;
+
+        let imageUrl = '';
+        if (user.image) {
+            imageUrl = user.image.startsWith('http')
+                ? user.image
+                : `${process.env.SERVER_URL || 'https://astrohark.com'}${user.image.startsWith('/') ? '' : '/'}${user.image}`;
+        }
+
         const notification = {
-            title: `✨ Astrohark`,
-            body: `${user.name} is now ONLINE / ஆன்லைனில் உள்ளார்! 🔮`
+            title: titleText,
+            body: bodyText,
+            image: imageUrl || undefined
         };
         const data = {
             type: 'ASTRO_ONLINE',
-            astrologerId: user.userId
+            title: titleText,
+            body: bodyText,
+            astrologerId: user.userId,
+            astrologerName: user.name,
+            image: imageUrl || ''
         };
 
         console.log(`[Notification] Sending online push for ${user.name} to topic ${topicName}`);

@@ -185,10 +185,10 @@ fun BannerSection(
 
                              // Decoration
                              Image(
-                                 painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
+                                 painter = painterResource(id = com.astrohark.app.R.drawable.app_icon_final),
                                  contentDescription = null,
-                                 modifier = Modifier.align(Alignment.CenterEnd).size(82.dp).padding(end = 10.dp), // Reduced size by 25% (from 110dp to 82dp)
-                                 alpha = 0.8f
+                                 modifier = Modifier.align(Alignment.CenterEnd).size(72.dp).padding(end = 10.dp),
+                                 alpha = 0.95f
                              )
                          }
 
@@ -1738,7 +1738,7 @@ fun HomeTopBar(
                             .border(1.dp, Color(0xFFF0F0F0), CircleShape)
                     ) {
                         Image(
-                            painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
+                            painter = painterResource(id = com.astrohark.app.R.drawable.app_icon_final),
                             contentDescription = "Avatar",
                             modifier = Modifier.fillMaxSize(),
                             contentScale = ContentScale.Fit
@@ -2059,6 +2059,7 @@ fun AstrologerCard(
                     putExtra("is_audio_online", astro.isAudioOnline)
                     putExtra("is_video_online", astro.isVideoOnline)
                     putExtra("astro_rating", astro.rating.toFloat())
+                    putExtra("astro_languages", if (astro.languages.isNotEmpty()) astro.languages.joinToString(", ") else "Tamil")
                 }
                 context.startActivity(intent)
             }
@@ -3274,7 +3275,7 @@ fun getRasiIconById(id: Int): Int {
         10 -> com.astrohark.app.R.drawable.ic_rasi_capricorn_premium_copy
         11 -> com.astrohark.app.R.drawable.ic_rasi_aquarius_premium
         12 -> com.astrohark.app.R.drawable.ic_rasi_pisces_premium_copy
-        else -> com.astrohark.app.R.mipmap.ic_launcher_foreground
+        else -> com.astrohark.app.R.drawable.app_icon_final
     }
 }
 

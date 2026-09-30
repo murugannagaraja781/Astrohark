@@ -1145,6 +1145,34 @@
             </div>
         </div>
 
+        <!-- Modal: Edit Feedback / Review & Rating -->
+        <div id="modal-edit-feedback" class="admin-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:10000; overflow-y:auto; padding:20px;">
+            <div class="admin-modal-content" style="max-width: 520px; background: var(--bg-body); border: 1px solid var(--border-soft); box-shadow: 0 20px 50px rgba(0,0,0,0.5); border-radius: 16px; padding: 24px; position:relative; margin: 40px auto;">
+                <span onclick="closeModal('modal-edit-feedback')" style="position:absolute; right:20px; top:20px; font-size:1.8rem; cursor:pointer; color:var(--text-muted);">&times;</span>
+                <h3 style="margin-top:0; color:var(--primary); font-family:var(--font-heading);"><i class="fas fa-edit"></i> Edit Review & Rating</h3>
+                <input type="hidden" id="editFeedbackId">
+                <div style="margin-top: 20px;">
+                    <label class="app-label" style="font-weight:600; margin-bottom:8px; display:block;">Star Rating</label>
+                    <select id="editFeedbackRating" class="app-input" style="width:100%; padding:10px; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-soft); border-radius:8px;">
+                        <option value="5">⭐⭐⭐⭐⭐ (5 Stars)</option>
+                        <option value="4">⭐⭐⭐⭐ (4 Stars)</option>
+                        <option value="3">⭐⭐⭐ (3 Stars)</option>
+                        <option value="2">⭐⭐ (2 Stars)</option>
+                        <option value="1">⭐ (1 Star)</option>
+                    </select>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label class="app-label" style="font-weight:600; margin-bottom:8px; display:block;">Review Comment</label>
+                    <textarea id="editFeedbackComment" class="app-input" rows="4" style="width:100%; padding:12px; background:var(--bg-card); color:var(--text-main); border:1px solid var(--border-soft); border-radius:8px; resize:vertical; font-family:inherit;"></textarea>
+                </div>
+                <div style="margin-top:24px; display:flex; gap:12px;">
+                    <button class="cosmic-btn" style="flex:1; padding:10px 20px; border-radius:8px; cursor:pointer;" onclick="saveFeedbackEdit()"><i class="fas fa-check"></i> Save Review</button>
+                    <button class="btn-admin" style="background:rgba(239,68,68,0.15); border:1px solid #EF4444; color:#EF4444; padding:10px 16px; border-radius:8px; cursor:pointer;" onclick="deleteFeedback(document.getElementById('editFeedbackId').value)"><i class="fas fa-trash-alt"></i> Delete</button>
+                    <button class="btn-admin" style="background:var(--border-soft); color:var(--text-muted); padding:10px 16px; border-radius:8px; cursor:pointer;" onclick="closeModal('modal-edit-feedback')">Cancel</button>
+                </div>
+            </div>
+        </div>
+
 
 
         <!-- Navigation -->
@@ -3080,7 +3108,9 @@
                         container.innerHTML = '<div style="padding:40px; text-align:center; color:var(--text-dim);">No user feedback found yet.</div>';
                         return;
                     }
-                    container.innerHTML = res.feedback.map(f => `
+                    container.innerHTML = res.feedback.map(f => {
+                        const safeComment = (f.comment || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        return `
                         <div class="admin-card" style="position:relative; padding:20px; border-left: 4px solid ${f.rating >= 4 ? '#10B981' : (f.rating >= 2 ? '#F59E0B' : '#EF4444')};">
                             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
                                 <div style="display:flex; align-items:center; gap:12px;">
@@ -3102,14 +3132,64 @@
                             <div style="font-size:0.9rem; color:var(--text-secondary); line-height:1.6; font-style:italic; background:rgba(255,255,255,0.02); padding:10px; border-radius:8px;">
                                 "${f.comment || 'No comment provided.'}"
                             </div>
-                            <div style="margin-top:15px; font-size:0.75rem; color:var(--text-muted); display:flex; justify-content:space-between;">
+                            <div style="margin-top:15px; font-size:0.75rem; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center;">
                                 <span>Astro: <b>${f.astrologerName || 'N/A'}</b></span>
                                 <span>${f.sessionType || 'Session'}</span>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn-admin" style="padding:4px 10px; font-size:0.75rem; background:rgba(255,127,0,0.15); border:1px solid var(--primary); color:var(--primary); border-radius:4px; cursor:pointer;" onclick="openEditFeedbackModal('${f._id}', ${f.rating || 5}, '${safeComment}')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn-admin" style="padding:4px 10px; font-size:0.75rem; background:rgba(239,68,68,0.15); border:1px solid #EF4444; color:#EF4444; border-radius:4px; cursor:pointer;" onclick="deleteFeedback('${f._id}')">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 } else {
                     container.innerHTML = `<div style="color:#EF4444; padding:20px;">Error: ${res.error}</div>`;
+                }
+            });
+        };
+
+        window.openEditFeedbackModal = (id, rating, comment) => {
+            document.getElementById('editFeedbackId').value = id;
+            document.getElementById('editFeedbackRating').value = rating || 5;
+            document.getElementById('editFeedbackComment').value = comment || '';
+            document.getElementById('modal-edit-feedback').style.display = 'block';
+        };
+
+        window.saveFeedbackEdit = () => {
+            const feedbackId = document.getElementById('editFeedbackId').value;
+            const rating = parseInt(document.getElementById('editFeedbackRating').value) || 5;
+            const comment = document.getElementById('editFeedbackComment').value.trim();
+            if (!feedbackId) return;
+
+            socket.emit('admin-update-feedback', { feedbackId, rating, comment }, (res) => {
+                if (res && res.ok) {
+                    alert('Review and rating updated successfully!');
+                    closeModal('modal-edit-feedback');
+                    fetchFeedback();
+                } else {
+                    alert('Failed to update review: ' + (res ? res.error : 'Unknown error'));
+                }
+            });
+        };
+
+        window.deleteFeedback = (feedbackId) => {
+            if (!feedbackId) return;
+            if (!confirm('Are you sure you want to permanently delete this customer review? The astrologer\'s average rating will be automatically recalculated.')) {
+                return;
+            }
+
+            socket.emit('admin-delete-feedback', { feedbackId }, (res) => {
+                if (res && res.ok) {
+                    alert('Review deleted successfully!');
+                    closeModal('modal-edit-feedback');
+                    fetchFeedback();
+                } else {
+                    alert('Failed to delete review: ' + (res ? res.error : 'Unknown error'));
                 }
             });
         };

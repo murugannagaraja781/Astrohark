@@ -285,7 +285,7 @@ class AstrologerDashboardActivity : ComponentActivity() {
                         }
                         
                         val notification = androidx.core.app.NotificationCompat.Builder(this@AstrologerDashboardActivity, channelId)
-                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setSmallIcon(R.drawable.app_icon_final)
                             .setContentTitle("Incoming Call")
                             .setContentText("$callerName is calling")
                             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MAX)
@@ -342,7 +342,8 @@ suspend fun updateServiceStatus(context: android.content.Context, userId: String
             if (success) {
                 // Background Service Management
                 if (enabled) {
-                    com.astrohark.app.AstrologerStatusService.startService(context, userId)
+                    val currentImg = com.astrohark.app.data.local.TokenManager(context).getUserSession()?.image
+                    com.astrohark.app.AstrologerStatusService.startService(context, userId, currentImg)
                     // Ensure socket is active and registered
                     com.astrohark.app.data.remote.SocketManager.init()
                     com.astrohark.app.data.remote.SocketManager.registerUser(userId)
@@ -479,6 +480,7 @@ fun AstrologerDashboardScreen(
                             val session = tokenManager.getUserSession()
                             if (session != null) {
                                 tokenManager.saveUserSession(session.copy(image = newImage))
+                                com.astrohark.app.AstrologerStatusService.updateAvatar(context, newImage)
                             }
                             withContext(kotlinx.coroutines.Dispatchers.Main) {
                                 Toast.makeText(context, "Profile Picture Updated!", Toast.LENGTH_SHORT).show()
@@ -863,6 +865,12 @@ fun AstrologerDashboardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .shadow(16.dp, RoundedCornerShape(28.dp), spotColor = colors.accent.copy(alpha = 0.3f))
+                    .clickable {
+                        val intent = Intent(context, com.astrohark.app.ui.astro.AstrologerHistoryActivity::class.java).apply {
+                            putExtra("filter_type", "earnings")
+                        }
+                        context.startActivity(intent)
+                    }
             ) {
                 Box(
                     modifier = Modifier
@@ -1066,7 +1074,12 @@ fun AstrologerDashboardScreen(
                                      )
                                      .clickable {
                                          when (label) {
-                                             "Call" -> showRecordingsDialog(context)
+                                             "Call" -> {
+                                                 val intent = Intent(context, com.astrohark.app.ui.astro.AstrologerHistoryActivity::class.java).apply {
+                                                     putExtra("filter_type", "call")
+                                                 }
+                                                 context.startActivity(intent)
+                                             }
                                              "Profile" -> {
                                                  val intent = Intent(context, com.astrohark.app.ui.profile.AstrologerProfileActivity::class.java).apply {
                                                      putExtra("astro_id", sessionId)
@@ -1082,7 +1095,12 @@ fun AstrologerDashboardScreen(
                                                  context.startActivity(intent)
                                              }
                                              "History" -> context.startActivity(Intent(context, com.astrohark.app.ui.astro.AstrologerHistoryActivity::class.java))
-                                             "Earnings" -> Toast.makeText(context, "Fetching Data...", Toast.LENGTH_SHORT).show()
+                                             "Earnings" -> {
+                                                 val intent = Intent(context, com.astrohark.app.ui.astro.AstrologerHistoryActivity::class.java).apply {
+                                                     putExtra("filter_type", "earnings")
+                                                 }
+                                                 context.startActivity(intent)
+                                             }
                                              "Settings" -> context.startActivity(Intent(context, com.astrohark.app.ui.settings.SettingsActivity::class.java))
                                              "Reviews" -> {
                                                  val socket = SocketManager.getSocket()

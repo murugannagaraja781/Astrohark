@@ -397,10 +397,9 @@ fun WalletScreen(
                                         letterSpacing = 1.sp
                                     )
                                     Image(
-                                        painter = painterResource(id = com.astrohark.app.R.mipmap.ic_launcher_foreground),
+                                        painter = painterResource(id = com.astrohark.app.R.drawable.app_icon_final),
                                         contentDescription = null,
-                                        modifier = Modifier.size(40.dp).graphicsLayer(alpha = 0.6f),
-                                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(goldPrimary)
+                                        modifier = Modifier.size(40.dp)
                                     )
                                 }
                             }

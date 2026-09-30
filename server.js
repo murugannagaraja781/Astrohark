@@ -1704,37 +1704,59 @@ io.on('connection', (socket) => {
   const feedbackCooldowns = new Map();
 
   socket.on('send-feedback', async (data, cb) => {
-    const userId = socketToUser.get(socket.id);
-    if (!userId || !data.comment) return cb({ ok: false, error: 'Invalid data' });
+    const commentText = (data && (data.comment || data.message) ? String(data.comment || data.message) : '').trim();
+    if (!commentText) {
+      if (typeof cb === 'function') cb({ ok: false, error: 'Feedback message cannot be empty / கருத்து காலியாக உள்ளது' });
+      return;
+    }
 
-    // Rate Limit Check (5 min cooldown)
+    const userId = socketToUser.get(socket.id) || (data && data.userId) || (socket.id ? ('guest_' + socket.id.slice(0, 8)) : ('guest_' + Date.now()));
+
+    // Rate Limit Check (60s cooldown per user/guest)
     const now = Date.now();
     const lastSent = feedbackCooldowns.get(userId) || 0;
-    if (now - lastSent < 300000) {
-      return cb({ ok: false, error: 'Please wait a few minutes before sending another feedback.' });
+    if (now - lastSent < 60000) {
+      if (typeof cb === 'function') cb({ ok: false, error: 'Please wait a minute before sending another feedback.' });
+      return;
     }
 
     try {
-      const user = await User.findOne({ userId });
+      let userName = 'பொதுமக்கள் / Public Visitor';
+      let userPhone = '';
+      if (userId && !userId.startsWith('guest_')) {
+        const user = await User.findOne({ userId });
+        if (user) {
+          userName = user.name || userName;
+          userPhone = user.phone || '';
+        }
+      } else if (data && data.userName) {
+        userName = data.userName;
+      }
+
       const fb = await Feedback.create({
         userId,
-        userName: user ? user.name : 'Unknown User',
-        astrologerId: data.astrologerId,
-        astrologerName: data.astrologerName,
-        rating: data.rating || 5,
-        comment: data.comment,
-        sessionType: data.sessionType
+        userName,
+        userPhone,
+        astrologerId: (data && data.astrologerId) ? data.astrologerId : null,
+        astrologerName: (data && data.astrologerName) ? data.astrologerName : (data && data.astrologerId ? 'Astrologer' : 'Astrohark Platform'),
+        rating: (data && data.rating) ? Math.max(1, Math.min(5, Number(data.rating))) : 5,
+        comment: commentText,
+        sessionType: (data && data.sessionType) || 'பொதுமக்கள் கருத்து (Public Feedback)'
       });
 
       // Send Email Notification
-      const { sendFeedbackEmail } = require('./services/email.service');
-      sendFeedbackEmail(fb).catch(err => console.error("Email send failed:", err));
+      try {
+        const { sendFeedbackEmail } = require('./services/email.service');
+        sendFeedbackEmail(fb).catch(err => console.error("Email send failed:", err));
+      } catch (emErr) {
+        console.error("Email send error:", emErr);
+      }
 
       feedbackCooldowns.set(userId, now);
-      if (typeof cb === 'function') cb({ ok: true });
+      if (typeof cb === 'function') cb({ ok: true, feedback: fb });
     } catch (e) {
       console.error('Feedback Error:', e);
-      if (typeof cb === 'function') cb({ ok: false, error: 'Database error' });
+      if (typeof cb === 'function') cb({ ok: false, error: 'Database error: ' + (e.message || 'unknown') });
     }
   });
 
@@ -1744,6 +1766,90 @@ io.on('connection', (socket) => {
       cb({ ok: true, feedback });
     } catch (e) {
       cb({ ok: false, error: 'Failed to fetch feedback' });
+    }
+  });
+
+  socket.on('admin-update-feedback', async (data, cb) => {
+    try {
+      const { feedbackId, rating, comment } = data || {};
+      if (!feedbackId) {
+        if (typeof cb === 'function') cb({ ok: false, error: 'Feedback ID required' });
+        return;
+      }
+      const updateData = {};
+      if (rating !== undefined && rating !== null) {
+        updateData.rating = Math.max(1, Math.min(5, Number(rating)));
+      }
+      if (comment !== undefined) {
+        updateData.comment = String(comment).trim();
+      }
+
+      const updated = await Feedback.findByIdAndUpdate(feedbackId, updateData, { new: true });
+      if (!updated) {
+        if (typeof cb === 'function') cb({ ok: false, error: 'Feedback not found' });
+        return;
+      }
+
+      // If review is linked to an astrologer, recalculate astrologer's average rating in User model
+      if (updated.astrologerId) {
+        const allReviews = await Feedback.find({ astrologerId: updated.astrologerId });
+        if (allReviews.length > 0) {
+          const avgRating = allReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / allReviews.length;
+          const formattedAvg = parseFloat(avgRating.toFixed(1));
+          await User.updateOne(
+            { userId: updated.astrologerId },
+            { rating: formattedAvg }
+          );
+        }
+        broadcastAstroUpdate().catch(() => {});
+      }
+
+      if (typeof cb === 'function') cb({ ok: true, feedback: updated });
+    } catch (err) {
+      console.error('Admin Update Feedback Error:', err);
+      if (typeof cb === 'function') cb({ ok: false, error: err.message || 'Update failed' });
+    }
+  });
+
+  socket.on('admin-delete-feedback', async (data, cb) => {
+    try {
+      const { feedbackId } = data || {};
+      if (!feedbackId) {
+        if (typeof cb === 'function') cb({ ok: false, error: 'Feedback ID required' });
+        return;
+      }
+
+      const deleted = await Feedback.findByIdAndDelete(feedbackId);
+      if (!deleted) {
+        if (typeof cb === 'function') cb({ ok: false, error: 'Feedback not found' });
+        return;
+      }
+
+      // If review was linked to an astrologer, recalculate astrologer's average rating in User model
+      if (deleted.astrologerId) {
+        const allReviews = await Feedback.find({ astrologerId: deleted.astrologerId });
+        if (allReviews.length > 0) {
+          const avgRating = allReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / allReviews.length;
+          const formattedAvg = parseFloat(avgRating.toFixed(1));
+          await User.updateOne(
+            { userId: deleted.astrologerId },
+            { rating: formattedAvg }
+          );
+        } else {
+          // If no reviews left, reset to 5.0
+          await User.updateOne(
+            { userId: deleted.astrologerId },
+            { rating: 5.0 }
+          );
+        }
+        broadcastAstroUpdate().catch(() => {});
+      }
+
+      console.log(`[Admin] Deleted feedback review ${feedbackId} for astrologer ${deleted.astrologerId || 'N/A'}`);
+      if (typeof cb === 'function') cb({ ok: true, message: 'Review deleted successfully' });
+    } catch (err) {
+      console.error('Admin Delete Feedback Error:', err);
+      if (typeof cb === 'function') cb({ ok: false, error: err.message || 'Delete failed' });
     }
   });
 

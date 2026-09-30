@@ -2657,16 +2657,16 @@
       </div>
 
       <div class="grid-menu">
-        <div class="grid-item">
+        <div class="grid-item" onclick="showHistory('call')" style="cursor: pointer;">
           <div class="grid-icon"><i class="fas fa-phone"></i></div> Call
         </div>
-        <div class="grid-item">
+        <div class="grid-item" onclick="showHistory('chat')" style="cursor: pointer;">
           <div class="grid-icon"><i class="fas fa-comment"></i></div> Chat
         </div>
-        <div class="grid-item">
+        <div class="grid-item" onclick="toggleEarnings(); document.getElementById('astroEarningsContainer')?.scrollIntoView({behavior:'smooth'});" style="cursor: pointer;">
           <div class="grid-icon"><i class="fas fa-rupee-sign"></i></div> Earnings
         </div>
-        <div class="grid-item">
+        <div class="grid-item" onclick="showHistory()" style="cursor: pointer;">
           <div class="grid-icon"><i class="fas fa-star"></i></div> Reviews
         </div>
         <div class="grid-item" onclick="showHistory()" style="cursor: pointer;">
@@ -4983,15 +4983,22 @@
 
     window.submitUserFeedback = function() {
       const msg = document.getElementById('userFeedbackText').value.trim();
-      if (!msg) return alert('Please enter your feedback');
-      if (state.me.role === 'guest') return showLogin();
+      if (!msg) return alert('Please enter your feedback / உங்கள் கருத்தை பதிவு செய்யவும்');
 
-      socket.emit('send-feedback', { message: msg }, (res) => {
-        if (res.ok) {
+      const payload = {
+        message: msg,
+        comment: msg,
+        userId: (state.me && state.me.userId && state.me.role !== 'guest') ? state.me.userId : undefined,
+        userName: (state.me && state.me.name && state.me.role !== 'guest') ? state.me.name : 'பொதுமக்கள் / Public Visitor',
+        sessionType: 'பொதுமக்கள் கருத்து (Public Feedback)'
+      };
+
+      socket.emit('send-feedback', payload, (res) => {
+        if (res && res.ok) {
           showSuccessModal('நன்றி! (Thank You)', 'உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. (Your feedback has been submitted successfully.)');
           document.getElementById('userFeedbackText').value = '';
         } else {
-          alert('Error: ' + res.error);
+          alert('Error: ' + ((res && res.error) ? res.error : 'Failed to submit'));
         }
       });
     };
@@ -5220,7 +5227,7 @@
     }
 
     // History Logic
-    function showHistory() {
+    function showHistory(filterType) {
       const modal = document.getElementById('screen-history');
       const list = document.getElementById('historyList');
       list.innerHTML = '<div style="text-align:center; margin-top:20px;">Loading...</div>';
@@ -5232,13 +5239,20 @@
           return;
         }
 
-        if (res.sessions.length === 0) {
-          list.innerHTML = '<div style="text-align:center; color:#999; margin-top:50px;">No History Found</div>';
+        let sessions = res.sessions;
+        if (filterType === 'call') {
+          sessions = sessions.filter(s => s.type === 'call' || s.type === 'audio' || s.type === 'video');
+        } else if (filterType === 'chat') {
+          sessions = sessions.filter(s => s.type === 'chat');
+        }
+
+        if (sessions.length === 0) {
+          list.innerHTML = `<div style="text-align:center; color:#999; margin-top:50px;">No ${filterType ? filterType.toUpperCase() : ''} History Found</div>`;
           return;
         }
 
         list.innerHTML = '';
-        res.sessions.forEach(s => {
+        sessions.forEach(s => {
           const date = new Date(s.startTime).toLocaleString();
 
           // Format duration

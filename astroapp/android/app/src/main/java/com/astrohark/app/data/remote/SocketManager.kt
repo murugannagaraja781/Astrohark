@@ -457,6 +457,10 @@ object SocketManager {
     fun sendFeedback(message: String, callback: ((Boolean) -> Unit)? = null) {
         val payload = JSONObject().apply {
             put("message", message)
+            put("comment", message)
+            if (currentUserId != null) {
+                put("userId", currentUserId)
+            }
         }
         socket?.emit("send-feedback", payload, Ack { args ->
             val success = if (args != null && args.isNotEmpty()) {

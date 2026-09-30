@@ -63,7 +63,7 @@ class AstrologerProfileActivity : ComponentActivity() {
         val astroOrders = intent.getIntExtra("astro_orders", 1000)
         val astroProfession = intent.getStringExtra("astro_profession") ?: ""
         val astroRating = intent.getFloatExtra("astro_rating", 4.9f)
-        val astroLanguages = intent.getStringExtra("astro_languages") ?: "Tamil, English"
+        val astroLanguages = intent.getStringExtra("astro_languages")?.takeIf { it.isNotBlank() } ?: "Tamil"
 
         setContent {
             CosmicAppTheme {
@@ -242,6 +242,17 @@ fun AstrologerProfileScreen(
                             .border(2.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.3f), CircleShape)
                             .padding(2.dp)
                     )
+
+                    // Online Green Dot Indicator
+                    if (isChatOnline || isAudioOnline || isVideoOnline) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .size(20.dp)
+                                .background(Color(0xFF22C55E), CircleShape)
+                                .border(2.5.dp, Color.White, CircleShape)
+                        )
+                    }
                 }
             }
 
@@ -394,14 +405,14 @@ fun AstrologerProfileScreen(
                         Text(if (isTamil) "மொழிகள்" else "Languages", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = CosmicAppTheme.colors.accent)
                         Spacer(modifier = Modifier.height(6.dp))
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            languages.split(",").forEach { lang ->
+                            languages.split(",").map { it.trim() }.filter { it.isNotEmpty() }.forEach { lang ->
                                 Box(
                                     modifier = Modifier
                                         .background(CosmicAppTheme.colors.accent.copy(alpha = 0.1f), RoundedCornerShape(50.dp))
                                         .border(1.dp, CosmicAppTheme.colors.accent.copy(alpha = 0.3f), RoundedCornerShape(50.dp))
                                         .padding(horizontal = 12.dp, vertical = 6.dp)
                                 ) {
-                                    Text(lang.trim(), color = CosmicAppTheme.colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                    Text(lang, color = CosmicAppTheme.colors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                                 }
                             }
                         }

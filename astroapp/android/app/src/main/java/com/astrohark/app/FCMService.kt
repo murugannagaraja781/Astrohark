@@ -198,6 +198,14 @@ class FCMService : FirebaseMessagingService() {
                         Log.d(TAG, "App in foreground - skipping notification for $messageId")
                     }
                 }
+                "ASTRO_ONLINE" -> {
+                    val astroName = data["astrologerName"] ?: data["name"] ?: "Astrologer"
+                    val title = data["title"] ?: "✨ Astrohark"
+                    val body = data["body"] ?: "$astroName is now ONLINE 🟢 / ஆன்லைனில் உள்ளார்! 🔮"
+                    val astroId = data["astrologerId"] ?: ""
+                    val imageUrl = data["image"] ?: data["imageUrl"]
+                    showAstroOnlineNotification(title, body, astroId, imageUrl)
+                }
                 else -> {
                     // Handle generic data messages or unknown types by showing a simple notification
                     val title = data["title"] ?: message.notification?.title ?: "astrohark"
@@ -217,9 +225,73 @@ class FCMService : FirebaseMessagingService() {
         }
     }
 
+    private fun showAstroOnlineNotification(title: String, body: String, astroId: String, imageUrl: String?) {
+        val intent = if (astroId.isNotBlank()) {
+            Intent(this, com.astrohark.app.ui.profile.AstrologerProfileActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra("astrologerId", astroId)
+            }
+        } else {
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            (System.currentTimeMillis() % 100000).toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val channelId = "astro_online_channel_v1"
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Astrologer Online Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Alerts when astrologers come online"
+                enableVibration(true)
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val builder = NotificationCompat.Builder(this, channelId)
+            .setSmallIcon(R.drawable.app_icon_final)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+
+        if (!imageUrl.isNullOrBlank()) {
+            serviceScope.launch(Dispatchers.IO) {
+                try {
+                    val url = java.net.URL(imageUrl)
+                    val connection = url.openConnection() as java.net.HttpURLConnection
+                    connection.doInput = true
+                    connection.connectTimeout = 4000
+                    connection.readTimeout = 4000
+                    connection.connect()
+                    val bitmap = android.graphics.BitmapFactory.decodeStream(connection.inputStream)
+                    if (bitmap != null) {
+                        builder.setLargeIcon(bitmap)
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to load notification large icon: ${e.message}")
+                }
+                notificationManager.notify(if (astroId.isNotBlank()) astroId.hashCode() else GENERIC_NOTIFICATION_ID, builder.build())
+            }
+        } else {
+            notificationManager.notify(if (astroId.isNotBlank()) astroId.hashCode() else GENERIC_NOTIFICATION_ID, builder.build())
+        }
+    }
+
     private fun showGenericNotification(title: String, body: String) {
         val notification = NotificationCompat.Builder(this, CHAT_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.app_icon_final)
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -485,7 +557,7 @@ class FCMService : FirebaseMessagingService() {
         )
 
         val notification = NotificationCompat.Builder(this, CHAT_CALL_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_agenda)
+            .setSmallIcon(R.drawable.app_icon_final)
             .setContentTitle("Chat Request")
             .setContentText("$callerName wants to chat")
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -523,7 +595,7 @@ class FCMService : FirebaseMessagingService() {
         )
 
         val notification = NotificationCompat.Builder(this, CHAT_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_agenda)
+            .setSmallIcon(R.drawable.app_icon_final)
             .setContentTitle(senderName)
             .setContentText(text)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

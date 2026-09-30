@@ -8883,15 +8883,22 @@
 
     window.submitUserFeedback = function() {
       const msg = document.getElementById('userFeedbackText').value.trim();
-      if (!msg) return alert('Please enter your feedback');
-      if (state.me.role === 'guest') return showLogin();
+      if (!msg) return alert('Please enter your feedback / உங்கள் கருத்தை பதிவு செய்யவும்');
 
-      socket.emit('send-feedback', { message: msg }, (res) => {
-        if (res.ok) {
+      const payload = {
+        message: msg,
+        comment: msg,
+        userId: (state.me && state.me.userId && state.me.role !== 'guest') ? state.me.userId : undefined,
+        userName: (state.me && state.me.name && state.me.role !== 'guest') ? state.me.name : 'பொதுமக்கள் / Public Visitor',
+        sessionType: 'பொதுமக்கள் கருத்து (Public Feedback)'
+      };
+
+      socket.emit('send-feedback', payload, (res) => {
+        if (res && res.ok) {
           showSuccessModal('நன்றி! (Thank You)', 'உங்கள் கருத்து வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது. (Your feedback has been submitted successfully.)');
           document.getElementById('userFeedbackText').value = '';
         } else {
-          alert('Error: ' + res.error);
+          alert('Error: ' + ((res && res.error) ? res.error : 'Failed to submit'));
         }
       });
     };

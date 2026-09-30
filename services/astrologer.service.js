@@ -112,22 +112,17 @@ async function sendOnlineNotification(user, io) {
                 : `${process.env.SERVER_URL || 'https://astrohark.com'}${user.image.startsWith('/') ? '' : '/'}${user.image}`;
         }
 
-        const notification = {
-            title: titleText,
-            body: bodyText,
-            image: imageUrl || undefined
-        };
         const data = {
             type: 'ASTRO_ONLINE',
             title: titleText,
             body: bodyText,
-            astrologerId: user.userId,
-            astrologerName: user.name,
+            astrologerId: String(user.userId || ''),
+            astrologerName: String(user.name || ''),
             image: imageUrl || ''
         };
 
-        console.log(`[Notification] Sending online push for ${user.name} to topic ${topicName}`);
-        sendFcmTopicPush(topicName, data, notification).catch(err => {
+        console.log(`[Notification] Sending online data push for ${user.name} to topic ${topicName} (image: ${imageUrl})`);
+        sendFcmTopicPush(topicName, data, null).catch(err => {
             console.error('[Notification] Error calling sendFcmTopicPush:', err);
         });
     } catch (e) {

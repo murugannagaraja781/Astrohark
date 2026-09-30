@@ -18,6 +18,16 @@ import com.astrohark.app.data.local.entity.ChatMessageEntity
 import com.astrohark.app.utils.Constants
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.graphics.Rect
+import android.graphics.RectF
+import java.net.HttpURLConnection
+import java.net.URL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -237,14 +247,24 @@ class FCMService : FirebaseMessagingService() {
             }
         }
 
+        val notificationId = if (astroId.isNotBlank()) astroId.hashCode() else GENERIC_NOTIFICATION_ID
+
         val pendingIntent = PendingIntent.getActivity(
             this,
-            (System.currentTimeMillis() % 100000).toInt(),
+            notificationId,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val channelId = "astro_online_channel_v1"
+        // Action button for notification: [ 🟢 Connect Now / பேசவும் ]
+        val actionPendingIntent = PendingIntent.getActivity(
+            this,
+            notificationId + 1,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val channelId = "astro_online_channel_v2"
         val notificationManager = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
@@ -262,31 +282,87 @@ class FCMService : FirebaseMessagingService() {
             .setSmallIcon(R.drawable.app_icon_final)
             .setContentTitle(title)
             .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
+            .addAction(0, "🟢 Connect Now / பேசவும்", actionPendingIntent)
 
-        if (!imageUrl.isNullOrBlank()) {
+        val fullUrl = when {
+            imageUrl.isNullOrBlank() -> null
+            imageUrl.startsWith("http://") || imageUrl.startsWith("https://") -> imageUrl
+            imageUrl.startsWith("/") -> "${Constants.SERVER_URL}$imageUrl"
+            else -> "${Constants.SERVER_URL}/$imageUrl"
+        }
+
+        if (!fullUrl.isNullOrBlank()) {
             serviceScope.launch(Dispatchers.IO) {
                 try {
-                    val url = java.net.URL(imageUrl)
-                    val connection = url.openConnection() as java.net.HttpURLConnection
-                    connection.doInput = true
-                    connection.connectTimeout = 4000
-                    connection.readTimeout = 4000
-                    connection.connect()
-                    val bitmap = android.graphics.BitmapFactory.decodeStream(connection.inputStream)
-                    if (bitmap != null) {
-                        builder.setLargeIcon(bitmap)
+                    val downloaded = downloadBitmap(fullUrl)
+                    if (downloaded != null) {
+                        val circular = getCircularBitmap(downloaded)
+                        builder.setLargeIcon(circular)
                     }
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed to load notification large icon: ${e.message}")
                 }
-                notificationManager.notify(if (astroId.isNotBlank()) astroId.hashCode() else GENERIC_NOTIFICATION_ID, builder.build())
+                notificationManager.notify(notificationId, builder.build())
             }
         } else {
-            notificationManager.notify(if (astroId.isNotBlank()) astroId.hashCode() else GENERIC_NOTIFICATION_ID, builder.build())
+            notificationManager.notify(notificationId, builder.build())
         }
+    }
+
+    private fun downloadBitmap(imageUrl: String): Bitmap? {
+        return try {
+            val url = URL(imageUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.doInput = true
+            connection.connectTimeout = 6000
+            connection.readTimeout = 6000
+            connection.instanceFollowRedirects = true
+            connection.connect()
+            val inputStream = connection.inputStream
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+            connection.disconnect()
+            bitmap
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to download avatar from $imageUrl: ${e.message}")
+            null
+        }
+    }
+
+    private fun getCircularBitmap(src: Bitmap): Bitmap {
+        if (src.width <= 0 || src.height <= 0) return src
+        val size = Math.min(src.width, src.height)
+        val maxDimension = 256
+        val finalSize = Math.min(size, maxDimension).coerceAtLeast(1)
+
+        val output = Bitmap.createBitmap(finalSize, finalSize, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+
+        val paint = Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+            isDither = true
+        }
+
+        val srcRect = Rect(
+            (src.width - size) / 2,
+            (src.height - size) / 2,
+            (src.width + size) / 2,
+            (src.height + size) / 2
+        )
+        val destRect = RectF(0f, 0f, finalSize.toFloat(), finalSize.toFloat())
+
+        canvas.drawARGB(0, 0, 0, 0)
+        canvas.drawCircle(finalSize / 2f, finalSize / 2f, finalSize / 2f, paint)
+
+        paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+        canvas.drawBitmap(src, srcRect, destRect, paint)
+
+        return output
     }
 
     private fun showGenericNotification(title: String, body: String) {

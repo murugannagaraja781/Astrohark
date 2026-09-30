@@ -16,8 +16,8 @@ android {
         applicationId = "com.astrohark.app"
         minSdk = 24
         targetSdk = 36
-        versionCode = 32
-        versionName = "32.0"
+        versionCode = 33
+        versionName = "33.0"
 
         ndk {
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))

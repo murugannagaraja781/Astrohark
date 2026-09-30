@@ -234,6 +234,23 @@ A release build was performed with version code bumped to `31` and version name 
 * **File Path:** `releases/astrohark-v31-release.aab` and `releases/astrohark-v31-release.apk`
 * **Status:** Build, Keystore Signing (v1-v4), 16 KB Alignment Verified & Packaging Successful
 
+---
+
+## [2026-10-01] - Release Build v33.0 (Planetary Orbit Notification & App Icon, Super Admin Review Deletion)
+
+A release build was performed with version code bumped to `33` and version name to `"33.0"`:
+1. **New Notification & App Icon**: Integrated the official Astrohark yellow planetary orbit logo across all mipmap densities and notification builders (`app_icon_final.png`).
+2. **Notification Enhancements**: Astrologer online alerts configured with circular astrologer avatar and `🟢 Connect Now / பேசவும்` action button. Pure data push integration ensures foreground/background consistency.
+3. **Super Admin Review Management**: Review deletion with real-time rating recalculation and live socket broadcasting.
+4. **Android App Bundle (.aab)**: Production release keystore signed (v1, v2, v3, v4).
+
+* **Date & Time:** October 01, 2026 - 01:05 AM (IST)
+* **File Name:** `astrohark-v33-release.aab`
+* **File Path:** `releases/astrohark-v33-release.aab` and `/Users/wohozo/Documents/Astrohark/app-release.aab`
+* **Size:** ~88 MB
+* **Status:** Build, Keystore Signing (v1-v4), Packaging Successful
+
+
 
 
 
